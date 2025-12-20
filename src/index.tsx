@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 import './index.scss';
 import Timer from 'routes/Timer';
+import { PeerProvider } from 'components/PeerProvider';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
@@ -22,6 +23,8 @@ const router = createBrowserRouter(
 
 root.render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <PeerProvider>
+      <RouterProvider router={router} />
+    </PeerProvider>
   </React.StrictMode>,
 );
