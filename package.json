@@ -18,8 +18,7 @@
     "react-router-dom": "^7.11.0",
     "sanitize-html": "^2.17.0",
     "sass": "^1.97.1",
-    "typescript": "^4.9.5",
-    "web-vitals": "^5.1.0"
+    "typescript": "^4.9.5"
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.0",
