@@ -15,6 +15,7 @@ export default function EditableHtml({
   onChange: (value: string) => void;
   className?: string;
   tagName?: string;
+  title?: string;
 }) {
   return (
     <ContentEditable

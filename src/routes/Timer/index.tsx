@@ -102,6 +102,7 @@ function Timer() {
           title: value,
         })}
         className={styles.title}
+        title="Click to edit title"
       />
       <div
         className={styles.pieContainer}
