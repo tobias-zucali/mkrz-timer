@@ -143,6 +143,7 @@ function Timer() {
               RESET
             </button>
           </div>
+          <a className={styles.by} href='https://www.mkrz.at/impressum'>by mkrz</a>
         </div>
       </div>
     </div>

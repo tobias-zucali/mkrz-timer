@@ -1,3 +1,5 @@
+@use 'variables';
+
 .container {
   display: flex;
   flex-direction: column;
@@ -46,4 +48,11 @@
 .controlsContainer {
   text-align: center;
   padding: 0.5em 0;
+}
+
+.by {
+  color: variables.$textColor;
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
 }
