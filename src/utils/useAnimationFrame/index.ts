@@ -9,7 +9,7 @@ export default function useAnimationFrame(
   callback: (deltaTime: number) => void,
   settings: Settings = {},
 ) {
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number | undefined>(undefined);
   const previousTimeRef = useRef<number | null>(null);
   const callbackRef = useRef(callback);
   callbackRef.current = callback;

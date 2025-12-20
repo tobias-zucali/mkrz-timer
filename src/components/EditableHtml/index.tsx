@@ -20,9 +20,9 @@ export default function EditableHtml({
     <ContentEditable
       tagName="div"
       html={sanitizeHtml(html, sanitizeConf)}
-      onChange={({ target }) => onChange(sanitizeHtml(target.value, sanitizeConf))}
-      onKeyDown={(event) => event.stopPropagation()}
-      onKeyUp={(event) => event.stopPropagation()}
+      onChange={({ target }: React.ChangeEvent<{ value: string; }>) => onChange(sanitizeHtml(target.value, sanitizeConf))}
+      onKeyDown={( event: React.KeyboardEvent<EventTarget> ) => event.stopPropagation()}
+      onKeyUp={(event: React.KeyboardEvent<EventTarget>) => event.stopPropagation()}
       {...otherProps}
     />
   );
