@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { prefixZeros, getSecondsDuration, getMinutesSeconds } from '@/src/utils/timeInputHelpers';
 import useAnimationFrame from '@/src/utils/useAnimationFrame';
 import useGlobalKeyUp from '@/src/utils/useGlobalKeyUp';
 import useSound from '@/src/utils/useSound';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 // import beep from '@/src/utils/beep';
 
 import EditableHtml from '@/src/components/EditableHtml';
@@ -15,8 +16,26 @@ import DigitalDisplay from '@/src/components/DigitalDisplay';
 import styles from './page.module.scss';
 
 function Timer() {
-  // const [searchParams, setSearchParams] = useSearchParams();
-  // const searchParamsObject = Object.fromEntries(searchParams);
+  const searchParams = useSearchParams();
+  const pathname = usePathname()
+  const router = useRouter();
+
+  const searchParamsObject = Object.fromEntries(searchParams);
+
+  const {
+    m: totalMinutes = '01',
+    s: totalSeconds = '00',
+    title = '',
+  } = searchParamsObject;
+
+  const setSearchParams = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
+      router.push(pathname + '?' + params.toString());
+    },
+    [searchParams]
+  )
 
   const sound = useSound();
 
@@ -25,21 +44,15 @@ function Timer() {
   const isTimedOutRef = useRef(false);
   const isStarted = (elapsedTime > 0);
 
-  const {
-    m: totalMinutes = '01',
-    s: totalSeconds = '00',
-    title = '',
-  } = {}; // searchParamsObject;
-
-  useEffect(() => {
-    // initially set params
-    // setSearchParams({
-    //   m: totalMinutes,
-    //   s: totalSeconds,
-    //   title,
-    // });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   // initially set params
+  //   setSearchParams({
+  //     m: totalMinutes,
+  //     s: totalSeconds,
+  //     title,
+  //   });
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   const totalDuration = getSecondsDuration(totalMinutes, totalSeconds);
   const remainingSecondsRef = useRef(totalDuration);
@@ -48,7 +61,7 @@ function Timer() {
   const isTimedOut = (elapsedPercentage >= 1);
 
   if (isTimedOut && !isTimedOutRef.current) {
-    sound.play();
+    // sound.play();
   }
   isTimedOutRef.current = isTimedOut;
 
@@ -98,11 +111,7 @@ function Timer() {
     >
       <EditableHtml
         html={title}
-        // onChange={(value) => setSearchParams({
-        //   ...searchParamsObject,
-        //   title: value,
-        // })}
-        onChange={(value) => {}}
+        onChange={(value) => setSearchParams('title', value)}
         className={styles.title}
         title="Click to edit title"
       />
@@ -121,16 +130,8 @@ function Timer() {
             isReadonly={isStarted}
             minutes={minutes}
             seconds={seconds}
-            onMinutesChange={({ target }) => {}}
-            onSecondsChange={({ target }) => {}}
-            // onMinutesChange={({ target }) => setSearchParams({
-            //   ...searchParamsObject,
-            //   m: prefixZeros(target.value),
-            // })}
-            // onSecondsChange={({ target }) => setSearchParams({
-            //   ...searchParamsObject,
-            //   s: prefixZeros(target.value),
-            // })}
+            onMinutesChange={({ target }) => setSearchParams('m', prefixZeros(target.value))}
+            onSecondsChange={({ target }) => setSearchParams('s', prefixZeros(target.value))}
           />
           <div
             className={styles.controlsContainer}
