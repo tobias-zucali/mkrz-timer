@@ -20,21 +20,21 @@ function Timer() {
   const pathname = usePathname()
   const router = useRouter();
 
-  const searchParamsObject = Object.fromEntries(searchParams);
-
-  const {
-    m: totalMinutes = '01',
-    s: totalSeconds = '00',
-    title = '',
-  } = searchParamsObject;
+  const params = {
+    m: searchParams.get('m') || '01',
+    s: searchParams.get('s') || '00',
+    title: searchParams.get('title') || '',
+  };
 
   const setSearchParams = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
-      router.push(pathname + '?' + params.toString());
+    (newParams: Record<string, string>) => {
+      const newSearchParams = new URLSearchParams({
+        ...params,
+        ...newParams,
+      });
+      router.push(pathname + '?' + newSearchParams.toString());
     },
-    [searchParams]
+    [params]
   )
 
   const sound = useSound();
@@ -44,17 +44,13 @@ function Timer() {
   const isTimedOutRef = useRef(false);
   const isStarted = (elapsedTime > 0);
 
-  // useEffect(() => {
-  //   // initially set params
-  //   setSearchParams({
-  //     m: totalMinutes,
-  //     s: totalSeconds,
-  //     title,
-  //   });
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+  useEffect(() => {
+    // initially set params
+    setSearchParams({});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const totalDuration = getSecondsDuration(totalMinutes, totalSeconds);
+  const totalDuration = getSecondsDuration(params.m, params.s);
   const remainingSecondsRef = useRef(totalDuration);
 
   const elapsedPercentage = (elapsedTime) / totalDuration;
@@ -65,7 +61,7 @@ function Timer() {
   }
   isTimedOutRef.current = isTimedOut;
 
-  const [minutes = totalMinutes, seconds = totalSeconds] = (isStarted) ? getMinutesSeconds(
+  const [minutes = params.m, seconds = params.s] = (isStarted) ? getMinutesSeconds(
     totalDuration * (1 - elapsedPercentage),
     10,
   ) : [];
@@ -110,8 +106,8 @@ function Timer() {
       className={styles.container}
     >
       <EditableHtml
-        html={title}
-        onChange={(value) => setSearchParams('title', value)}
+        html={params.title}
+        onChange={(value) => setSearchParams({'title': value})}
         className={styles.title}
         title="Click to edit title"
       />
@@ -130,8 +126,8 @@ function Timer() {
             isReadonly={isStarted}
             minutes={minutes}
             seconds={seconds}
-            onMinutesChange={({ target }) => setSearchParams('m', prefixZeros(target.value))}
-            onSecondsChange={({ target }) => setSearchParams('s', prefixZeros(target.value))}
+            onMinutesChange={({ target }) => setSearchParams({'m': prefixZeros(target.value)})}
+            onSecondsChange={({ target }) => setSearchParams({'s': prefixZeros(target.value)})}
           />
           <div
             className={styles.controlsContainer}
