@@ -1,21 +1,22 @@
+"use client"
+
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from "react-router-dom";
 
-import { prefixZeros, getSecondsDuration, getMinutesSeconds } from 'utils/timeInputHelpers';
-import useAnimationFrame from 'utils/useAnimationFrame';
-import useGlobalKeyUp from 'utils/useGlobalKeyUp';
-import useSound from 'utils/useSound';
-// import beep from 'utils/beep';
+import { prefixZeros, getSecondsDuration, getMinutesSeconds } from '@/src/utils/timeInputHelpers';
+import useAnimationFrame from '@/src/utils/useAnimationFrame';
+import useGlobalKeyUp from '@/src/utils/useGlobalKeyUp';
+import useSound from '@/src/utils/useSound';
+// import beep from '@/src/utils/beep';
 
-import EditableHtml from 'components/EditableHtml';
-import Pie from 'components/Pie';
-import DigitalDisplay from 'components/DigitalDisplay';
+import EditableHtml from '@/src/components/EditableHtml';
+import Pie from '@/src/components/Pie';
+import DigitalDisplay from '@/src/components/DigitalDisplay';
 
-import styles from './index.module.scss';
+import styles from './page.module.scss';
 
 function Timer() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchParamsObject = Object.fromEntries(searchParams);
+  // const [searchParams, setSearchParams] = useSearchParams();
+  // const searchParamsObject = Object.fromEntries(searchParams);
 
   const sound = useSound();
 
@@ -28,15 +29,15 @@ function Timer() {
     m: totalMinutes = '01',
     s: totalSeconds = '00',
     title = '',
-  } = searchParamsObject;
+  } = {}; // searchParamsObject;
 
   useEffect(() => {
     // initially set params
-    setSearchParams({
-      m: totalMinutes,
-      s: totalSeconds,
-      title,
-    });
+    // setSearchParams({
+    //   m: totalMinutes,
+    //   s: totalSeconds,
+    //   title,
+    // });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,10 +98,11 @@ function Timer() {
     >
       <EditableHtml
         html={title}
-        onChange={(value) => setSearchParams({
-          ...searchParamsObject,
-          title: value,
-        })}
+        // onChange={(value) => setSearchParams({
+        //   ...searchParamsObject,
+        //   title: value,
+        // })}
+        onChange={(value) => {}}
         className={styles.title}
         title="Click to edit title"
       />
@@ -119,14 +121,16 @@ function Timer() {
             isReadonly={isStarted}
             minutes={minutes}
             seconds={seconds}
-            onMinutesChange={({ target }) => setSearchParams({
-              ...searchParamsObject,
-              m: prefixZeros(target.value),
-            })}
-            onSecondsChange={({ target }) => setSearchParams({
-              ...searchParamsObject,
-              s: prefixZeros(target.value),
-            })}
+            onMinutesChange={({ target }) => {}}
+            onSecondsChange={({ target }) => {}}
+            // onMinutesChange={({ target }) => setSearchParams({
+            //   ...searchParamsObject,
+            //   m: prefixZeros(target.value),
+            // })}
+            // onSecondsChange={({ target }) => setSearchParams({
+            //   ...searchParamsObject,
+            //   s: prefixZeros(target.value),
+            // })}
           />
           <div
             className={styles.controlsContainer}

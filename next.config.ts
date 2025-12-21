@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {
+      rules: {
+        "*.mp3": {
+          loaders: ["file-loader"],
+          as: "*.mp3",
+        },
+      },
+  },
 };
 
 export default nextConfig;

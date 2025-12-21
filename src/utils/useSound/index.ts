@@ -1,7 +1,9 @@
+"use client"
+
 import { useMemo } from 'react';
-import sound from './Attention.mp3';
 
 export default function useSound() {
-  const audio = useMemo(() => new Audio(sound), []);
-  return audio;
+  // const audio = useMemo(() => new Audio('./sounds/Attention.mp3'), []);
+  // return audio;
+  return () => {};
 }

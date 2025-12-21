@@ -6,7 +6,7 @@ import {
 } from 'react-router-dom';
 import './index.scss';
 import Timer from 'routes/Timer';
-import { PeerProvider } from 'components/PeerProvider';
+import { PeerProvider } from '@/src/components/PeerProvider';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
