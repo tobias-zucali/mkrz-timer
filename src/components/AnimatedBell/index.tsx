@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import styles from './index.module.scss';
+import styles from './index.module.css';
 
 export default function AnimatedBell({
   className,
@@ -9,7 +9,7 @@ export default function AnimatedBell({
 }) {
   return (
     <svg
-      className={classNames(styles.bell, className)}
+      className={classNames('bg-secondary', className)}
       xmlns="http://www.w3.org/2000/svg"
       xmlnsXlink="http://www.w3.org/1999/xlink"
       viewBox="0 0 24 24"

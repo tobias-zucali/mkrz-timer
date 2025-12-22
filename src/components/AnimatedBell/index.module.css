@@ -1,9 +1,3 @@
-@use "variables";
-
-.bell {
-  fill: variables.$secondaryColor;
-}
-
 .bell-u-sound_ts {
   animation: bell-u-sound_ts__ts 1000ms linear infinite normal forwards;
 }
