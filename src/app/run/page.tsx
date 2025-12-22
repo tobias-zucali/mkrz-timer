@@ -25,12 +25,17 @@ function Timer() {
   };
 
   const setSearchParams = useCallback(
-    (newParams: Record<string, string>) => {
+    (newParams: Record<string, string>, push: boolean = false) => {
       const newSearchParams = new URLSearchParams({
         ...params,
         ...newParams,
       });
-      router.push(pathname + '?' + newSearchParams.toString());
+      const newUrl = pathname + '?' + newSearchParams.toString();
+      if (push) {
+        router.push(newUrl);
+      } else {
+        router.replace(newUrl);
+      }
     },
     [params]
   )
