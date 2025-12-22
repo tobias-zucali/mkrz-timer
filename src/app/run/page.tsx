@@ -13,8 +13,6 @@ import EditableHtml from '@/src/components/EditableHtml';
 import Pie from '@/src/components/Pie';
 import DigitalDisplay from '@/src/components/DigitalDisplay';
 
-import styles from './page.module.scss';
-
 function Timer() {
   const searchParams = useSearchParams();
   const pathname = usePathname()
@@ -101,25 +99,28 @@ function Timer() {
     }
   });
 
+  const buttonClassName = 'bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default '
+    + 'px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2';
+
   return (
     <div
-      className={styles.container}
+      className="flex flex-col h-full hugo"
     >
       <EditableHtml
         html={params.title}
         onChange={(value) => setSearchParams({'title': value})}
-        className={styles.title}
+        className="text-center text-[3em] font-bold pt-1 hover:outline-4 hover:-outline-offset-4 md:text-[5em] rouded-lg"
         title="Click to edit title"
       />
       <div
-        className={styles.pieContainer}
+        className="flex items-center justify-center grow h-[10em] p-[1em] relative"
       >
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
         />
 
         <div
-          className={styles.centerContainer}
+          className="flex flex-col items-center justify-center grow absolute inset-0"
         >
           <DigitalDisplay
             isAlert={isTimedOut}
@@ -130,22 +131,27 @@ function Timer() {
             onSecondsChange={({ target }) => setSearchParams({'s': prefixZeros(target.value)})}
           />
           <div
-            className={styles.controlsContainer}
+            className="text-center py-[0.5em]"
           >
             <button
+              className={buttonClassName}
               disabled={isTimedOut}
               onClick={toggleTimer}
-            >
+              >
               {isPaused ? 'START' : 'PAUSE'}
             </button>
             <button
+              className={buttonClassName}
               disabled={!isStarted}
               onClick={resetTimer}
             >
               RESET
             </button>
           </div>
-          <a className={styles.by} href='https://www.mkrz.at/'>by mkrz</a>
+          <a
+            className="absolute bottom-4 right-4 underline hover:text-primary"
+            href='https://www.mkrz.at/'
+          >by mkrz</a>
         </div>
       </div>
     </div>
