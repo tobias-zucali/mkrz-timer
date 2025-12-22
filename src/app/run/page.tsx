@@ -55,7 +55,7 @@ function Timer() {
   const isTimedOut = (elapsedPercentage >= 1);
 
   if (isTimedOut && !isTimedOutRef.current) {
-    // sound.play();
+    sound?.play();
   }
   isTimedOutRef.current = isTimedOut;
 

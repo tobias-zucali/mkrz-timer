@@ -1,9 +1,13 @@
-"use client"
-
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 export default function useSound() {
-  // const audio = useMemo(() => new Audio('./sounds/Attention.mp3'), []);
-  // return audio;
-  return () => {};
+  const sound = useMemo(() => {
+    if (typeof window !== "undefined") {
+      // Ensure this runs only on the client side
+      return new Audio("/sounds/Attention.mp3");
+    }
+    return null; // Return null during SSR
+  }, []);
+
+  return sound;
 }
