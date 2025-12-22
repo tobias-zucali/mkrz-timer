@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import classNames from 'classnames';
 
-import styles from './index.module.scss';
+import styles from './index.module.css';
 
 
 type Props = {
@@ -26,16 +26,22 @@ function DigitalDisplay({
   const minuteInputRef = useRef<HTMLInputElement>(null);
   const secondsInputRef = useRef<HTMLInputElement>(null);
 
+  const inputClassNames = classNames(
+    "inline-block flex-1 text-center w-8 outline-none",
+    styles.noSpinner
+  );
+
   return (
     <div
       className={classNames(
-        styles.container,
-        (isAlert && styles.container_isAlert) || (isReadonly && styles.container_isReadonly),
+        'flex content-center font-mono text-[5em] font-bold relative text-center w-full md:text-[8em]',
+        isReadonly && 'opacity-50',
+        isAlert && classNames(styles.blink, 'text-primary opacity-100'),
       )}
       {...otherProps}
     >
       <input
-        className={classNames(styles.input, styles.input_min)}
+        className={classNames(inputClassNames, 'text-right')}
         min="0"
         readOnly={isReadonly}
         ref={minuteInputRef}
@@ -54,7 +60,7 @@ function DigitalDisplay({
         {' : '}
       </div>
       <input
-        className={classNames(styles.input, styles.input_sec)}
+        className={classNames(inputClassNames, 'text-left')}
         max="60"
         min="0"
         onChange={onSecondsChange}
