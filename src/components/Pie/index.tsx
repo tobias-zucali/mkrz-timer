@@ -1,5 +1,3 @@
-import styles from './index.module.scss';
-
 type Props = {
   percentage: number;
   style?: React.StyleHTMLAttributes<SVGElement>;
@@ -14,7 +12,7 @@ function Pie({
   const fullCircle = Math.PI * diameter;
   return (
     <svg
-      className={styles.pie}
+      className="w-full h-full"
       height={ sideLength }
       style={{
         height: '100%',
@@ -25,7 +23,7 @@ function Pie({
       {...otherProps}
     >
       <circle
-        className={styles.pie_stroke}
+        className="fill-transparent stroke-primary"
         r={diameter / 2}
         cx={diameter}
         cy={diameter}
