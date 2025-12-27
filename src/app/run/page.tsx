@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { prefixZeros, getSecondsDuration, getMinutesSeconds } from '@/src/utils/timeInputHelpers';
-import useAnimationFrame from '@/src/utils/useAnimationFrame';
-import useGlobalKeyUp from '@/src/utils/useGlobalKeyUp';
-import useParams from '@/src/utils/useParams';
-import useSound from '@/src/utils/useSound';
-// import beep from '@/src/utils/beep';
+import { prefixZeros, getSecondsDuration, getMinutesSeconds } from '@/utils/timeInputHelpers';
+import useAnimationFrame from '@/utils/useAnimationFrame';
+import useGlobalKeyUp from '@/utils/useGlobalKeyUp';
+import useParams from '@/utils/useParams';
+import useSound from '@/utils/useSound';
+// import beep from '@/utils/beep';
 
-import EditableHtml from '@/src/components/EditableHtml';
-import Pie from '@/src/components/Pie';
-import DigitalDisplay from '@/src/components/DigitalDisplay';
+import EditableHtml from '@/components/EditableHtml';
+import Pie from '@/components/Pie';
+import DigitalDisplay from '@/components/DigitalDisplay';
 
 function Timer() {
   const { params, setParams } = useParams();

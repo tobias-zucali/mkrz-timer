@@ -1,6 +1,6 @@
 "use client"
 
-import { usePeer } from '@/src/components/PeerProvider';
+import { usePeer } from '@/components/PeerProvider';
 import { useEffect } from 'react';
 // ...existing imports...
 
