@@ -1,5 +1,5 @@
 export const parseIntSafe = (value: string | number) => {
-  let intValue = typeof(value) === 'number' ? value : parseInt(value);
+  const intValue = typeof(value) === 'number' ? value : parseInt(value);
   return isNaN(intValue) ? 0 : intValue;
 };
 

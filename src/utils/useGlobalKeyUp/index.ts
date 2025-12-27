@@ -7,7 +7,10 @@ export default function useGlobalKeyUp(
   callback:  (event: KeyboardEvent) => void,
 ) {
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
   useEffect(() => {
     const onKeyUp = (event: KeyboardEvent) => {

@@ -10,30 +10,38 @@ export default function useParams() {
     m: searchParams.get('m') || '01',
     s: searchParams.get('s') || '00',
     title: searchParams.get('title') || '',
+    bg: searchParams.get('bg') || '#000000',
+    fg: searchParams.get('fg') || '#ffffff',
+    p: searchParams.get('p') || '#d61f69',
   }), [searchParams]);
 
-  const getUrlWithParams = useCallback((newParams = {}, newPathName = pathname) => {
+  const getPathWithParams = useCallback((newPathName = pathname, newParams = {}) => {
     const newSearchParams = new URLSearchParams({
       ...params,
       ...newParams,
     });
-    return newPathName + '?' + newSearchParams.toString();
+    return newPathName + '?' + newSearchParams.toString()
   }, [params, pathname]);
+
+  const getUrlWithParams = useCallback((newPathName?: string, newParams = {}) => {
+    return new URL(getPathWithParams(newPathName, newParams), window.location.origin).toString();
+  }, [getPathWithParams]);
 
   const setParams = useCallback(
     (newParams: Record<string, string>, push: boolean = false) => {
-      const newUrl = getUrlWithParams(newParams);
+      const newUrl = getPathWithParams(undefined, newParams);
       if (push) {
         router.push(newUrl);
       } else {
         router.replace(newUrl);
       }
     },
-    [getUrlWithParams, router]
+    [getPathWithParams, router]
   )
   return useMemo(() => ({
     params,
     setParams,
+    getPathWithParams,
     getUrlWithParams,
-  }), [params, setParams, getUrlWithParams]);
+  }), [params, setParams, getPathWithParams, getUrlWithParams]);
 }

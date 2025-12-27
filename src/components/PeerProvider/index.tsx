@@ -14,9 +14,9 @@ export const PeerProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const newPeer = new Peer(); // Create a new PeerJS instance
-    setPeer(newPeer);
 
     newPeer.on('open', (id) => {
+      setPeer(newPeer); // Set the peer instance after it's fully initialized
       setPeerId(id); // Set the peer ID when the connection is established
       console.log('Peer connected with ID:', id);
     });
