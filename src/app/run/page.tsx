@@ -40,7 +40,10 @@ function Timer() {
   }
   isTimedOutRef.current = isTimedOut;
 
-  const [minutes = params.m, seconds = params.s] = (isStarted) ? getMinutesSeconds(
+  const [
+    minutes = prefixZeros(params.m),
+    seconds = prefixZeros(params.s)
+  ] = (isStarted) ? getMinutesSeconds(
     totalDuration * (1 - elapsedPercentage),
     10,
   ) : [];
@@ -108,8 +111,8 @@ function Timer() {
             isReadonly={isStarted}
             minutes={minutes}
             seconds={seconds}
-            onMinutesChange={({ target }) => setParams({'m': prefixZeros(target.value)})}
-            onSecondsChange={({ target }) => setParams({'s': prefixZeros(target.value)})}
+            onMinutesChange={({ target }) => setParams({'m': target.value})}
+            onSecondsChange={({ target }) => setParams({'s': target.value})}
           />
           <div
             className="text-center py-[0.5em]"
