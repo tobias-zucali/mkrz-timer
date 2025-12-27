@@ -1,11 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react';
 
 import { prefixZeros, getSecondsDuration, getMinutesSeconds } from '@/src/utils/timeInputHelpers';
 import useAnimationFrame from '@/src/utils/useAnimationFrame';
 import useGlobalKeyUp from '@/src/utils/useGlobalKeyUp';
+import useParams from '@/src/utils/useParams';
 import useSound from '@/src/utils/useSound';
 // import beep from '@/src/utils/beep';
 
@@ -14,31 +14,7 @@ import Pie from '@/src/components/Pie';
 import DigitalDisplay from '@/src/components/DigitalDisplay';
 
 function Timer() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname()
-  const router = useRouter();
-
-  const params = {
-    m: searchParams.get('m') || '01',
-    s: searchParams.get('s') || '00',
-    title: searchParams.get('title') || '',
-  };
-
-  const setSearchParams = useCallback(
-    (newParams: Record<string, string>, push: boolean = false) => {
-      const newSearchParams = new URLSearchParams({
-        ...params,
-        ...newParams,
-      });
-      const newUrl = pathname + '?' + newSearchParams.toString();
-      if (push) {
-        router.push(newUrl);
-      } else {
-        router.replace(newUrl);
-      }
-    },
-    [params]
-  )
+  const { params, setParams } = useParams();
 
   const sound = useSound();
 
@@ -49,7 +25,7 @@ function Timer() {
 
   useEffect(() => {
     // initially set params
-    setSearchParams({});
+    setParams({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -113,7 +89,7 @@ function Timer() {
     >
       <EditableHtml
         html={params.title}
-        onChange={(value) => setSearchParams({'title': value})}
+        onChange={(value) => setParams({'title': value})}
         className="text-center text-[3em] font-bold pt-1 hover:outline-4 hover:-outline-offset-4 md:text-[5em] rouded-lg"
         title="Click to edit title"
       />
@@ -132,8 +108,8 @@ function Timer() {
             isReadonly={isStarted}
             minutes={minutes}
             seconds={seconds}
-            onMinutesChange={({ target }) => setSearchParams({'m': prefixZeros(target.value)})}
-            onSecondsChange={({ target }) => setSearchParams({'s': prefixZeros(target.value)})}
+            onMinutesChange={({ target }) => setParams({'m': prefixZeros(target.value)})}
+            onSecondsChange={({ target }) => setParams({'s': prefixZeros(target.value)})}
           />
           <div
             className="text-center py-[0.5em]"
