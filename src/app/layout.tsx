@@ -47,6 +47,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         {children}
+        <a
+          className="absolute bottom-4 right-4 underline hover:text-primary"
+          href='https://www.mkrz.at/'
+        >by mkrz</a>
       </body>
     </html>
   );

@@ -85,8 +85,8 @@ function Timer() {
   };
 
   useGlobalKeyUp((event: KeyboardEvent) => {
-    const target = event.target as any;
-    if (target && target.tagName === 'BUTTON') {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.tagName === 'BUTTON') {
       return;
     }
     switch (event.key) {
@@ -153,10 +153,6 @@ function Timer() {
               RESET
             </button>
           </div>
-          <a
-            className="absolute bottom-4 right-4 underline hover:text-primary"
-            href='https://www.mkrz.at/'
-          >by mkrz</a>
         </div>
       </div>
     </div>
