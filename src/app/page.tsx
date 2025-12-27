@@ -42,31 +42,35 @@ const InputField = ({
 );
 
 export default function Home() {
-  const { params, setParams, getPathWithParams } = useParams();
-  
+  const { params, setParams, getPathWithParams, getUrlWithParams } = useParams();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+    <div
+      className="flex min-h-screen items-center justify-center font-sans"
+      style={{
+        backgroundColor: params.bg,
+        color: params.fg,
+      }}
+    >
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 sm:items-start">
         <Link
           href={getPathWithParams("/run")}
-          className="mb-8 w-full rounded-lg bg-secondary px-8 py-4 text-center font-medium text-white hover:bg-blue-600"
+          className="mb-8 w-full rounded-lg px-8 py-4 text-center font-bold text-white"
+          style={{
+            backgroundColor: params.p,
+          }}
         >
           Run Timer
         </Link>
 
-        <pre>
-          {JSON.stringify(params, null, 2)}
-        </pre>
-
         <form className="w-full">
           <div className="space-y-12">
-            <h2 className="text-base/7 font-semibold text-white">Profile</h2>
             <div className="flex flex-wrap border-b border-white/10 pb-12 -mx-3">
               <InputField
                 label="Title"
                 id="title"
                 containerClassName="px-3"
-                defaultValue={params.title}
+                value={params.title}
                 onChange={(e) => setParams({'title': e.target.value})}
               />
               <InputField
@@ -74,7 +78,7 @@ export default function Home() {
                 id="minutes"
                 type="number"
                 containerClassName="md:w-1/2 px-3"
-                defaultValue={params.m || 1}
+                value={params.m || 1}
                 onChange={(e) => setParams({'m': e.target.value})}
               />
               <InputField
@@ -82,7 +86,7 @@ export default function Home() {
                 id="seconds"
                 type="number"
                 containerClassName="md:w-1/2 px-3"
-                defaultValue={params.s || 0}
+                value={params.s || 0}
                 onChange={(e) => setParams({'s': e.target.value})}
               />
               <InputField
@@ -90,7 +94,7 @@ export default function Home() {
                 id="bg"
                 type="color"
                 containerClassName="md:w-1/3 px-3"
-                defaultValue={params.bg}
+                value={params.bg}
                 onChange={(e) => setParams({'bg': e.target.value})}
               />
               <InputField
@@ -98,7 +102,7 @@ export default function Home() {
                 id="fg"
                 type="color"
                 containerClassName="md:w-1/3 px-3"
-                defaultValue={params.fg}
+                value={params.fg}
                 onChange={(e) => setParams({'fg': e.target.value})}
               />
               <InputField
@@ -106,8 +110,13 @@ export default function Home() {
                 id="p"
                 type="color"
                 containerClassName="md:w-1/3 px-3"
-                defaultValue={params.p}
+                value={params.p}
                 onChange={(e) => setParams({'p': e.target.value})}
+              />
+              <InputField
+                label="Timer URL"
+                containerClassName="px-3"
+                value={getUrlWithParams()}
               />
             </div>
           </div>

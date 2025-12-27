@@ -6,6 +6,8 @@ export default function useParams() {
   const pathname = usePathname()
   const router = useRouter();
 
+  const isSearchParamsEmpty = searchParams.size === 0;
+
   const params = useMemo(() => ({
     m: searchParams.get('m') || '01',
     s: searchParams.get('s') || '00',
@@ -28,7 +30,7 @@ export default function useParams() {
   }, [getPathWithParams]);
 
   const setParams = useCallback(
-    (newParams: Record<string, string>, push: boolean = false) => {
+    (newParams: Record<string, string>, push: boolean = isSearchParamsEmpty) => {
       const newUrl = getPathWithParams(undefined, newParams);
       if (push) {
         router.push(newUrl);
@@ -36,12 +38,13 @@ export default function useParams() {
         router.replace(newUrl);
       }
     },
-    [getPathWithParams, router]
+    [getPathWithParams, router, isSearchParamsEmpty]
   )
   return useMemo(() => ({
     params,
     setParams,
     getPathWithParams,
     getUrlWithParams,
-  }), [params, setParams, getPathWithParams, getUrlWithParams]);
+    isSearchParamsEmpty,
+  }), [params, setParams, getPathWithParams, getUrlWithParams, isSearchParamsEmpty]);
 }

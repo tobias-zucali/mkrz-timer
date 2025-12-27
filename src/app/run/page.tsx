@@ -88,7 +88,7 @@ function Timer() {
 
   return (
     <div
-      className="flex flex-col h-full hugo"
+      className="flex flex-col h-full"
     >
       <EditableHtml
         html={params.title}
