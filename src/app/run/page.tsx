@@ -1,14 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-import {
-  prefixZeros,
-  getSecondsDuration,
-  getMinutesSeconds,
-} from "@/utils/timeInputHelpers";
-import useAnimationFrame from "@/utils/useAnimationFrame";
-import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
 import useParams from "@/utils/useParams";
 import useSound from "@/utils/useSound";
 // import beep from '@/utils/beep';
@@ -17,16 +10,21 @@ import EditableHtml from "@/components/EditableHtml";
 import Pie from "@/components/Pie";
 import DigitalDisplay from "@/components/DigitalDisplay";
 import Link from "next/link";
+import useTimer from "@/utils/useTimer";
 
 function Timer() {
   const { params, setParams, getPathWithParams } = useParams();
 
-  const sound = useSound();
-
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(true);
-  const isTimedOutRef = useRef(false);
-  const isStarted = elapsedTime > 0;
+  const {
+    minutes,
+    seconds,
+    isStarted,
+    isPaused,
+    isTimedOut,
+    elapsedPercentage,
+    resetTimer,
+    toggleTimer,
+  } = useTimer();
 
   useEffect(() => {
     // initially set params
@@ -34,56 +32,13 @@ function Timer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const totalDuration = getSecondsDuration(params.m, params.s);
-  const remainingSecondsRef = useRef(totalDuration);
-
-  const elapsedPercentage = elapsedTime / totalDuration;
-  const isTimedOut = elapsedPercentage >= 1;
+  const isTimedOutRef = useRef(false);
+  const sound = useSound();
 
   if (isTimedOut && !isTimedOutRef.current) {
     sound?.play();
   }
   isTimedOutRef.current = isTimedOut;
-
-  const [minutes = prefixZeros(params.m), seconds = prefixZeros(params.s)] =
-    isStarted
-      ? getMinutesSeconds(totalDuration * (1 - elapsedPercentage), 10)
-      : [];
-
-  useAnimationFrame(
-    (deltaTime) => setElapsedTime((prevState) => prevState + deltaTime / 1000),
-    { isPaused }
-  );
-
-  const resetTimer = () => {
-    remainingSecondsRef.current = totalDuration;
-    setIsPaused(true);
-    setElapsedTime(0);
-  };
-
-  const toggleTimer = () => {
-    setIsPaused((prevState) => !prevState);
-  };
-
-  useGlobalKeyUp((event: KeyboardEvent) => {
-    const target = event.target;
-    if (target instanceof HTMLElement && target.tagName === "BUTTON") {
-      return;
-    }
-    switch (event.key) {
-      case "r":
-      case "Escape":
-        resetTimer();
-        break;
-      case "Enter":
-      case " ":
-      case "p":
-        if (!isTimedOut) {
-          toggleTimer();
-        }
-        break;
-    }
-  });
 
   const buttonClassName =
     "bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default " +
