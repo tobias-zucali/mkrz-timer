@@ -26,6 +26,9 @@ export default function useParams() {
   }, [params, pathname]);
 
   const getUrlWithParams = useCallback((newPathName?: string, newParams = {}) => {
+    if (typeof window === 'undefined') {
+      return getPathWithParams(newPathName, newParams);
+    }
     return new URL(getPathWithParams(newPathName, newParams), window.location.origin).toString();
   }, [getPathWithParams]);
 
