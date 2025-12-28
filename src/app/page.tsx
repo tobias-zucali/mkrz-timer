@@ -5,6 +5,7 @@ import Link from "next/link";
 import classNames from "classnames";
 
 import useParams from "@/utils/useParams";
+import HelpText from "@/components/HelpText";
 
 const InputField = ({
   containerClassName,
@@ -174,6 +175,8 @@ export default function Home() {
             </Link>
           </div>
         </form>
+        <HelpText 
+        />
       </main>
     </div>
   );
