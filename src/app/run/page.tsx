@@ -10,7 +10,6 @@ import {
 import useAnimationFrame from "@/utils/useAnimationFrame";
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
 import useParams from "@/utils/useParams";
-import useParamStyles from "@/utils/useParamStyles";
 import useSound from "@/utils/useSound";
 // import beep from '@/utils/beep';
 
@@ -21,7 +20,6 @@ import Link from "next/link";
 
 function Timer() {
   const { params, setParams, getPathWithParams } = useParams();
-  useParamStyles();
 
   const sound = useSound();
 

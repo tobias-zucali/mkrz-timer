@@ -5,7 +5,6 @@ import Link from "next/link";
 import classNames from "classnames";
 
 import useParams from "@/utils/useParams";
-import useParamStyles from "@/utils/useParamStyles";
 
 const InputField = ({
   containerClassName,
@@ -51,7 +50,6 @@ export default function Home() {
   const { params, setParams, getPathWithParams, getUrlWithParams } =
     useParams();
   const [isCopied, setIsCopied] = useState(false);
-  useParamStyles();
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
