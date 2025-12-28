@@ -5,6 +5,7 @@ import Link from "next/link";
 import classNames from "classnames";
 
 import useParams from "@/utils/useParams";
+import useParamStyles from "@/utils/useParamStyles";
 
 const InputField = ({
   containerClassName,
@@ -34,9 +35,9 @@ const InputField = ({
           otherProps.type !== "color" && "pl-3",
           otherProps.type !== "color" && otherProps.type !== "number" && "pr-3",
           "block w-full rounded-md h-10",
-          "bg-white/15 text-base text-white",
-          "outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500",
-          "focus:outline-2 focus:-outline-offset-2 focus:outline-secondary sm:text-sm/6",
+          "bg-foreground/15 text-base text-foreground",
+          "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
+          "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
           className
         )}
         {...otherProps}
@@ -50,29 +51,14 @@ export default function Home() {
   const { params, setParams, getPathWithParams, getUrlWithParams } =
     useParams();
   const [isCopied, setIsCopied] = useState(false);
+  useParamStyles();
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center font-sans"
-      style={{
-        backgroundColor: params.bg,
-        color: params.fg,
-      }}
-    >
+    <div className="flex min-h-screen items-center justify-center font-sans">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 sm:items-start">
-        <Link
-          href={getPathWithParams("/run")}
-          className="mb-8 w-full rounded-lg px-8 py-4 text-center font-bold"
-          style={{
-            backgroundColor: params.p,
-          }}
-        >
-          Run Timer
-        </Link>
-
         <form className="w-full">
           <div className="space-y-12">
-            <div className="flex flex-wrap border-b border-white/10 pb-12 -mx-3">
+            <div className="flex flex-wrap pb-3 -mx-3">
               <InputField
                 label="Title"
                 id="title"
@@ -129,10 +115,7 @@ export default function Home() {
                 disabled={true}
               >
                 <button
-                  className="shadow-xs font-bold rounded-md w-26 ml-3 cursor-pointer"
-                  style={{
-                    backgroundColor: params.p,
-                  }}
+                  className="font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
                   onClick={(e) => {
                     navigator.clipboard.writeText(getUrlWithParams());
                     setIsCopied(true);
@@ -175,7 +158,7 @@ export default function Home() {
                 <div
                   id="tooltip-copy-npm-install-copy-button"
                   role="tooltip"
-                  className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-dark rounded-base shadow-xs opacity-0 tooltip"
+                  className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-foreground transition-opacity duration-300 bg-dark rounded-base shadow-xs opacity-0 tooltip"
                 >
                   <span id="default-tooltip-message">Copy to clipboard</span>
                   <span id="success-tooltip-message" className="hidden">
@@ -185,21 +168,12 @@ export default function Home() {
                 </div>
               </InputField>
             </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-end gap-x-6">
-            <button
-              type="button"
-              className="text-sm/6 font-semibold text-white"
+            <Link
+              href={getPathWithParams("/run")}
+              className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-md bg-secondary px-3 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary"
-            >
-              Save
-            </button>
+              Run Timer
+            </Link>
           </div>
         </form>
       </main>
