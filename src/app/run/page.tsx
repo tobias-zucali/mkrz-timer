@@ -6,14 +6,13 @@ import useParams from "@/utils/useParams";
 import useSound from "@/utils/useSound";
 // import beep from '@/utils/beep';
 
-import EditableHtml from "@/components/EditableHtml";
-import Pie from "@/components/Pie";
-import DigitalDisplay from "@/components/DigitalDisplay";
 import Link from "next/link";
 import useTimer from "@/utils/useTimer";
+import Timer from "@/components/Timer";
 
-function Timer() {
+export default function Run() {
   const { params, setParams, getPathWithParams } = useParams();
+  const { title } = params;
 
   const {
     minutes,
@@ -40,50 +39,23 @@ function Timer() {
   }
   isTimedOutRef.current = isTimedOut;
 
-  const buttonClassName =
-    "bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default " +
-    "px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2";
+  const handleChange = (key: string, value: string) =>
+    setParams({ [key]: value });
 
   return (
-    <div className="flex flex-col h-full">
-      <EditableHtml
-        html={params.title}
-        onChange={(value) => setParams({ title: value })}
-        className="text-center text-[3em] font-bold pt-1 hover:outline-4 hover:-outline-offset-4 md:text-[5em] rouded-lg"
-        title="Click to edit title"
+    <>
+      <Timer
+        title={title}
+        handleChange={handleChange}
+        elapsedPercentage={elapsedPercentage}
+        isTimedOut={isTimedOut}
+        isStarted={isStarted}
+        minutes={minutes}
+        seconds={seconds}
+        toggleTimer={toggleTimer}
+        isPaused={isPaused}
+        resetTimer={resetTimer}
       />
-      <div className="flex items-center justify-center grow h-[10em] p-[1em] relative">
-        <Pie
-          percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
-        />
-
-        <div className="flex flex-col items-center justify-center grow absolute inset-0">
-          <DigitalDisplay
-            isAlert={isTimedOut}
-            isReadonly={isStarted}
-            minutes={minutes}
-            seconds={seconds}
-            onMinutesChange={({ target }) => setParams({ m: target.value })}
-            onSecondsChange={({ target }) => setParams({ s: target.value })}
-          />
-          <div className="text-center py-[0.5em]">
-            <button
-              className={buttonClassName}
-              disabled={isTimedOut}
-              onClick={toggleTimer}
-            >
-              {isPaused ? "START" : "PAUSE"}
-            </button>
-            <button
-              className={buttonClassName}
-              disabled={!isStarted}
-              onClick={resetTimer}
-            >
-              RESET
-            </button>
-          </div>
-        </div>
-      </div>
       <Link
         className="absolute bottom-4 left-4 text-foreground/50 hover:text-primary"
         href={getPathWithParams("/")}
@@ -114,8 +86,6 @@ function Timer() {
           />
         </svg>
       </Link>
-    </div>
+    </>
   );
 }
-
-export default Timer;
