@@ -1,56 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import classNames from "classnames";
 
 import useParams from "@/utils/useParams";
-import HelpText from "@/components/HelpText";
+import usePeer from "@/utils/usePeer";
 
-const InputField = ({
-  containerClassName,
-  label,
-  id,
-  className,
-  children,
-  ...otherProps
-}: {
-  containerClassName?: string;
-  label: string;
-  id: string;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  children?: React.ReactNode;
-} & React.InputHTMLAttributes<HTMLInputElement>) => (
-  <div className={classNames("pt-2 w-full", containerClassName)}>
-    <label htmlFor={id} className="block text-sm/6 font-medium">
-      {label}
-    </label>
-    <div className="flex items-stretch">
-      <input
-        id={id}
-        type="text"
-        name={id}
-        autoComplete="given-name"
-        className={classNames(
-          otherProps.type !== "color" && "pl-3",
-          otherProps.type !== "color" && otherProps.type !== "number" && "pr-3",
-          "block w-full rounded-md h-10",
-          "bg-foreground/15 text-base text-foreground",
-          "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
-          "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
-          className
-        )}
-        {...otherProps}
-      />
-      {children}
-    </div>
-  </div>
-);
+import HelpText from "@/components/HelpText";
+import InputField from "@/components/InputField";
+import CopyField from "@/components/InputField/CopyField";
+
 
 export default function Home() {
   const { params, setParams, getPathWithParams, getUrlWithParams } =
     useParams();
-  const [isCopied, setIsCopied] = useState(false);
+
+  const { status, connect, disconnect, error, peerId } = usePeer();
+  const isRemote = status !== "idle";
+
+  const isInitialRender = useRef(true);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      if (params.r) {
+        connect(params.r);
+      }
+      return;
+    }
+    if (params.r !== (peerId || "")) {
+      setParams({ r: peerId || "" });
+    }
+  }, [connect, params.r, peerId, setParams]);
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -105,78 +86,57 @@ export default function Home() {
                 value={params.p}
                 onChange={(e) => setParams({ p: e.target.value })}
               />
-              <InputField
-                label="Timer URL"
-                id="timer_url"
-                containerClassName="px-3"
-                value={getUrlWithParams()}
-                readOnly={true}
-                disabled={true}
-              >
-                <button
-                  className="font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
-                  onClick={(e) => {
-                    navigator.clipboard.writeText(getUrlWithParams());
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2000);
-                    e.preventDefault();
-                  }}
-                >
-                  <span
-                    id="default-message"
-                    className={isCopied ? "hidden" : ""}
-                  >
-                    Copy
-                  </span>
-                  <span
-                    id="success-message"
-                    className={isCopied ? "" : "hidden"}
-                  >
-                    <div className="inline-flex items-center">
-                      <svg
-                        className="w-3 h-3 me-1"
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 11.917 9.724 16.5 19 7.5"
-                        />
-                      </svg>
-                      Copied!
-                    </div>
-                  </span>
-                </button>
-                <div
-                  id="tooltip-copy-npm-install-copy-button"
-                  role="tooltip"
-                  className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-foreground transition-opacity duration-300 bg-dark rounded-base shadow-xs opacity-0 tooltip"
-                >
-                  <span id="default-tooltip-message">Copy to clipboard</span>
-                  <span id="success-tooltip-message" className="hidden">
-                    Copied!
-                  </span>
-                  <div className="tooltip-arrow" data-popper-arrow></div>
-                </div>
-              </InputField>
             </div>
-            <Link
-              href={getPathWithParams("/run")}
-              className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
-            >
-              Run Timer
-            </Link>
+            {!isRemote ? (
+              <>
+                <CopyField
+                  label="Timer URL"
+                  id="timer_url"
+                  containerClassName="px-3"
+                  value={getUrlWithParams()}
+                />
+                <Link
+                  href={getPathWithParams("/run")}
+                  className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
+                >
+                  Run Timer
+                </Link>
+                <p>
+                  <button
+                    className="underline cursor-pointer hover:text-primary font-bold"
+                    onClick={(event) => {
+                      connect();
+                      event.preventDefault();
+                    }}
+                  >
+                    Switch to remote mode
+                  </button>{" "}
+                  in case you want to remote control the timer in another window
+                  / on another device.
+                </p>
+              </>
+            ) : (
+              <div className="mb-4">
+                <p className="text-center text-sm text-foreground/80">
+                  Remote peer ID: {peerId}
+                </p>
+                <p>
+                  <button
+                    className="underline cursor-pointer hover:text-primary font-bold"
+                    onClick={(event) => {
+                      disconnect();
+                      event.preventDefault();
+                    }}
+                  >
+                    End remote mode
+                  </button>
+                </p>
+              </div>
+            )}
+            {error && (<div className="bg-red-700 rounded-xl p-3 text-white font-bold">Error: {error.type}</div>)}
           </div>
         </form>
-        <HelpText 
-        />
+        <HelpText />
       </main>
     </div>
   );
