@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import useParams from "@/utils/useParams";
-import useSound from "@/utils/useSound";
-// import beep from '@/utils/beep';
 
 import Link from "next/link";
 import useTimer from "@/utils/useTimer";
@@ -30,14 +28,6 @@ export default function Run() {
     setParams({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const isTimedOutRef = useRef(false);
-  const sound = useSound();
-
-  if (isTimedOut && !isTimedOutRef.current) {
-    sound?.play();
-  }
-  isTimedOutRef.current = isTimedOut;
 
   const handleChange = (key: string, value: string) =>
     setParams({ [key]: value });

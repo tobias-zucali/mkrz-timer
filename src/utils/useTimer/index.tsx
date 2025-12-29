@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   prefixZeros,
@@ -23,6 +23,12 @@ export default function useTimer() {
 
   const elapsedPercentage = elapsedTime / totalDuration;
   const isTimedOut = elapsedPercentage >= 1;
+
+  useEffect(() => {
+    if (isTimedOut) {
+      new Audio("/sounds/Attention.mps3").play();
+    }
+  }, [isTimedOut]);
 
   const [minutes = prefixZeros(params.m), seconds = prefixZeros(params.s)] =
     isStarted
