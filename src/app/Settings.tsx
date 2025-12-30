@@ -13,9 +13,11 @@ import CopyField from "@/components/InputField/CopyField";
 export default function Settings({
   peerData,
   paramData,
+  closeSettings,
 } : {
   peerData: ReturnType<typeof usePeer>;
   paramData: ReturnType<typeof useParams>;
+  closeSettings: () => void;
 }) {
   const { params, setParams, getPathWithParams, getUrlWithParams } =
     paramData;
@@ -85,12 +87,12 @@ export default function Settings({
                   containerClassName="px-3"
                   value={getUrlWithParams()}
                 />
-                <Link
-                  href={getPathWithParams("/run")}
+                <button
+                  onClick={closeSettings}
                   className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
                 >
                   Run Timer
-                </Link>
+                </button>
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
