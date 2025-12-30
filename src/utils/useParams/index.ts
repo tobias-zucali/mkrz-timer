@@ -23,10 +23,10 @@ export default function useParams() {
   );
 
   const getPathWithParams = useCallback(
-    (newPathName = pathname, newParams = {}) => {
+    (newPathName = pathname, newParams = {}, inherit = true) => {
       const newSearchParams = new URLSearchParams();
 
-      const mergedParams = { ...params, ...newParams };
+      const mergedParams = inherit ? { ...params, ...newParams } : newParams;
 
       (Object.keys(mergedParams) as Array<keyof typeof mergedParams>).forEach(
         (key) => {
@@ -42,12 +42,12 @@ export default function useParams() {
   );
 
   const getUrlWithParams = useCallback(
-    (newPathName?: string, newParams = {}) => {
+    (newPathName?: string, newParams = {}, inherit = true) => {
       if (typeof window === "undefined") {
-        return getPathWithParams(newPathName, newParams);
+        return getPathWithParams(newPathName, newParams, inherit);
       }
       return new URL(
-        getPathWithParams(newPathName, newParams),
+        getPathWithParams(newPathName, newParams, inherit),
         window.location.origin
       ).toString();
     },

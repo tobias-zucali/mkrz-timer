@@ -112,6 +112,17 @@ export default function Settings({
                 <p className="text-center text-sm text-foreground/80">
                   Remote peer ID: {peerId}
                 </p>
+                <p>Keep the current window open to control the timer.</p>
+                <p>Open as many client windows on as many devices as you want to view the timer.</p>
+                <CopyField
+                  label="Client URL"
+                  id="timer_url"
+                  containerClassName="px-3"
+                  value={getUrlWithParams(undefined, {
+                    c: peerId,
+                  }, false)}
+                  showOpenButton={true}
+                />
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
