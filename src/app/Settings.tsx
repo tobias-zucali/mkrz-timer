@@ -97,7 +97,9 @@ export default function Settings({
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={(event) => {
-                      connect();
+                      connect(null, (id) => {
+                        setParams({ r: id });
+                      });
                       event.preventDefault();
                     }}
                   >
@@ -129,6 +131,7 @@ export default function Settings({
                     onClick={(event) => {
                       disconnect();
                       event.preventDefault();
+                      setParams({ r: undefined });
                     }}
                   >
                     End remote mode

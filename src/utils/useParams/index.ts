@@ -18,6 +18,7 @@ export default function useParams() {
       p: searchParams.get("p") || "#d61f69",
       r: searchParams.get("r") || "", // remote peer id
       c: searchParams.get("c") || "", // client peer id
+      settings: searchParams.get("settings") || null, // settings open
     }),
     [searchParams]
   );
@@ -56,7 +57,7 @@ export default function useParams() {
 
   const setParams = useCallback(
     (
-      newParams: Record<string, string>,
+      newParams: Partial<typeof params>,
       push: boolean = isSearchParamsEmpty
     ) => {
       const newUrl = getPathWithParams(undefined, newParams);

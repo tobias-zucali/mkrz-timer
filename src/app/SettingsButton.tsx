@@ -8,7 +8,7 @@ export default function SettingsButton({
   return (
     <button
       className={classNames(
-        "absolute bottom-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer",
+        "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer",
         className,
       )}
       title={title}

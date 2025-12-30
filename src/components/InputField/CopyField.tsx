@@ -15,7 +15,7 @@ export default function CopyField(
 ) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const buttonClassName = "flex items-center content-center font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
+  const buttonClassName = "flex items-center justify-center font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
 
   return (
     <InputField

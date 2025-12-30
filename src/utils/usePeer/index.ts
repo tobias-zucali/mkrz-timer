@@ -18,7 +18,7 @@ export default function usePeer() {
     };
   }, [peer]);
 
-  const connect = useCallback((id?: string) => {
+  const connect = useCallback((id?: string | null, onConnect?: (id: string) => void) => {
     const newPeer = new Peer(id || "");
     setPeer(newPeer);
     setStatus("connecting");
@@ -30,6 +30,7 @@ export default function usePeer() {
       console.log("peer connected:", id);
       setPeerId(id);
       setStatus("connected");
+      onConnect?.(id);
     });
 
     newPeer.on("error", (err) => {

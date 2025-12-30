@@ -13,21 +13,19 @@ import CloseButton from "./CloseButton";
 
 export default function Run() {
   const paramData = useParams();
-  const { params, setParams } = useParams();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { title } = params;
+  const {
+    params: { title, r: remoteId, settings: isSettingsOpen },
+    setParams
+  } = paramData;
 
   const closeSettings = () => {
-    setIsSettingsOpen(false);
+    setParams({ settings: null });
+  };
+  const openSettings = () => {
+    setParams({ settings: "true" });
   };
   
   const timer = useTimer();
-  
-  useEffect(() => {
-    // initially set params
-    setParams({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   
   const handleChange = (key: string, value: string) => {
     setParams({ [key]: value });
@@ -43,15 +41,15 @@ export default function Run() {
   useEffect(() => {
     if (isInitialRender.current) {
       isInitialRender.current = false;
-      if (params.r) {
-        connect(params.r);
+      if (remoteId) {
+        connect(remoteId);
       }
       return;
     }
-    if (params.r !== (peerId || "")) {
-      setParams({ r: peerId || "" });
-    }
-  }, [connect, params.r, peerId, setParams]);
+    // if (remoteId !== (peerId || "")) {
+    //   setParams({ r: peerId || "" });
+    // }
+  }, [connect, remoteId, peerId, setParams]);
 
   return isSettingsOpen ? (
     <>
@@ -72,9 +70,7 @@ export default function Run() {
         timer={timer}
       />
       <SettingsButton
-        onClick={() => {
-          setIsSettingsOpen(true);
-        }}
+        onClick={openSettings}
       />
     </>
   );
