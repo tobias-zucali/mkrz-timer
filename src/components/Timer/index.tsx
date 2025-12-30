@@ -3,33 +3,32 @@
 import EditableHtml from "@/components/EditableHtml";
 import Pie from "@/components/Pie";
 import DigitalDisplay from "@/components/DigitalDisplay";
+import useTimer from "@/utils/useTimer";
 
 export default function Timer({
   title,
   handleChange,
-  elapsedPercentage,
-  isTimedOut,
-  isStarted,
-  minutes,
-  seconds,
-  toggleTimer,
-  isPaused,
-  resetTimer,
+  timer,
 } : {
   title: string,
   handleChange: (key: string, value: string) => void,
-  elapsedPercentage: number,
-  isTimedOut: boolean,
-  isStarted: boolean,
-  minutes: string,
-  seconds: string,
-  toggleTimer: () => void,
-  isPaused: boolean,
-  resetTimer: () => void
+  timer: ReturnType<typeof useTimer>,
 }) {
+  const {
+    minutes,
+    seconds,
+    isStarted,
+    isPaused,
+    isTimedOut,
+    elapsedPercentage,
+    resetTimer,
+    toggleTimer,
+  } = timer;
+
   const buttonClassName =
     "bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default " +
     "px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2";
+
   return (
     <div className="flex flex-col h-full">
       <EditableHtml
