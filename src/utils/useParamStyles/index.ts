@@ -15,7 +15,7 @@ export default function useParamStyles() {
     );
     document.documentElement.style.setProperty(
       "--primary",
-      params.params.p,
+      params.params.pc,
     );
-  }, [params.params.bg, params.params.fg, params.params.p]);
+  }, [params.params.bg, params.params.fg, params.params.pc]);
 }

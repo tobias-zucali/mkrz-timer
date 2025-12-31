@@ -15,9 +15,9 @@ export default function useParams() {
       title: searchParams.get("title") || "",
       bg: searchParams.get("bg") || "#000000",
       fg: searchParams.get("fg") || "#ffffff",
-      p: searchParams.get("p") || "#d61f69",
-      r: searchParams.get("r") || "", // remote peer id
-      c: searchParams.get("c") || "", // client peer id
+      pc: searchParams.get("pc") || "#d61f69",
+      pid: searchParams.get("pid") || "", // peer id
+      rid: searchParams.get("rid") || "", // remote peer id
       settings: searchParams.get("settings") || null, // settings open
     }),
     [searchParams]

@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import useParams from "@/utils/useParams";
 import usePeer from "@/utils/usePeer";
 
@@ -19,11 +17,10 @@ export default function Settings({
   paramData: ReturnType<typeof useParams>;
   closeSettings: () => void;
 }) {
-  const { params, setParams, getPathWithParams, getUrlWithParams } =
+  const { params, setParams, getUrlWithParams } =
     paramData;
 
-  const { status, connect, disconnect, error, peerId } = peerData;
-  const isRemote = status !== "idle";
+  const { connect, connections, disconnect, error, peerId, isClient, isRemote } = peerData;
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -72,11 +69,11 @@ export default function Settings({
               />
               <InputField
                 label="Primary Color"
-                id="p"
+                id="pc"
                 type="color"
                 containerClassName="md:w-1/3 px-3"
-                value={params.p}
-                onChange={(e) => setParams({ p: e.target.value })}
+                value={params.pc}
+                onChange={(e) => setParams({ pc: e.target.value })}
               />
             </div>
             {!isRemote ? (
@@ -98,7 +95,7 @@ export default function Settings({
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={(event) => {
                       connect(null, (id) => {
-                        setParams({ r: id });
+                        setParams({ pid: id });
                       });
                       event.preventDefault();
                     }}
@@ -121,17 +118,18 @@ export default function Settings({
                   id="timer_url"
                   containerClassName="px-3"
                   value={getUrlWithParams(undefined, {
-                    c: peerId,
+                    rid: peerId,
                   }, false)}
                   showOpenButton={true}
                 />
+                <p>{connections.length > 0 ? `Connected to ${connections.length} client(s)` : "No clients connected yet."}</p>
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={(event) => {
                       disconnect();
                       event.preventDefault();
-                      setParams({ r: undefined });
+                      setParams({ rid: undefined, pid: undefined });
                     }}
                   >
                     End remote mode

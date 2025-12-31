@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
 import useParams from "@/utils/useParams";
 
 import useTimer from "@/utils/useTimer";
@@ -11,10 +9,21 @@ import usePeer from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
 
+
 export default function Run() {
   const paramData = useParams();
   const {
-    params: { title, r: remoteId, settings: isSettingsOpen },
+    params: {
+      title,
+      pid: peerIdParam,
+      rid: remoteIdParam,
+      settings: isSettingsOpen,
+      bg,
+      fg,
+      pc,
+      m,
+      s,
+    },
     setParams
   } = paramData;
 
@@ -32,24 +41,19 @@ export default function Run() {
   };
   
   // handle connection
-  const peerData = usePeer();
-  const { status, connect, peerId } = peerData;
-  const isRemote = status !== "idle";
-
-  const isInitialRender = useRef(true);
-
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      if (remoteId) {
-        connect(remoteId);
-      }
-      return;
+  const peerData = usePeer(
+    peerIdParam,
+    remoteIdParam,
+    {
+      title,
+      bg,
+      fg,
+      pc,
+      m,
+      s
     }
-    // if (remoteId !== (peerId || "")) {
-    //   setParams({ r: peerId || "" });
-    // }
-  }, [connect, remoteId, peerId, setParams]);
+  );
+  const { isClient, isRemote } = peerData;
 
   return isSettingsOpen ? (
     <>
@@ -72,6 +76,13 @@ export default function Run() {
       <SettingsButton
         onClick={openSettings}
       />
+      <div
+        className="absolute bottom-0 left-0 p-4 text-foreground/50"
+      >
+        {isClient ? "Client Mode" : isRemote ? (
+          `Remote Mode (${peerData.connections.length} client${peerData.connections.length !== 1 && "s"})`
+        ) : ""}
+      </div>
     </>
   );
 }
