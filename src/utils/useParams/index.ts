@@ -19,6 +19,7 @@ export default function useParams() {
     rid: searchParams.get("rid") || "", // remote peer id
     settings: searchParams.get("settings") || null, // settings open
   });
+  
 
   const getPathWithParams = useCallback(
     (newPathName = pathname, newParams = {}, inherit = true) => {
@@ -64,7 +65,7 @@ export default function useParams() {
     []
   );
 
-  // sync url each 500ms max
+  // debounced replace url
   useEffect(() => {
     const handler = setTimeout(() => {
       const newUrl = getPathWithParams(undefined, currentParams);

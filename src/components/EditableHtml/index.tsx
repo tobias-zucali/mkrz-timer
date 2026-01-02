@@ -8,11 +8,13 @@ const sanitizeConf = {
 
 export default function EditableHtml({
   html,
+  onBlur,
   onChange,
   ...otherProps
 }: {
   html: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   className?: string;
   tagName?: string;
   title?: string;
@@ -21,6 +23,7 @@ export default function EditableHtml({
     <ContentEditable
       tagName="div"
       html={sanitizeHtml(html, sanitizeConf)}
+      onBlur={onBlur}
       onChange={({ target }: React.ChangeEvent<{ value: string; }>) => onChange(sanitizeHtml(target.value, sanitizeConf))}
       onKeyDown={( event: React.KeyboardEvent<EventTarget> ) => event.stopPropagation()}
       onKeyUp={(event: React.KeyboardEvent<EventTarget>) => event.stopPropagation()}

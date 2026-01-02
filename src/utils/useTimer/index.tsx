@@ -9,11 +9,10 @@ import {
 } from "@/utils/timeInputHelpers";
 import useAnimationFrame from "@/utils/useAnimationFrame";
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
-import useParams from "@/utils/useParams";
+import { ClientSyncData } from "@/utils/usePeer";
 
-export default function useTimer() {
-  const { params } = useParams();
 
+export default function useTimer(params: ClientSyncData) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const isStarted = elapsedTime > 0;

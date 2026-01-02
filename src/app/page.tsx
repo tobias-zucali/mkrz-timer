@@ -8,24 +8,26 @@ import SettingsButton from "./SettingsButton";
 import usePeer, { ClientSyncData } from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
+import { useEffect, useState } from "react";
 
 
 export default function App() {
   const paramData = useParams();
   const {
-    params: {
-      title,
-      pid: peerIdParam,
-      rid: remoteIdParam,
-      settings: isSettingsOpen,
-      bg,
-      fg,
-      pc,
-      m,
-      s,
-    },
+    params,
     setParams
   } = paramData;
+
+  const {
+    title,
+    rid: remoteIdParam,
+    settings: isSettingsOpen,
+    bg,
+    fg,
+    pc,
+    m,
+    s,
+  } = params;
 
   const currentSyncData = {
     title,
@@ -43,15 +45,20 @@ export default function App() {
     setParams({ settings: "true" });
   };
   
-  const timer = useTimer();
+  const timer = useTimer(params);
   
+  const [syncKeys, setSyncKeys] = useState<string[]>([]);
+
   const handleChange = (key: string, value: string) => {
     setParams({ [key]: value });
+    setSyncKeys((curr) => ([
+      ...curr,
+      key
+    ]))
   };
   
   // handle connection
   const peerData = usePeer({
-    peerIdParam,
     remoteIdParam,
     currentSyncData,
     onAction: (action) => {
@@ -75,7 +82,19 @@ export default function App() {
       }
     }
   });
-  const { peerId, connections, syncAll } = peerData;
+  
+  const { connections, syncAll } = peerData;
+
+  // debounced sync data
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      syncAll();
+    }, 200);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [syncKeys, syncAll])
 
   return isSettingsOpen ? (
     <>
@@ -83,9 +102,7 @@ export default function App() {
         peerData={peerData}
         paramData={paramData}
         closeSettings={closeSettings}
-        onParamChange={() => {
-          syncAll(currentSyncData);
-        }}
+        handleChange={closeSettings}
       />
       <CloseButton
         onClick={closeSettings}
@@ -101,7 +118,7 @@ export default function App() {
       <SettingsButton
         onClick={openSettings}
       />
-      {peerId && (
+      {remoteIdParam && (
         <div
           className="absolute bottom-0 left-0 p-4 text-foreground/50"
         >

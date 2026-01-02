@@ -31,7 +31,6 @@ export default function usePeer({
   currentSyncData,
   onAction,
 } : {
-  peerIdParam: string | null;
   remoteIdParam: string | null;
   currentSyncData: ClientSyncData;
   onAction: (action: SyncAction) => void;
@@ -48,9 +47,9 @@ export default function usePeer({
   const onActionRef = useRef(onAction);
   onActionRef.current = onAction;
 
-  const syncAll = useCallback((data: ClientSyncData) => {
+  const syncAll = useCallback(() => {
     peerConnection.sendAll(getSyncAction({
-      ...data,
+      ...syncDataRef.current,
       connections: peerConnection.getConnections()
     }))
   }, [])

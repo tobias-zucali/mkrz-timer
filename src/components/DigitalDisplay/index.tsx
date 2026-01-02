@@ -4,25 +4,25 @@ import classNames from 'classnames';
 import styles from './index.module.css';
 
 
-type Props = {
-  isAlert?: boolean;
-  isReadonly?: boolean;
-  minutes: string;
-  onMinutesChange: React.ChangeEventHandler<HTMLInputElement>;
-  onSecondsChange: React.ChangeEventHandler<HTMLInputElement>;
-  seconds: string;
-  style?: React.StyleHTMLAttributes<SVGElement>;
-}
-
 function DigitalDisplay({
   isAlert = false,
   isReadonly = false,
   minutes,
+  onBlur,
   onMinutesChange,
   onSecondsChange,
   seconds,
   ...otherProps
-}: Props) {
+}: {
+  isAlert?: boolean;
+  minutes: string;
+  onMinutesChange: React.ChangeEventHandler<HTMLInputElement>;
+  onSecondsChange: React.ChangeEventHandler<HTMLInputElement>;
+  seconds: string;
+  isReadonly?: boolean;
+  onBlur?: () => void;
+  style?: React.StyleHTMLAttributes<SVGElement>;
+}) {
   const minuteInputRef = useRef<HTMLInputElement>(null);
   const secondsInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +52,7 @@ function DigitalDisplay({
             minuteInputRef.current.focus();
           }
         }}
+        onBlur={onBlur}
         onChange={onMinutesChange}
       />
       <div
@@ -63,6 +64,7 @@ function DigitalDisplay({
         className={classNames(inputClassNames, 'text-left')}
         max="60"
         min="0"
+        onBlur={onBlur}
         onChange={onSecondsChange}
         readOnly={isReadonly}
         ref={secondsInputRef}
