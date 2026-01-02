@@ -41,18 +41,32 @@ export default function Run() {
   };
   
   // handle connection
-  const peerData = usePeer(
+  const peerData = usePeer({
     peerIdParam,
     remoteIdParam,
-    {
+    syncData: {
       title,
       bg,
       fg,
       pc,
       m,
       s
+    },
+    onAction: (action) => {
+      if (action.type === "sync_data") {
+        const data = action.data;
+        // update params
+        setParams({
+          title: data.title,
+          bg: data.bg,
+          fg: data.fg,
+          pc: data.pc,
+          m: data.m,
+          s: data.s
+        });
+      }
     }
-  );
+  });
   const { isClient, isRemote } = peerData;
 
   return isSettingsOpen ? (

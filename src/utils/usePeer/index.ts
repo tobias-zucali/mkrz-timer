@@ -21,11 +21,17 @@ const getSyncAction = (data: SyncData): SyncAction => ({
   data,
 });
 
-export default function usePeer(
-  peerIdParam: string | null,
-  remoteIdParam: string | null,
-  syncData: SyncData,
-) {
+export default function usePeer({
+  peerIdParam,
+  remoteIdParam,
+  syncData,
+  onAction,
+} : {
+  peerIdParam: string | null;
+  remoteIdParam: string | null;
+  syncData: SyncData;
+  onAction: (action: SyncAction) => void;
+}) {
   const [status, setStatus] = useState<"idle" | "connecting" | "connected">(
     "idle"
   );
@@ -36,6 +42,17 @@ export default function usePeer(
   const [remote, setRemote] = useState<DataConnection | null>(null);
   const [mode, setMode] = useState<"client" | "remote" | null>(null);
   const syncDataRef = useRef(syncData);
+
+  const handleAction = useCallback((data: unknown) => {
+    if (data && typeof data === "object" && "type" in data) {
+      if (data.type === "sync_data") {
+        const action = data as SyncAction;
+        onAction(action);
+        return;
+      }
+    }
+    console.warn("handleAction: Unknown action received:", data);
+  }, [onAction]);
 
   useEffect(() => {
     if (remoteIdParam) {
@@ -120,6 +137,7 @@ export default function usePeer(
 
       connection.on("data", (data) => {
         console.log("Connection data:", data);
+        handleAction(data);
       });
 
       connection.on("close", () => {
@@ -151,7 +169,7 @@ export default function usePeer(
     newPeer.on("disconnected", (conn) => {
       console.log("Disconnected:", conn);
     });
-  }, [error, status]);
+  }, [error, handleAction, status]);
 
   const connect = useCallback((newPeerId?: string | null, onConnect?: (id: string, peer: Peer) => void) => {
     setMode("remote");
@@ -180,9 +198,10 @@ export default function usePeer(
 
       connection.on("data", (data) => {
         console.log("Remote data:", data);
+        handleAction(data);
       });
     });
-  }, [_connect]);
+  }, [_connect, handleAction]);
 
   const disconnect = useCallback(() => {
     setPeer(null);
