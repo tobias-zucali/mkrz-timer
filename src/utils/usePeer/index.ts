@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Peer, { DataConnection, PeerError } from "peerjs";
+import { PeerError } from "peerjs";
+
+import peerConnection from "./peerConnection";
 
 
 export type SyncData = {
@@ -22,7 +24,6 @@ const getSyncAction = (data: SyncData): SyncAction => ({
 });
 
 export default function usePeer({
-  peerIdParam,
   remoteIdParam,
   syncData,
   onAction,
@@ -32,16 +33,9 @@ export default function usePeer({
   syncData: SyncData;
   onAction: (action: SyncAction) => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "connecting" | "connected">(
-    "idle"
-  );
-  const [peer, setPeer] = useState<Peer | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [peerId, setPeerId] = useState<string | null>(null);
-  const [error, setError] = useState<PeerError<string> | null>(null);
-  const [connections, setConnections] = useState<DataConnection[]>([]);
-  const [remote, setRemote] = useState<DataConnection | null>(null);
-  const [mode, setMode] = useState<"client" | "remote" | null>(null);
-  const syncDataRef = useRef(syncData);
+  const [connections, setConnections] = useState<string[]>([]);
 
   const handleAction = useCallback((data: unknown) => {
     if (data && typeof data === "object" && "type" in data) {
@@ -55,180 +49,49 @@ export default function usePeer({
   }, [onAction]);
 
   useEffect(() => {
+    const connectRemote = async (remoteId: string) => {
+      let peerId
+      try {
+        peerId = await peerConnection.startPeerSession(remoteId)
+      } catch (error) {
+        if (error instanceof PeerError) {
+          if (error.type === "unavailable-id") {
+            peerId = await peerConnection.startPeerSession()
+            await peerConnection.connectPeer(remoteId)
+            setConnections(peerConnection.getConnections())
+            peerConnection.onConnectionReceiveData(remoteId, handleAction)
+          }
+        } else {
+          console.error(error)
+          setError(error as Error)
+        }
+      }
+      if (peerId) {
+        setPeerId(peerId)
+        peerConnection.onIncomingConnection((conn) => {
+          setConnections(peerConnection.getConnections())
+          peerConnection.onConnectionReceiveData(conn.peer, handleAction)
+          peerConnection.send(conn.peer, getSyncAction(syncData))
+        })
+      }
+    }
     if (remoteIdParam) {
-      connectToRemote(remoteIdParam);
-    } else if (peerIdParam) {
-      connect(peerIdParam);
+      connectRemote(remoteIdParam)
+    }
+    return () => {
+      peerConnection.closePeerSession()
     }
   // initial render only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    syncDataRef.current = syncData;
-    const SyncAction = getSyncAction(syncData);
-    connections.forEach((conn) => {
-      conn.send(SyncAction);
-    });
-  }, [syncData, connections]);
-
-  useEffect(() => { // making sure to clean up
-    if (!peer) return;
-    const newPeer = peer;
-
-    return () => {
-      newPeer.destroy();
-    };
-  }, [peer]);
-
-  const removeConnection = (connection: DataConnection) => {
-    setConnections((prev) =>
-      prev.filter((conn) => conn.peer !== connection.peer)
-    );
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      for (const conn of connections) {
-        if (!conn.peerConnection ||conn.peerConnection.iceConnectionState !== "connected") {
-          console.log("Connection lost:", conn.peer);
-          removeConnection(conn);
-          continue;
-        }
-      }
-      if (peer) {
-        if (peer.disconnected) {
-          peer.reconnect();
-        } else if (remote && remote.peerConnection.iceConnectionState !== "connected") {
-          // ToDo: handle remote disconnection properly
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [connections, peer, remote]);
-
-  const _connect = useCallback((newPeerId?: string | null, onConnect?: (id: string, peer: Peer) => void) => {
-    if (status !== "idle") {
-      console.warn("Peer is already connected or connecting");
-      return;
-    }
-    const newPeer = new Peer(newPeerId || "");
-    setPeer(newPeer);
-    setStatus("connecting");
-    if (error) {
-      setError(null);
-    }
-
-    newPeer.on("open", (id) => {
-      console.log("peer connected:", id);
-      setPeerId(id);
-      setStatus("connected");
-      onConnect?.(id, newPeer);
-    });
-
-    newPeer.on("connection", (connection) => {
-      console.log("new connection:", connection);
-
-      connection.on("open", () => {
-        console.log("Connection opened with peer:", connection.peer);
-        setConnections((prev) => ([...(prev || []), connection]));
-      });
-
-      connection.on("data", (data) => {
-        console.log("Connection data:", data);
-        handleAction(data);
-      });
-
-      connection.on("close", () => {
-        console.log("Connection closed with peer:", connection.peer);
-        removeConnection(connection);
-      });
-
-      connection.on("error", (err) => {
-        console.error("Connection error:", err);
-      });
-    });
-
-    newPeer.on("error", (err) => {
-      console.error("Peer error:", err);
-      setError(err);
-      setStatus("idle");
-    });
-
-    newPeer.on("call", (conn) => {
-      console.log("Call:", conn);
-    });
-
-    newPeer.on("close", () => {
-      console.log("Closed connection");
-      setPeerId(null);
-      setStatus("idle");
-    });
-
-    newPeer.on("disconnected", (conn) => {
-      console.log("Disconnected:", conn);
-    });
-  }, [error, handleAction, status]);
-
-  const connect = useCallback((newPeerId?: string | null, onConnect?: (id: string, peer: Peer) => void) => {
-    setMode("remote");
-    console.log(" Connecting as remote peer...");
-    _connect(newPeerId, onConnect);
-  }, [_connect]);
-
-  const connectToRemote = useCallback((remoteId: string) => {
-    setMode("client");
-    console.log(" Connecting as client to remote peer:", remoteId);
-    _connect(null, (_id, peer) => { 
-      const connection = peer.connect(remoteId);
-      setRemote(connection);
-
-      connection.on("open", () => {
-        console.log("Connected to remote:", remoteId);
-      });
-
-      connection.on("error", (err) => {
-        console.error("Remote error:", err);
-      });
-
-      connection.on("close", () => {
-        console.log("Connection closed with remote:", remoteId);
-      });
-
-      connection.on("data", (data) => {
-        console.log("Remote data:", data);
-        handleAction(data);
-      });
-    });
-  }, [_connect, handleAction]);
-
-  const disconnect = useCallback(() => {
-    setPeer(null);
-  }, []);
-
   return useMemo(() => ({
-    connect,
     connections,
-    connectToRemote,
-    disconnect,
     error,
-    peer,
     peerId,
-    remote,
-    status,
-    isClient: mode === "client",
-    isRemote: mode === "remote",
   }), [
-    connect,
     connections,
-    connectToRemote,
-    disconnect,
     error,
-    peer,
     peerId,
-    remote,
-    status,
-    mode,
   ]);
 }

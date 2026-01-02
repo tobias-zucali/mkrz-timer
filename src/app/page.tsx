@@ -67,7 +67,7 @@ export default function Run() {
       }
     }
   });
-  const { isClient, isRemote } = peerData;
+  const { peerId, connections } = peerData;
 
   return isSettingsOpen ? (
     <>
@@ -90,13 +90,13 @@ export default function Run() {
       <SettingsButton
         onClick={openSettings}
       />
-      <div
-        className="absolute bottom-0 left-0 p-4 text-foreground/50"
-      >
-        {isClient ? "Client Mode" : isRemote ? (
-          `Remote Mode (${peerData.connections.length} client${peerData.connections.length !== 1 && "s"})`
-        ) : ""}
-      </div>
+      {peerId && (
+        <div
+          className="absolute bottom-0 left-0 p-4 text-foreground/50"
+        >
+          {`Remote Mode (${connections.length} connected)`}
+        </div>
+      )}
     </>
   );
 }
