@@ -64,18 +64,19 @@ export default function App() {
     onAction: (action) => {
       if (action.type === "sync_data") {
         const data = action.data;
-        const syncData: Partial<typeof currentSyncData> = {}
-        let isNewData = false;
-
+        
         const keys = Object.keys(currentSyncData) as Array<keyof ClientSyncData>
-        keys.forEach((key) => {
+        const syncData = keys.reduce((prev: Partial<ClientSyncData> | null, key) => {
           if (data[key] !== currentSyncData[key]) {
-            isNewData = true;
-            syncData[key] = data[key]
+            return {
+              ...(prev || {}),
+              [key]: data[key]
+            }
           }
-        })
+          return prev;
+        }, null)
 
-        if (isNewData) {
+        if (syncData) {
           // update params
           setParams(syncData);
         }
@@ -88,7 +89,7 @@ export default function App() {
   // debounced sync data
   useEffect(() => {
     const handler = setTimeout(() => {
-      syncAll();
+      syncAll(syncKeys);
     }, 200);
 
     return () => {

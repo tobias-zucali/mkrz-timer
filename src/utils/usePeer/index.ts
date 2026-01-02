@@ -18,10 +18,10 @@ type SyncData = ClientSyncData & {
 
 export type SyncAction = {
   type: "sync_data";
-  data: SyncData;
+  data: Partial<SyncData>;
 };
 
-const getSyncAction = (data: SyncData): SyncAction => ({
+const getSyncAction = (data: Partial<SyncData>): SyncAction => ({
   type: "sync_data",
   data,
 });
@@ -47,9 +47,18 @@ export default function usePeer({
   const onActionRef = useRef(onAction);
   onActionRef.current = onAction;
 
-  const syncAll = useCallback(() => {
+  const syncAll = useCallback((keys?: string[]) => {
     peerConnection.sendAll(getSyncAction({
-      ...syncDataRef.current,
+      ...(keys ? keys.reduce((prev, key) => {
+        if (Object.hasOwn(syncDataRef.current, key)) {
+          return {
+            ...prev,
+            [key]: syncDataRef.current[key as keyof ClientSyncData]
+          };
+        }
+        console.warn(`usePeer syncAll: key ${key} not found`, {keys, syncData: syncDataRef.current})
+        return prev;
+      }, {}) : syncDataRef.current),
       connections: peerConnection.getConnections()
     }))
   }, [])
@@ -72,7 +81,7 @@ export default function usePeer({
           const action = data as SyncAction;
           const currentConnections = peerConnection.getConnections();
           const peerId = peerConnection.getPeer()?.id;
-          action.data.connections.map((id) => {
+          action.data.connections?.map((id) => {
             if (id !==peerId && currentConnections.indexOf(id) === -1) {
               peerConnection.connectPeer(id, peerCallbacks)
             }
