@@ -1,7 +1,7 @@
 "use client";
 
 import useParams from "@/utils/useParams";
-import usePeer from "@/utils/usePeer";
+import usePeer, { ClientSyncData } from "@/utils/usePeer";
 
 import HelpText from "@/components/HelpText";
 import InputField from "@/components/InputField";
@@ -12,15 +12,18 @@ export default function Settings({
   peerData,
   paramData,
   closeSettings,
+  onParamChange,
 } : {
   peerData: ReturnType<typeof usePeer>;
   paramData: ReturnType<typeof useParams>;
   closeSettings: () => void;
+  onParamChange: () => void;
 }) {
   const { params, setParams, getUrlWithParams } =
     paramData;
+  const { rid: remoteId } = params;
 
-  const { connect, connections, disconnect, error, peerId, isClient, isRemote } = peerData;
+  const { connectRemote, connections, disconnect, error, peerId } = peerData;
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -28,12 +31,13 @@ export default function Settings({
         <form className="w-full">
           <div className="space-y-12">
             <div className="flex flex-wrap pb-3 -mx-3">
-              <InputField
+              {/* <InputField
                 label="Title"
                 id="title"
                 containerClassName="px-3"
                 value={params.title}
                 onChange={(e) => setParams({ title: e.target.value })}
+                onBlur={onParamChange}
               />
               <InputField
                 label="Minutes"
@@ -42,6 +46,7 @@ export default function Settings({
                 containerClassName="md:w-1/2 px-3"
                 value={params.m || 1}
                 onChange={(e) => setParams({ m: e.target.value })}
+                onBlur={onParamChange}
               />
               <InputField
                 label="Seconds"
@@ -50,7 +55,8 @@ export default function Settings({
                 containerClassName="md:w-1/2 px-3"
                 value={params.s || 0}
                 onChange={(e) => setParams({ s: e.target.value })}
-              />
+                onBlur={onParamChange}
+              /> */}
               <InputField
                 label="Background Color"
                 id="bg"
@@ -58,6 +64,7 @@ export default function Settings({
                 containerClassName="md:w-1/3 px-3"
                 value={params.bg}
                 onChange={(e) => setParams({ bg: e.target.value })}
+                onBlur={onParamChange}
               />
               <InputField
                 label="Foreground Color"
@@ -66,6 +73,7 @@ export default function Settings({
                 containerClassName="md:w-1/3 px-3"
                 value={params.fg}
                 onChange={(e) => setParams({ fg: e.target.value })}
+                onBlur={onParamChange}
               />
               <InputField
                 label="Primary Color"
@@ -74,9 +82,10 @@ export default function Settings({
                 containerClassName="md:w-1/3 px-3"
                 value={params.pc}
                 onChange={(e) => setParams({ pc: e.target.value })}
+                onBlur={onParamChange}
               />
             </div>
-            {!isRemote ? (
+            {!remoteId ? (
               <>
                 <CopyField
                   label="Timer URL"
@@ -93,11 +102,12 @@ export default function Settings({
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
-                    onClick={(event) => {
-                      connect(null, (id) => {
-                        setParams({ pid: id });
-                      });
+                    onClick={async (event) => {
                       event.preventDefault();
+                      const id = await connectRemote(remoteId);
+                      if (!remoteId) {
+                        setParams({ rid: id })
+                      }
                     }}
                   >
                     Switch to remote mode
@@ -137,7 +147,7 @@ export default function Settings({
                 </p>
               </div>
             )}
-            {error && (<div className="bg-red-700 rounded-xl p-3 text-white font-bold">Error: {error.type}</div>)}
+            {error && (<div className="bg-red-700 rounded-xl p-3 text-white font-bold">{error.toString()}</div>)}
           </div>
         </form>
         <HelpText />

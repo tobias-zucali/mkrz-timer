@@ -5,12 +5,12 @@ import useParams from "@/utils/useParams";
 import useTimer from "@/utils/useTimer";
 import Timer from "@/components/Timer";
 import SettingsButton from "./SettingsButton";
-import usePeer from "@/utils/usePeer";
+import usePeer, { ClientSyncData } from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
 
 
-export default function Run() {
+export default function App() {
   const paramData = useParams();
   const {
     params: {
@@ -26,6 +26,15 @@ export default function Run() {
     },
     setParams
   } = paramData;
+
+  const currentSyncData = {
+    title,
+    bg,
+    fg,
+    pc,
+    m,
+    s
+  };
 
   const closeSettings = () => {
     setParams({ settings: null });
@@ -44,30 +53,29 @@ export default function Run() {
   const peerData = usePeer({
     peerIdParam,
     remoteIdParam,
-    syncData: {
-      title,
-      bg,
-      fg,
-      pc,
-      m,
-      s
-    },
+    currentSyncData,
     onAction: (action) => {
       if (action.type === "sync_data") {
         const data = action.data;
-        // update params
-        setParams({
-          title: data.title,
-          bg: data.bg,
-          fg: data.fg,
-          pc: data.pc,
-          m: data.m,
-          s: data.s
-        });
+        const syncData: Partial<typeof currentSyncData> = {}
+        let isNewData = false;
+
+        const keys = Object.keys(currentSyncData) as Array<keyof ClientSyncData>
+        keys.forEach((key) => {
+          if (data[key] !== currentSyncData[key]) {
+            isNewData = true;
+            syncData[key] = data[key]
+          }
+        })
+
+        if (isNewData) {
+          // update params
+          setParams(syncData);
+        }
       }
     }
   });
-  const { peerId, connections } = peerData;
+  const { peerId, connections, syncAll } = peerData;
 
   return isSettingsOpen ? (
     <>
@@ -75,6 +83,9 @@ export default function Run() {
         peerData={peerData}
         paramData={paramData}
         closeSettings={closeSettings}
+        onParamChange={() => {
+          syncAll(currentSyncData);
+        }}
       />
       <CloseButton
         onClick={closeSettings}

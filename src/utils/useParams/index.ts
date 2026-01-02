@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
 export default function useParams() {
@@ -8,26 +8,23 @@ export default function useParams() {
 
   const isSearchParamsEmpty = searchParams.size === 0;
 
-  const params = useMemo(
-    () => ({
-      m: searchParams.get("m") || "01",
-      s: searchParams.get("s") || "00",
-      title: searchParams.get("title") || "",
-      bg: searchParams.get("bg") || "#000000",
-      fg: searchParams.get("fg") || "#ffffff",
-      pc: searchParams.get("pc") || "#d61f69",
-      pid: searchParams.get("pid") || "", // peer id
-      rid: searchParams.get("rid") || "", // remote peer id
-      settings: searchParams.get("settings") || null, // settings open
-    }),
-    [searchParams]
-  );
+  const [currentParams, setCurrentParams] = useState({
+    m: searchParams.get("m") || "01",
+    s: searchParams.get("s") || "00",
+    title: searchParams.get("title") || "",
+    bg: searchParams.get("bg") || "#000000",
+    fg: searchParams.get("fg") || "#ffffff",
+    pc: searchParams.get("pc") || "#d61f69",
+    pid: searchParams.get("pid") || "", // peer id
+    rid: searchParams.get("rid") || "", // remote peer id
+    settings: searchParams.get("settings") || null, // settings open
+  });
 
   const getPathWithParams = useCallback(
     (newPathName = pathname, newParams = {}, inherit = true) => {
       const newSearchParams = new URLSearchParams();
 
-      const mergedParams = inherit ? { ...params, ...newParams } : newParams;
+      const mergedParams = inherit ? { ...currentParams, ...newParams } : newParams;
 
       (Object.keys(mergedParams) as Array<keyof typeof mergedParams>).forEach(
         (key) => {
@@ -39,7 +36,7 @@ export default function useParams() {
 
       return newPathName + "?" + newSearchParams.toString();
     },
-    [params, pathname]
+    [currentParams, pathname]
   );
 
   const getUrlWithParams = useCallback(
@@ -57,29 +54,38 @@ export default function useParams() {
 
   const setParams = useCallback(
     (
-      newParams: Partial<typeof params>,
-      push: boolean = isSearchParamsEmpty
+      newParams: Partial<typeof currentParams>
     ) => {
-      const newUrl = getPathWithParams(undefined, newParams);
-      if (push) {
-        router.push(newUrl);
-      } else {
-        router.replace(newUrl);
-      }
+      setCurrentParams((curr) => ({
+        ...curr,
+        ...newParams
+      }));
     },
-    [getPathWithParams, router, isSearchParamsEmpty]
+    []
   );
+
+  // sync url each 500ms max
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const newUrl = getPathWithParams(undefined, currentParams);
+      router.replace(newUrl);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [currentParams, getPathWithParams, router]);
 
   return useMemo(
     () => ({
-      params,
+      params: currentParams,
       setParams,
       getPathWithParams,
       getUrlWithParams,
       isSearchParamsEmpty,
     }),
     [
-      params,
+      currentParams,
       setParams,
       getPathWithParams,
       getUrlWithParams,

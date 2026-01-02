@@ -1,6 +1,7 @@
 import Peer, { DataConnection, PeerErrorType, PeerError } from "peerjs";
 
 let peer: Peer | undefined;
+
 const connectionMap: Map<string, DataConnection> = new Map<
   string,
   DataConnection
@@ -9,19 +10,22 @@ const connectionMap: Map<string, DataConnection> = new Map<
 const initializeConnection = (conn: DataConnection, {
     onError,
     onReceiveData,
-    onClose,
+    onConnectionClose,
+    onOpen,
   }: {
     onError: (error: Error, id?: string) => void;
     onReceiveData: (id: string, data: unknown) => void;
-    onClose?: (id: string) => void;
+    onConnectionClose?: (id: string) => void;
+    onOpen?: (id: string) => void;
   }) => {
   const id = conn.peer
   connectionMap.set(id, conn);
+  onOpen?.(id);
 
   conn.on("close", () => {
     console.log("Connection closed:", id);
     connectionMap.delete(id);
-    onClose?.(id);
+    onConnectionClose?.(id);
   });
   conn.on("data", (data) => {
     console.log("Incoming data:", id, data);
@@ -54,19 +58,24 @@ const peerConnection = {
     onConnectionClose?: (id: string) => void;
   }) =>
     new Promise<string>((resolve, reject) => {
+      let isResolved = false;
       try {
-        let peerId = id
+        let peerId = id;
         peer = new Peer(peerId);
         peer
           .on("open", (id) => {
             console.log("PeerSession Open:", id);
             peerId = id;
             resolve(id);
+            isResolved = true;
           })
           .on("error", (error) => {
             console.log("PeerSession Error:", error);
-            onError?.(error);
+            if (isResolved) {
+              onError?.(error);
+            }
             reject(error);
+            isResolved = true;
           })
           .on("close", () => {
             console.log("PeerSession Closed:", peerId);
@@ -78,7 +87,7 @@ const peerConnection = {
               initializeConnection(conn, {
                 onError,
                 onReceiveData,
-                onClose: onConnectionClose,
+                onConnectionClose,
               })
               onConnection?.(conn.peer);
             })
@@ -86,6 +95,7 @@ const peerConnection = {
       } catch (err) {
         console.log(err);
         reject(err);
+        isResolved = true;
       }
     }),
   closePeerSession: () =>

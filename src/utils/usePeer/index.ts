@@ -3,7 +3,7 @@ import { PeerError, PeerErrorType } from "peerjs";
 
 import peerConnection from "./peerConnection";
 
-export type SyncData = {
+export type ClientSyncData = {
   m: string;
   s: string;
   title: string;
@@ -11,6 +11,10 @@ export type SyncData = {
   fg: string;
   pc: string;
 };
+
+type SyncData = ClientSyncData & {
+  connections: string[];
+}
 
 export type SyncAction = {
   type: "sync_data";
@@ -24,50 +28,83 @@ const getSyncAction = (data: SyncData): SyncAction => ({
 
 export default function usePeer({
   remoteIdParam,
-  syncData,
+  currentSyncData,
   onAction,
 } : {
   peerIdParam: string | null;
   remoteIdParam: string | null;
-  syncData: SyncData;
+  currentSyncData: ClientSyncData;
   onAction: (action: SyncAction) => void;
 }) {
   const [error, setError] = useState<Error | null>(null);
   const [peerId, setPeerId] = useState<string | null>(null);
   const [connections, setConnections] = useState<string[]>([]);
-  const syncDataRef = useRef(syncData);
-  syncDataRef.current = syncData;
 
-  const handleAction = useCallback((data: unknown) => {
-    if (data && typeof data === "object" && "type" in data) {
-      if (data.type === "sync_data") {
-        const action = data as SyncAction;
-        onAction(action);
-        return;
+  const isRemoteRef = useRef(false);
+
+  const syncDataRef = useRef(currentSyncData);
+  syncDataRef.current = currentSyncData;
+
+  const onActionRef = useRef(onAction);
+  onActionRef.current = onAction;
+
+  const syncAll = useCallback((data: ClientSyncData) => {
+    peerConnection.sendAll(getSyncAction({
+      ...data,
+      connections: peerConnection.getConnections()
+    }))
+  }, [])
+
+  const peerCallbacks = useMemo(() => ({
+    onError: setError,
+    onOpen: () => setConnections(peerConnection.getConnections()),
+    onConnection: (id: string) => {
+      setConnections(peerConnection.getConnections())
+      if (isRemoteRef.current) {
+        peerConnection.send(id, getSyncAction({
+          ...syncDataRef.current,
+          connections: peerConnection.getConnections()
+        }))
       }
-    }
-    console.warn("handleAction: Unknown action received:", data);
-  }, [onAction]);
+    },
+    onReceiveData: (id: string, data: unknown) => {
+      if (data && typeof data === "object" && "type" in data) {
+        if (data.type === "sync_data") {
+          const action = data as SyncAction;
+          const currentConnections = peerConnection.getConnections();
+          const peerId = peerConnection.getPeer()?.id;
+          action.data.connections.map((id) => {
+            if (id !==peerId && currentConnections.indexOf(id) === -1) {
+              peerConnection.connectPeer(id, peerCallbacks)
+            }
+          })
+          onActionRef.current(action);
+          return;
+        }
+      }
+      console.warn("handleAction: Unknown action received:", data);
+    },
+    onClose: (id: string) => {
+      isRemoteRef.current = false
+      console.log("usePeer onClose", id)
+      setConnections(peerConnection.getConnections())
+    },
+    onConnectionClose: (id: string) => {
+      console.log("usePeer onConnectionClose", id)
+      setConnections(peerConnection.getConnections())
+    },
+  }), [])
 
-  const connectRemote = async (remoteId: string) => {
+  const connectRemote = useCallback(async (
+    remoteId: string
+  ) => {
     let peerId
-    const peerCallbacks = {
-      onError: setError,
-      onConnection: (id: string) => {
-        setConnections(peerConnection.getConnections())
-        peerConnection.send(id, getSyncAction(syncDataRef.current))
-      },
-      onReceiveData: (id: string, data: unknown) => handleAction(data),
-      onClose: () => {
-        // TODO: Handle if needed
-      },
-      onConnectionClose: () => setConnections(peerConnection.getConnections()),
-    }
     try {
       peerId = await peerConnection.startPeerSession({
         id: remoteId,
         ...peerCallbacks,
       })
+      isRemoteRef.current = true
     } catch (error) {
       if (error instanceof PeerError) {
         if (error.type === PeerErrorType.UnavailableID) {
@@ -79,11 +116,13 @@ export default function usePeer({
         console.error(error)
         setError(error as Error)
       }
+      isRemoteRef.current = false
     }
     if (peerId) {
       setPeerId(peerId)
     }
-  }
+    return peerId
+  }, [peerCallbacks])
 
   useEffect(() => {
     if (remoteIdParam) {
@@ -97,12 +136,17 @@ export default function usePeer({
   }, []);
 
   return useMemo(() => ({
+    connectRemote,
     connections,
+    disconnect: () => peerConnection.closePeerSession(),
     error,
     peerId,
+    syncAll,
   }), [
+    connectRemote,
     connections,
     error,
     peerId,
+    syncAll,
   ]);
 }
