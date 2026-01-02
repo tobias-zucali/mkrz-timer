@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PeerError } from "peerjs";
+import { useCallback, useEffect, useMemo,  useRef,  useState } from "react";
+import { PeerError, PeerErrorType } from "peerjs";
 
 import peerConnection from "./peerConnection";
-
 
 export type SyncData = {
   m: string;
@@ -36,6 +35,8 @@ export default function usePeer({
   const [error, setError] = useState<Error | null>(null);
   const [peerId, setPeerId] = useState<string | null>(null);
   const [connections, setConnections] = useState<string[]>([]);
+  const syncDataRef = useRef(syncData);
+  syncDataRef.current = syncData;
 
   const handleAction = useCallback((data: unknown) => {
     if (data && typeof data === "object" && "type" in data) {
@@ -48,33 +49,43 @@ export default function usePeer({
     console.warn("handleAction: Unknown action received:", data);
   }, [onAction]);
 
-  useEffect(() => {
-    const connectRemote = async (remoteId: string) => {
-      let peerId
-      try {
-        peerId = await peerConnection.startPeerSession(remoteId)
-      } catch (error) {
-        if (error instanceof PeerError) {
-          if (error.type === "unavailable-id") {
-            peerId = await peerConnection.startPeerSession()
-            await peerConnection.connectPeer(remoteId)
-            setConnections(peerConnection.getConnections())
-            peerConnection.onConnectionReceiveData(remoteId, handleAction)
-          }
-        } else {
-          console.error(error)
-          setError(error as Error)
-        }
-      }
-      if (peerId) {
-        setPeerId(peerId)
-        peerConnection.onIncomingConnection((conn) => {
+  const connectRemote = async (remoteId: string) => {
+    let peerId
+    const peerCallbacks = {
+      onError: setError,
+      onConnection: (id: string) => {
+        setConnections(peerConnection.getConnections())
+        peerConnection.send(id, getSyncAction(syncDataRef.current))
+      },
+      onReceiveData: (id: string, data: unknown) => handleAction(data),
+      onClose: () => {
+        // TODO: Handle if needed
+      },
+      onConnectionClose: () => setConnections(peerConnection.getConnections()),
+    }
+    try {
+      peerId = await peerConnection.startPeerSession({
+        id: remoteId,
+        ...peerCallbacks,
+      })
+    } catch (error) {
+      if (error instanceof PeerError) {
+        if (error.type === PeerErrorType.UnavailableID) {
+          peerId = await peerConnection.startPeerSession(peerCallbacks)
+          await peerConnection.connectPeer(remoteId, peerCallbacks)
           setConnections(peerConnection.getConnections())
-          peerConnection.onConnectionReceiveData(conn.peer, handleAction)
-          peerConnection.send(conn.peer, getSyncAction(syncData))
-        })
+        }
+      } else {
+        console.error(error)
+        setError(error as Error)
       }
     }
+    if (peerId) {
+      setPeerId(peerId)
+    }
+  }
+
+  useEffect(() => {
     if (remoteIdParam) {
       connectRemote(remoteIdParam)
     }
