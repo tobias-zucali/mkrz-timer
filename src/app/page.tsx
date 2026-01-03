@@ -67,7 +67,7 @@ export default function App() {
         
         const keys = Object.keys(currentSyncData) as Array<keyof ClientSyncData>
         const syncData = keys.reduce((prev: Partial<ClientSyncData> | null, key) => {
-          if (data[key] !== currentSyncData[key]) {
+          if (Object.hasOwn(data, key) && data[key] !== currentSyncData[key]) {
             return {
               ...(prev || {}),
               [key]: data[key]

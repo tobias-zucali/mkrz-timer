@@ -1,7 +1,7 @@
 "use client";
 
 import useParams from "@/utils/useParams";
-import usePeer, { ClientSyncData } from "@/utils/usePeer";
+import usePeer from "@/utils/usePeer";
 
 import HelpText from "@/components/HelpText";
 import InputField from "@/components/InputField";

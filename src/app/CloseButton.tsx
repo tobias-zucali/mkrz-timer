@@ -1,10 +1,11 @@
 import classNames from "classnames";
+import { HTMLAttributes } from "react";
 
 export default function CloseButton({
   className,
   title = "Close",
   ...otherProps
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={classNames(

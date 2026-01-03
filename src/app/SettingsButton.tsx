@@ -1,10 +1,11 @@
 import classNames from "classnames"
+import { HTMLAttributes } from "react";
 
 export default function SettingsButton({
   className,
   title = "Settings",
   ...otherProps
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={classNames(

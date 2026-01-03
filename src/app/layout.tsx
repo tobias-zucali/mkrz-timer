@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ParamStyles from "@/components/ParamStyles";
+import ParamStyledBody from "@/components/ParamStyledBody";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,16 +44,15 @@ export default function RootLayout({
         {/* Safari Pinned Tab */}
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
       </head>
-      <body
+      <ParamStyledBody
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <ParamStyles />
         {children}
         <a
           className="absolute bottom-4 right-4 underline hover:text-primary"
           href='https://www.mkrz.at/'
         >by mkrz</a>
-      </body>
+      </ParamStyledBody>
     </html>
   );
 }
