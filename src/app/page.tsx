@@ -103,7 +103,7 @@ export default function App() {
         peerData={peerData}
         paramData={paramData}
         closeSettings={closeSettings}
-        handleChange={closeSettings}
+        handleChange={handleChange}
       />
       <CloseButton
         onClick={closeSettings}

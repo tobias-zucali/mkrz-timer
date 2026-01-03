@@ -133,7 +133,7 @@ export default function Settings({
                     onClick={(event) => {
                       disconnect();
                       event.preventDefault();
-                      setParams({ rid: undefined, pid: undefined });
+                      setParams({ rid: undefined });
                     }}
                   >
                     End remote mode

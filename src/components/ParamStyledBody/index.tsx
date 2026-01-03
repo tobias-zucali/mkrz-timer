@@ -1,32 +1,51 @@
 "use client";
 
 import useParams from "@/utils/useParams";
-import { HTMLAttributes } from "react";
+import { createContext, HTMLAttributes, useState } from "react";
 
-declare module 'react' {
-    interface CSSProperties {
-        [key: `--${string}`]: string | number
-    }
+
+// fix typescript warning
+declare module "react" {
+  interface CSSProperties {
+    [key: `--${string}`]: string | number;
+  }
 }
+
+const defaultColors = {
+  "bg": "",
+  "fg": "",
+  "pc": "",
+}
+
+export const ParamStyleContext = createContext({
+  ...defaultColors,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setColors: (colors: typeof defaultColors) => { },
+});
 
 export default function ParamStyledBody({
   children,
   ...otherProps
 }: HTMLAttributes<HTMLBodyElement> & {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const params = useParams();
+  const [colors, setColors] = useState(defaultColors)
 
   return (
     <body
       style={{
-        "--background": params.params.bg,
-        "--foreground": params.params.fg,
-        "--primary": params.params.pc,        
+        ...(colors.bg ? {"--background": colors.bg} : {}),
+        ...(colors.fg ? {"--foreground": colors.fg} : {}),
+        ...(colors.pc ? {"--primary": colors.pc} : {}),
       }}
       {...otherProps}
     >
-      {children}
+      <ParamStyleContext value={{
+        ...colors,
+        setColors,
+      }}>
+        {children}
+      </ParamStyleContext>
     </body>
   );
 }

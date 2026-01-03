@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { ParamStyleContext } from "@/components/ParamStyledBody";
 
 export default function useParams() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const { setColors } = useContext(ParamStyleContext);
 
   const isSearchParamsEmpty = searchParams.size === 0;
 
@@ -19,6 +21,14 @@ export default function useParams() {
     rid: searchParams.get("rid") || "", // remote peer id
     settings: searchParams.get("settings") || null, // settings open
   });
+
+  useEffect(() => {
+    setColors({
+      "bg": currentParams.bg,
+      "fg": currentParams.fg,
+      "pc": currentParams.pc,
+    })
+  }, [setColors, currentParams.bg, currentParams.fg, currentParams.pc])
   
 
   const getPathWithParams = useCallback(
