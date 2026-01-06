@@ -13,12 +13,15 @@ import { ClientSyncData } from "@/utils/usePeer";
 
 
 export default function useTimer(params: ClientSyncData) {
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(true);
-  const isStarted = elapsedTime > 0;
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
 
-  const totalDuration = getSecondsDuration(params.m, params.s);
-  const remainingSecondsRef = useRef(totalDuration);
+  const getTotalDuration = useCallback(() => getSecondsDuration(paramsRef.current.m, paramsRef.current.s), []);
+
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState(true);
+  const [totalDuration, setTotalDuration] = useState<number>(getTotalDuration);
+  const isStarted = elapsedTime > 0;
 
   const elapsedPercentage = elapsedTime / totalDuration;
   const isTimedOut = elapsedPercentage >= 1;
@@ -40,18 +43,23 @@ export default function useTimer(params: ClientSyncData) {
   );
 
   const resetTimer = useCallback(() => {
-    remainingSecondsRef.current = totalDuration;
     setIsPaused(true);
     setElapsedTime(0);
-  }, [totalDuration]);
+  }, []);
 
   const toggleTimer = useCallback(() => {
-    setIsPaused((prevState) => !prevState);
-  }, []);
+    setIsPaused((prevIsPaused) => {
+      if (!isStarted) {
+        setTotalDuration(getTotalDuration());
+      }
+      return !prevIsPaused;
+    });
+  }, [getTotalDuration, isStarted]);
 
   useGlobalKeyUp((event: KeyboardEvent) => {
     const target = event.target;
-    if (target instanceof HTMLElement && target.tagName === "BUTTON") {
+    if (target instanceof HTMLElement && target.tagName === "BUTTON"
+      && event.key === "Enter" || event.key === " ") {
       return;
     }
     switch (event.key) {

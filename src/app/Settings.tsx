@@ -88,7 +88,10 @@ export default function Settings({
                   value={getUrlWithParams()}
                 />
                 <button
-                  onClick={closeSettings}
+                  onClick={(event) => {
+                    closeSettings();
+                    event.preventDefault();
+                  }}
                   className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
                 >
                   Run Timer
