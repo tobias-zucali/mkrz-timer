@@ -9,7 +9,7 @@ import {
 } from "@/utils/timeInputHelpers";
 import useAnimationFrame from "@/utils/useAnimationFrame";
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
-import { SyncData } from "@/utils/usePeer";
+import { SyncParams } from "@/utils/usePeer";
 
 
 export type TimerState = {
@@ -24,7 +24,7 @@ export default function useTimer({
   params,
   onAction,
 }: {
-  params: SyncData,
+  params: SyncParams,
   onAction: (action: TimerActions, state: TimerState) => void
 }) {
   const paramsRef = useRef(params);

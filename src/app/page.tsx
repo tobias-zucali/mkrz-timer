@@ -2,16 +2,18 @@
 
 import useParams from "@/utils/useParams";
 
-import useTimer from "@/utils/useTimer";
+import useTimer, { TimerState } from "@/utils/useTimer";
 import Timer from "@/components/Timer";
 import SettingsButton from "./SettingsButton";
-import usePeer, { SyncData } from "@/utils/usePeer";
+import usePeer, { SyncParams } from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 export default function App() {
+  const syncStateRef = useRef<Partial<TimerState>>({});
+
   const paramData = useParams();
   const {
     params,
@@ -29,7 +31,7 @@ export default function App() {
     s,
   } = params;
 
-  const currentSyncData = {
+  const syncParams = {
     title,
     bg,
     fg,
@@ -37,6 +39,10 @@ export default function App() {
     m,
     s
   };
+
+  const syncParamsRef = useRef<SyncParams>(syncParams);
+  // eslint-disable-next-line react-hooks/refs
+  syncParamsRef.current = syncParams;
 
   const closeSettings = () => {
     setParams({ settings: null });
@@ -56,7 +62,7 @@ export default function App() {
   };
 
   const timer = useTimer({
-    params: currentSyncData,
+    params: syncParams,
     onAction: (action, state) => {
       // no-op for now
     }
@@ -65,14 +71,14 @@ export default function App() {
   // handle connection
   const peerData = usePeer({
     remoteIdParam,
-    currentSyncData,
+    syncParamsRef,
     onAction: (action) => {
       if (action.type === "sync") {
         const data = action.data;
         
-        const keys = Object.keys(currentSyncData) as Array<keyof SyncData>
-        const syncData = keys.reduce((prev: Partial<SyncData> | null, key) => {
-          if (Object.hasOwn(data, key) && data[key] !== currentSyncData[key]) {
+        const keys = Object.keys(syncParamsRef.current) as Array<keyof SyncParams>
+        const syncParams = keys.reduce((prev: Partial<SyncParams> | null, key) => {
+          if (Object.hasOwn(data, key) && data[key] !== syncParamsRef.current[key]) {
             return {
               ...(prev || {}),
               [key]: data[key]
@@ -81,9 +87,9 @@ export default function App() {
           return prev;
         }, null)
 
-        if (syncData) {
+        if (syncParams) {
           // update params
-          setParams(syncData);
+          setParams(syncParams);
         }
       }
     }

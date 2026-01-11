@@ -4,7 +4,7 @@ import { PeerError, PeerErrorType } from "peerjs";
 import peerConnection from "./peerConnection";
 import { TimerState } from "@/utils/useTimer";
 
-export type SyncData = {
+export type SyncParams = {
   m: string;
   s: string;
   title: string;
@@ -18,7 +18,7 @@ const getSyncAction = ({
   connections,
   state
 }: {
-  data: Partial<SyncData>;
+  data: Partial<SyncParams>;
   connections: string[];
   state?: TimerState;
 }) => ({
@@ -32,11 +32,11 @@ export type SyncAction = ReturnType<typeof getSyncAction> ;
 
 export default function usePeer({
   remoteIdParam,
-  currentSyncData,
+  syncParamsRef,
   onAction,
 } : {
   remoteIdParam: string | null;
-  currentSyncData: SyncData;
+  syncParamsRef: React.RefObject<SyncParams>;
   onAction: (action: SyncAction) => void;
 }) {
   const [error, setError] = useState<Error | null>(null);
@@ -44,9 +44,6 @@ export default function usePeer({
   const [connections, setConnections] = useState<string[]>([]);
 
   const isRemoteRef = useRef(false);
-
-  const syncDataRef = useRef(currentSyncData);
-  syncDataRef.current = currentSyncData;
 
   const onActionRef = useRef(onAction);
   onActionRef.current = onAction;
@@ -61,15 +58,15 @@ export default function usePeer({
     peerConnection.sendAll(getSyncAction({
       data: {
         ...(keys ? keys.reduce((prev, key) => {
-          if (Object.hasOwn(syncDataRef.current, key)) {
+          if (Object.hasOwn(syncParamsRef.current, key)) {
             return {
               ...prev,
-              [key]: syncDataRef.current[key as keyof SyncData]
+              [key]: syncParamsRef.current[key as keyof SyncParams]
             };
           }
-          console.warn(`usePeer syncAll: key ${key} not found`, {keys, syncData: syncDataRef.current})
+          console.warn(`usePeer syncAll: key ${key} not found`, {keys, syncParams: syncParamsRef.current})
           return prev;
-        }, {}) : syncDataRef.current),
+        }, {}) : syncParamsRef.current),
       },
       connections: peerConnection.getConnections(),
       state,
@@ -83,7 +80,7 @@ export default function usePeer({
       setConnections(peerConnection.getConnections())
       if (isRemoteRef.current) {
         peerConnection.send(id, getSyncAction({
-          data: syncDataRef.current,
+          data: syncParamsRef.current,
           connections: peerConnection.getConnections()
         }))
       }
