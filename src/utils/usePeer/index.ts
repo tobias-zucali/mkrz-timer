@@ -33,11 +33,13 @@ export type SyncAction = ReturnType<typeof getSyncAction> ;
 export default function usePeer({
   remoteIdParam,
   syncParamsRef,
-  onAction,
+  syncStateRef,
+  onHandleAction,
 } : {
   remoteIdParam: string | null;
   syncParamsRef: React.RefObject<SyncParams>;
-  onAction: (action: SyncAction) => void;
+  syncStateRef: React.RefObject<TimerState>;
+  onHandleAction: (action: SyncAction) => void;
 }) {
   const [error, setError] = useState<Error | null>(null);
   const [peerId, setPeerId] = useState<string | null>(null);
@@ -45,15 +47,15 @@ export default function usePeer({
 
   const isRemoteRef = useRef(false);
 
-  const onActionRef = useRef(onAction);
-  onActionRef.current = onAction;
+  const onHandleActionRef = useRef(onHandleAction);
+  onHandleActionRef.current = onHandleAction;
 
   const syncAll = useCallback(({
     keys,
-    state,
+    state = {},
   }: {
     keys?: string[]
-    state?: TimerState,
+    state?: Partial<TimerState>,
   }) => {
     peerConnection.sendAll(getSyncAction({
       data: {
@@ -69,9 +71,12 @@ export default function usePeer({
         }, {}) : syncParamsRef.current),
       },
       connections: peerConnection.getConnections(),
-      state,
+      state: {
+        ...state,
+        ...syncStateRef.current,
+      },
     }));
-  }, [])
+  }, [syncParamsRef, syncStateRef])
 
   const peerCallbacks = useMemo(() => ({
     onError: setError,
@@ -81,7 +86,8 @@ export default function usePeer({
       if (isRemoteRef.current) {
         peerConnection.send(id, getSyncAction({
           data: syncParamsRef.current,
-          connections: peerConnection.getConnections()
+          connections: peerConnection.getConnections(),
+          state: syncStateRef.current,
         }))
       }
     },
@@ -96,7 +102,7 @@ export default function usePeer({
               peerConnection.connectPeer(id, peerCallbacks)
             }
           })
-          onActionRef.current(action);
+          onHandleActionRef.current(action);
           return;
         }
       }
@@ -111,7 +117,7 @@ export default function usePeer({
       console.log("usePeer onConnectionClose", id)
       setConnections(peerConnection.getConnections())
     },
-  }), [])
+  }), [syncParamsRef, syncStateRef])
 
   const connectRemote = useCallback(async (
     remoteId: string

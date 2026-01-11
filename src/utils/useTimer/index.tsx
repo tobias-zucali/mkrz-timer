@@ -21,10 +21,12 @@ export type TimerState = {
 export type TimerActions = "reset" | "toggle";
 
 export default function useTimer({
-  params,
   onAction,
+  syncStateRef,
+  params,
 }: {
   params: SyncParams,
+  syncStateRef: React.RefObject<TimerState>,
   onAction: (action: TimerActions, state: TimerState) => void
 }) {
   const paramsRef = useRef(params);
@@ -42,7 +44,7 @@ export default function useTimer({
 
   useEffect(() => {
     if (isTimedOut) {
-      new Audio("/sounds/Attention.mps3").play();
+      new Audio("/sounds/Attention.mp3").play();
     }
   }, [isTimedOut]);
 
@@ -116,6 +118,12 @@ export default function useTimer({
     setTotalDuration(totalDuration);
   }, []);
 
+  syncStateRef.current = {
+    elapsedTime,
+    isPaused,
+    totalDuration,
+  };
+
   return useMemo(() => ({
     minutes,
     seconds,
@@ -125,11 +133,6 @@ export default function useTimer({
     elapsedPercentage,
     handleAction,
     setState,
-    state: {
-      elapsedTime,
-      isPaused,
-      totalDuration,
-    },
   }), [
     minutes,
     seconds,
@@ -138,8 +141,6 @@ export default function useTimer({
     isTimedOut,
     elapsedPercentage,
     handleAction,
-    setState,
-    elapsedTime,
-    totalDuration
+    setState
   ]);
 }

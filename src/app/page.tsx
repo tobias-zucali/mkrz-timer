@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 
 
 export default function App() {
-  const syncStateRef = useRef<Partial<TimerState>>({});
+  const syncStateRef = useRef<TimerState>({} as TimerState);
 
   const paramData = useParams();
   const {
@@ -61,43 +61,41 @@ export default function App() {
     ]))
   };
 
+
+  const [syncState, setSyncState] = useState<TimerState>({} as TimerState);
+
   const timer = useTimer({
     params: syncParams,
-    onAction: (action, state) => {
-      // no-op for now
+    syncStateRef,
+    onAction: (_action, state) => {
+      setSyncState(state);
     }
   });
+  const { setState } = timer;
   
   // handle connection
   const peerData = usePeer({
     remoteIdParam,
     syncParamsRef,
-    onAction: (action) => {
+    syncStateRef,
+    onHandleAction: (action) => {
       if (action.type === "sync") {
-        const data = action.data;
-        
-        const keys = Object.keys(syncParamsRef.current) as Array<keyof SyncParams>
-        const syncParams = keys.reduce((prev: Partial<SyncParams> | null, key) => {
-          if (Object.hasOwn(data, key) && data[key] !== syncParamsRef.current[key]) {
-            return {
-              ...(prev || {}),
-              [key]: data[key]
-            }
-          }
-          return prev;
-        }, null)
-
-        if (syncParams) {
-          // update params
-          setParams(syncParams);
+        if (action.data) {
+          setParams(action.data);
         }
+        if (action.state) {
+          setState(action.state);
+        }
+      } else {
+        // handle other actions if needed
+        console.error("Unhandled action:", action);
       }
     }
   });
   
   const { connections, syncAll } = peerData;
 
-  // debounced sync data
+  // debounced sync params
   useEffect(() => {
     const handler = setTimeout(() => {
       syncAll({ keys: syncKeys });
@@ -107,6 +105,11 @@ export default function App() {
       clearTimeout(handler);
     };
   }, [syncKeys, syncAll]);
+
+  // immediately sync state
+  useEffect(() => {
+    syncAll({ state: syncState })
+  }, [syncState, syncAll]);
 
   return isSettingsOpen ? (
     <>
