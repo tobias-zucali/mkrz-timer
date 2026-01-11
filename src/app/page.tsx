@@ -80,8 +80,8 @@ export default function App() {
     syncStateRef,
     onHandleAction: (action) => {
       if (action.type === "sync") {
-        if (action.data) {
-          setParams(action.data);
+        if (action.params) {
+          setParams(action.params);
         }
         if (action.state) {
           setState(action.state);

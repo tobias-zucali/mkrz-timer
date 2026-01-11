@@ -14,16 +14,16 @@ export type SyncParams = {
 };
 
 const getSyncAction = ({
-  data,
+  params,
   connections,
   state
 }: {
-  data: Partial<SyncParams>;
+  params: Partial<SyncParams>;
   connections: string[];
   state?: TimerState;
 }) => ({
   type: "sync",
-  data,
+  params,
   connections,
   state,
 });
@@ -58,7 +58,7 @@ export default function usePeer({
     state?: Partial<TimerState>,
   }) => {
     peerConnection.sendAll(getSyncAction({
-      data: {
+      params: {
         ...(keys ? keys.reduce((prev, key) => {
           if (Object.hasOwn(syncParamsRef.current, key)) {
             return {
@@ -85,7 +85,7 @@ export default function usePeer({
       setConnections(peerConnection.getConnections())
       if (isRemoteRef.current) {
         peerConnection.send(id, getSyncAction({
-          data: syncParamsRef.current,
+          params: syncParamsRef.current,
           connections: peerConnection.getConnections(),
           state: syncStateRef.current,
         }))

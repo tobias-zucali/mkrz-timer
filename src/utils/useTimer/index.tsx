@@ -44,7 +44,12 @@ export default function useTimer({
 
   useEffect(() => {
     if (isTimedOut) {
-      new Audio("/sounds/Attention.mp3").play();
+      new Audio("/sounds/Attention.mp3").play().catch((error) => {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          console.warn("Autoplay prevented");
+          return;
+        }
+      });
     }
   }, [isTimedOut]);
 
