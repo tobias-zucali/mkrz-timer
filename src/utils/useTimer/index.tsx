@@ -93,7 +93,7 @@ export default function useTimer({
   useGlobalKeyUp((event: KeyboardEvent) => {
     const target = event.target;
     if (target instanceof HTMLElement && target.tagName === "BUTTON"
-      && event.key === "Enter" || event.key === " ") {
+      && (event.key === "Enter" || event.key === " ")) {
       return;
     }
     switch (event.key) {
