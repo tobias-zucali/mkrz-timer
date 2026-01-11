@@ -23,7 +23,7 @@ export default function Settings({
     paramData;
   const { rid: remoteId } = params;
 
-  const { connectRemote, connections, disconnect, error, peerId } = peerData;
+  const { connectRemote, connections, disconnect, peerId } = peerData;
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -144,7 +144,6 @@ export default function Settings({
                 </p>
               </div>
             )}
-            {error && (<div className="bg-red-700 rounded-xl p-3 text-white font-bold">{error.toString()}</div>)}
           </div>
         </form>
         <HelpText />

@@ -175,7 +175,11 @@ const peerConnection = {
     Promise.all(
       connectionMap.keys().map((id) => peerConnection.send(id, data))
     ),
-  getConnections: () => connectionMap.keys().toArray(),
+  getConnections: () => {
+    const connections = connectionMap.keys().toArray();
+    console.log("Current connections:", connections);
+    return connections;
+  },
 };
 
 export default peerConnection;

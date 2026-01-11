@@ -1,4 +1,3 @@
-import classNames from "classnames";
 import { HTMLAttributes } from "react";
 
 export default function CloseButton({
@@ -8,10 +7,7 @@ export default function CloseButton({
 }: HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={classNames(
-        "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer",
-        className
-      )}
+      className={className || "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"}
       title={title}
       {...otherProps}
     >

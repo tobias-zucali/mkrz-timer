@@ -45,7 +45,9 @@ export default function usePeer({
   const [peerId, setPeerId] = useState<string | null>(null);
   const [connections, setConnections] = useState<string[]>([]);
 
-  const isRemoteRef = useRef(false);
+  const [remoteLost, setRemoteLost] = useState(false);
+
+  const isRemote = (remoteIdParam === peerId);
 
   const onHandleActionRef = useRef(onHandleAction);
   onHandleActionRef.current = onHandleAction;
@@ -83,7 +85,7 @@ export default function usePeer({
     onOpen: () => setConnections(peerConnection.getConnections()),
     onConnection: (id: string) => {
       setConnections(peerConnection.getConnections())
-      if (isRemoteRef.current) {
+      if (isRemote) {
         peerConnection.send(id, getSyncAction({
           params: syncParamsRef.current,
           connections: peerConnection.getConnections(),
@@ -109,38 +111,69 @@ export default function usePeer({
       console.warn("handleAction: Unknown action received:", data);
     },
     onClose: (id: string) => {
-      isRemoteRef.current = false
       console.log("usePeer onClose", id)
       setConnections(peerConnection.getConnections())
     },
     onConnectionClose: (id: string) => {
       console.log("usePeer onConnectionClose", id)
+      if (remoteIdParam === id) {
+        console.log("usePeer remote lost", id)
+        setRemoteLost(true);
+      }
       setConnections(peerConnection.getConnections())
     },
-  }), [syncParamsRef, syncStateRef])
+  }), [isRemote, remoteIdParam, syncParamsRef, syncStateRef])
 
   const connectRemote = useCallback(async (
-    remoteId: string
+    remoteId: string,
   ) => {
-    let peerId
-    try {
-      peerId = await peerConnection.startPeerSession({
-        id: remoteId,
-        ...peerCallbacks,
-      })
-      isRemoteRef.current = true
-    } catch (error) {
-      if (error instanceof PeerError) {
-        if (error.type === PeerErrorType.UnavailableID) {
-          peerId = await peerConnection.startPeerSession(peerCallbacks)
-          await peerConnection.connectPeer(remoteId, peerCallbacks)
-          setConnections(peerConnection.getConnections())
+    const startSession = async (id?: string | null) => {
+      try {
+        const peerId = await peerConnection.startPeerSession({
+          id: id || "",
+          ...peerCallbacks,
+        })
+        return peerId;
+      } catch (error) {
+        if (error instanceof PeerError) {
+          if (error.type === PeerErrorType.UnavailableID) {
+            return;
+          }
         }
-      } else {
-        console.error(error)
-        setError(error as Error)
+        throw error;
       }
-      isRemoteRef.current = false
+    };
+
+    let peerId: string | undefined;
+
+    try {
+      peerId = await startSession(remoteId);
+
+      if (!peerId) {
+        // id taken, use stored id
+        const storedId = window.localStorage.getItem("peerId");
+        if (storedId) {
+          peerId = await startSession(storedId);
+        }
+      }
+
+      if (!peerId) {
+        // fall back to fresh id
+        peerId = await startSession();
+        if (peerId) {
+          // store id for next time
+          window.localStorage.setItem("peerId", peerId);
+        }
+      }
+
+      if (peerId && peerId !== remoteId) {
+        await peerConnection.connectPeer(remoteId, peerCallbacks);
+        setConnections(peerConnection.getConnections());
+      }  
+    } catch (error) {
+      window.localStorage.removeItem("peerId");
+      console.error(error)
+      setError(error as Error)
     }
     if (peerId) {
       setPeerId(peerId)
@@ -158,6 +191,16 @@ export default function usePeer({
   // initial render only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (remoteLost) {
+      console.log("Reconnecting to remote peer...", remoteIdParam)
+      if (remoteIdParam) {
+        connectRemote(remoteIdParam)
+      }
+      setRemoteLost(false);
+    }
+  }, [remoteLost, remoteIdParam, connectRemote]);
 
   return useMemo(() => ({
     connectRemote,
