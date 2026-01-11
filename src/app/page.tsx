@@ -5,7 +5,7 @@ import useParams from "@/utils/useParams";
 import useTimer from "@/utils/useTimer";
 import Timer from "@/components/Timer";
 import SettingsButton from "./SettingsButton";
-import usePeer, { ClientSyncData } from "@/utils/usePeer";
+import usePeer, { SyncData } from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
 import { useEffect, useState } from "react";
@@ -45,8 +45,6 @@ export default function App() {
     setParams({ settings: "true" });
   };
   
-  const timer = useTimer(params);
-  
   const [syncKeys, setSyncKeys] = useState<string[]>([]);
 
   const handleChange = (key: string, value: string) => {
@@ -56,17 +54,24 @@ export default function App() {
       key
     ]))
   };
+
+  const timer = useTimer({
+    params: currentSyncData,
+    onAction: (action, state) => {
+      // no-op for now
+    }
+  });
   
   // handle connection
   const peerData = usePeer({
     remoteIdParam,
     currentSyncData,
     onAction: (action) => {
-      if (action.type === "sync_data") {
+      if (action.type === "sync") {
         const data = action.data;
         
-        const keys = Object.keys(currentSyncData) as Array<keyof ClientSyncData>
-        const syncData = keys.reduce((prev: Partial<ClientSyncData> | null, key) => {
+        const keys = Object.keys(currentSyncData) as Array<keyof SyncData>
+        const syncData = keys.reduce((prev: Partial<SyncData> | null, key) => {
           if (Object.hasOwn(data, key) && data[key] !== currentSyncData[key]) {
             return {
               ...(prev || {}),
@@ -89,13 +94,13 @@ export default function App() {
   // debounced sync data
   useEffect(() => {
     const handler = setTimeout(() => {
-      syncAll(syncKeys);
+      syncAll({ keys: syncKeys });
     }, 200);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [syncKeys, syncAll])
+  }, [syncKeys, syncAll]);
 
   return isSettingsOpen ? (
     <>

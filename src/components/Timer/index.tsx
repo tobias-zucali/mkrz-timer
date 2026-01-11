@@ -21,8 +21,7 @@ export default function Timer({
     isPaused,
     isTimedOut,
     elapsedPercentage,
-    resetTimer,
-    toggleTimer,
+    handleAction,
   } = timer;
 
   const buttonClassName =
@@ -55,14 +54,14 @@ export default function Timer({
             <button
               className={buttonClassName}
               disabled={isTimedOut}
-              onClick={toggleTimer}
+              onClick={() => handleAction("toggle")}
             >
               {isPaused ? "START" : "PAUSE"}
             </button>
             <button
               className={buttonClassName}
               disabled={!isStarted}
-              onClick={resetTimer}
+              onClick={() => handleAction("reset")}
             >
               RESET
             </button>

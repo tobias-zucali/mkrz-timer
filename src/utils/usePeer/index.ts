@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo,  useRef,  useState } from "react";
 import { PeerError, PeerErrorType } from "peerjs";
 
 import peerConnection from "./peerConnection";
+import { TimerState } from "@/utils/useTimer";
 
-export type ClientSyncData = {
+export type SyncData = {
   m: string;
   s: string;
   title: string;
@@ -12,19 +13,22 @@ export type ClientSyncData = {
   pc: string;
 };
 
-type SyncData = ClientSyncData & {
-  connections: string[];
-}
-
-export type SyncAction = {
-  type: "sync_data";
-  data: Partial<SyncData>;
-};
-
-const getSyncAction = (data: Partial<SyncData>): SyncAction => ({
-  type: "sync_data",
+const getSyncAction = ({
   data,
+  connections,
+  state
+}: {
+  data: Partial<SyncData>;
+  connections: string[];
+  state?: TimerState;
+}) => ({
+  type: "sync",
+  data,
+  connections,
+  state,
 });
+
+export type SyncAction = ReturnType<typeof getSyncAction> ;
 
 export default function usePeer({
   remoteIdParam,
@@ -32,7 +36,7 @@ export default function usePeer({
   onAction,
 } : {
   remoteIdParam: string | null;
-  currentSyncData: ClientSyncData;
+  currentSyncData: SyncData;
   onAction: (action: SyncAction) => void;
 }) {
   const [error, setError] = useState<Error | null>(null);
@@ -47,20 +51,29 @@ export default function usePeer({
   const onActionRef = useRef(onAction);
   onActionRef.current = onAction;
 
-  const syncAll = useCallback((keys?: string[]) => {
+  const syncAll = useCallback(({
+    keys,
+    state,
+  }: {
+    keys?: string[]
+    state?: TimerState,
+  }) => {
     peerConnection.sendAll(getSyncAction({
-      ...(keys ? keys.reduce((prev, key) => {
-        if (Object.hasOwn(syncDataRef.current, key)) {
-          return {
-            ...prev,
-            [key]: syncDataRef.current[key as keyof ClientSyncData]
-          };
-        }
-        console.warn(`usePeer syncAll: key ${key} not found`, {keys, syncData: syncDataRef.current})
-        return prev;
-      }, {}) : syncDataRef.current),
-      connections: peerConnection.getConnections()
-    }))
+      data: {
+        ...(keys ? keys.reduce((prev, key) => {
+          if (Object.hasOwn(syncDataRef.current, key)) {
+            return {
+              ...prev,
+              [key]: syncDataRef.current[key as keyof SyncData]
+            };
+          }
+          console.warn(`usePeer syncAll: key ${key} not found`, {keys, syncData: syncDataRef.current})
+          return prev;
+        }, {}) : syncDataRef.current),
+      },
+      connections: peerConnection.getConnections(),
+      state,
+    }));
   }, [])
 
   const peerCallbacks = useMemo(() => ({
@@ -70,18 +83,18 @@ export default function usePeer({
       setConnections(peerConnection.getConnections())
       if (isRemoteRef.current) {
         peerConnection.send(id, getSyncAction({
-          ...syncDataRef.current,
+          data: syncDataRef.current,
           connections: peerConnection.getConnections()
         }))
       }
     },
     onReceiveData: (id: string, data: unknown) => {
       if (data && typeof data === "object" && "type" in data) {
-        if (data.type === "sync_data") {
+        if (data.type === "sync") {
           const action = data as SyncAction;
           const currentConnections = peerConnection.getConnections();
           const peerId = peerConnection.getPeer()?.id;
-          action.data.connections?.map((id) => {
+          action.connections?.map((id) => {
             if (id !==peerId && currentConnections.indexOf(id) === -1) {
               peerConnection.connectPeer(id, peerCallbacks)
             }

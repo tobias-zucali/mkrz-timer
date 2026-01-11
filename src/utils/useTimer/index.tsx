@@ -9,10 +9,24 @@ import {
 } from "@/utils/timeInputHelpers";
 import useAnimationFrame from "@/utils/useAnimationFrame";
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
-import { ClientSyncData } from "@/utils/usePeer";
+import { SyncData } from "@/utils/usePeer";
 
 
-export default function useTimer(params: ClientSyncData) {
+export type TimerState = {
+  elapsedTime: number;
+  isPaused: boolean;
+  totalDuration: number;
+};
+
+export type TimerActions = "reset" | "toggle";
+
+export default function useTimer({
+  params,
+  onAction,
+}: {
+  params: SyncData,
+  onAction: (action: TimerActions, state: TimerState) => void
+}) {
   const paramsRef = useRef(params);
   paramsRef.current = params;
 
@@ -42,19 +56,32 @@ export default function useTimer(params: ClientSyncData) {
     { isPaused }
   );
 
-  const resetTimer = useCallback(() => {
-    setIsPaused(true);
-    setElapsedTime(0);
-  }, []);
-
-  const toggleTimer = useCallback(() => {
-    setIsPaused((prevIsPaused) => {
-      if (!isStarted) {
-        setTotalDuration(getTotalDuration());
-      }
-      return !prevIsPaused;
-    });
-  }, [getTotalDuration, isStarted]);
+  const handleAction = useCallback((action: "reset" | "toggle") => {
+    switch (action) {
+      case "reset":
+        setIsPaused(true);
+        setElapsedTime(0);
+        onAction(action, {
+          elapsedTime: 0,
+          isPaused: true,
+          totalDuration: getTotalDuration(),
+        });
+        break;
+      case "toggle":
+        const newTotalDuration = getTotalDuration();
+        const newIsPaused = !isPaused;
+        if (!isStarted) {
+          setTotalDuration(newTotalDuration);
+        }
+        setIsPaused(newIsPaused);
+        onAction(action, {
+          elapsedTime,
+          isPaused: newIsPaused,
+          totalDuration: newTotalDuration,
+        });
+        break;
+    }
+  }, [elapsedTime, getTotalDuration, isPaused, isStarted, onAction]);
 
   useGlobalKeyUp((event: KeyboardEvent) => {
     const target = event.target;
@@ -65,17 +92,30 @@ export default function useTimer(params: ClientSyncData) {
     switch (event.key) {
       case "r":
       case "Escape":
-        resetTimer();
+        handleAction("reset");
         break;
       case "Enter":
       case " ":
+        handleAction(isTimedOut ? "reset" : "toggle");
+        break;
       case "p":
         if (!isTimedOut) {
-          toggleTimer();
+          handleAction("toggle");
         }
         break;
     }
   });
+
+  const setState = useCallback(({
+    elapsedTime,
+    isPaused,
+    totalDuration,
+  }: TimerState) => {
+    setElapsedTime(elapsedTime);
+    setIsPaused(isPaused);
+    setTotalDuration(totalDuration);
+  }, []);
+
   return useMemo(() => ({
     minutes,
     seconds,
@@ -83,7 +123,23 @@ export default function useTimer(params: ClientSyncData) {
     isPaused,
     isTimedOut,
     elapsedPercentage,
-    resetTimer,
-    toggleTimer,
-  }), [minutes, seconds, isStarted, isPaused, isTimedOut, elapsedPercentage, resetTimer, toggleTimer]);
+    handleAction,
+    setState,
+    state: {
+      elapsedTime,
+      isPaused,
+      totalDuration,
+    },
+  }), [
+    minutes,
+    seconds,
+    isStarted,
+    isPaused,
+    isTimedOut,
+    elapsedPercentage,
+    handleAction,
+    setState,
+    elapsedTime,
+    totalDuration
+  ]);
 }
