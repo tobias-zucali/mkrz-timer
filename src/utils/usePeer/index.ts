@@ -47,7 +47,8 @@ export default function usePeer({
 
   const [remoteLost, setRemoteLost] = useState(false);
 
-  const isRemote = (remoteIdParam === peerId);
+  const isRemoteIdRef = useRef(false);
+  isRemoteIdRef.current = (remoteIdParam === peerId);
 
   const onHandleActionRef = useRef(onHandleAction);
   onHandleActionRef.current = onHandleAction;
@@ -85,7 +86,7 @@ export default function usePeer({
     onOpen: () => setConnections(peerConnection.getConnections()),
     onConnection: (id: string) => {
       setConnections(peerConnection.getConnections())
-      if (isRemote) {
+      if (isRemoteIdRef.current) {
         peerConnection.send(id, getSyncAction({
           params: syncParamsRef.current,
           connections: peerConnection.getConnections(),
@@ -93,7 +94,7 @@ export default function usePeer({
         }))
       }
     },
-    onReceiveData: (id: string, data: unknown) => {
+    onReceiveData: (senderId: string, data: unknown) => {
       if (data && typeof data === "object" && "type" in data) {
         if (data.type === "sync") {
           const action = data as SyncAction;
@@ -122,7 +123,7 @@ export default function usePeer({
       }
       setConnections(peerConnection.getConnections())
     },
-  }), [isRemote, remoteIdParam, syncParamsRef, syncStateRef])
+  }), [remoteIdParam, syncParamsRef, syncStateRef])
 
   const connectRemote = useCallback(async (
     remoteId: string,
@@ -150,28 +151,14 @@ export default function usePeer({
       peerId = await startSession(remoteId);
 
       if (!peerId) {
-        // id taken, use stored id
-        const storedId = window.localStorage.getItem("peerId");
-        if (storedId) {
-          peerId = await startSession(storedId);
-        }
-      }
-
-      if (!peerId) {
         // fall back to fresh id
         peerId = await startSession();
-        if (peerId) {
-          // store id for next time
-          window.localStorage.setItem("peerId", peerId);
-        }
       }
 
       if (peerId && peerId !== remoteId) {
         await peerConnection.connectPeer(remoteId, peerCallbacks);
-        setConnections(peerConnection.getConnections());
       }  
     } catch (error) {
-      window.localStorage.removeItem("peerId");
       console.error(error)
       setError(error as Error)
     }

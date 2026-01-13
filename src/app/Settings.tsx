@@ -5,25 +5,37 @@ import usePeer from "@/utils/usePeer";
 
 import HelpText from "@/components/HelpText";
 import InputField from "@/components/InputField";
-import CopyField from "@/components/InputField/CopyField";
-
+import UrlCopyField from "@/components/InputField/UrlCopyField";
 
 export default function Settings({
   peerData,
   paramData,
   closeSettings,
   handleChange,
-} : {
+}: {
   peerData: ReturnType<typeof usePeer>;
   paramData: ReturnType<typeof useParams>;
   closeSettings: () => void;
   handleChange: (key: string, value: string) => void;
 }) {
-  const { params, setParams, getUrlWithParams } =
-    paramData;
+  const { params, setParams, getUrlWithParams } = paramData;
   const { rid: remoteId } = params;
 
-  const { connectRemote, connections, disconnect, peerId } = peerData;
+  const { connectRemote, disconnect, peerId } = peerData;
+
+  const closeButton = (
+    <div className="flex justify-end">
+      <button
+        onClick={(event) => {
+          closeSettings();
+          event.preventDefault();
+        }}
+        className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground cursor-pointer"
+      >
+        Close Settings
+      </button>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -81,68 +93,69 @@ export default function Settings({
             </div>
             {!remoteId ? (
               <>
-                <CopyField
+                <UrlCopyField
                   label="Timer URL"
                   id="timer_url"
                   containerClassName="px-3"
                   value={getUrlWithParams()}
                 />
-                <button
-                  onClick={(event) => {
-                    closeSettings();
-                    event.preventDefault();
-                  }}
-                  className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground"
-                >
-                  Run Timer
-                </button>
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
-                    onClick={async (event) => {
-                      event.preventDefault();
+                    onClick={async () => {
                       const id = await connectRemote(remoteId);
                       if (!remoteId) {
-                        setParams({ rid: id })
+                        setParams({ rid: id });
                       }
                     }}
+                    type="button"
                   >
                     Switch to remote mode
                   </button>{" "}
                   in case you want to remote control the timer in another window
                   / on another device.
                 </p>
+                {closeButton}
               </>
             ) : (
-              <div className="mb-4">
-                <p className="text-center text-sm text-foreground/80">
-                  Remote peer ID: {peerId}
-                </p>
-                <p>Keep the current window open to control the timer.</p>
-                <p>Open as many client windows on as many devices as you want to view the timer.</p>
-                <CopyField
-                  label="Client URL"
-                  id="timer_url"
-                  containerClassName="px-3"
-                  value={getUrlWithParams(undefined, {
-                    rid: peerId,
-                  }, false)}
-                  showOpenButton={true}
-                />
-                <p>{connections.length > 0 ? `Connected to ${connections.length} client(s)` : "No clients connected yet."}</p>
+              <>
+                {peerData.peerId ? (
+                  <div>
+                    <p>
+                      Open as many client windows on as many devices as you want
+                      to view the timer.
+                    </p>
+                    <UrlCopyField
+                      label="Client URL"
+                      id="timer_url"
+                      containerClassName="px-3"
+                      value={getUrlWithParams(
+                        undefined,
+                        {
+                          rid: peerId,
+                        },
+                        false
+                      )}
+                      showOpenButton={true}
+                    />
+                  </div>
+                ) : (
+                  <p>Connecting to server...</p>
+                )}
                 <p>
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
-                    onClick={(event) => {
+                    onClick={() => {
                       disconnect();
-                      event.preventDefault();
                       setParams({ rid: undefined });
                     }}
+                    type="button"
                   >
                     End remote mode
                   </button>
                 </p>
-              </div>
+                {closeButton}
+              </>
             )}
           </div>
         </form>

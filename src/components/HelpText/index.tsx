@@ -16,7 +16,7 @@ export default function HelpText({
       <h2 className="text-lg font-bold">Keyboard Shortcuts</h2>
       <table className="table-auto border-collapse border border-foreground w-full mt-4">
         <thead>
-          <tr>
+          <tr className="bg-foreground/20">
             <th className="border border-foreground px-4 py-2 text-left">Key</th>
             <th className="border border-foreground px-4 py-2 text-left">Action</th>
           </tr>
@@ -27,8 +27,12 @@ export default function HelpText({
             <td className="border border-foreground px-4 py-2">Reset the timer</td>
           </tr>
           <tr>
-            <td className="border border-foreground px-4 py-2"><em className="font-bold">Enter</em> / <em className="font-bold">Space</em> / <em className="font-bold">P</em></td>
+            <td className="border border-foreground px-4 py-2"><em className="font-bold">P</em></td>
             <td className="border border-foreground px-4 py-2">Start/Pause the timer</td>
+          </tr>
+          <tr>
+            <td className="border border-foreground px-4 py-2"><em className="font-bold">Enter</em> / <em className="font-bold">Space</em></td>
+            <td className="border border-foreground px-4 py-2">Start/Pause the timer and reset on timeout</td>
           </tr>
         </tbody>
       </table>
