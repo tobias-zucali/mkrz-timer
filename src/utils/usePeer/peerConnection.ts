@@ -2,32 +2,65 @@ import Peer, { DataConnection, PeerErrorType, PeerError } from "peerjs";
 
 let peer: Peer | undefined;
 
-const connectionMap: Map<string, DataConnection> = new Map<
+const connectionMap = new Map<
   string,
-  DataConnection
+  {
+    lastPing: number;
+    conn: DataConnection;
+    isAlive: boolean;
+  }
 >();
+
+const pingAction = {
+  type: "ping",
+};
+
+const pongAction = {
+  type: "pong",
+};
+
+const ALIVE_TIMEOUT = 2000; // ms
+const PING_INTERVAL = 1000; // ms
 
 const initializeConnection = (conn: DataConnection, {
     onError,
     onReceiveData,
     onConnectionClose,
     onOpen,
+    onConnectionsChange,
   }: {
     onError: (error: Error, id?: string) => void;
     onReceiveData: (id: string, data: unknown) => void;
     onConnectionClose?: (id: string) => void;
     onOpen?: (id: string) => void;
+    onConnectionsChange?: (connections: string[]) => void;
   }) => {
   const id = conn.peer
-  connectionMap.set(id, conn);
+  connectionMap.set(id, {
+    lastPing: Date.now(), conn,
+    isAlive: true
+  });
+  onConnectionsChange?.(Array.from(connectionMap.keys()));
   onOpen?.(id);
 
   conn.on("close", () => {
     console.log("Connection closed:", id);
     connectionMap.delete(id);
+    onConnectionsChange?.(Array.from(connectionMap.keys()));
     onConnectionClose?.(id);
   });
   conn.on("data", (data) => {
+    if (data && typeof data === "object" && "type" in data) {
+      switch(data.type) {
+        case "pong":
+          connectionMap.set(id, { lastPing: Date.now(), conn, isAlive: true });
+          return;
+        case "ping":
+          connectionMap.set(id, { lastPing: Date.now(), conn, isAlive: true });
+          conn.send(pongAction);
+          return;
+      }
+    }
     console.log("Incoming data:", id, data);
     onReceiveData?.(id, data);
   });
@@ -49,6 +82,7 @@ const peerConnection = {
     onReceiveData,
     onConnectionClose,
     onClose,
+    onConnectionsChange,
   }: {
     id?: string;
     onError: (error: Error, id?: string) => void;
@@ -56,9 +90,11 @@ const peerConnection = {
     onReceiveData: (id: string, data: unknown) => void;
     onClose?: (id: string) => void;
     onConnectionClose?: (id: string) => void;
+    onConnectionsChange?: (connections: string[]) => void;
   }) =>
     new Promise<string>((resolve, reject) => {
-      let isResolved = false;
+      let isHandled = false;
+      let interval: number;
       try {
         let peerId = id;
         peer = new Peer(peerId);
@@ -67,19 +103,49 @@ const peerConnection = {
             console.log("PeerSession Open:", id);
             peerId = id;
             resolve(id);
-            isResolved = true;
+            isHandled = true;
+
+            interval = window.setInterval(() => {
+              const now = Date.now();
+              for (const { conn, lastPing } of connectionMap.values()) {
+                if (now - lastPing >= PING_INTERVAL) {
+                  conn.send(pingAction);
+                }
+              }
+
+              let connectionsChanged = false;
+              for (const [id, { conn, lastPing, isAlive }] of connectionMap.entries()) {
+                if (now - lastPing > ALIVE_TIMEOUT) {
+                  if (isAlive === true) {
+                    console.log("Connection timed out:", id);
+                    connectionMap.set(id, { lastPing, conn: conn, isAlive: false });
+                    connectionsChanged = true;
+                  }
+                } else {
+                  if (isAlive === false) {
+                    connectionMap.set(id, { lastPing, conn: conn, isAlive: true });
+                    console.log("Connection alive again:", id);
+                    connectionsChanged = true;
+                  }
+                }
+              }
+              if (connectionsChanged) {
+                onConnectionsChange?.(peerConnection.getConnections());
+              }
+            }, PING_INTERVAL);
           })
           .on("error", (error) => {
             console.log("PeerSession Error:", error);
-            if (isResolved) {
+            if (isHandled) {
               onError?.(error);
             }
             reject(error);
-            isResolved = true;
+            isHandled = true;
           })
           .on("close", () => {
             console.log("PeerSession Closed:", peerId);
             onClose?.(peerId);
+            window.clearInterval(interval);
           })
           .on("connection", (conn) => {
             console.log("PeerSession incoming connection:", conn.peer);
@@ -88,6 +154,7 @@ const peerConnection = {
                 onError,
                 onReceiveData,
                 onConnectionClose,
+                onConnectionsChange,
               })
               onConnection?.(conn.peer);
             })
@@ -95,7 +162,7 @@ const peerConnection = {
       } catch (err) {
         console.log(err);
         reject(err);
-        isResolved = true;
+        isHandled = true;
       }
     }),
   closePeerSession: () =>
@@ -105,6 +172,7 @@ const peerConnection = {
           peer.destroy();
           peer = undefined;
         }
+        connectionMap.clear();
         resolve();
       } catch (err) {
         console.log(err);
@@ -129,7 +197,6 @@ const peerConnection = {
           conn
             .on("open", function () {
               console.log("Connect to: " + id);
-              connectionMap.set(id, conn);
               peer?.removeListener("error", handlePeerError);
               initializeConnection(conn, peerCallbacks)
               resolve();
@@ -156,16 +223,19 @@ const peerConnection = {
         reject(err);
       }
     }),
-  send: (id: string, data: unknown): Promise<void> =>
-    new Promise((resolve, reject) => {
+  send: async (id: string, data: unknown) => {
       if (!connectionMap.has(id)) {
-        reject(new Error("Connection didn't exist"));
+        throw new Error("Connection didn't exist");
       }
+      const connectionInfo = connectionMap.get(id);
+      if (connectionInfo) {
+        return peerConnection.sendToConn(connectionInfo.conn, data);
+      }
+    },
+  sendToConn: (conn: DataConnection, data: unknown): Promise<void> =>
+    new Promise((resolve, reject) => {
       try {
-        const conn = connectionMap.get(id);
-        if (conn) {
-          conn.send(data);
-        }
+        conn.send(data);
       } catch (err) {
         reject(err);
       }
@@ -173,12 +243,16 @@ const peerConnection = {
     }),
   sendAll: async (data: unknown) =>
     Promise.all(
-      connectionMap.keys().map((id) => peerConnection.send(id, data))
+      peerConnection.getConnections().map((id) => peerConnection.send(id, data))
     ),
   getConnections: () => {
-    const connections = connectionMap.keys().toArray();
-    console.log("Current connections:", connections);
-    return connections;
+    const connectionsAlive: string[] = [];
+    for (const [id, { isAlive }] of connectionMap.entries()) {
+      if (isAlive) {
+        connectionsAlive.push(id);
+      }
+    }
+    return connectionsAlive;
   },
 };
 

@@ -83,9 +83,8 @@ export default function usePeer({
 
   const peerCallbacks = useMemo(() => ({
     onError: setError,
-    onOpen: () => setConnections(peerConnection.getConnections()),
+    onOpen: () => {},
     onConnection: (id: string) => {
-      setConnections(peerConnection.getConnections())
       if (isRemoteIdRef.current) {
         peerConnection.send(id, getSyncAction({
           params: syncParamsRef.current,
@@ -96,24 +95,25 @@ export default function usePeer({
     },
     onReceiveData: (senderId: string, data: unknown) => {
       if (data && typeof data === "object" && "type" in data) {
-        if (data.type === "sync") {
-          const action = data as SyncAction;
-          const currentConnections = peerConnection.getConnections();
-          const peerId = peerConnection.getPeer()?.id;
-          action.connections?.map((id) => {
-            if (id !==peerId && currentConnections.indexOf(id) === -1) {
-              peerConnection.connectPeer(id, peerCallbacks)
-            }
-          })
-          onHandleActionRef.current(action);
-          return;
+        switch (data.type) {
+          case "sync": {
+            const action = data as SyncAction;
+            const currentConnections = peerConnection.getConnections();
+            const peerId = peerConnection.getPeer()?.id;
+            action.connections?.map((id) => {
+              if (id !==peerId && currentConnections.indexOf(id) === -1) {
+                peerConnection.connectPeer(id, peerCallbacks)
+              }
+            })
+            onHandleActionRef.current(action);
+            return;
+          }
         }
       }
       console.warn("handleAction: Unknown action received:", data);
     },
     onClose: (id: string) => {
       console.log("usePeer onClose", id)
-      setConnections(peerConnection.getConnections())
     },
     onConnectionClose: (id: string) => {
       console.log("usePeer onConnectionClose", id)
@@ -121,7 +121,6 @@ export default function usePeer({
         console.log("usePeer remote lost", id)
         setRemoteLost(true);
       }
-      setConnections(peerConnection.getConnections())
     },
   }), [remoteIdParam, syncParamsRef, syncStateRef])
 
@@ -133,6 +132,9 @@ export default function usePeer({
         const peerId = await peerConnection.startPeerSession({
           id: id || "",
           ...peerCallbacks,
+          onConnectionsChange(connections) {
+            setConnections(connections);
+          },
         })
         return peerId;
       } catch (error) {
