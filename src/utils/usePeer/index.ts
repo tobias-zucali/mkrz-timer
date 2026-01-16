@@ -122,6 +122,10 @@ export default function usePeer({
         setRemoteLost(true);
       }
     },
+    onConnectionsChange(connections: string[]) {
+      console.log("onConnectionsChange", connections);
+      setConnections(connections);
+    }
   }), [remoteIdParam, syncParamsRef, syncStateRef])
 
   const connectRemote = useCallback(async (
@@ -132,9 +136,6 @@ export default function usePeer({
         const peerId = await peerConnection.startPeerSession({
           id: id || "",
           ...peerCallbacks,
-          onConnectionsChange(connections) {
-            setConnections(connections);
-          },
         })
         return peerId;
       } catch (error) {
