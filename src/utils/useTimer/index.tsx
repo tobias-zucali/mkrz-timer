@@ -10,6 +10,7 @@ import {
 import useAnimationFrame from "@/utils/useAnimationFrame";
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp";
 import { SyncParams } from "@/utils/usePeer";
+import debug from "@/utils/debug";
 
 
 export type TimerState = {
@@ -46,7 +47,7 @@ export default function useTimer({
     if (isTimedOut) {
       new Audio("/sounds/Attention.mp3").play().catch((error) => {
         if (error instanceof DOMException && error.name === "NotAllowedError") {
-          console.warn("Autoplay prevented");
+          debug.warn("Autoplay prevented");
           return;
         }
       });

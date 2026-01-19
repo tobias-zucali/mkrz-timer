@@ -3,6 +3,7 @@ import { PeerError, PeerErrorType } from "peerjs";
 
 import PeerConnection from "./PeerConnection";
 import { TimerState } from "@/utils/useTimer";
+import debug from "@/utils/debug";
 
 export type SyncParams = {
   m: string;
@@ -47,10 +48,12 @@ export default function usePeer({
   const [peerId, setPeerId] = useState<string | undefined>();
 
   const memoRefs = useRef({
+    connections,
     onHandleAction,
     remoteIdParam,
   });
   memoRefs.current = {
+    connections,
     onHandleAction,
     remoteIdParam,
   };
@@ -58,12 +61,12 @@ export default function usePeer({
 
   const peer = useMemo(() => {
     const newPeer = new PeerConnection({
-      onError: setError,
-      onOpen: () => { },
-      onConnection: (id: string) => {
+      onError: debug.wrap("usePeer onError", setError),
+      onOpen: debug.wrap("usePeer onOpen", () => { }),
+      onConnection: debug.wrap("usePeer onConnection", (id: string) => {
         const isRemote = (memoRefs.current?.remoteIdParam === newPeer.getPeerId());
-        console.log("usePeer onConnection", id, "isRemote:", isRemote);
         if (isRemote) {
+          debug.log("isRemote:", isRemote);
           newPeer.send(
             id,
             getSyncAction({
@@ -73,21 +76,25 @@ export default function usePeer({
             })
           );
         }
-      },
-      onReceiveData: (senderId: string, data: unknown) => {
-        console.log("usePeer onReceiveData", senderId, data);
+      }),
+      onReceiveData: debug.wrap("usePeer onReceiveData", (senderId: string, data: unknown) => {
         if (data && typeof data === "object" && "type" in data) {
           switch (data.type) {
             case "sync": {
               const action = data as SyncAction;
-              const currentConnections = newPeer.getConnections();
               const peerId = newPeer.getPeerId();
               action.connections?.map((id) => {
                 if (
                   id !== peerId &&
-                  currentConnections.indexOf(id) === -1
+                  memoRefs.current.connections.indexOf(id) === -1
                 ) {
-                  newPeer.connectPeer(id);
+                  if (newPeer.getConnections().indexOf(id) !== -1) {
+                    debug.log("usePeer onReceiveData connect missing peer", id);
+                    newPeer.connectPeer(id);
+                  } else {
+                    debug.log("usePeer onReceiveData sync missing peer", id);
+                    setConnections((curr) => [...curr, id]);
+                  }
                 }
               });
               memoRefs.current.onHandleAction(action);
@@ -95,23 +102,19 @@ export default function usePeer({
             }
           }
         }
-        console.warn("handleAction: Unknown action received:", data);
-      },
-      onClose: (id?: string) => {
+      }),
+      onClose: debug.wrap("usePeer onClose", (id?: string) => {
         setPeerId(undefined);
-        console.log("usePeer onClose", id);
-      },
-      onConnectionClose: (id: string) => {
-        console.log("usePeer onConnectionClose", id);
+      }),
+      onConnectionClose: debug.wrap("usePeer onConnectionClose", (id: string) => {
         if (memoRefs.current.remoteIdParam === id) {
-          console.log("usePeer remote lost", id);
+          debug.log("remote lost", id);
           setRemoteLost(true);
         }
-      },
-      onConnectionsChange(connections: string[]) {
-        console.log("onConnectionsChange", connections);
+      }),
+      onConnectionsChange: debug.wrap("usePeer onConnectionsChange", (connections: string[]) => {
         setConnections(connections);
-      },
+      }),
     });
     return newPeer;
   }, [syncParamsRef, syncStateRef]);
@@ -124,24 +127,25 @@ export default function usePeer({
       keys?: string[];
       state?: Partial<TimerState>;
     }) => {
+      debug.log("usePeer syncAll", { keys, state });
       peer.sendAll(
         getSyncAction({
           params: {
             ...(keys
               ? keys.reduce((prev, key) => {
-                  if (Object.hasOwn(syncParamsRef.current, key)) {
-                    return {
-                      ...prev,
-                      [key]: syncParamsRef.current[key as keyof SyncParams],
-                    };
-                  }
-                  console.warn(`usePeer syncAll: key ${key} not found`, {
-                    keys,
-                    syncParams: syncParamsRef.current,
-                  });
-                  return prev;
-                }, {})
-              : syncParamsRef.current),
+                if (Object.hasOwn(syncParamsRef.current, key)) {
+                  return {
+                    ...prev,
+                    [key]: syncParamsRef.current[key as keyof SyncParams],
+                  };
+                }
+                debug.warn(`usePeer syncAll: key ${key} not found`, {
+                  keys,
+                  syncParams: syncParamsRef.current,
+                });
+                return prev;
+              }, {})
+            : syncParamsRef.current),
           },
           connections: peer.getConnections(),
           state: {
@@ -186,7 +190,7 @@ export default function usePeer({
         setPeerId(peerId);
         return peerId;
       } catch (error) {
-        console.error(error);
+        debug.error(error);
         setError(error as Error);
       }
     },
@@ -206,7 +210,7 @@ export default function usePeer({
 
   useEffect(() => {
     if (remoteLost) {
-      console.log("Reconnecting to remote peer...", remoteIdParam);
+      debug.log("Reconnecting to remote peer...", remoteIdParam);
       if (remoteIdParam) {
         connectRemote(remoteIdParam);
       }
@@ -218,6 +222,7 @@ export default function usePeer({
     () => ({
       connectRemote,
       connections,
+      peer: peer,
       disconnect: () => peer.closePeerSession(),
       error,
       peerId,

@@ -9,6 +9,8 @@ import usePeer, { SyncParams } from "@/utils/usePeer";
 import Settings from "./Settings";
 import CloseButton from "./CloseButton";
 import { useEffect, useRef, useState } from "react";
+import debug, { IS_DEBUGGING } from "@/utils/debug";
+
 
 export default function App() {
   const syncStateRef = useRef<TimerState>({} as TimerState);
@@ -80,12 +82,12 @@ export default function App() {
         }
       } else {
         // handle other actions if needed
-        console.error("Unhandled action:", action);
+        debug.error("Unhandled action:", action);
       }
     },
   });
 
-  const { connections, syncAll, error } = peerData;
+  const { connections, peer, syncAll, error, peerId } = peerData;
 
   // debounced sync params
   useEffect(() => {
@@ -107,6 +109,13 @@ export default function App() {
   useEffect(() => {
     setErrorText(error ? error.toString() : null);
   }, [error]);
+
+  // if (connections.length !== peer.getConnections().length) {
+  //   debug.log("Connections length mismatch", connections, peer.getConnections());
+  // }
+  // if (connections.length !== peer.getAllConnections().length) {
+  //   debug.log("All Connections length mismatch", connections, peer.getAllConnections());
+  // }
 
   return (
     <>
@@ -142,6 +151,13 @@ export default function App() {
             onClick={() => setErrorText(null)}
           />
           {errorText}
+        </div>
+      )}
+      { IS_DEBUGGING && (
+        <div className="absolute bottom-4 left-4 right-4 bg-blue-700 rounded-xl px-8 py-3 text-white font-bold z-50">
+          {connections.length} Connections, {peerData.peerId === remoteIdParam ? "main , " : ""}me {peerId}): {peer.getAllConnections().map(({id, isAlive}) => (
+            <p key={id}>{`${id} (${isAlive ? "alive" : "lost"})`}</p>
+          ))}
         </div>
       )}
     </>

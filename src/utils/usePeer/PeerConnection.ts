@@ -1,4 +1,5 @@
 import Peer, { DataConnection, PeerErrorType, PeerError } from "peerjs";
+import debug from "@/utils/debug";
 
 class PeerConnection {
   private peer: Peer | undefined;
@@ -66,7 +67,7 @@ class PeerConnection {
       ] of this.connectionMap.entries()) {
         if (now - lastPing > this.ALIVE_TIMEOUT) {
           if (isAlive === true) {
-            console.log("Connection timed out:", id);
+            debug.log("Connection timed out:", id);
             this.connectionMap.set(id, {
               lastPing,
               conn: conn,
@@ -81,7 +82,7 @@ class PeerConnection {
               conn: conn,
               isAlive: true,
             });
-            console.log("Connection alive again:", id);
+            debug.log("Connection alive again:", id);
             connectionsChanged = true;
           }
         }
@@ -98,14 +99,14 @@ class PeerConnection {
         this.peer = id ? new Peer(id) : new Peer();
         this.peer
           .on("open", (id) => {
-            console.log("PeerSession Open:", id);
+            debug.log("PeerSession Open:", id);
             interval = window.setInterval(checkConnectionsChanged, this.PING_INTERVAL);
             isInitialized = true;
 
             resolve(id);
           })
           .on("error", (error) => {
-            console.log("PeerSession Error:", error);
+            debug.log("PeerSession Error:", error);
             window.clearInterval(interval);
             if (isInitialized) {
               this.onError?.(error);
@@ -114,7 +115,7 @@ class PeerConnection {
             }
           })
           .on("close", () => {
-            console.log("PeerSession Closed");
+            debug.log("PeerSession Closed");
             window.clearInterval(interval);
             if (isInitialized) {
               this.onClose?.();
@@ -123,14 +124,14 @@ class PeerConnection {
             }
           })
           .on("connection", (conn) => {
-            console.log("PeerSession incoming connection:", conn.peer);
+            debug.log("PeerSession incoming connection:", conn.peer);
             conn.on("open", () => {
               this.initializeConnection(conn);
               this.onConnection?.(conn.peer);
             });
           });
       } catch (errror) {
-        console.log(errror);
+        debug.log(errror);
         reject(errror);
       }
     });
@@ -149,7 +150,7 @@ class PeerConnection {
     this.onOpen?.();
 
     conn.on("close", () => {
-      console.log("Connection closed:", id);
+      debug.log("Connection closed:", id);
       this.connectionMap.delete(id);
       this.onConnectionsChange(Array.from(this.connectionMap.keys()));
       this.onConnectionClose?.(id);
@@ -166,15 +167,15 @@ class PeerConnection {
             return;
         }
       }
-      console.log("Incoming data:", id, data);
+      debug.log("Incoming data:", id, data);
       this.onReceiveData?.(id, data);
     });
     conn.on("error", (error) => {
-      console.log("Connection Error:", error, id);
+      debug.log("Connection Error:", error, id);
       this.onError?.(error, id);
     });
     conn.on("iceStateChanged", (state) => {
-      console.log("Connection state change:", state, id);
+      debug.log("Connection state change:", state, id);
     });
   }
 
@@ -192,7 +193,7 @@ class PeerConnection {
         this.connectionMap.clear();
         resolve();
       } catch (err) {
-        console.log(err);
+        debug.log(err);
         reject(err);
       }
     });
@@ -217,13 +218,13 @@ class PeerConnection {
         } else {
           conn
             .on("open", () => {
-              console.log("Connect to: " + id);
+              debug.log("Connect to: " + id);
               this.peer?.removeListener("error", handlePeerError);
               this.initializeConnection(conn);
               resolve();
             })
             .on("error", (err) => {
-              console.log(err);
+              debug.log(err);
               this.peer?.removeListener("error", handlePeerError);
               reject(err);
             });
@@ -276,6 +277,14 @@ class PeerConnection {
       if (isAlive) {
         connectionsAlive.push(id);
       }
+    }
+    return connectionsAlive;
+  }
+
+  public getAllConnections() {
+    const connectionsAlive: Array<{ id: string; isAlive: boolean }> = [];
+    for (const [id, { isAlive }] of this.connectionMap.entries()) {
+      connectionsAlive.push({ id, isAlive });
     }
     return connectionsAlive;
   }
