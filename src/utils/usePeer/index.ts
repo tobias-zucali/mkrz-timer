@@ -5,6 +5,7 @@ import PeerConnection from "./PeerConnection";
 import { TimerState } from "@/utils/useTimer";
 import debug from "@/utils/debug";
 
+
 export type SyncParams = {
   m: string;
   s: string;
@@ -47,16 +48,16 @@ export default function usePeer({
   const [remoteLost, setRemoteLost] = useState(false);
   const [peerId, setPeerId] = useState<string | undefined>();
 
-  const memoRefs = useRef({
+  const isRemote = (peerId && remoteIdParam === peerId);
+
+  const currentMemoRefs = {
     connections,
     onHandleAction,
     remoteIdParam,
-  });
-  memoRefs.current = {
-    connections,
-    onHandleAction,
-    remoteIdParam,
-  };
+    isRemote,
+  }
+  const memoRefs = useRef(currentMemoRefs);
+  memoRefs.current = currentMemoRefs;
 
 
   const peer = useMemo(() => {
@@ -64,11 +65,8 @@ export default function usePeer({
       onError: debug.wrap("usePeer onError", setError),
       onOpen: debug.wrap("usePeer onOpen", () => { }),
       onConnection: debug.wrap("usePeer onConnection", (id: string) => {
-        const isRemote = (memoRefs.current?.remoteIdParam === newPeer.getPeerId());
-        if (isRemote) {
-          debug.log("isRemote:", isRemote);
-          newPeer.send(
-            id,
+        if (memoRefs.current.isRemote) {
+          newPeer.sendAll(
             getSyncAction({
               params: syncParamsRef.current,
               connections: newPeer.getConnections(),
@@ -83,7 +81,13 @@ export default function usePeer({
             case "sync": {
               const action = data as SyncAction;
               const peerId = newPeer.getPeerId();
-              action.connections?.map((id) => {
+
+              const connectionsToCheck = [
+                ...(action.connections || []),
+                senderId
+              ].filter((id, index, self) => self.indexOf(id) === index); // unique
+
+              connectionsToCheck.map((id) => {
                 if (
                   id !== peerId &&
                   memoRefs.current.connections.indexOf(id) === -1
@@ -98,12 +102,20 @@ export default function usePeer({
                 }
               });
               memoRefs.current.onHandleAction(action);
+              if (memoRefs.current.isRemote) {
+                newPeer.getConnections().forEach((connId) => {
+                  if (connId !== senderId) {
+                    newPeer.send(connId, data);
+                  }
+                });
+              }
               return;
             }
           }
         }
       }),
       onClose: debug.wrap("usePeer onClose", (id?: string) => {
+        debug.warn("Peer closed", id);
         setPeerId(undefined);
       }),
       onConnectionClose: debug.wrap("usePeer onConnectionClose", (id: string) => {
