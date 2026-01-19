@@ -1,16 +1,41 @@
 import Peer, { DataConnection, PeerErrorType, PeerError } from "peerjs";
 import debug from "@/utils/debug";
 
+
+type ConnectionInfo = {
+  lastPing: number;
+  conn: DataConnection;
+  isAlive: boolean;
+};
+
 class PeerConnection {
   private peer: Peer | undefined;
   private connectionMap = new Map<
     string,
-    {
-      lastPing: number;
-      conn: DataConnection;
-      isAlive: boolean;
-    }
+    ConnectionInfo
   >();
+
+  private setConnection(conn: DataConnection, isAlive = true) {
+    const prevConn = this.connectionMap.get(conn.peer);
+    this.connectionMap.set(conn.peer, {
+      lastPing: Date.now(),
+      conn,
+      isAlive,
+    });
+    if (!prevConn || prevConn.isAlive !== isAlive) {
+      this.onConnectionsChange(this.getConnections());
+    }
+  }
+
+  private deleteConnection(id: string) {
+    this.connectionMap.delete(id);
+    this.onConnectionsChange(this.getConnections());
+  }
+
+  private clearConnections() {
+    this.connectionMap.clear();
+    this.onConnectionsChange(this.getConnections());
+  }
 
   private readonly pingAction = { type: "ping" };
   private readonly pongAction = { type: "pong" };
@@ -60,7 +85,6 @@ class PeerConnection {
         }
       }
 
-      let connectionsChanged = false;
       for (const [
         id,
         { conn, lastPing, isAlive },
@@ -68,27 +92,14 @@ class PeerConnection {
         if (now - lastPing > this.ALIVE_TIMEOUT) {
           if (isAlive === true) {
             debug.log("Connection timed out:", id);
-            this.connectionMap.set(id, {
-              lastPing,
-              conn: conn,
-              isAlive: false,
-            });
-            connectionsChanged = true;
+            this.setConnection(conn, false);
           }
         } else {
           if (isAlive === false) {
-            this.connectionMap.set(id, {
-              lastPing,
-              conn: conn,
-              isAlive: true,
-            });
+            this.setConnection(conn, true);
             debug.log("Connection alive again:", id);
-            connectionsChanged = true;
           }
         }
-      }
-      if (connectionsChanged) {
-        this.onConnectionsChange(this.getConnections());
       }
     }
 
@@ -141,17 +152,13 @@ class PeerConnection {
     conn: DataConnection
   ) {
     const id = conn.peer;
-    this.connectionMap.set(id, {
-      lastPing: Date.now(),
-      conn,
-      isAlive: true,
-    });
+    this.setConnection(conn);
     this.onConnectionsChange(Array.from(this.connectionMap.keys()));
     this.onOpen?.();
 
     conn.on("close", () => {
       debug.log("Connection closed:", id);
-      this.connectionMap.delete(id);
+      this.deleteConnection(id);
       this.onConnectionsChange(Array.from(this.connectionMap.keys()));
       this.onConnectionClose?.(id);
     });
@@ -159,10 +166,10 @@ class PeerConnection {
       if (data && typeof data === "object" && "type" in data) {
         switch (data.type) {
           case "pong":
-            this.connectionMap.set(id, { lastPing: Date.now(), conn, isAlive: true });
+            this.setConnection(conn, true);
             return;
           case "ping":
-            this.connectionMap.set(id, { lastPing: Date.now(), conn, isAlive: true });
+            this.setConnection(conn, true);
             conn.send(this.pongAction);
             return;
         }
@@ -190,7 +197,7 @@ class PeerConnection {
           this.peer.destroy();
           this.peer = undefined;
         }
-        this.connectionMap.clear();
+        this.clearConnections();
         resolve();
       } catch (err) {
         debug.log(err);

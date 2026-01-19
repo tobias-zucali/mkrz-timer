@@ -103,6 +103,7 @@ export default function usePeer({
               });
               memoRefs.current.onHandleAction(action);
               if (memoRefs.current.isRemote) {
+                debug.log("is remote, syncing others", senderId, data);
                 newPeer.getConnections().forEach((connId) => {
                   if (connId !== senderId) {
                     newPeer.send(connId, data);
