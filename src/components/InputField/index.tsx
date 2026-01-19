@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "classnames"
 
 export default function InputField({
   containerClassName,
@@ -8,11 +8,11 @@ export default function InputField({
   children,
   ...otherProps
 }: {
-  containerClassName?: string;
-  label: string;
-  id: string;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  children?: React.ReactNode;
+  containerClassName?: string
+  label: string
+  id: string
+  onChange?: React.ChangeEventHandler<HTMLInputElement>
+  children?: React.ReactNode
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className={classNames("pt-2 w-full", containerClassName)}>
@@ -34,12 +34,12 @@ export default function InputField({
             "bg-foreground/15 text-base text-foreground",
             "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
             "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
-            className
+            className,
           )}
           {...otherProps}
         />
         {children}
       </div>
     </div>
-  );
+  )
 }

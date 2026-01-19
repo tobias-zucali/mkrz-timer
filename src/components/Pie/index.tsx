@@ -1,25 +1,22 @@
 type Props = {
-  percentage: number;
-  style?: React.StyleHTMLAttributes<SVGElement>;
+  percentage: number
+  style?: React.StyleHTMLAttributes<SVGElement>
 }
 
-function Pie({
-  percentage,
-  ...otherProps
-}: Props) {
-  const diameter = 10;
-  const sideLength = 2 * diameter;
-  const fullCircle = Math.PI * diameter;
+function Pie({ percentage, ...otherProps }: Props) {
+  const diameter = 10
+  const sideLength = 2 * diameter
+  const fullCircle = Math.PI * diameter
   return (
     <svg
       className="w-full h-full"
-      height={ sideLength }
+      height={sideLength}
       style={{
-        height: '100%',
-        width: '100%',
+        height: "100%",
+        width: "100%",
       }}
       viewBox={`0 0 ${sideLength} ${sideLength}`}
-      width={ sideLength }
+      width={sideLength}
       {...otherProps}
     >
       <circle
@@ -28,11 +25,11 @@ function Pie({
         cx={diameter}
         cy={diameter}
         strokeWidth={diameter}
-        strokeDasharray={`${fullCircle * percentage / 100} ${fullCircle}`}
+        strokeDasharray={`${(fullCircle * percentage) / 100} ${fullCircle}`}
         transform="scale(-1 1) rotate(270, 10, 10) translate(0 -20)"
       />
     </svg>
-  );
+  )
 }
 
-export default Pie;
+export default Pie

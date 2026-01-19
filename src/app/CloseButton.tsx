@@ -1,4 +1,4 @@
-import { HTMLAttributes } from "react";
+import { HTMLAttributes } from "react"
 
 export default function CloseButton({
   className,
@@ -7,7 +7,10 @@ export default function CloseButton({
 }: HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={className || "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"}
+      className={
+        className ||
+        "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"
+      }
       title={title}
       {...otherProps}
     >
@@ -29,5 +32,5 @@ export default function CloseButton({
         />
       </svg>
     </button>
-  );
+  )
 }

@@ -6,11 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --check --ignore-path .gitignore --ignore-path .prettierignore .",
+    "format:fix": "prettier --write --ignore-path .gitignore --ignore-path .prettierignore ."
   },
   "dependencies": {
+    "eslint-config-prettier": "^10.1.8",
     "next": "16.1.0",
     "peerjs": "^1.5.5",
+    "prettier": "^3.8.0",
     "react": "19.2.3",
     "react-contenteditable": "^3.3.7",
     "react-dom": "19.2.3"

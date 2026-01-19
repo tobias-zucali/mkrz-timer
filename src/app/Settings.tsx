@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import useParams from "@/utils/useParams";
-import usePeer from "@/utils/usePeer";
+import useParams from "@/utils/useParams"
+import usePeer from "@/utils/usePeer"
 
-import HelpText from "@/components/HelpText";
-import InputField from "@/components/InputField";
-import UrlCopyField from "@/components/InputField/UrlCopyField";
+import HelpText from "@/components/HelpText"
+import InputField from "@/components/InputField"
+import UrlCopyField from "@/components/InputField/UrlCopyField"
 
 export default function Settings({
   peerData,
@@ -13,29 +13,29 @@ export default function Settings({
   closeSettings,
   handleChange,
 }: {
-  peerData: ReturnType<typeof usePeer>;
-  paramData: ReturnType<typeof useParams>;
-  closeSettings: () => void;
-  handleChange: (key: string, value: string) => void;
+  peerData: ReturnType<typeof usePeer>
+  paramData: ReturnType<typeof useParams>
+  closeSettings: () => void
+  handleChange: (key: string, value: string) => void
 }) {
-  const { params, setParams, getUrlWithParams } = paramData;
-  const { rid: remoteId } = params;
+  const { params, setParams, getUrlWithParams } = paramData
+  const { rid: remoteId } = params
 
-  const { connectRemote, disconnect, peerId } = peerData;
+  const { connectRemote, disconnect, peerId } = peerData
 
   const closeButton = (
     <div className="flex justify-end">
       <button
         onClick={(event) => {
-          closeSettings();
-          event.preventDefault();
+          closeSettings()
+          event.preventDefault()
         }}
         className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground cursor-pointer"
       >
         Close Settings
       </button>
     </div>
-  );
+  )
 
   return (
     <div className="flex min-h-screen items-center justify-center font-sans">
@@ -103,9 +103,9 @@ export default function Settings({
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={async () => {
-                      const id = await connectRemote(remoteId);
+                      const id = await connectRemote(remoteId)
                       if (!remoteId) {
-                        setParams({ rid: id });
+                        setParams({ rid: id })
                       }
                     }}
                     type="button"
@@ -134,7 +134,7 @@ export default function Settings({
                         {
                           rid: peerId,
                         },
-                        false
+                        false,
                       )}
                       showOpenButton={true}
                     />
@@ -146,8 +146,8 @@ export default function Settings({
                   <button
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={() => {
-                      disconnect();
-                      setParams({ rid: undefined });
+                      disconnect()
+                      setParams({ rid: undefined })
                     }}
                     type="button"
                   >
@@ -162,5 +162,5 @@ export default function Settings({
         <HelpText />
       </main>
     </div>
-  );
+  )
 }

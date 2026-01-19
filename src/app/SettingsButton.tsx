@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import { HTMLAttributes } from "react";
+import { HTMLAttributes } from "react"
 
 export default function SettingsButton({
   className,
@@ -40,5 +40,5 @@ export default function SettingsButton({
         />
       </svg>
     </button>
-  );
+  )
 }

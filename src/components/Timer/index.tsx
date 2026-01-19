@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import EditableHtml from "@/components/EditableHtml";
-import Pie from "@/components/Pie";
-import DigitalDisplay from "@/components/DigitalDisplay";
-import useTimer from "@/utils/useTimer";
+import EditableHtml from "@/components/EditableHtml"
+import Pie from "@/components/Pie"
+import DigitalDisplay from "@/components/DigitalDisplay"
+import useTimer from "@/utils/useTimer"
 
 export default function Timer({
   title,
   handleChange,
   timer,
-} : {
-  title: string,
-  handleChange: (key: string, value: string) => void,
-  timer: ReturnType<typeof useTimer>,
+}: {
+  title: string
+  handleChange: (key: string, value: string) => void
+  timer: ReturnType<typeof useTimer>
 }) {
   const {
     minutes,
@@ -22,11 +22,11 @@ export default function Timer({
     isTimedOut,
     elapsedPercentage,
     handleAction,
-  } = timer;
+  } = timer
 
   const buttonClassName =
     "bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default " +
-    "px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2";
+    "px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2"
 
   return (
     <div className="flex flex-col h-full">
@@ -69,5 +69,5 @@ export default function Timer({
         </div>
       </div>
     </div>
-  );
+  )
 }

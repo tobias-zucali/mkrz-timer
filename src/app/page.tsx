@@ -1,22 +1,21 @@
-"use client";
+"use client"
 
-import useParams from "@/utils/useParams";
+import useParams from "@/utils/useParams"
 
-import useTimer, { TimerState } from "@/utils/useTimer";
-import Timer from "@/components/Timer";
-import SettingsButton from "./SettingsButton";
-import usePeer, { SyncParams } from "@/utils/usePeer";
-import Settings from "./Settings";
-import CloseButton from "./CloseButton";
-import { useEffect, useRef, useState } from "react";
-import debug, { IS_DEBUGGING } from "@/utils/debug";
-
+import useTimer, { TimerState } from "@/utils/useTimer"
+import Timer from "@/components/Timer"
+import SettingsButton from "./SettingsButton"
+import usePeer, { SyncParams } from "@/utils/usePeer"
+import Settings from "./Settings"
+import CloseButton from "./CloseButton"
+import { useEffect, useRef, useState } from "react"
+import debug, { IS_DEBUGGING } from "@/utils/debug"
 
 export default function App() {
-  const syncStateRef = useRef<TimerState>({} as TimerState);
+  const syncStateRef = useRef<TimerState>({} as TimerState)
 
-  const paramData = useParams();
-  const { params, setParams } = paramData;
+  const paramData = useParams()
+  const { params, setParams } = paramData
 
   const {
     title,
@@ -27,7 +26,7 @@ export default function App() {
     pc,
     m,
     s,
-  } = params;
+  } = params
 
   const syncParams = {
     title,
@@ -36,36 +35,36 @@ export default function App() {
     pc,
     m,
     s,
-  };
+  }
 
-  const syncParamsRef = useRef<SyncParams>(syncParams);
+  const syncParamsRef = useRef<SyncParams>(syncParams)
   // eslint-disable-next-line react-hooks/refs
-  syncParamsRef.current = syncParams;
+  syncParamsRef.current = syncParams
 
   const closeSettings = () => {
-    setParams({ settings: null });
-  };
+    setParams({ settings: null })
+  }
   const openSettings = () => {
-    setParams({ settings: "true" });
-  };
+    setParams({ settings: "true" })
+  }
 
-  const [syncKeys, setSyncKeys] = useState<string[]>([]);
+  const [syncKeys, setSyncKeys] = useState<string[]>([])
 
   const handleChange = (key: string, value: string) => {
-    setParams({ [key]: value });
-    setSyncKeys((curr) => [...curr, key]);
-  };
+    setParams({ [key]: value })
+    setSyncKeys((curr) => [...curr, key])
+  }
 
-  const [syncState, setSyncState] = useState<TimerState>({} as TimerState);
+  const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
 
   const timer = useTimer({
     params: syncParams,
     syncStateRef,
     onAction: (_action, state) => {
-      setSyncState(state);
+      setSyncState(state)
     },
-  });
-  const { setState } = timer;
+  })
+  const { setState } = timer
 
   // handle connection
   const peerData = usePeer({
@@ -75,40 +74,40 @@ export default function App() {
     onHandleAction: (action) => {
       if (action.type === "sync") {
         if (action.params) {
-          setParams(action.params);
+          setParams(action.params)
         }
         if (action.state) {
-          setState(action.state);
+          setState(action.state)
         }
       } else {
         // handle other actions if needed
-        debug.error("Unhandled action:", action);
+        debug.error("Unhandled action:", action)
       }
     },
-  });
+  })
 
-  const { connections, peer, syncAll, error, peerId } = peerData;
+  const { connections, peer, syncAll, error, peerId } = peerData
 
   // debounced sync params
   useEffect(() => {
     const handler = setTimeout(() => {
-      syncAll({ keys: syncKeys });
-    }, 200);
+      syncAll({ keys: syncKeys })
+    }, 200)
 
     return () => {
-      clearTimeout(handler);
-    };
-  }, [syncKeys, syncAll]);
+      clearTimeout(handler)
+    }
+  }, [syncKeys, syncAll])
 
   // immediately sync state
   useEffect(() => {
-    syncAll({ state: syncState });
-  }, [syncState, syncAll]);
+    syncAll({ state: syncState })
+  }, [syncState, syncAll])
 
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null)
   useEffect(() => {
-    setErrorText(error ? error.toString() : null);
-  }, [error]);
+    setErrorText(error ? error.toString() : null)
+  }, [error])
 
   // if (connections.length !== peer.getConnections().length) {
   //   debug.log("Connections length mismatch", connections, peer.getConnections());
@@ -153,13 +152,15 @@ export default function App() {
           {errorText}
         </div>
       )}
-      { IS_DEBUGGING && (
+      {IS_DEBUGGING && (
         <div className="absolute bottom-4 left-4 right-4 bg-blue-700 rounded-xl px-8 py-3 text-white font-bold z-50">
-          {connections.length} Connections, {peerData.peerId === remoteIdParam ? "main , " : ""}me {peerId}): {peer.getAllConnections().map(({id, isAlive}) => (
+          {connections.length} Connections,{" "}
+          {peerData.peerId === remoteIdParam ? "main , " : ""}me {peerId}):{" "}
+          {peer.getAllConnections().map(({ id, isAlive }) => (
             <p key={id}>{`${id} (${isAlive ? "alive" : "lost"})`}</p>
           ))}
         </div>
       )}
     </>
-  );
+  )
 }

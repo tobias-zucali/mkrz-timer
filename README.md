@@ -8,7 +8,6 @@ This project is inspired by the wonderful [Time Timer](https://www.timetimer.com
 
 The timer is deployed at [time.mkrz.at](https://time.mkrz.at).
 
-
 ## Getting Started
 
 First, run the development server:

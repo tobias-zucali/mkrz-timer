@@ -1,29 +1,28 @@
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useEffect, useState } from "react"
 
-import InputField from ".";
-import Link from "next/link";
+import InputField from "."
+import Link from "next/link"
 
-export default function CopyField(
-  {
-    value,
-    showOpenButton = false,
-    ...otherProps
-  }: ComponentProps<typeof InputField> & {
-    showOpenButton?: boolean;
-    value: string;
-  }
-) {
-  const [isCopied, setIsCopied] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+export default function CopyField({
+  value,
+  showOpenButton = false,
+  ...otherProps
+}: ComponentProps<typeof InputField> & {
+  showOpenButton?: boolean
+  value: string
+}) {
+  const [isCopied, setIsCopied] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsClient(true);
+      setIsClient(true)
     }
-  }, []);
+  }, [])
 
-  const buttonClassName = "flex items-center justify-center font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
+  const buttonClassName =
+    "flex items-center justify-center font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
 
   return (
     <InputField
@@ -32,19 +31,17 @@ export default function CopyField(
       readOnly={true}
       disabled={true}
     >
-      {navigator.clipboard &&  (
+      {navigator.clipboard && (
         <button
           className={buttonClassName}
           onClick={() => {
-            navigator.clipboard.writeText(value);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            navigator.clipboard.writeText(value)
+            setIsCopied(true)
+            setTimeout(() => setIsCopied(false), 2000)
           }}
           type="button"
         >
-          <span className={isCopied ? "hidden" : ""}>
-            Copy
-          </span>
+          <span className={isCopied ? "hidden" : ""}>Copy</span>
           <span className={isCopied ? "" : "hidden"}>
             <div className="inline-flex items-center">
               <svg
@@ -79,5 +76,5 @@ export default function CopyField(
         </Link>
       )}
     </InputField>
-  );
+  )
 }

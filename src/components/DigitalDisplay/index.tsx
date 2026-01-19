@@ -1,8 +1,7 @@
-import { useRef } from 'react';
-import classNames from 'classnames';
+import { useRef } from "react"
+import classNames from "classnames"
 
-import styles from './index.module.css';
-
+import styles from "./index.module.css"
 
 function DigitalDisplay({
   isAlert = false,
@@ -14,54 +13,50 @@ function DigitalDisplay({
   seconds,
   ...otherProps
 }: {
-  isAlert?: boolean;
-  minutes: string;
-  onMinutesChange: React.ChangeEventHandler<HTMLInputElement>;
-  onSecondsChange: React.ChangeEventHandler<HTMLInputElement>;
-  seconds: string;
-  isReadonly?: boolean;
-  onBlur?: () => void;
-  style?: React.StyleHTMLAttributes<SVGElement>;
+  isAlert?: boolean
+  minutes: string
+  onMinutesChange: React.ChangeEventHandler<HTMLInputElement>
+  onSecondsChange: React.ChangeEventHandler<HTMLInputElement>
+  seconds: string
+  isReadonly?: boolean
+  onBlur?: () => void
+  style?: React.StyleHTMLAttributes<SVGElement>
 }) {
-  const minuteInputRef = useRef<HTMLInputElement>(null);
-  const secondsInputRef = useRef<HTMLInputElement>(null);
+  const minuteInputRef = useRef<HTMLInputElement>(null)
+  const secondsInputRef = useRef<HTMLInputElement>(null)
 
   const inputClassNames = classNames(
     "inline-block flex-1 text-center w-8 outline-none",
-    styles.noSpinner
-  );
+    styles.noSpinner,
+  )
 
   return (
     <div
       className={classNames(
-        'flex content-center font-mono text-[5em] font-bold relative text-center w-full md:text-[8em]',
-        isReadonly && 'opacity-50',
-        isAlert && classNames(styles.blink, 'text-primary opacity-100'),
+        "flex content-center font-mono text-[5em] font-bold relative text-center w-full md:text-[8em]",
+        isReadonly && "opacity-50",
+        isAlert && classNames(styles.blink, "text-primary opacity-100"),
       )}
       {...otherProps}
     >
       <input
-        className={classNames(inputClassNames, 'text-right')}
+        className={classNames(inputClassNames, "text-right")}
         min="0"
         readOnly={isReadonly}
         ref={minuteInputRef}
         type="number"
         value={minutes}
         onKeyDown={({ key }) => {
-          if (minuteInputRef.current && key === ':') {
-            minuteInputRef.current.focus();
+          if (minuteInputRef.current && key === ":") {
+            minuteInputRef.current.focus()
           }
         }}
         onBlur={onBlur}
         onChange={onMinutesChange}
       />
-      <div
-        className={styles.separator}
-      >
-        {' : '}
-      </div>
+      <div className={styles.separator}>{" : "}</div>
       <input
-        className={classNames(inputClassNames, 'text-left')}
+        className={classNames(inputClassNames, "text-left")}
         max="60"
         min="0"
         onBlur={onBlur}
@@ -72,7 +67,7 @@ function DigitalDisplay({
         value={seconds}
       />
     </div>
-  );
+  )
 }
 
-export default DigitalDisplay;
+export default DigitalDisplay

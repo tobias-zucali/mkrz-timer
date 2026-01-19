@@ -1,27 +1,27 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import ParamStyledBody from "@/components/ParamStyledBody";
+import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css"
+import ParamStyledBody from "@/components/ParamStyledBody"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: "mkrz timer",
   description: "simple time keeping",
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" className="h-full">
@@ -50,9 +50,11 @@ export default function RootLayout({
         {children}
         <a
           className="absolute bottom-4 right-4 underline hover:text-primary"
-          href='https://www.mkrz.at/'
-        >by mkrz</a>
+          href="https://www.mkrz.at/"
+        >
+          by mkrz
+        </a>
       </ParamStyledBody>
     </html>
-  );
+  )
 }
