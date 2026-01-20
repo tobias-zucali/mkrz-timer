@@ -150,13 +150,11 @@ class PeerConnection {
   private initializeConnection(conn: DataConnection) {
     const id = conn.peer
     this.setConnection(conn)
-    this.onConnectionsChange(Array.from(this.connectionMap.keys()))
     this.onOpen?.()
 
     conn.on("close", () => {
       debug.log("Connection closed:", id)
       this.deleteConnection(id)
-      this.onConnectionsChange(Array.from(this.connectionMap.keys()))
       this.onConnectionClose?.(id)
     })
     conn.on("data", (data) => {

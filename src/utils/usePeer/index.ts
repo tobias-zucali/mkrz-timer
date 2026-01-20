@@ -95,10 +95,11 @@ export default function usePeer({
                     id !== peerId &&
                     memoRefs.current.connections.indexOf(id) === -1
                   ) {
-                    if (newPeer.getConnections().indexOf(id) !== -1) {
+                    if (newPeer.getConnections().indexOf(id) === -1) {
                       debug.log(
                         "usePeer onReceiveData connect missing peer",
                         id,
+                        newPeer.getConnections(),
                       )
                       newPeer.connectPeer(id)
                     } else {

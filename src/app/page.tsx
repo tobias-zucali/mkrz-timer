@@ -154,11 +154,17 @@ export default function App() {
       )}
       {IS_DEBUGGING && (
         <div className="absolute bottom-4 left-4 right-4 bg-blue-700 rounded-xl px-8 py-3 text-white font-bold z-50">
-          {connections.length} Connections,{" "}
-          {peerData.peerId === remoteIdParam ? "main , " : ""}me {peerId}):{" "}
-          {peer.getAllConnections().map(({ id, isAlive }) => (
-            <p key={id}>{`${id} (${isAlive ? "alive" : "lost"})`}</p>
-          ))}
+          {peerId ? (
+            <>
+              {connections.length} Connections,{" "}
+              {peerData.peerId === remoteIdParam ? "main , " : ""}id {peerId.slice(-4)}:{" "}
+              {peer.getAllConnections().map(({ id, isAlive }) => (
+                <p key={id}>{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</p>
+              ))}
+            </>
+          ) : (
+            "Not connected"
+          )}
         </div>
       )}
     </>
