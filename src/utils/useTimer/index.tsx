@@ -15,6 +15,7 @@ import debug from "@/utils/debug"
 export type TimerState = {
   elapsedTime: number
   isPaused: boolean
+  isStarted: boolean
   totalDuration: number
 }
 
@@ -39,8 +40,8 @@ export default function useTimer({
 
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [isPaused, setIsPaused] = useState(true)
+  const [isStarted, setIsStarted] = useState(false)
   const [totalDuration, setTotalDuration] = useState<number>(getTotalDuration)
-  const isStarted = elapsedTime > 0
 
   const elapsedPercentage = elapsedTime / totalDuration
   const isTimedOut = elapsedPercentage >= 1
@@ -71,10 +72,12 @@ export default function useTimer({
       switch (action) {
         case "reset":
           setIsPaused(true)
+          setIsStarted(false)
           setElapsedTime(0)
           onAction(action, {
             elapsedTime: 0,
             isPaused: true,
+            isStarted: false,
             totalDuration: getTotalDuration(),
           })
           break
@@ -83,11 +86,14 @@ export default function useTimer({
           const newIsPaused = !isPaused
           if (!isStarted) {
             setTotalDuration(newTotalDuration)
+            setIsStarted(true)
+            setElapsedTime(0)
           }
           setIsPaused(newIsPaused)
           onAction(action, {
             elapsedTime,
             isPaused: newIsPaused,
+            isStarted: true,
             totalDuration: newTotalDuration,
           })
           break
@@ -123,10 +129,11 @@ export default function useTimer({
   })
 
   const setState = useCallback(
-    ({ elapsedTime, isPaused, totalDuration }: TimerState) => {
-      setElapsedTime(elapsedTime)
-      setIsPaused(isPaused)
-      setTotalDuration(totalDuration)
+    ({ elapsedTime, isPaused, isStarted, totalDuration }: TimerState) => {
+      setElapsedTime(() => elapsedTime)
+      setIsPaused(() => isPaused)
+      setIsStarted(() => isStarted)
+      setTotalDuration(() => totalDuration)
     },
     [],
   )
@@ -134,6 +141,7 @@ export default function useTimer({
   syncStateRef.current = {
     elapsedTime,
     isPaused,
+    isStarted,
     totalDuration,
   }
 
