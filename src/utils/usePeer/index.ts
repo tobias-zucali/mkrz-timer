@@ -189,7 +189,7 @@ export default function usePeer({
     async (remoteId: string) => {
       const startSession = async (id?: string) => {
         try {
-          const peerId = await peer?.startSession(id)
+          const peerId = await peer.createPeer(id, true)
           return peerId
         } catch (error) {
           if (error instanceof PeerError) {

@@ -72,7 +72,7 @@ class PeerConnection {
     this.onConnectionsChange = onConnectionsChange
   }
 
-  async startSession(id?: string) {
+  async createPeer(id?: string, force = false) {
     const checkConnectionsChanged = () => {
       const now = Date.now()
       for (const { conn, lastPing } of this.connectionMap.values()) {
@@ -85,7 +85,7 @@ class PeerConnection {
         id,
         { conn, lastPing, isAlive },
       ] of this.connectionMap.entries()) {
-        if (now - lastPing > this.ALIVE_TIMEOUT) {
+        if ((now - lastPing) > this.ALIVE_TIMEOUT) {
           if (isAlive === true) {
             debug.log("Connection timed out:", id)
             this.setConnection(conn, false)
@@ -99,10 +99,18 @@ class PeerConnection {
       }
     }
 
-    return new Promise<string>((resolve, reject) => {
+    const createPeerPromise = new Promise<string>(async (resolve, reject) => {
       let interval: number
       let isInitialized = false
       try {
+        if (this.peer) {
+          if (force) {
+            await this.closePeerSession()
+          } else {
+            reject("Peer already exists")
+            return
+          }
+        }
         this.peer = id ? new Peer(id) : new Peer()
         this.peer
           .on("open", (id) => {
@@ -113,6 +121,7 @@ class PeerConnection {
             )
             isInitialized = true
 
+            window.addEventListener("beforeunload", this.beforeUnload)
             resolve(id)
           })
           .on("error", (error) => {
@@ -127,6 +136,7 @@ class PeerConnection {
           .on("close", () => {
             debug.log("PeerSession Closed")
             window.clearInterval(interval)
+            window.removeEventListener("beforeunload", this.beforeUnload)
             if (isInitialized) {
               this.onClose?.()
             } else {
@@ -145,6 +155,7 @@ class PeerConnection {
         reject(errror)
       }
     })
+    return createPeerPromise
   }
 
   private initializeConnection(conn: DataConnection) {
@@ -167,6 +178,11 @@ class PeerConnection {
             this.setConnection(conn, true)
             conn.send(this.pongAction)
             return
+          case "disconnect":
+            debug.log("Disconnect from:", id.slice(-4))
+            this.deleteConnection(id)
+            conn.close()
+            return
         }
       }
       debug.log("Incoming data:", id, data)
@@ -178,6 +194,15 @@ class PeerConnection {
     })
     conn.on("iceStateChanged", (state) => {
       debug.log("Connection state change:", state, id)
+    })
+  }
+
+  private beforeUnload = () => {
+    this.sendAll({ type: "disconnect" }).catch((err) => {
+      debug.log("Error sending disconnect on unload:", err)
+    })
+    this.closePeerSession().catch((err) => {
+      debug.log("Error closing peer session on unload:", err)
     })
   }
 
