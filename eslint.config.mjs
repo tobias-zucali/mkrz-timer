@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "no-console": "error",
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ])

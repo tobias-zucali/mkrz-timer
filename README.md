@@ -10,10 +10,22 @@ The timer is deployed at [time.mkrz.at](https://time.mkrz.at).
 
 ## Getting Started
 
-First, run the development server:
+Use Node.js 20.9 or newer. This project uses pnpm; avoid mixing in `npm
+install` or `yarn install`, since this repository is locked with
+`pnpm-lock.yaml`.
+
+If pnpm is not available yet, enable Corepack once:
 
 ```bash
-npm run dev
+corepack enable
+corepack prepare pnpm@8.11.0 --activate
+```
+
+Install dependencies and run the development server:
+
+```bash
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

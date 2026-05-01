@@ -46,7 +46,6 @@ function TimerApp() {
   }
 
   const syncParamsRef = useRef<SyncParams>(syncParams)
-  // eslint-disable-next-line react-hooks/refs
   syncParamsRef.current = syncParams
 
   const closeSettings = () => {
