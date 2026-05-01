@@ -23,13 +23,19 @@ class PeerConnection {
     }
   }
 
-  private deleteConnection(id: string) {
+  private deleteConnection(id: string, promoteChange = true) {
+    const { conn } = this.connectionMap.get(id) || {}
+    conn?.close()
     this.connectionMap.delete(id)
-    this.onConnectionsChange(this.getConnections())
+    if (promoteChange) {
+      this.onConnectionsChange(this.getConnections())
+    }
   }
 
   private clearConnections() {
-    this.connectionMap.clear()
+    this.connectionMap.forEach((_value, id) => {
+      this.deleteConnection(id, false)
+    })
     this.onConnectionsChange(this.getConnections())
   }
 
@@ -72,35 +78,37 @@ class PeerConnection {
     this.onConnectionsChange = onConnectionsChange
   }
 
-  async createPeer(id?: string, force = false) {
-    const checkConnectionsChanged = () => {
-      const now = Date.now()
-      for (const { conn, lastPing } of this.connectionMap.values()) {
-        if (now - lastPing >= this.PING_INTERVAL) {
-          conn.send(this.pingAction)
-        }
-      }
 
-      for (const [
-        id,
-        { conn, lastPing, isAlive },
-      ] of this.connectionMap.entries()) {
-        if ((now - lastPing) > this.ALIVE_TIMEOUT) {
-          if (isAlive === true) {
-            debug.log("Connection timed out:", id)
-            this.setConnection(conn, false)
-          }
-        } else {
-          if (isAlive === false) {
-            this.setConnection(conn, true)
-            debug.log("Connection alive again:", id)
-          }
-        }
+  private interval: number | undefined = undefined
+
+  private checkConnectionsChanged() {
+    const now = Date.now()
+    for (const { conn, lastPing } of this.connectionMap.values()) {
+      if (now - lastPing >= this.PING_INTERVAL) {
+        conn.send(this.pingAction)
       }
     }
 
+    for (const [
+      id,
+      { conn, lastPing, isAlive },
+    ] of this.connectionMap.entries()) {
+      if ((now - lastPing) > this.ALIVE_TIMEOUT) {
+        if (isAlive === true) {
+          debug.log("Connection timed out:", id)
+          this.setConnection(conn, false)
+        }
+      } else {
+        if (isAlive === false) {
+          this.setConnection(conn, true)
+          debug.log("Connection alive again:", id)
+        }
+      }
+    }
+  }
+
+  async createPeer(id?: string, force = false) {
     const createPeerPromise = new Promise<string>(async (resolve, reject) => {
-      let interval: number
       let isInitialized = false
       try {
         if (this.peer) {
@@ -111,12 +119,14 @@ class PeerConnection {
             return
           }
         }
+
         this.peer = id ? new Peer(id) : new Peer()
         this.peer
           .on("open", (id) => {
             debug.log("PeerSession Open:", id)
-            interval = window.setInterval(
-              checkConnectionsChanged,
+            window.clearInterval(this.interval)
+            this.interval = window.setInterval(
+              () => this.checkConnectionsChanged(),
               this.PING_INTERVAL,
             )
             isInitialized = true
@@ -126,16 +136,21 @@ class PeerConnection {
           })
           .on("error", (error) => {
             debug.log("PeerSession Error:", error)
-            window.clearInterval(interval)
+            window.clearInterval(this.interval)
             if (isInitialized) {
               this.onError?.(error)
+
+              this.interval = window.setInterval(
+                () => this.createPeer(id, true),
+                2000,
+              )
             } else {
               reject(error)
             }
           })
           .on("close", () => {
             debug.log("PeerSession Closed")
-            window.clearInterval(interval)
+            window.clearInterval(this.interval)
             window.removeEventListener("beforeunload", this.beforeUnload)
             if (isInitialized) {
               this.onClose?.()
@@ -165,7 +180,6 @@ class PeerConnection {
 
     conn.on("close", () => {
       debug.log("Connection closed:", id)
-      this.deleteConnection(id)
       this.onConnectionClose?.(id)
     })
     conn.on("data", (data) => {
