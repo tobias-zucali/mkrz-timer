@@ -58,7 +58,7 @@ export default function usePeer({
   const memoRefs = useRef(currentMemoRefs)
   memoRefs.current = currentMemoRefs
 
-  const createPeer = (deletePeer: () => void) => {
+  const createPeer = () => {
     const newPeer = new PeerConnection({
       onError: debug.wrap("usePeer onError", setError),
       onOpen: debug.wrap("usePeer onOpen", () => {}),
@@ -101,7 +101,6 @@ export default function usePeer({
       onClose: debug.wrap("usePeer onClose", (id?: string) => {
         debug.log("Peer closed", id)
         setPeerId(undefined)
-        deletePeer()
       }),
       onConnectionClose: debug.wrap(
         "usePeer onConnectionClose",
@@ -123,9 +122,7 @@ export default function usePeer({
     return newPeer
   }
 
-  const [peer, setPeer] = useState<PeerConnection | null>(
-    () => createPeer(() => setPeer(null))
-  )
+  const [peer] = useState<PeerConnection>(() => createPeer())
 
   const syncAll = useCallback(
     ({
@@ -136,7 +133,7 @@ export default function usePeer({
       state?: Partial<TimerState>
     }) => {
       debug.log("usePeer syncAll", { keys, state })
-      peer?.sendAll(
+      peer.sendAll(
         getSyncAction({
           params: {
             ...(keys
@@ -170,7 +167,7 @@ export default function usePeer({
     async (remoteId: string) => {
       const startSession = async (id?: string) => {
         try {
-          const peerId = await peer?.createPeer(id, true)
+          const peerId = await peer.createPeer(id, true)
           return peerId
         } catch (error) {
           if (error instanceof PeerError) {
@@ -193,7 +190,7 @@ export default function usePeer({
         }
 
         if (peerId && remoteId && peerId !== remoteId) {
-          await peer?.connectPeer(remoteId)
+          await peer.connectPeer(remoteId)
         }
         setPeerId(peerId)
         return peerId
@@ -210,7 +207,7 @@ export default function usePeer({
       connectRemote(remoteIdParam)
     }
     return () => {
-      peer?.closePeerSession()
+      peer.closePeerSession()
     }
     // initial render only
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,7 +228,7 @@ export default function usePeer({
       connectRemote,
       connections,
       peer: peer,
-      disconnect: () => peer?.closePeerSession(),
+      disconnect: () => peer.closePeerSession(),
       error,
       peerId,
       syncAll,

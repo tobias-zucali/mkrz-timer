@@ -1,6 +1,6 @@
 type Props = {
   percentage: number
-  style?: React.StyleHTMLAttributes<SVGElement>
+  style?: React.CSSProperties
 }
 
 function Pie({ percentage, ...otherProps }: Props) {

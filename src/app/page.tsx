@@ -8,10 +8,18 @@ import SettingsButton from "./SettingsButton"
 import usePeer, { SyncParams } from "@/utils/usePeer"
 import Settings from "./Settings"
 import CloseButton from "./CloseButton"
-import { useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import debug, { IS_DEBUGGING } from "@/utils/debug"
 
 export default function App() {
+  return (
+    <Suspense fallback={null}>
+      <TimerApp />
+    </Suspense>
+  )
+}
+
+function TimerApp() {
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
   const paramData = useParams()

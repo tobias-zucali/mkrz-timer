@@ -20,7 +20,7 @@ function DigitalDisplay({
   seconds: string
   isReadonly?: boolean
   onBlur?: () => void
-  style?: React.StyleHTMLAttributes<SVGElement>
+  style?: React.CSSProperties
 }) {
   const minuteInputRef = useRef<HTMLInputElement>(null)
   const secondsInputRef = useRef<HTMLInputElement>(null)

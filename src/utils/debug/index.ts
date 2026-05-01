@@ -1,4 +1,4 @@
-export const IS_DEBUGGING = true
+export const IS_DEBUGGING = process.env.NODE_ENV !== "production"
 
 const debug = {
   log: (...args: unknown[]) => {
