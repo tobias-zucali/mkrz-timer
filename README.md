@@ -1,5 +1,9 @@
 # Time Timer
 
+## AI
+
+This project uses Codex. Please follow the instructions in AGENTS.md regarding coding style and architectural decisions.
+
 ## About
 
 This project is inspired by the wonderful [Time Timer](https://www.timetimer.com/) device. I built it mainly to be used in my own workshops – get in touch @ [mkrz.at](https://mkrz.at/).
