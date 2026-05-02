@@ -19,9 +19,38 @@ test("syncs start and pause actions between main and three clients", async ({
     clients.push(await openClientFromSettings(page, clientUrl))
   }
 
-  await expect(page.getByText("3 Connections", { exact: false })).toBeVisible({
-    timeout: 30_000,
-  })
+  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    "data-connection-count",
+    "3",
+    {
+      timeout: 30_000,
+    },
+  )
+  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    "data-peer-role",
+    "main",
+  )
+  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    "data-peer-status",
+    "connected",
+  )
+
+  await Promise.all(
+    clients.map(async (client) => {
+      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        "data-peer-role",
+        "client",
+      )
+      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        "data-peer-status",
+        "connected",
+      )
+      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        "data-connection-count",
+        "1",
+      )
+    }),
+  )
 
   await page.getByRole("button", { exact: true, name: "Close" }).click()
 

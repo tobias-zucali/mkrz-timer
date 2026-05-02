@@ -123,6 +123,11 @@ function TimerApp() {
   //   debug.log("All Connections length mismatch", connections, peer.getAllConnections());
   // }
 
+  const connectionDetails = peer.getAllConnections()
+  const peerRole =
+    peerData.peerId && peerData.peerId === remoteIdParam ? "main" : "client"
+  const peerStatus = peerId ? "connected" : "disconnected"
+
   return (
     <>
       {isSettingsOpen ? (
@@ -160,15 +165,25 @@ function TimerApp() {
         </div>
       )}
       {IS_DEBUGGING && (
-        <div className="absolute bottom-4 left-4 right-4 bg-blue-700 rounded-xl px-8 py-3 text-white font-bold z-50">
+        <div
+          aria-live="polite"
+          className="absolute bottom-4 left-4 right-4 bg-blue-700 rounded-xl px-8 py-3 text-white font-bold z-50"
+          data-connection-count={connections.length}
+          data-peer-id={peerId ?? ""}
+          data-peer-role={peerRole}
+          data-peer-status={peerStatus}
+          data-testid="peer-debug-state"
+        >
           {peerId ? (
             <>
-              {connections.length} Connections,{" "}
-              {peerData.peerId === remoteIdParam ? "main , " : ""}id{" "}
-              {peerId.slice(-4)}:{" "}
-              {peer.getAllConnections().map(({ id, isAlive }) => (
+              {connections.length} Connections, {peerRole === "main" ? "main , " : ""}
+              id {peerId.slice(-4)}:{" "}
+              {connectionDetails.map(({ id, isAlive }) => (
                 <p
                   key={id}
+                  data-connection-id={id}
+                  data-connection-state={isAlive ? "alive" : "lost"}
+                  data-testid="peer-debug-connection"
                 >{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</p>
               ))}
             </>
