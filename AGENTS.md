@@ -1,45 +1,19 @@
 # AGENTS
 
-## Setup
+This file is for agent-facing repo conventions. For normal setup and day-to-day commands, start with [README.md](./README.md).
 
-- Use `pnpm` for this repository. Do not mix in `npm` or `yarn`.
+## Baseline
+
+- Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `20.9.0` or newer.
-- If `pnpm` is not available yet, enable Corepack and activate the pinned version from `package.json`:
-
-```bash
-corepack enable
-corepack prepare pnpm@8.11.0 --activate
-pnpm install
-```
-
-## Common commands
-
-```bash
-pnpm dev
-pnpm build
-pnpm lint
-pnpm format
-```
-
-## General Conventions
-
-- Keep AGENTS.md and README.md in sync with architectural changes.
+- Keep this file focused on durable repo guidance for agents, not one-off debugging notes.
 
 ## End-to-end tests
 
-- Playwright tests live in `/Users/tobias/Source/time-timer/tests/e2e`.
+- Playwright tests live in `./tests/e2e`.
 - The Playwright config starts the Next.js dev server on `http://127.0.0.1:3000` and reuses an existing server when one is already running.
 - Test scripts clean old `test-results` and `playwright-report` output before each run.
-
-Use these scripts:
-
-```bash
-pnpm test:e2e:ui
-pnpm test:e2e:visual
-pnpm test:e2e:debug
-pnpm test:e2e
-pnpm test:e2e:report
-```
+- The preferred visual entry point is `pnpm test:e2e:ui`.
 
 ## Test conventions
 
@@ -55,3 +29,8 @@ pnpm test:e2e:report
 
 - `playwright-report/` and `test-results/` are generated artifacts.
 - They are intentionally git-ignored and should not be committed.
+
+## Maintenance
+
+- Update this file when repository-level workflow or testing conventions change.
+- Keep `README.md` human-focused and keep this file agent-focused.
