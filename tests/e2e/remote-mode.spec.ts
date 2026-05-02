@@ -1,9 +1,11 @@
-import { expect, test } from "@playwright/test"
+import { expect, Page, test } from "@playwright/test"
 
-test("opens settings, enables remote mode, and opens a client timer", async ({
-  page,
-}) => {
-  await page.goto("/?m=01&s=00&bg=%23000000&fg=%23ffffff&pc=%23d61f69")
+const timerUrl = "/?m=01&s=00&bg=%23000000&fg=%23ffffff&pc=%23d61f69"
+
+test.describe.configure({ mode: "serial" })
+
+async function enableRemoteMode(page: Page) {
+  await page.goto(timerUrl)
 
   await page.getByRole("button", { name: "Settings" }).click()
   await expect(
@@ -20,7 +22,10 @@ test("opens settings, enables remote mode, and opens a client timer", async ({
     })
     .toContain("?rid=")
 
-  const clientUrl = await clientUrlInput.inputValue()
+  return clientUrlInput.inputValue()
+}
+
+async function openClientFromSettings(page: Page, clientUrl: string) {
   const clientPagePromise = page.waitForEvent("popup")
   await page.getByRole("link", { name: "Open" }).click()
   const clientPage = await clientPagePromise
@@ -28,4 +33,55 @@ test("opens settings, enables remote mode, and opens a client timer", async ({
   await expect(clientPage).toHaveURL(clientUrl)
   await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
   await expect(clientPage).toHaveURL(/rid=/)
+  return clientPage
+}
+
+async function expectTimerRunning(page: Page) {
+  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible({
+    timeout: 15_000,
+  })
+}
+
+async function expectTimerPaused(page: Page) {
+  await expect(page.getByRole("button", { name: "START" })).toBeVisible({
+    timeout: 15_000,
+  })
+}
+
+test("opens settings, enables remote mode, and opens a client timer", async ({
+  page,
+}) => {
+  const clientUrl = await enableRemoteMode(page)
+  await openClientFromSettings(page, clientUrl)
+})
+
+test("syncs start and pause actions between main and three clients", async ({
+  page,
+}) => {
+  test.setTimeout(60_000)
+
+  const clientUrl = await enableRemoteMode(page)
+  const clients = []
+
+  for (let index = 0; index < 3; index += 1) {
+    clients.push(await openClientFromSettings(page, clientUrl))
+  }
+
+  await expect(page.getByText("3 Connections", { exact: false })).toBeVisible({
+    timeout: 30_000,
+  })
+
+  await page.getByRole("button", { exact: true, name: "Close" }).click()
+
+  await page.getByRole("button", { name: "START" }).click()
+  await Promise.all([page, ...clients].map(expectTimerRunning))
+
+  await page.getByRole("button", { name: "PAUSE" }).click()
+  await Promise.all([page, ...clients].map(expectTimerPaused))
+
+  await clients[0].getByRole("button", { name: "START" }).click()
+  await Promise.all([page, ...clients].map(expectTimerRunning))
+
+  await clients[0].getByRole("button", { name: "PAUSE" }).click()
+  await Promise.all([page, ...clients].map(expectTimerPaused))
 })
