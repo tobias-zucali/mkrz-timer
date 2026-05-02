@@ -9,6 +9,15 @@ type PeerDebugState = {
   status: string
 }
 
+type TimerSettings = {
+  backgroundColor?: string
+  foregroundColor?: string
+  minutes?: string
+  primaryColor?: string
+  seconds?: string
+  title?: string
+}
+
 export async function enableRemoteMode(page: Page) {
   await page.goto(timerUrl)
 
@@ -57,6 +66,42 @@ export async function openClientsFromSettings(
 export async function closeSettingsOverlay(page: Page) {
   await page.getByRole("button", { exact: true, name: "Close" }).click()
   await expect(page).not.toHaveURL(/settings=true/)
+}
+
+export async function openSettingsOverlay(page: Page) {
+  await page.getByRole("button", { name: "Settings" }).click()
+  await expect(page.getByLabel("Title")).toBeVisible()
+}
+
+export async function updateTimerSettings(
+  page: Page,
+  {
+    backgroundColor,
+    foregroundColor,
+    minutes,
+    primaryColor,
+    seconds,
+    title,
+  }: TimerSettings,
+) {
+  if (title !== undefined) {
+    await page.getByLabel("Title").fill(title)
+  }
+  if (minutes !== undefined) {
+    await page.getByLabel("Minutes").fill(minutes)
+  }
+  if (seconds !== undefined) {
+    await page.getByLabel("Seconds").fill(seconds)
+  }
+  if (backgroundColor !== undefined) {
+    await page.getByLabel("Background Color").fill(backgroundColor)
+  }
+  if (foregroundColor !== undefined) {
+    await page.getByLabel("Foreground Color").fill(foregroundColor)
+  }
+  if (primaryColor !== undefined) {
+    await page.getByLabel("Primary Color").fill(primaryColor)
+  }
 }
 
 export async function expectTimerRunning(page: Page) {
@@ -114,6 +159,83 @@ export async function getDisplayedSeconds(page: Page) {
   const seconds = Number(await page.getByLabel("Seconds").inputValue())
 
   return minutes * 60 + seconds
+}
+
+async function getBodyCssVariable(page: Page, name: string) {
+  return page.locator("body").evaluate((body, cssVariableName) => {
+    return getComputedStyle(body).getPropertyValue(cssVariableName).trim()
+  }, name)
+}
+
+export async function expectTimerSettings(page: Page, settings: TimerSettings) {
+  if (settings.title !== undefined) {
+    await expect(page.getByTitle("Click to edit title")).toHaveText(
+      settings.title,
+    )
+  }
+
+  if (settings.minutes !== undefined || settings.seconds !== undefined) {
+    const expectedSeconds =
+      Number(settings.minutes ?? "0") * 60 + Number(settings.seconds ?? "0")
+
+    await expect
+      .poll(() => getDisplayedSeconds(page), {
+        message: "timer display should reflect settings duration",
+      })
+      .toBe(expectedSeconds)
+  }
+
+  if (settings.backgroundColor !== undefined) {
+    await expect
+      .poll(() => getBodyCssVariable(page, "--background"), {
+        message: "background color should be applied",
+      })
+      .toBe(settings.backgroundColor)
+  }
+  if (settings.foregroundColor !== undefined) {
+    await expect
+      .poll(() => getBodyCssVariable(page, "--foreground"), {
+        message: "foreground color should be applied",
+      })
+      .toBe(settings.foregroundColor)
+  }
+  if (settings.primaryColor !== undefined) {
+    await expect
+      .poll(() => getBodyCssVariable(page, "--primary"), {
+        message: "primary color should be applied",
+      })
+      .toBe(settings.primaryColor)
+  }
+}
+
+export async function expectTimerUrlParams(page: Page, settings: TimerSettings) {
+  await expect
+    .poll(() => page.url(), {
+      message: "timer URL should reflect settings without color hashes",
+    })
+    .toEqual(expect.not.stringContaining("%23"))
+
+  await expect
+    .poll(() => page.url(), {
+      message: "timer URL should not contain a URL fragment",
+    })
+    .toEqual(expect.not.stringContaining("#"))
+
+  if (settings.backgroundColor !== undefined) {
+    await expect(page).toHaveURL(
+      new RegExp(`(?:\\?|&)bg=${settings.backgroundColor.slice(1)}(?:&|$)`),
+    )
+  }
+  if (settings.foregroundColor !== undefined) {
+    await expect(page).toHaveURL(
+      new RegExp(`(?:\\?|&)fg=${settings.foregroundColor.slice(1)}(?:&|$)`),
+    )
+  }
+  if (settings.primaryColor !== undefined) {
+    await expect(page).toHaveURL(
+      new RegExp(`(?:\\?|&)pc=${settings.primaryColor.slice(1)}(?:&|$)`),
+    )
+  }
 }
 
 export async function expectTimersToMatch(

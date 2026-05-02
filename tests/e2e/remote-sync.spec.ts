@@ -6,9 +6,13 @@ import {
   expectTimerControlsToMatch,
   expectTimerPaused,
   expectTimerRunning,
+  expectTimerSettings,
+  expectTimerUrlParams,
   expectTimersToMatch,
   getDisplayedSeconds,
+  openSettingsOverlay,
   openClientsFromSettings,
+  updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
 
@@ -171,4 +175,60 @@ test("syncs the current timer state to a client that rejoins during active contr
   await page.getByRole("button", { name: "PAUSE" }).click()
   await Promise.all([...activePages, rejoinedClient].map(expectTimerPaused))
   await expectTimersToMatch([...activePages, rejoinedClient])
+})
+
+test("syncs settings changes from main and clients", async ({ page }) => {
+  test.setTimeout(120_000)
+
+  const clientUrl = await enableRemoteMode(page)
+  const clients = await openClientsFromSettings(page, clientUrl, 3)
+  const allPages = [page, ...clients]
+
+  await closeSettingsOverlay(page)
+
+  await waitForRemoteCluster(allPages, {
+    clientCount: 3,
+    mainConnectionCount: 3,
+    message: "remote cluster should stabilize before settings sync",
+  })
+
+  const mainSettings = {
+    backgroundColor: "#123456",
+    foregroundColor: "#fefefe",
+    minutes: "02",
+    primaryColor: "#00aa88",
+    seconds: "15",
+    title: "Main settings",
+  }
+
+  await openSettingsOverlay(page)
+  await updateTimerSettings(page, mainSettings)
+  await closeSettingsOverlay(page)
+
+  await Promise.all(allPages.map((remotePage) =>
+    expectTimerSettings(remotePage, mainSettings),
+  ))
+  await Promise.all(allPages.map((remotePage) =>
+    expectTimerUrlParams(remotePage, mainSettings),
+  ))
+
+  const clientSettings = {
+    backgroundColor: "#1a2b3c",
+    foregroundColor: "#ddeeff",
+    minutes: "00",
+    primaryColor: "#ff8800",
+    seconds: "45",
+    title: "Client settings",
+  }
+
+  await openSettingsOverlay(clients[1])
+  await updateTimerSettings(clients[1], clientSettings)
+  await closeSettingsOverlay(clients[1])
+
+  await Promise.all(allPages.map((remotePage) =>
+    expectTimerSettings(remotePage, clientSettings),
+  ))
+  await Promise.all(allPages.map((remotePage) =>
+    expectTimerUrlParams(remotePage, clientSettings),
+  ))
 })
