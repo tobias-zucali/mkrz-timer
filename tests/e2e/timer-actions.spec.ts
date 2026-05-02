@@ -4,7 +4,7 @@ import { getDisplayedSeconds } from "./remote-mode.helpers"
 
 async function openTimer(page: Page, seconds = 3) {
   await page.goto(
-    `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=%23000000&fg=%23ffffff&pc=%23d61f69`,
+    `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`,
   )
 }
 

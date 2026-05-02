@@ -1,6 +1,6 @@
 import { expect, Page } from "@playwright/test"
 
-const timerUrl = "/?m=01&s=00&bg=%23000000&fg=%23ffffff&pc=%23d61f69"
+const timerUrl = "/?m=01&s=00&bg=000000&fg=ffffff&pc=d61f69"
 
 type PeerDebugState = {
   connectionCount: string

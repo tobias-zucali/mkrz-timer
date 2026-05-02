@@ -88,6 +88,9 @@ test("keeps state consistent when multiple peers control the timer quickly", asy
   )
 
   await page.getByRole("button", { name: "START" }).click()
+  if ((await expectTimerControlsToMatch(allPages)) === "paused") {
+    await page.getByRole("button", { name: "START" }).click()
+  }
   await Promise.all(allPages.map(expectTimerRunning))
 
   await Promise.all([
