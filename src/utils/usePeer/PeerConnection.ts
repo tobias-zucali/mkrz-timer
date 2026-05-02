@@ -78,7 +78,6 @@ class PeerConnection {
     this.onConnectionsChange = onConnectionsChange
   }
 
-
   private interval: number | undefined = undefined
 
   private checkConnectionsChanged() {
@@ -93,7 +92,7 @@ class PeerConnection {
       id,
       { conn, lastPing, isAlive },
     ] of this.connectionMap.entries()) {
-      if ((now - lastPing) > this.ALIVE_TIMEOUT) {
+      if (now - lastPing > this.ALIVE_TIMEOUT) {
         if (isAlive === true) {
           debug.log("Connection timed out:", id)
           this.setConnection(conn, false)

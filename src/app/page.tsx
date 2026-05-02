@@ -164,9 +164,12 @@ function TimerApp() {
           {peerId ? (
             <>
               {connections.length} Connections,{" "}
-              {peerData.peerId === remoteIdParam ? "main , " : ""}id {peerId.slice(-4)}:{" "}
+              {peerData.peerId === remoteIdParam ? "main , " : ""}id{" "}
+              {peerId.slice(-4)}:{" "}
               {peer.getAllConnections().map(({ id, isAlive }) => (
-                <p key={id}>{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</p>
+                <p
+                  key={id}
+                >{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</p>
               ))}
             </>
           ) : (

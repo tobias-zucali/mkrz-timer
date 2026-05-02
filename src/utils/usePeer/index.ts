@@ -62,19 +62,16 @@ export default function usePeer({
     const newPeer = new PeerConnection({
       onError: debug.wrap("usePeer onError", setError),
       onOpen: debug.wrap("usePeer onOpen", () => {}),
-      onConnection: debug.wrap(
-        "usePeer onConnection",
-        (senderId: string) => {
-          newPeer.send(
-            senderId,
-            getSyncAction({
-              params: syncParamsRef.current,
-              connections: newPeer.getConnections(),
-              state: syncStateRef.current,
-            }),
-          )
-        }
-      ),
+      onConnection: debug.wrap("usePeer onConnection", (senderId: string) => {
+        newPeer.send(
+          senderId,
+          getSyncAction({
+            params: syncParamsRef.current,
+            connections: newPeer.getConnections(),
+            state: syncStateRef.current,
+          }),
+        )
+      }),
       onReceiveData: debug.wrap(
         "usePeer onReceiveData",
         (senderId: string, data: unknown) => {
