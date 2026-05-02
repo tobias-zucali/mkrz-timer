@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 import {
+  closeSettingsOverlay,
   enableRemoteMode,
   expectTimerPaused,
   expectTimerRunning,
@@ -18,6 +19,8 @@ test("syncs start and pause actions between main and three clients", async ({
   for (let index = 0; index < 3; index += 1) {
     clients.push(await openClientFromSettings(page, clientUrl))
   }
+
+  await closeSettingsOverlay(page)
 
   await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
     "data-connection-count",
@@ -51,8 +54,6 @@ test("syncs start and pause actions between main and three clients", async ({
       )
     }),
   )
-
-  await page.getByRole("button", { exact: true, name: "Close" }).click()
 
   await page.getByRole("button", { name: "START" }).click()
   await Promise.all([page, ...clients].map(expectTimerRunning))

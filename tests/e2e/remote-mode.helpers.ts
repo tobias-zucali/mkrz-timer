@@ -2,6 +2,13 @@ import { expect, Page } from "@playwright/test"
 
 const timerUrl = "/?m=01&s=00&bg=%23000000&fg=%23ffffff&pc=%23d61f69"
 
+type PeerDebugState = {
+  connectionCount: string
+  peerId: string
+  role: string
+  status: string
+}
+
 export async function enableRemoteMode(page: Page) {
   await page.goto(timerUrl)
 
@@ -11,7 +18,6 @@ export async function enableRemoteMode(page: Page) {
   ).toBeVisible()
 
   await page.getByRole("button", { name: "Switch to remote mode" }).click()
-
   const clientUrlInput = page.getByLabel("Client URL")
   await expect(clientUrlInput).toBeVisible()
   await expect
@@ -32,6 +38,11 @@ export async function openClientFromSettings(page: Page, clientUrl: string) {
   await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
   await expect(clientPage).toHaveURL(/rid=/)
   return clientPage
+}
+
+export async function closeSettingsOverlay(page: Page) {
+  await page.getByRole("button", { exact: true, name: "Close" }).click()
+  await expect(page).not.toHaveURL(/settings=true/)
 }
 
 export async function expectTimerRunning(page: Page) {
@@ -59,4 +70,15 @@ export async function getDisplayedSeconds(page: Page) {
   const seconds = Number(await page.getByLabel("Seconds").inputValue())
 
   return minutes * 60 + seconds
+}
+
+export async function getPeerDebugState(page: Page): Promise<PeerDebugState> {
+  const debugState = page.getByTestId("peer-debug-state")
+
+  return {
+    connectionCount: (await debugState.getAttribute("data-connection-count")) ?? "",
+    peerId: (await debugState.getAttribute("data-peer-id")) ?? "",
+    role: (await debugState.getAttribute("data-peer-role")) ?? "",
+    status: (await debugState.getAttribute("data-peer-status")) ?? "",
+  }
 }
