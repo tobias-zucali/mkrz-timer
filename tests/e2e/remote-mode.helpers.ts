@@ -38,10 +38,25 @@ export async function expectTimerRunning(page: Page) {
   await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible({
     timeout: 15_000,
   })
+
+  const initialSeconds = await getDisplayedSeconds(page)
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "timer should count down while running",
+      timeout: 5_000,
+    })
+    .toBeLessThan(initialSeconds)
 }
 
 export async function expectTimerPaused(page: Page) {
   await expect(page.getByRole("button", { name: "START" })).toBeVisible({
     timeout: 15_000,
   })
+}
+
+export async function getDisplayedSeconds(page: Page) {
+  const minutes = Number(await page.getByLabel("Minutes").inputValue())
+  const seconds = Number(await page.getByLabel("Seconds").inputValue())
+
+  return minutes * 60 + seconds
 }

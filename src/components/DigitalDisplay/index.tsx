@@ -40,6 +40,7 @@ function DigitalDisplay({
       {...otherProps}
     >
       <input
+        aria-label="Minutes"
         className={classNames(inputClassNames, "text-right")}
         min="0"
         readOnly={isReadonly}
@@ -56,6 +57,7 @@ function DigitalDisplay({
       />
       <div className={styles.separator}>{" : "}</div>
       <input
+        aria-label="Seconds"
         className={classNames(inputClassNames, "text-left")}
         max="60"
         min="0"
