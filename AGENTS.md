@@ -11,9 +11,21 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 ## End-to-end tests
 
 - Playwright tests live in `./tests/e2e`.
-- The Playwright config starts the Next.js dev server on `http://127.0.0.1:3000` and reuses an existing server when one is already running.
+- The Playwright config starts the Next.js dev server on `http://127.0.0.1:3000` and a local PeerJS server on `http://127.0.0.1:9000`; it reuses existing servers when they are already running.
+- Use `pnpm dev:peer` when you need the local PeerJS server outside Playwright.
+- `pnpm test` is the regular verification gate and runs lint plus the full Playwright e2e suite.
+- `pnpm build` runs `pnpm test` first, then runs `next build`.
 - Test scripts clean old `test-results` and `playwright-report` output before each run.
 - The preferred visual entry point is `pnpm test:e2e:ui`.
+
+## PeerJS server
+
+- Remote mode uses PeerJS for peer discovery/signalling before browser-to-browser data connections are established.
+- The app uses the default PeerJS cloud server unless `NEXT_PUBLIC_PEERJS_HOST` is set.
+- `pnpm dev:peer` starts the local PeerJS server on `127.0.0.1:9000`.
+- Playwright starts `pnpm dev:peer` and `pnpm dev:e2e` through `playwright.config.ts`.
+- The e2e Next.js server is configured with `NEXT_PUBLIC_PEERJS_HOST=127.0.0.1`, `NEXT_PUBLIC_PEERJS_PORT=9000`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
+- If e2e tests fail with a port bind error, check for stale listeners on ports `3000` or `9000` before changing test logic.
 
 ## Test conventions
 

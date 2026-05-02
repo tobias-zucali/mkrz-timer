@@ -1,4 +1,9 @@
-import Peer, { DataConnection, PeerErrorType, PeerError } from "peerjs"
+import Peer, {
+  DataConnection,
+  PeerErrorType,
+  PeerError,
+  type PeerOptions,
+} from "peerjs"
 import debug from "@/utils/debug"
 
 type ConnectionInfo = {
@@ -7,12 +12,35 @@ type ConnectionInfo = {
   isAlive: boolean
 }
 
+const getPeerOptions = (): PeerOptions | undefined => {
+  const host = process.env.NEXT_PUBLIC_PEERJS_HOST
+  if (!host) {
+    return
+  }
+
+  const port = Number(process.env.NEXT_PUBLIC_PEERJS_PORT)
+
+  return {
+    host,
+    port: Number.isFinite(port) ? port : undefined,
+    path: process.env.NEXT_PUBLIC_PEERJS_PATH || "/",
+    secure: process.env.NEXT_PUBLIC_PEERJS_SECURE === "true",
+  }
+}
+
 class PeerConnection {
   private peer: Peer | undefined
   private connectionMap = new Map<string, ConnectionInfo>()
+  private locallyClosedConnections = new WeakSet<DataConnection>()
+  private healthInterval: number | undefined = undefined
+  private reconnectInterval: number | undefined = undefined
 
   private setConnection(conn: DataConnection, isAlive = true) {
     const prevConn = this.connectionMap.get(conn.peer)
+    if (prevConn && prevConn.conn !== conn) {
+      this.locallyClosedConnections.add(prevConn.conn)
+      prevConn.conn.close()
+    }
     this.connectionMap.set(conn.peer, {
       lastPing: Date.now(),
       conn,
@@ -23,9 +51,20 @@ class PeerConnection {
     }
   }
 
-  private deleteConnection(id: string, promoteChange = true) {
-    const { conn } = this.connectionMap.get(id) || {}
-    conn?.close()
+  private deleteConnection(
+    id: string,
+    promoteChange = true,
+    expectedConn?: DataConnection,
+  ) {
+    const connectionInfo = this.connectionMap.get(id)
+    if (!connectionInfo) {
+      return
+    }
+    if (expectedConn && connectionInfo.conn !== expectedConn) {
+      return
+    }
+    this.locallyClosedConnections.add(connectionInfo.conn)
+    connectionInfo.conn.close()
     this.connectionMap.delete(id)
     if (promoteChange) {
       this.onConnectionsChange(this.getConnections())
@@ -78,13 +117,13 @@ class PeerConnection {
     this.onConnectionsChange = onConnectionsChange
   }
 
-  private interval: number | undefined = undefined
-
   private checkConnectionsChanged() {
     const now = Date.now()
     for (const { conn, lastPing } of this.connectionMap.values()) {
       if (now - lastPing >= this.PING_INTERVAL) {
-        conn.send(this.pingAction)
+        this.sendToConn(conn, this.pingAction).catch((error) => {
+          debug.log("Error sending ping:", error)
+        })
       }
     }
 
@@ -96,6 +135,7 @@ class PeerConnection {
         if (isAlive === true) {
           debug.log("Connection timed out:", id)
           this.setConnection(conn, false)
+          this.onConnectionClose?.(id)
         }
       } else {
         if (isAlive === false) {
@@ -112,19 +152,31 @@ class PeerConnection {
       try {
         if (this.peer) {
           if (force) {
-            await this.closePeerSession()
+            await this.closePeerSession(false)
           } else {
             reject("Peer already exists")
             return
           }
         }
 
-        this.peer = id ? new Peer(id) : new Peer()
-        this.peer
+        window.clearInterval(this.reconnectInterval)
+        this.reconnectInterval = undefined
+
+        const peerOptions = getPeerOptions()
+        const peer = id
+          ? new Peer(id, peerOptions)
+          : peerOptions
+            ? new Peer(peerOptions)
+            : new Peer()
+        this.peer = peer
+        peer
           .on("open", (id) => {
+            if (this.peer !== peer) {
+              return
+            }
             debug.log("PeerSession Open:", id)
-            window.clearInterval(this.interval)
-            this.interval = window.setInterval(
+            window.clearInterval(this.healthInterval)
+            this.healthInterval = window.setInterval(
               () => this.checkConnectionsChanged(),
               this.PING_INTERVAL,
             )
@@ -134,12 +186,16 @@ class PeerConnection {
             resolve(id)
           })
           .on("error", (error) => {
+            if (this.peer !== peer) {
+              return
+            }
             debug.log("PeerSession Error:", error)
-            window.clearInterval(this.interval)
+            window.clearInterval(this.healthInterval)
             if (isInitialized) {
               this.onError?.(error)
 
-              this.interval = window.setInterval(
+              window.clearInterval(this.reconnectInterval)
+              this.reconnectInterval = window.setInterval(
                 () => this.createPeer(id, true),
                 2000,
               )
@@ -148,8 +204,12 @@ class PeerConnection {
             }
           })
           .on("close", () => {
+            if (this.peer !== peer) {
+              return
+            }
             debug.log("PeerSession Closed")
-            window.clearInterval(this.interval)
+            window.clearInterval(this.healthInterval)
+            window.clearInterval(this.reconnectInterval)
             window.removeEventListener("beforeunload", this.beforeUnload)
             if (isInitialized) {
               this.onClose?.()
@@ -158,6 +218,10 @@ class PeerConnection {
             }
           })
           .on("connection", (conn) => {
+            if (this.peer !== peer) {
+              conn.close()
+              return
+            }
             debug.log("PeerSession incoming connection:", conn.peer)
             conn.on("open", () => {
               this.initializeConnection(conn)
@@ -179,7 +243,11 @@ class PeerConnection {
 
     conn.on("close", () => {
       debug.log("Connection closed:", id)
-      this.onConnectionClose?.(id)
+      const wasLocallyClosed = this.locallyClosedConnections.has(conn)
+      this.deleteConnection(id, true, conn)
+      if (!wasLocallyClosed) {
+        this.onConnectionClose?.(id)
+      }
     })
     conn.on("data", (data) => {
       if (data && typeof data === "object" && "type" in data) {
@@ -189,12 +257,15 @@ class PeerConnection {
             return
           case "ping":
             this.setConnection(conn, true)
-            conn.send(this.pongAction)
+            this.sendToConn(conn, this.pongAction).catch((error) => {
+              debug.log("Error sending pong:", error)
+            })
             return
           case "disconnect":
             debug.log("Disconnect from:", id.slice(-4))
-            this.deleteConnection(id)
+            this.deleteConnection(id, true, conn)
             conn.close()
+            this.onConnectionClose?.(id)
             return
         }
       }
@@ -223,12 +294,22 @@ class PeerConnection {
     return this.peer?.id
   }
 
-  public async closePeerSession(): Promise<void> {
+  public async closePeerSession(promoteClose = true): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       try {
+        window.clearInterval(this.healthInterval)
+        window.clearInterval(this.reconnectInterval)
+        this.healthInterval = undefined
+        this.reconnectInterval = undefined
+        window.removeEventListener("beforeunload", this.beforeUnload)
         if (this.peer) {
-          this.peer.destroy()
+          const peer = this.peer
           this.peer = undefined
+          peer.removeAllListeners()
+          peer.destroy()
+          if (promoteClose) {
+            this.onClose?.()
+          }
         }
         this.clearConnections()
         resolve()
@@ -245,9 +326,13 @@ class PeerConnection {
         reject(new Error("Peer doesn't start yet"))
         return
       }
-      if (this.connectionMap.has(id)) {
+      const existingConnection = this.connectionMap.get(id)
+      if (existingConnection?.isAlive) {
         reject(new Error("Connection existed"))
         return
+      }
+      if (existingConnection) {
+        this.deleteConnection(id, false)
       }
       try {
         const conn = this.peer.connect(id, { reliable: true })

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { PeerError, PeerErrorType } from "peerjs"
+import { PeerErrorType } from "peerjs"
 
 import PeerConnection from "./PeerConnection"
 import { TimerState } from "@/utils/useTimer"
@@ -30,6 +30,29 @@ const getSyncAction = ({
 })
 
 export type SyncAction = ReturnType<typeof getSyncAction>
+
+const RETRYABLE_PEER_ERRORS = new Set<`${PeerErrorType}`>([
+  PeerErrorType.Network,
+  PeerErrorType.ServerError,
+  PeerErrorType.SocketClosed,
+  PeerErrorType.SocketError,
+])
+
+const getPeerErrorType = (error: unknown) => {
+  if (error && typeof error === "object" && "type" in error) {
+    return error.type as `${PeerErrorType}`
+  }
+}
+
+const isRetryablePeerError = (error: unknown) => {
+  const type = getPeerErrorType(error)
+  return Boolean(type && RETRYABLE_PEER_ERRORS.has(type))
+}
+
+const wait = (delay: number) =>
+  new Promise<void>((resolve) => {
+    window.setTimeout(resolve, delay)
+  })
 
 export default function usePeer({
   remoteIdParam,
@@ -163,16 +186,25 @@ export default function usePeer({
   const connectRemote = useCallback(
     async (remoteId: string) => {
       const startSession = async (id?: string) => {
-        try {
-          const peerId = await peer.createPeer(id, true)
-          return peerId
-        } catch (error) {
-          if (error instanceof PeerError) {
-            if (error.type === PeerErrorType.UnavailableID) {
-              return
+        const maxAttempts = 3
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+          try {
+            const peerId = await peer.createPeer(id, true)
+            return peerId
+          } catch (error) {
+            const peerErrorType = getPeerErrorType(error)
+            if (peerErrorType) {
+              if (peerErrorType === PeerErrorType.UnavailableID) {
+                return
+              }
+              if (isRetryablePeerError(error) && attempt < maxAttempts) {
+                await wait(500 * attempt)
+                continue
+              }
             }
+            throw error
           }
-          throw error
         }
       }
 
@@ -189,6 +221,7 @@ export default function usePeer({
         if (peerId && remoteId && peerId !== remoteId) {
           await peer.connectPeer(remoteId)
         }
+        setError(null)
         setPeerId(peerId)
         return peerId
       } catch (error) {

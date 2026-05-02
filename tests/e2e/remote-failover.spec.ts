@@ -15,7 +15,6 @@ test("elects a new main when the original main closes and lets the original main
 }) => {
   test.setTimeout(150_000)
 
-  const originalMainUrl = page.url()
   const clientUrl = await enableRemoteMode(page)
   const clients: Page[] = []
 
@@ -32,8 +31,6 @@ test("elects a new main when the original main closes and lets the original main
       timeout: 30_000,
     },
   )
-
-  const currentMainUrl = page.url() || originalMainUrl
 
   await page.close({ runBeforeUnload: true })
 
@@ -61,7 +58,7 @@ test("elects a new main when the original main closes and lets the original main
     })
 
   const rejoinedMain = await clients[0].context().newPage()
-  await rejoinedMain.goto(currentMainUrl)
+  await rejoinedMain.goto(clientUrl)
   await expect(rejoinedMain.getByRole("button", { name: "START" })).toBeVisible()
 
   await expect

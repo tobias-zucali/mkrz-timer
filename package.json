@@ -7,8 +7,11 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "dev:e2e": "next dev -H 127.0.0.1",
+    "dev:peer": "peerjs --host 127.0.0.1 --port 9000",
+    "build": "pnpm test && next build",
     "start": "next start",
+    "test": "pnpm lint && pnpm test:e2e",
     "test:e2e": "pnpm test:e2e:clean && playwright test",
     "test:e2e:ui": "pnpm test:e2e:clean && playwright test --ui",
     "test:e2e:debug": "pnpm test:e2e:clean && playwright test --debug --workers=1",
@@ -37,6 +40,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.4",
     "eslint-config-prettier": "^10.1.8",
+    "peer": "^1.0.2",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3"

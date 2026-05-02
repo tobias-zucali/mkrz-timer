@@ -19,7 +19,7 @@ export async function enableRemoteMode(page: Page) {
 
   await page.getByRole("button", { name: "Switch to remote mode" }).click()
   const clientUrlInput = page.getByLabel("Client URL")
-  await expect(clientUrlInput).toBeVisible()
+  await expect(clientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect
     .poll(() => clientUrlInput.inputValue(), {
       message: "client URL should include a remote peer id",
