@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react"
 
 import CloseButton from "@/components/CloseButton"
 
-import InputField from "."
+import InputField from "../InputField"
 
 function ArrowTopRightOnSquareIcon() {
   return (

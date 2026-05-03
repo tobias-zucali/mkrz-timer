@@ -5,7 +5,7 @@ import usePeer from "@/utils/usePeer"
 
 import HelpText from "@/components/HelpText"
 import InputField from "@/components/InputField"
-import UrlCopyField from "@/components/InputField/UrlCopyField"
+import UrlCopyField from "@/components/UrlCopyField"
 
 export default function Settings({
   peerData,
