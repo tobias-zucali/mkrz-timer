@@ -1,18 +1,105 @@
-import { ComponentProps, useEffect, useState } from "react"
+import { ComponentProps, useEffect, useId, useState } from "react"
+
+import Link from "next/link"
+import { QRCodeSVG } from "qrcode.react"
+
+import CloseButton from "@/components/CloseButton"
 
 import InputField from "."
-import Link from "next/link"
 
-export default function CopyField({
+function ArrowTopRightOnSquareIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+      />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m4.5 12.75 6 6 9-13.5"
+      />
+    </svg>
+  )
+}
+
+function ClipboardDocumentIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+      />
+    </svg>
+  )
+}
+
+function QrCodeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"
+      />
+    </svg>
+  )
+}
+
+export default function UrlCopyField({
   value,
   showOpenButton = false,
   ...otherProps
-}: ComponentProps<typeof InputField> & {
+}: Omit<ComponentProps<typeof InputField>, "id"> & {
   showOpenButton?: boolean
   value: string
 }) {
+  const fieldId = useId()
   const [isCopied, setIsCopied] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isQrCodeOpen, setIsQrCodeOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -21,59 +108,89 @@ export default function CopyField({
   }, [])
 
   const buttonClassName =
-    "flex items-center justify-center font-bold rounded-md w-26 ml-3 cursor-pointer bg-primary/60 hover:bg-primary"
+    "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-primary/60 text-foreground hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+  const canCopy = isClient && navigator.clipboard
+  const qrCodeTitle = `${otherProps.label} QR code`
 
   return (
-    <InputField
-      {...otherProps}
-      value={isClient ? value : ""}
-      readOnly={true}
-      disabled={true}
-    >
-      {navigator.clipboard && (
-        <button
-          className={buttonClassName}
-          onClick={() => {
-            navigator.clipboard.writeText(value)
-            setIsCopied(true)
-            setTimeout(() => setIsCopied(false), 2000)
-          }}
-          type="button"
+    <>
+      <InputField
+        id={fieldId}
+        value={isClient ? value : ""}
+        readOnly={true}
+        disabled={true}
+        {...otherProps}
+      >
+        {canCopy && (
+          <button
+            className={buttonClassName}
+            onClick={() => {
+              navigator.clipboard.writeText(value)
+              setIsCopied(true)
+              setTimeout(() => setIsCopied(false), 2000)
+            }}
+            type="button"
+            title={isCopied ? "Copied" : "Copy URL"}
+            aria-label={isCopied ? "Copied" : "Copy URL"}
+          >
+            {isCopied ? <CheckIcon /> : <ClipboardDocumentIcon />}
+          </button>
+        )}
+        {showOpenButton && (
+          <Link
+            className={buttonClassName}
+            href={isClient ? value : ""}
+            target="_blank"
+            title="Open URL"
+            aria-label="Open URL"
+          >
+            <ArrowTopRightOnSquareIcon />
+          </Link>
+        )}
+        {isClient && value && (
+          <button
+            className={buttonClassName}
+            onClick={() => setIsQrCodeOpen(true)}
+            title={`Show ${qrCodeTitle}`}
+            aria-label={`Show ${qrCodeTitle}`}
+            type="button"
+          >
+            <QrCodeIcon />
+          </button>
+        )}
+      </InputField>
+      {isQrCodeOpen && (
+        <div
+          aria-labelledby={`${fieldId}_qr_title`}
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-8 bg-black p-8 text-center text-white"
+          onClick={() => setIsQrCodeOpen(false)}
+          role="dialog"
         >
-          <span className={isCopied ? "hidden" : ""}>Copy</span>
-          <span className={isCopied ? "" : "hidden"}>
-            <div className="inline-flex items-center">
-              <svg
-                className="w-3 h-3 me-1"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 11.917 9.724 16.5 19 7.5"
-                />
-              </svg>
-              Copied!
-            </div>
+          <CloseButton
+            aria-label={`Close ${qrCodeTitle}`}
+            title={`Close ${qrCodeTitle}`}
+          />
+          <h1
+            className="text-3xl font-bold sm:text-5xl"
+            id={`${fieldId}_qr_title`}
+          >
+            {qrCodeTitle}
+          </h1>
+          <span className="rounded-md bg-white p-4">
+            <QRCodeSVG
+              aria-label={qrCodeTitle}
+              className="h-64 w-64 sm:h-80 sm:w-80"
+              marginSize={2}
+              title={qrCodeTitle}
+              value={value}
+            />
           </span>
-        </button>
+          <span className="max-w-3xl break-all text-base text-white/85 sm:text-lg">
+            {value}
+          </span>
+        </div>
       )}
-      {showOpenButton && (
-        <Link
-          className={buttonClassName}
-          href={isClient ? value : ""}
-          target="_blank"
-        >
-          Open
-        </Link>
-      )}
-    </InputField>
+    </>
   )
 }

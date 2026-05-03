@@ -1,15 +1,15 @@
 "use client"
-
-import useParams from "@/utils/useParams"
-
-import useTimer, { TimerState } from "@/utils/useTimer"
-import Timer from "@/components/Timer"
-import SettingsButton from "./SettingsButton"
-import usePeer, { SyncParams } from "@/utils/usePeer"
-import Settings from "./Settings"
-import CloseButton from "./CloseButton"
 import { Suspense, useEffect, useRef, useState } from "react"
+
 import debug, { IS_DEBUGGING } from "@/utils/debug"
+import useParams from "@/utils/useParams"
+import usePeer, { SyncParams } from "@/utils/usePeer"
+import useTimer, { TimerState } from "@/utils/useTimer"
+
+import CloseButton from "@/components/CloseButton"
+import Settings from "@/components/Settings"
+import SettingsButton from "@/components/SettingsButton"
+import Timer from "@/components/Timer"
 
 export default function App() {
   return (
@@ -176,7 +176,8 @@ function TimerApp() {
         >
           {peerId ? (
             <>
-              {connections.length} Connections, {peerRole === "main" ? "main , " : ""}
+              {connections.length} Connections,{" "}
+              {peerRole === "main" ? "main , " : ""}
               id {peerId.slice(-4)}:{" "}
               {connectionDetails.map(({ id, isAlive }) => (
                 <p

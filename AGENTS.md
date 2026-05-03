@@ -7,6 +7,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `20.9.0` or newer.
 - Keep this file focused on durable repo guidance for agents, not one-off debugging notes.
+- Spread `...otherProps` last on the rendered element so callers can override defaults intentionally.
 
 ## End-to-end tests
 

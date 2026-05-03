@@ -1,19 +1,6 @@
 import { expect, Page, test } from "@playwright/test"
 
-import {
-  closeSettingsOverlay,
-  expectTimerSettings,
-  expectTimerUrlParams,
-  getDisplayedSeconds,
-  openSettingsOverlay,
-  updateTimerSettings,
-} from "./remote-mode.helpers"
-
-async function openTimer(page: Page, seconds = 3) {
-  await page.goto(
-    `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`,
-  )
-}
+import { getDisplayedSeconds, openTimer } from "./remote-mode.helpers"
 
 async function setTimer(page: Page, minutes: string, seconds: string) {
   await page.getByLabel("Minutes").fill(minutes)
@@ -123,24 +110,4 @@ test("runs a short timer to completion and resets it", async ({ page }) => {
       message: "timer should restore the configured duration after reset",
     })
     .toBe(3)
-})
-
-test("updates title, duration, and colors through settings", async ({ page }) => {
-  await openTimer(page, 3)
-
-  const settings = {
-    backgroundColor: "#123456",
-    foregroundColor: "#fefefe",
-    minutes: "02",
-    primaryColor: "#00aa88",
-    seconds: "15",
-    title: "Workshop timer",
-  }
-
-  await openSettingsOverlay(page)
-  await updateTimerSettings(page, settings)
-  await closeSettingsOverlay(page)
-
-  await expectTimerSettings(page, settings)
-  await expectTimerUrlParams(page, settings)
 })

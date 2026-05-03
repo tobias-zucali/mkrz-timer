@@ -18,6 +18,12 @@ type TimerSettings = {
   title?: string
 }
 
+export async function openTimer(page: Page, seconds = 3) {
+  await page.goto(
+    `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`,
+  )
+}
+
 export async function enableRemoteMode(page: Page) {
   await page.goto(timerUrl)
 
@@ -27,7 +33,7 @@ export async function enableRemoteMode(page: Page) {
   ).toBeVisible()
 
   await page.getByRole("button", { name: "Switch to remote mode" }).click()
-  const clientUrlInput = page.getByLabel("Client URL")
+  const clientUrlInput = page.getByRole("textbox", { name: "Client URL" })
   await expect(clientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect
     .poll(() => clientUrlInput.inputValue(), {
@@ -66,6 +72,19 @@ export async function openClientsFromSettings(
 export async function closeSettingsOverlay(page: Page) {
   await page.getByRole("button", { exact: true, name: "Close" }).click()
   await expect(page).not.toHaveURL(/settings=true/)
+}
+
+export async function expectUrlQrCode(page: Page, label: string) {
+  await page.getByRole("button", { name: `Show ${label} QR code` }).click()
+  const qrCodeDialog = page.getByRole("dialog", { name: `${label} QR code` })
+
+  await expect(qrCodeDialog).toBeVisible()
+  await expect(
+    qrCodeDialog.getByRole("img", { name: `${label} QR code` }),
+  ).toBeVisible()
+
+  await qrCodeDialog.click()
+  await expect(qrCodeDialog).not.toBeVisible()
 }
 
 export async function openSettingsOverlay(page: Page) {
@@ -138,17 +157,20 @@ export async function expectTimerControlsToMatch(pages: Page[]) {
   let matchingState = "unknown"
 
   await expect
-    .poll(async () => {
-      const states = await Promise.all(pages.map(getTimerControlState))
-      const [firstState] = states
-      const allMatch = states.every((state) => state === firstState)
+    .poll(
+      async () => {
+        const states = await Promise.all(pages.map(getTimerControlState))
+        const [firstState] = states
+        const allMatch = states.every((state) => state === firstState)
 
-      matchingState = allMatch ? firstState : "unknown"
-      return allMatch ? firstState : "mixed"
-    }, {
-      message: "all timer controls should converge to the same state",
-      timeout: 15_000,
-    })
+        matchingState = allMatch ? firstState : "unknown"
+        return allMatch ? firstState : "mixed"
+      },
+      {
+        message: "all timer controls should converge to the same state",
+        timeout: 15_000,
+      },
+    )
     .not.toBe("mixed")
 
   return matchingState
@@ -208,7 +230,10 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   }
 }
 
-export async function expectTimerUrlParams(page: Page, settings: TimerSettings) {
+export async function expectTimerUrlParams(
+  page: Page,
+  settings: TimerSettings,
+) {
   await expect
     .poll(() => page.url(), {
       message: "timer URL should reflect settings without color hashes",
@@ -255,7 +280,8 @@ export async function getPeerDebugState(page: Page): Promise<PeerDebugState> {
   const debugState = page.getByTestId("peer-debug-state")
 
   return {
-    connectionCount: (await debugState.getAttribute("data-connection-count")) ?? "",
+    connectionCount:
+      (await debugState.getAttribute("data-connection-count")) ?? "",
     peerId: (await debugState.getAttribute("data-peer-id")) ?? "",
     role: (await debugState.getAttribute("data-peer-role")) ?? "",
     status: (await debugState.getAttribute("data-peer-status")) ?? "",
@@ -277,25 +303,30 @@ export async function waitForRemoteCluster(
   },
 ) {
   await expect
-    .poll(async () => {
-      const states = await Promise.all(pages.map(getPeerDebugState))
+    .poll(
+      async () => {
+        const states = await Promise.all(pages.map(getPeerDebugState))
 
-      return {
-        connectedClients: states.filter(
-          ({ connectionCount, role, status }) =>
-            connectionCount === "1" && role === "client" && status === "connected",
-        ).length,
-        electedMain: states.filter(
-          ({ connectionCount, role, status }) =>
-            connectionCount === String(mainConnectionCount) &&
-            role === "main" &&
-            status === "connected",
-        ).length,
-      }
-    }, {
-      timeout,
-      message,
-    })
+        return {
+          connectedClients: states.filter(
+            ({ connectionCount, role, status }) =>
+              connectionCount === "1" &&
+              role === "client" &&
+              status === "connected",
+          ).length,
+          electedMain: states.filter(
+            ({ connectionCount, role, status }) =>
+              connectionCount === String(mainConnectionCount) &&
+              role === "main" &&
+              status === "connected",
+          ).length,
+        }
+      },
+      {
+        timeout,
+        message,
+      },
+    )
     .toEqual({
       connectedClients: clientCount,
       electedMain: 1,

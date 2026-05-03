@@ -1,16 +1,13 @@
-import { HTMLAttributes } from "react"
+import type { ButtonHTMLAttributes } from "react"
 
 export default function CloseButton({
-  className,
   title = "Close",
   ...otherProps
-}: HTMLAttributes<HTMLButtonElement>) {
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={
-        className ||
-        "absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"
-      }
+      className="absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"
+      type="button"
       title={title}
       {...otherProps}
     >

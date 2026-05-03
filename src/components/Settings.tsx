@@ -95,9 +95,8 @@ export default function Settings({
               <>
                 <UrlCopyField
                   label="Timer URL"
-                  id="timer_url"
                   containerClassName="px-3"
-                  value={getUrlWithParams()}
+                  value={getUrlWithParams({ omit: ["settings"] })}
                 />
                 <p>
                   <button
@@ -127,15 +126,13 @@ export default function Settings({
                     </p>
                     <UrlCopyField
                       label="Client URL"
-                      id="timer_url"
                       containerClassName="px-3"
-                      value={getUrlWithParams(
-                        undefined,
-                        {
+                      value={getUrlWithParams({
+                        inherit: false,
+                        params: {
                           rid: peerId,
                         },
-                        false,
-                      )}
+                      })}
                       showOpenButton={true}
                     />
                   </div>

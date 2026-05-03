@@ -8,6 +8,7 @@ import {
   expectTimerRunning,
   expectTimerSettings,
   expectTimerUrlParams,
+  expectUrlQrCode,
   expectTimersToMatch,
   getDisplayedSeconds,
   openSettingsOverlay,
@@ -202,6 +203,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   }
 
   await openSettingsOverlay(page)
+  await expectUrlQrCode(page, "Client URL")
   await updateTimerSettings(page, mainSettings)
   await closeSettingsOverlay(page)
 
