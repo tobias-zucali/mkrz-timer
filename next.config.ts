@@ -1,4 +1,13 @@
+import os from "node:os"
 import type { NextConfig } from "next"
+
+function getLocalIPv4Addresses() {
+  return Object.values(os.networkInterfaces()).flatMap((networks) =>
+    (networks ?? [])
+      .filter((network) => network.family === "IPv4" && !network.internal)
+      .map((network) => network.address),
+  )
+}
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -10,6 +19,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...getLocalIPv4Addresses()],
 }
 
 export default nextConfig
