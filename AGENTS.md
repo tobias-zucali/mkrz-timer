@@ -8,6 +8,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Use Node.js `20.9.0` or newer.
 - Keep this file focused on durable repo guidance for agents, not one-off debugging notes.
 - Spread `...otherProps` last on the rendered element so callers can override defaults intentionally.
+- Before making architectural changes, creating new components, adding dependencies, or introducing cross-cutting state/ownership patterns, pause and ask for confirmation. If the tradeoffs are not obvious, switch to planning mode or propose a short plan first.
 
 ## End-to-end tests
 
