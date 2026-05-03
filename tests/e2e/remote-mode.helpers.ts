@@ -18,6 +18,11 @@ type TimerSettings = {
   title?: string
 }
 
+export type RemoteClientUrls = {
+  controlClientUrl: string
+  readonlyClientUrl: string
+}
+
 export async function openTimer(page: Page, seconds = 3) {
   await page.goto(
     `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`,
@@ -33,24 +38,61 @@ export async function enableRemoteMode(page: Page) {
   ).toBeVisible()
 
   await page.getByRole("button", { name: "Switch to remote mode" }).click()
-  const clientUrlInput = page.getByRole("textbox", { name: "Client URL" })
-  await expect(clientUrlInput).toBeVisible({ timeout: 30_000 })
+  const readonlyClientUrlInput = page.getByRole("textbox", {
+    name: "Readonly Client URL",
+  })
+  const controlClientUrlInput = page.getByRole("textbox", {
+    name: "Control Client URL",
+  })
+  await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
+  await expect(controlClientUrlInput).toBeVisible()
+  await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
   await expect
-    .poll(() => clientUrlInput.inputValue(), {
-      message: "client URL should include a remote peer id",
+    .poll(() => readonlyClientUrlInput.inputValue(), {
+      message: "readonly client URL should include a remote peer id",
     })
     .toContain("?rid=")
 
-  return clientUrlInput.inputValue()
+  const readonlyClientUrl = await readonlyClientUrlInput.inputValue()
+
+  expect(readonlyClientUrl).not.toContain("control=42")
+  await expect
+    .poll(() => controlClientUrlInput.inputValue(), {
+      message: "control client URL should include the control marker",
+    })
+    .toContain("&control=42")
+
+  return controlClientUrlInput.inputValue()
 }
 
-export async function openClientFromSettings(page: Page, clientUrl: string) {
+export async function enableRemoteModeWithClientUrls(
+  page: Page,
+): Promise<RemoteClientUrls> {
+  const controlClientUrl = await enableRemoteMode(page)
+  const readonlyClientUrl = await page
+    .getByRole("textbox", { name: "Readonly Client URL" })
+    .inputValue()
+
+  return {
+    controlClientUrl,
+    readonlyClientUrl,
+  }
+}
+
+export async function openClientFromSettings(
+  page: Page,
+  clientUrl: string,
+  label = "Control Client URL",
+) {
   const clientPagePromise = page.waitForEvent("popup")
-  await page.getByRole("link", { name: "Open" }).click()
+  await page
+    .getByRole("textbox", { name: label })
+    .locator("..")
+    .getByRole("link", { name: "Open URL" })
+    .click()
   const clientPage = await clientPagePromise
 
   await expect(clientPage).toHaveURL(clientUrl)
-  await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
   await expect(clientPage).toHaveURL(/rid=/)
   return clientPage
 }
@@ -59,11 +101,12 @@ export async function openClientsFromSettings(
   page: Page,
   clientUrl: string,
   count: number,
+  label = "Control Client URL",
 ) {
   const clients: Page[] = []
 
   for (let index = 0; index < count; index += 1) {
-    clients.push(await openClientFromSettings(page, clientUrl))
+    clients.push(await openClientFromSettings(page, clientUrl, label))
   }
 
   return clients
@@ -75,12 +118,15 @@ export async function closeSettingsOverlay(page: Page) {
 }
 
 export async function expectUrlQrCode(page: Page, label: string) {
-  await page.getByRole("button", { name: `Show ${label} QR code` }).click()
-  const qrCodeDialog = page.getByRole("dialog", { name: `${label} QR code` })
+  await page.getByRole("button", { name: `Show ${label}` }).click()
+  const heading = label.endsWith("Client URL")
+    ? label.replace(/\s+URL$/, "")
+    : `${label}`
+  const qrCodeDialog = page.getByRole("dialog", { name: heading })
 
   await expect(qrCodeDialog).toBeVisible()
   await expect(
-    qrCodeDialog.getByRole("img", { name: `${label} QR code` }),
+    qrCodeDialog.getByRole("img", { name: `${label}` }),
   ).toBeVisible()
 
   await qrCodeDialog.click()
@@ -128,6 +174,10 @@ export async function expectTimerRunning(page: Page) {
     timeout: 15_000,
   })
 
+  await expectTimerDisplayRunning(page)
+}
+
+export async function expectTimerDisplayRunning(page: Page) {
   const initialSeconds = await getDisplayedSeconds(page)
   await expect
     .poll(() => getDisplayedSeconds(page), {
@@ -135,6 +185,15 @@ export async function expectTimerRunning(page: Page) {
       timeout: 5_000,
     })
     .toBeLessThan(initialSeconds)
+}
+
+export async function expectReadonlyTimerControls(page: Page) {
+  await expect(page.getByRole("button", { name: "START" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "PAUSE" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "RESET" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
+  await expect(page.getByLabel("Minutes")).toHaveAttribute("readonly", "")
+  await expect(page.getByLabel("Seconds")).toHaveAttribute("readonly", "")
 }
 
 export async function expectTimerPaused(page: Page) {
@@ -191,9 +250,15 @@ async function getBodyCssVariable(page: Page, name: string) {
 
 export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
-    await expect(page.getByTitle("Click to edit title")).toHaveText(
-      settings.title,
-    )
+    const editableTitle = page.getByTitle("Click to edit title")
+
+    if ((await editableTitle.count()) > 0) {
+      await expect(editableTitle).toHaveText(settings.title)
+    } else {
+      await expect(
+        page.getByText(settings.title, { exact: true }),
+      ).toBeVisible()
+    }
   }
 
   if (settings.minutes !== undefined || settings.seconds !== undefined) {

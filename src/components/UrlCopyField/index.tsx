@@ -89,10 +89,12 @@ function QrCodeIcon() {
 }
 
 export default function UrlCopyField({
-  value,
+  label,
   showOpenButton = false,
+  value,
   ...otherProps
 }: Omit<ComponentProps<typeof InputField>, "id"> & {
+  label: string
   showOpenButton?: boolean
   value: string
 }) {
@@ -110,7 +112,6 @@ export default function UrlCopyField({
   const buttonClassName =
     "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-primary/60 text-foreground hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
   const canCopy = isClient && navigator.clipboard
-  const qrCodeTitle = `${otherProps.label} QR code`
 
   return (
     <>
@@ -119,6 +120,7 @@ export default function UrlCopyField({
         value={isClient ? value : ""}
         readOnly={true}
         disabled={true}
+        label={label}
         {...otherProps}
       >
         {canCopy && (
@@ -151,8 +153,8 @@ export default function UrlCopyField({
           <button
             className={buttonClassName}
             onClick={() => setIsQrCodeOpen(true)}
-            title={`Show ${qrCodeTitle}`}
-            aria-label={`Show ${qrCodeTitle}`}
+            title={`Show ${label}`}
+            aria-label={`Show ${label}`}
             type="button"
           >
             <QrCodeIcon />
@@ -168,21 +170,21 @@ export default function UrlCopyField({
           role="dialog"
         >
           <CloseButton
-            aria-label={`Close ${qrCodeTitle}`}
-            title={`Close ${qrCodeTitle}`}
+            aria-label={`Close ${label}`}
+            title={`Close ${label}`}
           />
           <h1
             className="text-3xl font-bold sm:text-5xl"
             id={`${fieldId}_qr_title`}
           >
-            {qrCodeTitle}
+            {label}
           </h1>
           <span className="rounded-md bg-white p-4">
             <QRCodeSVG
-              aria-label={qrCodeTitle}
+              aria-label={label}
               className="h-64 w-64 sm:h-80 sm:w-80"
               marginSize={2}
-              title={qrCodeTitle}
+              title={label}
               value={value}
             />
           </span>

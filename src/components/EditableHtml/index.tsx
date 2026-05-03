@@ -12,6 +12,7 @@ export default function EditableHtml({
   onChange,
   ...otherProps
 }: {
+  disabled?: boolean
   html: string
   onChange: (value: string) => void
   onBlur?: () => void

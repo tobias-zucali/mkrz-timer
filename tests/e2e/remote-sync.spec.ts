@@ -164,7 +164,8 @@ test("syncs the current timer state to a client that rejoins during active contr
   await waitForRemoteCluster([...activePages, rejoinedClient], {
     clientCount: 3,
     mainConnectionCount: 3,
-    message: "rejoined client should reconnect before asserting synced timer state",
+    message:
+      "rejoined client should reconnect before asserting synced timer state",
   })
 
   await Promise.all([...activePages, rejoinedClient].map(expectTimerPaused))
@@ -203,16 +204,18 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   }
 
   await openSettingsOverlay(page)
-  await expectUrlQrCode(page, "Client URL")
+  await expectUrlQrCode(page, "Control Client URL")
   await updateTimerSettings(page, mainSettings)
   await closeSettingsOverlay(page)
 
-  await Promise.all(allPages.map((remotePage) =>
-    expectTimerSettings(remotePage, mainSettings),
-  ))
-  await Promise.all(allPages.map((remotePage) =>
-    expectTimerUrlParams(remotePage, mainSettings),
-  ))
+  await Promise.all(
+    allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
+  )
+  await Promise.all(
+    allPages.map((remotePage) =>
+      expectTimerUrlParams(remotePage, mainSettings),
+    ),
+  )
 
   const clientSettings = {
     backgroundColor: "#1a2b3c",
@@ -227,10 +230,14 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   await updateTimerSettings(clients[1], clientSettings)
   await closeSettingsOverlay(clients[1])
 
-  await Promise.all(allPages.map((remotePage) =>
-    expectTimerSettings(remotePage, clientSettings),
-  ))
-  await Promise.all(allPages.map((remotePage) =>
-    expectTimerUrlParams(remotePage, clientSettings),
-  ))
+  await Promise.all(
+    allPages.map((remotePage) =>
+      expectTimerSettings(remotePage, clientSettings),
+    ),
+  )
+  await Promise.all(
+    allPages.map((remotePage) =>
+      expectTimerUrlParams(remotePage, clientSettings),
+    ),
+  )
 })

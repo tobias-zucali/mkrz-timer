@@ -22,6 +22,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 ## PeerJS server
 
 - Remote mode uses PeerJS for peer discovery/signalling before browser-to-browser data connections are established.
+- Remote client URLs are readonly by default. Add `control=42` to the URL only for clients that should expose timer controls and settings.
 - The app uses the default PeerJS cloud server unless `NEXT_PUBLIC_PEERJS_HOST` is set.
 - `pnpm dev:peer` starts the local PeerJS server on `127.0.0.1:9000`.
 - Playwright starts `pnpm dev:peer` and `pnpm dev:e2e` through `playwright.config.ts`.

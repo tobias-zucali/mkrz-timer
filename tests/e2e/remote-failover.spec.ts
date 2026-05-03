@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test"
 import {
   closeSettingsOverlay,
   enableRemoteMode,
+  enableRemoteModeWithClientUrls,
+  expectReadonlyTimerControls,
+  expectTimerDisplayRunning,
   expectTimerPaused,
   expectTimerRunning,
   expectTimersToMatch,
@@ -39,12 +42,15 @@ test("elects a new main when the original main closes and lets the original main
 
   const rejoinedMain = await clients[0].context().newPage()
   await rejoinedMain.goto(clientUrl)
-  await expect(rejoinedMain.getByRole("button", { name: "START" })).toBeVisible()
+  await expect(
+    rejoinedMain.getByRole("button", { name: "START" }),
+  ).toBeVisible()
 
   await waitForRemoteCluster([...clients, rejoinedMain], {
     clientCount: 3,
     mainConnectionCount: 3,
-    message: "the original main should rejoin as a client after the cluster stabilizes",
+    message:
+      "the original main should rejoin as a client after the cluster stabilizes",
   })
 
   await expect(rejoinedMain.getByTestId("peer-debug-state")).toHaveAttribute(
@@ -93,7 +99,9 @@ test("survives two consecutive main failovers while timer actions stay in sync",
 
   await firstElectedMain.close({ runBeforeUnload: true })
 
-  const remainingClients = clients.filter((client) => client !== firstElectedMain)
+  const remainingClients = clients.filter(
+    (client) => client !== firstElectedMain,
+  )
   await waitForRemoteCluster(remainingClients, {
     clientCount: 2,
     mainConnectionCount: 2,
@@ -107,4 +115,51 @@ test("survives two consecutive main failovers while timer actions stay in sync",
   await secondElectedMain.getByRole("button", { name: "PAUSE" }).click()
   await Promise.all(remainingClients.map(expectTimerPaused))
   await expectTimersToMatch(remainingClients)
+})
+
+test("keeps mixed readonly and control clients synced after main failover", async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
+
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const controlClients = await openClientsFromSettings(
+    page,
+    controlClientUrl,
+    2,
+  )
+  const readonlyClients = await openClientsFromSettings(
+    page,
+    readonlyClientUrl,
+    2,
+    "Readonly Client URL",
+  )
+  const clients = [...controlClients, ...readonlyClients]
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, ...clients], {
+    clientCount: 4,
+    mainConnectionCount: 4,
+    message: "mixed clients should connect before failover",
+  })
+
+  await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
+
+  await page.getByRole("button", { name: "START" }).click()
+  await Promise.all(controlClients.map(expectTimerRunning))
+  await Promise.all(readonlyClients.map(expectTimerDisplayRunning))
+
+  await page.close({ runBeforeUnload: true })
+
+  await waitForRemoteCluster(clients, {
+    clientCount: 3,
+    mainConnectionCount: 3,
+    message: "mixed clients should reconnect after the original main closes",
+  })
+
+  await controlClients[0].getByRole("button", { name: "PAUSE" }).click()
+  await Promise.all(controlClients.map(expectTimerPaused))
+  await expectTimersToMatch(clients)
+  await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })

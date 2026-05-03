@@ -22,6 +22,7 @@ export default function useParams() {
     pc: withColorHash(searchParams.get("pc") || "d61f69"),
     pid: searchParams.get("pid") || "", // peer id
     rid: searchParams.get("rid") || "", // remote peer id
+    control: searchParams.get("control") || null, // client control mode
     settings: searchParams.get("settings") || null, // settings open
   })
 

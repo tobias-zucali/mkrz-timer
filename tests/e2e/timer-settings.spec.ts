@@ -14,15 +14,15 @@ test("opens and closes the timer URL QR overlay", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
-  await page.getByRole("button", { name: "Show Timer URL QR code" }).click()
-  const qrCodeDialog = page.getByRole("dialog", { name: "Timer URL QR code" })
+  await page.getByRole("button", { name: "Show Timer URL" }).click()
+  const qrCodeDialog = page.getByRole("dialog", { name: "Timer URL" })
 
   await expect(qrCodeDialog).toBeVisible()
   await expect(
-    qrCodeDialog.getByRole("heading", { name: "Timer URL QR code" }),
+    qrCodeDialog.getByRole("heading", { name: "Timer URL" }),
   ).toBeVisible()
   await expect(
-    qrCodeDialog.getByRole("img", { name: "Timer URL QR code" }),
+    qrCodeDialog.getByRole("img", { name: "Timer URL" }),
   ).toBeVisible()
   await expect(qrCodeDialog).toContainText("m=00")
   await expect(qrCodeDialog).toContainText("s=03")

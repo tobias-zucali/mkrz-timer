@@ -67,6 +67,24 @@ test("buildPathWithParams can skip inheritance for client URLs", () => {
   )
 })
 
+test("buildPathWithParams serializes control client URLs", () => {
+  assert.equal(
+    buildPathWithParams(
+      {
+        rid: "old-main",
+      },
+      {
+        inherit: false,
+        params: {
+          rid: "new-main",
+          control: "42",
+        },
+      },
+    ),
+    "/?rid=new-main&control=42",
+  )
+})
+
 test("buildPathWithParams can use a custom pathname", () => {
   assert.equal(
     buildPathWithParams(

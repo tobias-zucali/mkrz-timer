@@ -34,6 +34,7 @@ function TimerApp() {
     pc,
     m,
     s,
+    control,
   } = params
 
   const syncParams = {
@@ -127,10 +128,11 @@ function TimerApp() {
   const peerRole =
     peerData.peerId && peerData.peerId === remoteIdParam ? "main" : "client"
   const peerStatus = peerId ? "connected" : "disconnected"
+  const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
 
   return (
     <>
-      {isSettingsOpen ? (
+      {isSettingsOpen && !isReadonlyClient ? (
         <>
           <Settings
             peerData={peerData}
@@ -142,8 +144,13 @@ function TimerApp() {
         </>
       ) : (
         <>
-          <Timer title={title} handleChange={handleChange} timer={timer} />
-          <SettingsButton onClick={openSettings} />
+          <Timer
+            isReadonly={isReadonlyClient}
+            title={title}
+            handleChange={handleChange}
+            timer={timer}
+          />
+          {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
           {remoteIdParam && (
             <div className="absolute bottom-0 left-0 p-4 text-foreground/50">
               {peerData.peerId

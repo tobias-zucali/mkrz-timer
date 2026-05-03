@@ -41,6 +41,8 @@ pnpm format
 
 Remote mode uses PeerJS for peer-to-peer timer synchronization. In production, the app uses the default PeerJS cloud server unless a different PeerJS endpoint is configured.
 
+Remote mode offers two client URLs. The readonly client URL only includes the remote peer id, for example `rid=<peerId>`, and joins as a viewer without timer controls or settings. The control client URL adds `control=42`, for example `?rid=<peerId>&control=42`, and can start, pause, reset, and update timer settings. Readonly and control clients can be mixed in the same remote session.
+
 For local end-to-end tests, the repository runs its own PeerJS server so tests do not depend on the public PeerJS service:
 
 ```bash

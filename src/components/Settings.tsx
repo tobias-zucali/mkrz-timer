@@ -104,7 +104,7 @@ export default function Settings({
                     onClick={async () => {
                       const id = await connectRemote(remoteId)
                       if (!remoteId) {
-                        setParams({ rid: id })
+                        setParams({ control: "42", rid: id })
                       }
                     }}
                     type="button"
@@ -125,12 +125,24 @@ export default function Settings({
                       to view the timer.
                     </p>
                     <UrlCopyField
-                      label="Client URL"
+                      label="Readonly Client URL"
                       containerClassName="px-3"
                       value={getUrlWithParams({
                         inherit: false,
                         params: {
                           rid: peerId,
+                        },
+                      })}
+                      showOpenButton={true}
+                    />
+                    <UrlCopyField
+                      label="Control Client URL"
+                      containerClassName="px-3"
+                      value={getUrlWithParams({
+                        inherit: false,
+                        params: {
+                          rid: peerId,
+                          control: "42",
                         },
                       })}
                       showOpenButton={true}
@@ -144,7 +156,7 @@ export default function Settings({
                     className="underline cursor-pointer hover:text-primary font-bold"
                     onClick={() => {
                       disconnect()
-                      setParams({ rid: undefined })
+                      setParams({ control: null, rid: undefined })
                     }}
                     type="button"
                   >
