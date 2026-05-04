@@ -49,7 +49,7 @@ For local end-to-end tests, the repository runs its own PeerJS server so tests d
 pnpm dev:peer
 ```
 
-This starts PeerJS on [http://127.0.0.1:9000](http://127.0.0.1:9000). Playwright starts it automatically for the `test:e2e` scripts and points the Next.js app at it with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, and `NEXT_PUBLIC_PEERJS_SECURE`.
+This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE`.
 
 ## Testing
 

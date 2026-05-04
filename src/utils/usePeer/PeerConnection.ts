@@ -12,7 +12,7 @@ type ConnectionInfo = {
   isAlive: boolean
 }
 
-const getPeerPath = () => process.env.NEXT_PUBLIC_PEERJS_PATH || "/peerjs"
+const getPeerPath = () => process.env.NEXT_PUBLIC_PEERJS_PATH || "/"
 
 export const getPeerServerLabel = () => {
   const host = process.env.NEXT_PUBLIC_PEERJS_HOST
@@ -25,7 +25,9 @@ export const getPeerServerLabel = () => {
   const protocol = secure ? "https" : "http"
   const portSegment = Number.isFinite(port) ? `:${port}` : ""
 
-  return `PeerJS: ${protocol}://${host}${portSegment}${getPeerPath()}`
+  const path = getPeerPath()
+  const pathSegment = path === "/" ? "" : path
+  return `PeerJS: ${protocol}://${host}${portSegment}${pathSegment}`
 }
 
 const getPeerOptions = (): PeerOptions | undefined => {

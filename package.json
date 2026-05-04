@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "dev:e2e": "next dev -H 127.0.0.1",
-    "dev:peer": "peerjs --host 127.0.0.1 --port 9000",
+    "dev:e2e": "next dev -H 127.0.0.1 -p 3100",
+    "dev:peer": "node scripts/dev-peer.mjs",
     "build": "pnpm test && next build",
     "start": "next start",
     "test": "pnpm lint && pnpm test:unit && pnpm test:e2e",

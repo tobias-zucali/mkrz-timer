@@ -6,13 +6,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: "http://127.0.0.1:3100",
     trace: "on-first-retry",
   },
   webServer: [
     {
       command: "pnpm dev:peer",
-      url: "http://127.0.0.1:9000/peerjs/id",
+      url: "http://127.0.0.1:9100/peerjs/id",
       reuseExistingServer: true,
       timeout: 120_000,
     },
@@ -20,10 +20,11 @@ export default defineConfig({
       command: "pnpm dev:e2e",
       env: {
         NEXT_PUBLIC_PEERJS_HOST: "127.0.0.1",
-        NEXT_PUBLIC_PEERJS_PORT: "9000",
+        NEXT_PUBLIC_PEERJS_PORT: "9100",
+        NEXT_PUBLIC_PEERJS_PATH: "/",
         NEXT_PUBLIC_PEERJS_SECURE: "false",
       },
-      url: "http://127.0.0.1:3000",
+      url: "http://127.0.0.1:3100",
       reuseExistingServer: true,
       timeout: 120_000,
     },
