@@ -1,5 +1,6 @@
 "use client"
 
+import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import usePeer from "@/utils/usePeer"
 
@@ -14,11 +15,13 @@ const primaryButtonClassName =
 const remoteModeStatusClassName = "text-sm text-foreground/70"
 
 export default function Settings({
+  floatingTimerData,
   peerData,
   paramData,
   closeSettings,
   handleChange,
 }: {
+  floatingTimerData: FloatingTimerData
   peerData: ReturnType<typeof usePeer>
   paramData: ReturnType<typeof useParams>
   closeSettings: () => void
@@ -28,6 +31,28 @@ export default function Settings({
   const { rid: remoteId } = params
 
   const { connectRemote, disconnect, isConnecting, peerId } = peerData
+
+  const floatingTimerSection = floatingTimerData.isSupported ? (
+    <p className="mt-4">
+      <button
+        className={actionLinkClassName}
+        data-testid="floating-timer-toggle"
+        onClick={() => {
+          void floatingTimerData.toggle()
+        }}
+        type="button"
+      >
+        {floatingTimerData.isOpen ? "Close Floating Timer" : "Open Floating Timer"}
+      </button>{" "}
+      to keep a readonly timer floating above other windows in supported
+      Chromium browsers.
+    </p>
+  ) : (
+    <p className="mt-4 text-sm text-foreground/70">
+      {floatingTimerData.unsupportedReason ??
+        "Floating Timer is not available in this browser."}
+    </p>
+  )
 
   const closeButton = (
     <div className="flex justify-end">
@@ -128,6 +153,7 @@ export default function Settings({
                   in case you want to remote control the timer in another window
                   / on another device.
                 </p>
+                {floatingTimerSection}
                 {closeButton}
               </>
             ) : (
@@ -162,6 +188,7 @@ export default function Settings({
                       })}
                       showOpenButton={true}
                     />
+                    {floatingTimerSection}
                   </div>
                 ) : (
                   <p

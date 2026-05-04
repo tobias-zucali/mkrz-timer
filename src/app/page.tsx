@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useRef, useState } from "react"
 
 import debug, { IS_DEBUGGING } from "@/utils/debug"
+import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import { getPeerServerLabel } from "@/utils/usePeer/PeerConnection"
 import usePeer, { SyncParams } from "@/utils/usePeer"
@@ -74,6 +75,7 @@ function TimerApp() {
     },
   })
   const { setState } = timer
+  const { minutes, seconds, isTimedOut, elapsedPercentage } = timer
 
   // handle connection
   const peerData = usePeer({
@@ -140,12 +142,26 @@ function TimerApp() {
   const peerStatus = peerId ? "connected" : "disconnected"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
   const peerServerLabel = getPeerServerLabel()
+  const floatingTimerData = useFloatingTimerPiP({
+    setErrorText,
+    state: {
+      backgroundColor: bg,
+      elapsedPercentage,
+      foregroundColor: fg,
+      isTimedOut,
+      minutes,
+      primaryColor: pc,
+      seconds,
+      title,
+    },
+  })
 
   return (
     <>
       {isSettingsOpen && !isReadonlyClient ? (
         <>
           <Settings
+            floatingTimerData={floatingTimerData}
             peerData={peerData}
             paramData={paramData}
             closeSettings={closeSettings}
