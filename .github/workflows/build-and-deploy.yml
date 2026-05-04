@@ -28,14 +28,13 @@ jobs:
 
       - name: Install
         run: |
-          npm ci --no-audit
-          npm audit --omit=dev
+          pnpm install --frozen-lockfile
 
       - name: Test
-        run: npm run test
+        run: pnpm run test
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

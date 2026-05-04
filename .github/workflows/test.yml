@@ -13,13 +13,15 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install
         run: |
-          npm ci --no-audit
-          npm audit --omit=dev
+          pnpm install --frozen-lockfile
 
       - name: Test
-        run: npm run test
+        run: pnpm run test
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
