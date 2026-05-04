@@ -6,7 +6,7 @@ export default function CloseButton({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className="absolute top-0 left-0 p-4 text-foreground/50 hover:text-primary cursor-pointer"
+      className="fixed top-0 left-0 z-50 p-4 text-foreground/50 hover:text-primary cursor-pointer"
       type="button"
       title={title}
       {...otherProps}

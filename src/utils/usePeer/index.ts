@@ -184,7 +184,7 @@ export default function usePeer({
   )
 
   const connectRemote = useCallback(
-    async (remoteId: string) => {
+    async (remoteId?: string | null) => {
       const startSession = async (id?: string) => {
         const maxAttempts = 3
 

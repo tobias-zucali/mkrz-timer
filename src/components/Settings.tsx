@@ -106,8 +106,8 @@ export default function Settings({
                   <button
                     className={actionLinkClassName}
                     onClick={async () => {
-                      const id = await connectRemote(remoteId)
-                      if (!remoteId) {
+                      const id = await connectRemote()
+                      if (!remoteId && id) {
                         setParams({ control: "42", rid: id })
                       }
                     }}
