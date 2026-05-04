@@ -6,8 +6,11 @@ import DigitalDisplay from "@/components/DigitalDisplay"
 import useTimer from "@/utils/useTimer"
 
 const timerButtonClassName =
-  "mx-1 rounded-sm bg-foreground px-2 text-background cursor-pointer " +
-  "hover:outline-secondary hover:outline-2 hover:outline-offset-2 disabled:cursor-default disabled:opacity-50"
+  "inline-flex min-h-11 min-w-24 appearance-none items-center justify-center " +
+  "rounded-md bg-foreground px-3.5 py-2.5 text-base font-bold text-background " +
+  "shadow-sm transition-colors hover:bg-foreground/90 " +
+  "focus-visible:outline-secondary focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation"
 
 export default function Timer({
   isReadonly = false,
@@ -56,7 +59,10 @@ export default function Timer({
             onSecondsChange={(event) => handleChange("s", event.target.value)}
           />
           {!isReadonly && (
-            <div className="text-center py-[0.5em]">
+            <div
+              className="flex flex-wrap items-center justify-center gap-2 py-[0.625em]"
+              data-testid="timer-controls"
+            >
               <button
                 className={timerButtonClassName}
                 disabled={isTimedOut}

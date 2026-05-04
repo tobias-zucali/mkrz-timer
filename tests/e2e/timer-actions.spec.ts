@@ -1,6 +1,10 @@
-import { expect, Page, test } from "@playwright/test"
+import { devices, expect, Page, test } from "@playwright/test"
 
-import { getDisplayedSeconds, openTimer } from "./remote-mode.helpers"
+import {
+  expectScreenshotWithoutDebugInfo,
+  getDisplayedSeconds,
+  openTimer,
+} from "./remote-mode.helpers"
 
 async function setTimer(page: Page, minutes: string, seconds: string) {
   await page.getByLabel("Minutes").fill(minutes)
@@ -110,4 +114,46 @@ test("runs a short timer to completion and resets it", async ({ page }) => {
       message: "timer should restore the configured duration after reset",
     })
     .toBe(3)
+})
+
+test("matches full timer layout across simulated form factors", async ({
+  baseURL,
+  browser,
+}) => {
+  const formFactors = [
+    {
+      name: "desktop",
+      contextOptions: {
+        viewport: { width: 1440, height: 1100 },
+      },
+    },
+    {
+      name: "tablet",
+      contextOptions: {
+        ...devices["iPad Mini"],
+      },
+    },
+    {
+      name: "phone",
+      contextOptions: {
+        ...devices["iPhone 13"],
+      },
+    },
+  ] as const
+
+  for (const { name, contextOptions } of formFactors) {
+    const context = await browser.newContext(contextOptions)
+    const devicePage = await context.newPage()
+
+    await openTimer(devicePage, 3, baseURL)
+    await expect(devicePage.getByRole("button", { name: "START" })).toBeVisible()
+
+    await expectScreenshotWithoutDebugInfo(devicePage, {
+      fullPage: true,
+      message: `${name} timer layout should stay visually stable`,
+      name: `timer-layout-${name}.png`,
+    })
+
+    await context.close()
+  }
 })

@@ -23,10 +23,36 @@ export type RemoteClientUrls = {
   readonlyClientUrl: string
 }
 
-export async function openTimer(page: Page, seconds = 3) {
-  await page.goto(
-    `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`,
-  )
+type ScreenshotMaskOptions = {
+  fullPage?: boolean
+  message?: string
+  name: string
+}
+
+const DEBUG_INFO_SELECTOR = '[data-testid="peer-debug-state"]'
+
+export async function openTimer(page: Page, seconds = 3, baseUrl?: string) {
+  const path = `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`
+  await page.goto(baseUrl ? new URL(path, baseUrl).toString() : path)
+}
+
+export async function expectScreenshotWithoutDebugInfo(
+  page: Page,
+  { fullPage = false, message, name }: ScreenshotMaskOptions,
+) {
+  const styleTag = await page.addStyleTag({
+    content: `${DEBUG_INFO_SELECTOR} { visibility: hidden !important; }`,
+  })
+
+  try {
+    await expect(page, message).toHaveScreenshot(name, {
+      fullPage,
+    })
+  } finally {
+    await styleTag.evaluate((node) => {
+      node.parentNode?.removeChild(node)
+    })
+  }
 }
 
 export async function enableRemoteMode(page: Page) {
