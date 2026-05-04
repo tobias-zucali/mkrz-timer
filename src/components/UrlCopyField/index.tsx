@@ -7,6 +7,9 @@ import CloseButton from "@/components/CloseButton"
 
 import InputField from "../InputField"
 
+const iconButtonClassName =
+  "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-primary/60 text-foreground hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+
 function ArrowTopRightOnSquareIcon() {
   return (
     <svg
@@ -109,8 +112,6 @@ export default function UrlCopyField({
     }
   }, [])
 
-  const buttonClassName =
-    "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-primary/60 text-foreground hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
   const canCopy = isClient && navigator.clipboard
 
   return (
@@ -125,7 +126,7 @@ export default function UrlCopyField({
       >
         {canCopy && (
           <button
-            className={buttonClassName}
+            className={iconButtonClassName}
             onClick={() => {
               navigator.clipboard.writeText(value)
               setIsCopied(true)
@@ -140,7 +141,7 @@ export default function UrlCopyField({
         )}
         {showOpenButton && (
           <Link
-            className={buttonClassName}
+            className={iconButtonClassName}
             href={isClient ? value : ""}
             target="_blank"
             title="Open URL"
@@ -151,7 +152,7 @@ export default function UrlCopyField({
         )}
         {isClient && value && (
           <button
-            className={buttonClassName}
+            className={iconButtonClassName}
             onClick={() => setIsQrCodeOpen(true)}
             title={`Show ${label}`}
             aria-label={`Show ${label}`}
@@ -169,10 +170,7 @@ export default function UrlCopyField({
           onClick={() => setIsQrCodeOpen(false)}
           role="dialog"
         >
-          <CloseButton
-            aria-label={`Close ${label}`}
-            title={`Close ${label}`}
-          />
+          <CloseButton aria-label={`Close ${label}`} title={`Close ${label}`} />
           <h1
             className="text-3xl font-bold sm:text-5xl"
             id={`${fieldId}_qr_title`}

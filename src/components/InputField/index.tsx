@@ -1,5 +1,12 @@
 import classNames from "classnames"
 
+const baseInputClassName = classNames(
+  "block h-10 w-full rounded-md",
+  "bg-foreground/15 text-base text-foreground",
+  "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
+  "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
+)
+
 export default function InputField({
   containerClassName,
   label,
@@ -14,6 +21,9 @@ export default function InputField({
   onChange?: React.ChangeEventHandler<HTMLInputElement>
   children?: React.ReactNode
 } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const hasInsetPadding =
+    otherProps.type !== "color" && otherProps.type !== "number"
+
   return (
     <div className={classNames("pt-2 w-full", containerClassName)}>
       <label htmlFor={id} className="block text-sm/6 font-medium">
@@ -27,13 +37,8 @@ export default function InputField({
           autoComplete="given-name"
           className={classNames(
             otherProps.type !== "color" && "pl-3",
-            otherProps.type !== "color" &&
-              otherProps.type !== "number" &&
-              "pr-3",
-            "block w-full rounded-md h-10",
-            "bg-foreground/15 text-base text-foreground",
-            "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
-            "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
+            hasInsetPadding && "pr-3",
+            baseInputClassName,
             className,
           )}
           {...otherProps}

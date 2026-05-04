@@ -5,6 +5,10 @@ import Pie from "@/components/Pie"
 import DigitalDisplay from "@/components/DigitalDisplay"
 import useTimer from "@/utils/useTimer"
 
+const timerButtonClassName =
+  "mx-1 rounded-sm bg-foreground px-2 text-background cursor-pointer " +
+  "hover:outline-secondary hover:outline-2 hover:outline-offset-2 disabled:cursor-default disabled:opacity-50"
+
 export default function Timer({
   isReadonly = false,
   title,
@@ -25,10 +29,6 @@ export default function Timer({
     elapsedPercentage,
     handleAction,
   } = timer
-
-  const buttonClassName =
-    "bg-foreground disabled:opacity-50 text-background cursor-pointer disabled:cursor-default " +
-    "px-2 mx-1 rounded-sm hover:outline-secondary hover:outline-2 hover:outline-offset-2"
 
   return (
     <div className="flex flex-col h-full">
@@ -58,14 +58,14 @@ export default function Timer({
           {!isReadonly && (
             <div className="text-center py-[0.5em]">
               <button
-                className={buttonClassName}
+                className={timerButtonClassName}
                 disabled={isTimedOut}
                 onClick={() => handleAction("toggle")}
               >
                 {isPaused ? "START" : "PAUSE"}
               </button>
               <button
-                className={buttonClassName}
+                className={timerButtonClassName}
                 disabled={!isStarted}
                 onClick={() => handleAction("reset")}
               >

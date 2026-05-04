@@ -7,6 +7,11 @@ import HelpText from "@/components/HelpText"
 import InputField from "@/components/InputField"
 import UrlCopyField from "@/components/UrlCopyField"
 
+const actionLinkClassName =
+  "cursor-pointer font-bold underline hover:text-primary"
+const primaryButtonClassName =
+  "block mb-8 rounded-lg bg-primary px-8 py-4 text-center font-bold text-foreground cursor-pointer hover:bg-primary/80"
+
 export default function Settings({
   peerData,
   paramData,
@@ -30,7 +35,7 @@ export default function Settings({
           closeSettings()
           event.preventDefault()
         }}
-        className="block mb-8 rounded-lg px-8 py-4 text-center font-bold bg-primary hover:bg-primary/80 text-foreground cursor-pointer"
+        className={primaryButtonClassName}
       >
         Close Settings
       </button>
@@ -95,12 +100,11 @@ export default function Settings({
               <>
                 <UrlCopyField
                   label="Timer URL"
-                  containerClassName="px-3"
                   value={getUrlWithParams({ omit: ["settings"] })}
                 />
                 <p>
                   <button
-                    className="underline cursor-pointer hover:text-primary font-bold"
+                    className={actionLinkClassName}
                     onClick={async () => {
                       const id = await connectRemote(remoteId)
                       if (!remoteId) {
@@ -126,7 +130,6 @@ export default function Settings({
                     </p>
                     <UrlCopyField
                       label="Readonly Client URL"
-                      containerClassName="px-3"
                       value={getUrlWithParams({
                         inherit: false,
                         params: {
@@ -137,7 +140,6 @@ export default function Settings({
                     />
                     <UrlCopyField
                       label="Control Client URL"
-                      containerClassName="px-3"
                       value={getUrlWithParams({
                         inherit: false,
                         params: {
@@ -153,7 +155,7 @@ export default function Settings({
                 )}
                 <p>
                   <button
-                    className="underline cursor-pointer hover:text-primary font-bold"
+                    className={actionLinkClassName}
                     onClick={() => {
                       disconnect()
                       setParams({ control: null, rid: undefined })
