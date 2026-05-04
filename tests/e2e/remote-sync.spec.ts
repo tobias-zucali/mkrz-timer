@@ -17,61 +17,63 @@ import {
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
 
-test("syncs start and pause actions between main and three clients", async ({
-  page,
-}) => {
-  test.setTimeout(60_000)
+test(
+  "syncs start and pause actions between main and three clients",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    test.setTimeout(60_000)
 
-  const clientUrl = await enableRemoteMode(page)
-  const clients = await openClientsFromSettings(page, clientUrl, 3)
+    const clientUrl = await enableRemoteMode(page)
+    const clients = await openClientsFromSettings(page, clientUrl, 3)
 
-  await closeSettingsOverlay(page)
+    await closeSettingsOverlay(page)
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
-    "data-connection-count",
-    "3",
-    {
-      timeout: 30_000,
-    },
-  )
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
-    "data-peer-role",
-    "main",
-  )
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
-    "data-peer-status",
-    "connected",
-  )
+    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+      "data-connection-count",
+      "3",
+      {
+        timeout: 30_000,
+      },
+    )
+    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+      "data-peer-role",
+      "main",
+    )
+    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+      "data-peer-status",
+      "connected",
+    )
 
-  await Promise.all(
-    clients.map(async (client) => {
-      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
-        "data-peer-role",
-        "client",
-      )
-      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
-        "data-peer-status",
-        "connected",
-      )
-      await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
-        "data-connection-count",
-        "1",
-      )
-    }),
-  )
+    await Promise.all(
+      clients.map(async (client) => {
+        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+          "data-peer-role",
+          "client",
+        )
+        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+          "data-peer-status",
+          "connected",
+        )
+        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+          "data-connection-count",
+          "1",
+        )
+      }),
+    )
 
-  await page.getByRole("button", { name: "START" }).click()
-  await Promise.all([page, ...clients].map(expectTimerRunning))
+    await page.getByRole("button", { name: "START" }).click()
+    await Promise.all([page, ...clients].map(expectTimerRunning))
 
-  await page.getByRole("button", { name: "PAUSE" }).click()
-  await Promise.all([page, ...clients].map(expectTimerPaused))
+    await page.getByRole("button", { name: "PAUSE" }).click()
+    await Promise.all([page, ...clients].map(expectTimerPaused))
 
-  await clients[0].getByRole("button", { name: "START" }).click()
-  await Promise.all([page, ...clients].map(expectTimerRunning))
+    await clients[0].getByRole("button", { name: "START" }).click()
+    await Promise.all([page, ...clients].map(expectTimerRunning))
 
-  await clients[0].getByRole("button", { name: "PAUSE" }).click()
-  await Promise.all([page, ...clients].map(expectTimerPaused))
-})
+    await clients[0].getByRole("button", { name: "PAUSE" }).click()
+    await Promise.all([page, ...clients].map(expectTimerPaused))
+  },
+)
 
 test("keeps state consistent when multiple peers control the timer quickly", async ({
   page,

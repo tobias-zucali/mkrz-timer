@@ -15,8 +15,9 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Playwright tests live in `./tests/e2e`.
 - The Playwright config starts the Next.js dev server on `http://127.0.0.1:3100` and a local PeerJS server on `http://127.0.0.1:9100`; it reuses existing servers when they are already running.
 - Use `pnpm dev:peer` when you need the local PeerJS server outside Playwright.
-- `pnpm test` is the regular verification gate and runs lint plus the full Playwright e2e suite.
-- `pnpm build` runs `pnpm test` first, then runs `next build`.
+- `pnpm test` is the regular verification gate and runs lint, unit tests, and the smoke Playwright suite.
+- `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
+- `pnpm build` runs `pnpm test:full` first, then runs `next build`.
 - Test scripts clean old `test-results` and `playwright-report` output before each run.
 - The preferred visual entry point is `pnpm test:e2e:ui`.
 
@@ -34,9 +35,11 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 
 - Prefer stable accessible selectors in browser tests, such as `getByLabel`, `getByRole`, and visible button text.
 - Timer input tests should address the `Minutes` and `Seconds` fields by label.
+- Tag everyday coverage with `@smoke`. Untagged Playwright tests stay in the deeper regression lane and run via `pnpm test:full` or `pnpm test:e2e:full`.
 - Remote-mode browser tests are split by concern:
   - `remote-client.spec.ts`
   - `remote-sync.spec.ts`
+  - `remote-failover.spec.ts`
   - `timer-actions.spec.ts`
 - Shared Playwright helpers live in `tests/e2e/remote-mode.helpers.ts`.
 

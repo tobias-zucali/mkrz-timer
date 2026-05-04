@@ -32,6 +32,8 @@ Useful commands:
 ```bash
 pnpm dev
 pnpm dev:peer
+pnpm test
+pnpm test:full
 pnpm build
 pnpm lint
 pnpm format
@@ -56,6 +58,17 @@ This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright
 Playwright is used for end-to-end coverage.
 The Playwright config starts both the Next.js app and a local PeerJS server for remote-mode tests.
 
+The e2e coverage is split into two lanes:
+
+- `pnpm test:e2e`: a quick smoke suite for everyday changes
+- `pnpm test:e2e:full`: the full Playwright suite for bigger changes and build verification
+
+The top-level scripts follow the same idea:
+
+- `pnpm test`: lint + unit tests + smoke e2e
+- `pnpm test:full`: lint + unit tests + full e2e
+- `pnpm build`: runs `pnpm test:full` first, then builds production output
+
 For the best visual overview, use Playwright UI mode:
 
 ```bash
@@ -69,9 +82,10 @@ pnpm test
 pnpm test:e2e:visual
 pnpm test:e2e:debug
 pnpm test:e2e
+pnpm test:e2e:full
 pnpm test:e2e:report
 ```
 
-`pnpm test` runs lint plus the full Playwright e2e suite. `pnpm build` runs that test gate first, then runs the production Next.js build.
+`pnpm test` is the fast default verification gate. `pnpm test:full` and `pnpm build` run the deeper regression lane.
 
 Use `pnpm test:e2e:debug` to step through the tests with Playwright Inspector.

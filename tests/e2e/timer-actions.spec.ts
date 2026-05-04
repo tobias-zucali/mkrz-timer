@@ -64,57 +64,65 @@ test("keeps the timer usable after strange duration input", async ({
     .toBeLessThan(3)
 })
 
-test("starts, pauses, and resumes the timer", async ({ page }) => {
-  await openTimer(page, 5)
+test(
+  "starts, pauses, and resumes the timer",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await openTimer(page, 5)
 
-  await page.getByRole("button", { name: "START" }).click()
-  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+    await page.getByRole("button", { name: "START" }).click()
+    await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
 
-  await expect
-    .poll(() => getDisplayedSeconds(page), {
-      message: "timer should count down after start",
-      timeout: 4_000,
-    })
-    .toBeLessThan(5)
+    await expect
+      .poll(() => getDisplayedSeconds(page), {
+        message: "timer should count down after start",
+        timeout: 4_000,
+      })
+      .toBeLessThan(5)
 
-  await page.getByRole("button", { name: "PAUSE" }).click()
-  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+    await page.getByRole("button", { name: "PAUSE" }).click()
+    await expect(page.getByRole("button", { name: "START" })).toBeVisible()
 
-  const pausedAt = await getDisplayedSeconds(page)
-  await page.waitForTimeout(1_200)
-  await expect(getDisplayedSeconds(page)).resolves.toBe(pausedAt)
+    const pausedAt = await getDisplayedSeconds(page)
+    await page.waitForTimeout(1_200)
+    await expect(getDisplayedSeconds(page)).resolves.toBe(pausedAt)
 
-  await page.getByRole("button", { name: "START" }).click()
-  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
-  await expect
-    .poll(() => getDisplayedSeconds(page), {
-      message: "timer should continue counting down after resume",
-      timeout: 4_000,
-    })
-    .toBeLessThan(pausedAt)
-})
+    await page.getByRole("button", { name: "START" }).click()
+    await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+    await expect
+      .poll(() => getDisplayedSeconds(page), {
+        message: "timer should continue counting down after resume",
+        timeout: 4_000,
+      })
+      .toBeLessThan(pausedAt)
+  },
+)
 
-test("runs a short timer to completion and resets it", async ({ page }) => {
-  await openTimer(page, 3)
+test(
+  "runs a short timer to completion and resets it",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await openTimer(page, 3)
 
-  await page.getByRole("button", { name: "START" }).click()
+    await page.getByRole("button", { name: "START" }).click()
 
-  await expect
-    .poll(() => getDisplayedSeconds(page), {
-      message: "timer should reach zero",
-      timeout: 6_000,
-    })
-    .toBe(0)
+    await expect
+      .poll(() => getDisplayedSeconds(page), {
+        message: "timer should reach zero",
+        timeout: 6_000,
+      })
+      .toBe(0)
 
-  await expect(page.getByRole("button", { name: "RESET" })).toBeEnabled()
-  await page.getByRole("button", { name: "RESET" }).click()
+    await expect(page.getByRole("button", { name: "RESET" })).toBeEnabled()
+    await page.getByRole("button", { name: "RESET" }).click()
 
-  await expect
-    .poll(() => getDisplayedSeconds(page), {
-      message: "timer should restore the configured duration after reset",
-    })
-    .toBe(3)
-})
+    await expect
+      .poll(() => getDisplayedSeconds(page), {
+        message: "timer should restore the configured duration after reset",
+      })
+      .toBe(3)
+  },
+)
 
 test("matches full timer layout across simulated form factors", async ({
   baseURL,

@@ -17,15 +17,17 @@ import {
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
 
-test("opens settings, enables remote mode, and opens a client timer", async ({
-  page,
-}) => {
-  const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
-  const clientPage = await openClientFromSettings(page, controlClientUrl)
-  await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
-  await closeSettingsOverlay(page)
-  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
-})
+test(
+  "opens settings, enables remote mode, and opens a client timer",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const clientPage = await openClientFromSettings(page, controlClientUrl)
+    await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
+    await closeSettingsOverlay(page)
+    await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+  },
+)
 
 test("marks the main remote page as control and clears remote params when ending", async ({
   page,
@@ -41,37 +43,39 @@ test("marks the main remote page as control and clears remote params when ending
   ).toBeVisible()
 })
 
-test("opens readonly clients without controls or settings", async ({
-  page,
-}) => {
-  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
-  const readonlyClient = await openClientFromSettings(
-    page,
-    readonlyClientUrl,
-    "Readonly Client URL",
-  )
+test(
+  "opens readonly clients without controls or settings",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const readonlyClient = await openClientFromSettings(
+      page,
+      readonlyClientUrl,
+      "Readonly Client URL",
+    )
 
-  await closeSettingsOverlay(page)
-  await waitForRemoteCluster([page, readonlyClient], {
-    clientCount: 1,
-    mainConnectionCount: 1,
-    message: "readonly client should connect to the main timer",
-  })
-
-  await expect(readonlyClient).not.toHaveURL(/control=42/)
-  await expectReadonlyTimerControls(readonlyClient)
-
-  await page.getByRole("button", { name: "START" }).click()
-  await expectTimerRunning(page)
-
-  const initialReadonlySeconds = await getDisplayedSeconds(readonlyClient)
-  await expect
-    .poll(() => getDisplayedSeconds(readonlyClient), {
-      message: "readonly client should keep receiving timer updates",
-      timeout: 5_000,
+    await closeSettingsOverlay(page)
+    await waitForRemoteCluster([page, readonlyClient], {
+      clientCount: 1,
+      mainConnectionCount: 1,
+      message: "readonly client should connect to the main timer",
     })
-    .toBeLessThan(initialReadonlySeconds)
-})
+
+    await expect(readonlyClient).not.toHaveURL(/control=42/)
+    await expectReadonlyTimerControls(readonlyClient)
+
+    await page.getByRole("button", { name: "START" }).click()
+    await expectTimerRunning(page)
+
+    const initialReadonlySeconds = await getDisplayedSeconds(readonlyClient)
+    await expect
+      .poll(() => getDisplayedSeconds(readonlyClient), {
+        message: "readonly client should keep receiving timer updates",
+        timeout: 5_000,
+      })
+      .toBeLessThan(initialReadonlySeconds)
+  },
+)
 
 test("syncs mixed readonly and control clients", async ({ page }) => {
   const { controlClientUrl, readonlyClientUrl } =
@@ -120,31 +124,33 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })
 
-test("shows a remote mode start error when the PeerJS server is unavailable", async ({
-  page,
-}) => {
-  await page.route("http://127.0.0.1:9100/peerjs/**", async (route) => {
-    await route.abort()
-  })
+test(
+  "shows a remote mode start error when the PeerJS server is unavailable",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.route("http://127.0.0.1:9100/peerjs/**", async (route) => {
+      await route.abort()
+    })
 
-  await openTimer(page, 3)
-  await openSettingsOverlay(page)
+    await openTimer(page, 3)
+    await openSettingsOverlay(page)
 
-  await page.getByRole("button", { name: "Switch to remote mode" }).click()
+    await page.getByRole("button", { name: "Switch to remote mode" }).click()
 
-  await expect(page.getByTestId("remote-mode-status")).toHaveText(
-    "Remote mode is starting...",
-  )
-  await expect(page.getByTestId("global-error-alert")).toContainText(
-    "Remote mode could not start.",
-    { timeout: 15_000 },
-  )
-  await expect(page.getByTestId("remote-mode-status")).toHaveText(
-    "Remote mode is off.",
-  )
-  await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
-  await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
-  await expect(
-    page.getByRole("button", { name: "Switch to remote mode" }),
-  ).toBeVisible()
-})
+    await expect(page.getByTestId("remote-mode-status")).toHaveText(
+      "Remote mode is starting...",
+    )
+    await expect(page.getByTestId("global-error-alert")).toContainText(
+      "Remote mode could not start.",
+      { timeout: 15_000 },
+    )
+    await expect(page.getByTestId("remote-mode-status")).toHaveText(
+      "Remote mode is off.",
+    )
+    await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
+    await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
+    await expect(
+      page.getByRole("button", { name: "Switch to remote mode" }),
+    ).toBeVisible()
+  },
+)
