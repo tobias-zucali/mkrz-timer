@@ -61,11 +61,13 @@ The Playwright config starts both the Next.js app and a local PeerJS server for 
 The e2e coverage is split into two lanes:
 
 - `pnpm test:e2e`: a quick smoke suite for everyday changes
+- `pnpm test:e2e:ci`: the CI regression lane, excluding `@visual` screenshot tests
 - `pnpm test:e2e:full`: the full Playwright suite for bigger changes and build verification
 
 The top-level scripts follow the same idea:
 
 - `pnpm test`: lint + unit tests + smoke e2e
+- `pnpm test:ci`: lint + unit tests + CI-safe e2e (without `@visual`)
 - `pnpm test:full`: lint + unit tests + full e2e
 - `pnpm build`: runs `pnpm test:full` first, then builds production output
 
@@ -79,13 +81,15 @@ Other useful modes:
 
 ```bash
 pnpm test
+pnpm test:ci
 pnpm test:e2e:visual
 pnpm test:e2e:debug
 pnpm test:e2e
+pnpm test:e2e:ci
 pnpm test:e2e:full
 pnpm test:e2e:report
 ```
 
-`pnpm test` is the fast default verification gate. `pnpm test:full` and `pnpm build` run the deeper regression lane.
+`pnpm test` is the fast default verification gate. `pnpm test:ci` is the stable CI lane. `pnpm test:full` and `pnpm build` run the deeper local regression lane including `@visual` screenshot coverage.
 
 Use `pnpm test:e2e:debug` to step through the tests with Playwright Inspector.

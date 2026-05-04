@@ -124,44 +124,45 @@ test(
   },
 )
 
-test("matches full timer layout across simulated form factors", async ({
-  baseURL,
-  browser,
-}) => {
-  const formFactors = [
-    {
-      name: "desktop",
-      contextOptions: {
-        viewport: { width: 1440, height: 1100 },
+test(
+  "matches full timer layout across simulated form factors",
+  { tag: "@visual" },
+  async ({ baseURL, browser }) => {
+    const formFactors = [
+      {
+        name: "desktop",
+        contextOptions: {
+          viewport: { width: 1440, height: 1100 },
+        },
       },
-    },
-    {
-      name: "tablet",
-      contextOptions: {
-        ...devices["iPad Mini"],
+      {
+        name: "tablet",
+        contextOptions: {
+          ...devices["iPad Mini"],
+        },
       },
-    },
-    {
-      name: "phone",
-      contextOptions: {
-        ...devices["iPhone 13"],
+      {
+        name: "phone",
+        contextOptions: {
+          ...devices["iPhone 13"],
+        },
       },
-    },
-  ] as const
+    ] as const
 
-  for (const { name, contextOptions } of formFactors) {
-    const context = await browser.newContext(contextOptions)
-    const devicePage = await context.newPage()
+    for (const { name, contextOptions } of formFactors) {
+      const context = await browser.newContext(contextOptions)
+      const devicePage = await context.newPage()
 
-    await openTimer(devicePage, 3, baseURL)
-    await expect(devicePage.getByRole("button", { name: "START" })).toBeVisible()
+      await openTimer(devicePage, 3, baseURL)
+      await expect(devicePage.getByRole("button", { name: "START" })).toBeVisible()
 
-    await expectScreenshotWithoutDebugInfo(devicePage, {
-      fullPage: true,
-      message: `${name} timer layout should stay visually stable`,
-      name: `timer-layout-${name}.png`,
-    })
+      await expectScreenshotWithoutDebugInfo(devicePage, {
+        fullPage: true,
+        message: `${name} timer layout should stay visually stable`,
+        name: `timer-layout-${name}.png`,
+      })
 
-    await context.close()
-  }
-})
+      await context.close()
+    }
+  },
+)

@@ -5,11 +5,6 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
-  expect: {
-    toHaveScreenshot: {
-      pathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
-    },
-  },
   use: {
     baseURL: "http://127.0.0.1:3100",
     trace: "on-first-retry",

@@ -16,6 +16,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - The Playwright config starts the Next.js dev server on `http://127.0.0.1:3100` and a local PeerJS server on `http://127.0.0.1:9100`; it reuses existing servers when they are already running.
 - Use `pnpm dev:peer` when you need the local PeerJS server outside Playwright.
 - `pnpm test` is the regular verification gate and runs lint, unit tests, and the smoke Playwright suite.
+- `pnpm test:ci` runs lint, unit tests, and the CI-safe Playwright suite with `@visual` tests excluded.
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.
 - Test scripts clean old `test-results` and `playwright-report` output before each run.
@@ -36,6 +37,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Prefer stable accessible selectors in browser tests, such as `getByLabel`, `getByRole`, and visible button text.
 - Timer input tests should address the `Minutes` and `Seconds` fields by label.
 - Tag everyday coverage with `@smoke`. Untagged Playwright tests stay in the deeper regression lane and run via `pnpm test:full` or `pnpm test:e2e:full`.
+- Tag screenshot-only regression coverage with `@visual`. CI excludes `@visual` tests via `pnpm test:ci` and `pnpm test:e2e:ci`.
 - Remote-mode browser tests are split by concern:
   - `remote-client.spec.ts`
   - `remote-sync.spec.ts`
