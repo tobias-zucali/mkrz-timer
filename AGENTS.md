@@ -19,6 +19,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - `pnpm test:ci` runs lint, unit tests, and the CI-safe Playwright suite with `@visual` tests excluded.
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.
+- GitHub Pages deploys the static export from `out/`.
 - Test scripts clean old `test-results` and `playwright-report` output before each run.
 - The preferred visual entry point is `pnpm test:e2e:ui`.
 

@@ -12,6 +12,8 @@ This project is inspired by the wonderful [Time Timer](https://www.timetimer.com
 
 The timer is deployed at [time.mkrz.at](https://time.mkrz.at).
 
+The GitHub Pages workflow builds a static export and uploads the generated `out/` directory.
+
 ## Getting Started
 
 Use Node.js 22.6 or newer. This repository uses `pnpm` and is locked with `pnpm-lock.yaml`.

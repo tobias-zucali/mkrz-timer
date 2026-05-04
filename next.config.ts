@@ -10,6 +10,7 @@ function getLocalIPv4Addresses() {
 }
 
 const nextConfig: NextConfig = {
+  output: "export",
   turbopack: {
     root: process.cwd(),
     rules: {
