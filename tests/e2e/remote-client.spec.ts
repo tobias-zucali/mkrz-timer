@@ -135,12 +135,14 @@ test("shows a remote mode start error when the PeerJS server is unavailable", as
   await expect(page.getByTestId("remote-mode-status")).toHaveText(
     "Remote mode is starting...",
   )
-  await expect(page.getByTestId("remote-mode-error")).toContainText(
+  await expect(page.getByTestId("global-error-alert")).toContainText(
     "Remote mode could not start.",
-    {
-      timeout: 15_000,
-    },
+    { timeout: 15_000 },
   )
+  await expect(page.getByTestId("remote-mode-status")).toHaveText(
+    "Remote mode is off.",
+  )
+  await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
   await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
   await expect(
     page.getByRole("button", { name: "Switch to remote mode" }),

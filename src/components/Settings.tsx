@@ -12,7 +12,6 @@ const actionLinkClassName =
 const primaryButtonClassName =
   "block mb-8 rounded-lg bg-primary px-8 py-4 text-center font-bold text-foreground cursor-pointer hover:bg-primary/80"
 const remoteModeStatusClassName = "text-sm text-foreground/70"
-const remoteModeErrorClassName = "text-sm font-bold text-red-400"
 
 export default function Settings({
   peerData,
@@ -28,13 +27,7 @@ export default function Settings({
   const { params, setParams, getUrlWithParams } = paramData
   const { rid: remoteId } = params
 
-  const { connectRemote, disconnect, error, isConnecting, peerId } = peerData
-  const remoteModeError =
-    error && !remoteId
-      ? `Remote mode could not start. ${error.message}`
-      : error
-        ? `Remote mode has a connection problem. ${error.message}`
-        : null
+  const { connectRemote, disconnect, isConnecting, peerId } = peerData
 
   const closeButton = (
     <div className="flex justify-end">
@@ -116,15 +109,6 @@ export default function Settings({
                 >
                   {isConnecting ? "Remote mode is starting..." : "Remote mode is off."}
                 </p>
-                {remoteModeError && (
-                  <p
-                    className={remoteModeErrorClassName}
-                    data-testid="remote-mode-error"
-                    role="alert"
-                  >
-                    {remoteModeError}
-                  </p>
-                )}
                 <p>
                   <button
                     className={actionLinkClassName}
@@ -187,15 +171,6 @@ export default function Settings({
                     {isConnecting
                       ? "Remote mode is starting..."
                       : "Remote mode is connecting to the server..."}
-                  </p>
-                )}
-                {remoteModeError && (
-                  <p
-                    className={remoteModeErrorClassName}
-                    data-testid="remote-mode-error"
-                    role="alert"
-                  >
-                    {remoteModeError}
                   </p>
                 )}
                 <p>

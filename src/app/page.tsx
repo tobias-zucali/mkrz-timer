@@ -115,8 +115,17 @@ function TimerApp() {
 
   const [errorText, setErrorText] = useState<string | null>(null)
   useEffect(() => {
-    setErrorText(error ? error.toString() : null)
-  }, [error])
+    if (!error) {
+      setErrorText(null)
+      return
+    }
+
+    setErrorText(
+      remoteIdParam
+        ? `Remote mode has a connection problem. ${error.message}`
+        : `Remote mode could not start. ${error.message}`,
+    )
+  }, [error, remoteIdParam])
 
   // if (connections.length !== peer.getConnections().length) {
   //   debug.log("Connections length mismatch", connections, peer.getConnections());
@@ -165,7 +174,12 @@ function TimerApp() {
         </>
       )}
       {errorText && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-red-700 rounded-xl px-8 py-3 text-white font-bold z-50">
+        <div
+          aria-live="assertive"
+          className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-700 px-8 py-3 font-bold text-white"
+          data-testid="global-error-alert"
+          role="alert"
+        >
           <CloseButton
             className="absolute inset-0 flex flex-row-reverse p-1 text-white/50 hover:text-white cursor-pointer"
             onClick={() => setErrorText(null)}
