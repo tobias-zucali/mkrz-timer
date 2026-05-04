@@ -14,7 +14,7 @@ The timer is deployed at [time.mkrz.at](https://time.mkrz.at).
 
 ## Getting Started
 
-Use Node.js 20.9 or newer. This repository uses `pnpm` and is locked with `pnpm-lock.yaml`.
+Use Node.js 22.6 or newer. This repository uses `pnpm` and is locked with `pnpm-lock.yaml`.
 
 If `pnpm` is not available yet, enable Corepack once:
 
