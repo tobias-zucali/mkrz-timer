@@ -9,8 +9,10 @@ import {
   expectTimerRunning,
   expectTimerSettings,
   getDisplayedSeconds,
+  openSettingsOverlay,
   openClientFromSettings,
   openClientsFromSettings,
+  openTimer,
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
@@ -116,4 +118,31 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     allPages.map((remotePage) => expectTimerSettings(remotePage, settings)),
   )
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
+})
+
+test("shows a remote mode start error when the PeerJS server is unavailable", async ({
+  page,
+}) => {
+  await page.route("http://127.0.0.1:9100/peerjs/**", async (route) => {
+    await route.abort()
+  })
+
+  await openTimer(page, 3)
+  await openSettingsOverlay(page)
+
+  await page.getByRole("button", { name: "Switch to remote mode" }).click()
+
+  await expect(page.getByTestId("remote-mode-status")).toHaveText(
+    "Remote mode is starting...",
+  )
+  await expect(page.getByTestId("remote-mode-error")).toContainText(
+    "Remote mode could not start.",
+    {
+      timeout: 15_000,
+    },
+  )
+  await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
+  await expect(
+    page.getByRole("button", { name: "Switch to remote mode" }),
+  ).toBeVisible()
 })

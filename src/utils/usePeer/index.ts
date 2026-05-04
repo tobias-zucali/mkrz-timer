@@ -49,6 +49,9 @@ const isRetryablePeerError = (error: unknown) => {
   return Boolean(type && RETRYABLE_PEER_ERRORS.has(type))
 }
 
+const toError = (error: unknown) =>
+  error instanceof Error ? error : new Error(String(error))
+
 const wait = (delay: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, delay)
@@ -67,6 +70,7 @@ export default function usePeer({
 }) {
   const [error, setError] = useState<Error | null>(null)
   const [connections, setConnections] = useState<string[]>([])
+  const [isConnecting, setIsConnecting] = useState(false)
   const [remoteLost, setRemoteLost] = useState(false)
   const [peerId, setPeerId] = useState<string | undefined>()
 
@@ -185,7 +189,7 @@ export default function usePeer({
 
   const connectRemote = useCallback(
     async (remoteId?: string | null) => {
-      const startSession = async (id?: string) => {
+      const createPeerWithRetry = async (id?: string) => {
         const maxAttempts = 3
 
         for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -208,14 +212,22 @@ export default function usePeer({
         }
       }
 
+      const startSession = async (id: string) => createPeerWithRetry(id)
+      const startFreshSession = async () => createPeerWithRetry()
+
       let peerId: string | undefined
 
+      setError(null)
+      setIsConnecting(true)
+
       try {
-        peerId = await startSession(remoteId)
+        if (remoteId) {
+          peerId = await startSession(remoteId)
+        }
 
         if (!peerId) {
           // fall back to fresh id
-          peerId = await startSession()
+          peerId = await startFreshSession()
         }
 
         if (peerId && remoteId && peerId !== remoteId) {
@@ -226,7 +238,9 @@ export default function usePeer({
         return peerId
       } catch (error) {
         debug.error(error)
-        setError(error as Error)
+        setError(toError(error))
+      } finally {
+        setIsConnecting(false)
       }
     },
     [peer],
@@ -260,9 +274,10 @@ export default function usePeer({
       peer: peer,
       disconnect: () => peer.closePeerSession(),
       error,
+      isConnecting,
       peerId,
       syncAll,
     }),
-    [connectRemote, connections, error, peer, peerId, syncAll],
+    [connectRemote, connections, error, isConnecting, peer, peerId, syncAll],
   )
 }

@@ -11,6 +11,8 @@ const actionLinkClassName =
   "cursor-pointer font-bold underline hover:text-primary"
 const primaryButtonClassName =
   "block mb-8 rounded-lg bg-primary px-8 py-4 text-center font-bold text-foreground cursor-pointer hover:bg-primary/80"
+const remoteModeStatusClassName = "text-sm text-foreground/70"
+const remoteModeErrorClassName = "text-sm font-bold text-red-400"
 
 export default function Settings({
   peerData,
@@ -26,7 +28,13 @@ export default function Settings({
   const { params, setParams, getUrlWithParams } = paramData
   const { rid: remoteId } = params
 
-  const { connectRemote, disconnect, peerId } = peerData
+  const { connectRemote, disconnect, error, isConnecting, peerId } = peerData
+  const remoteModeError =
+    error && !remoteId
+      ? `Remote mode could not start. ${error.message}`
+      : error
+        ? `Remote mode has a connection problem. ${error.message}`
+        : null
 
   const closeButton = (
     <div className="flex justify-end">
@@ -102,9 +110,25 @@ export default function Settings({
                   label="Timer URL"
                   value={getUrlWithParams({ omit: ["settings"] })}
                 />
+                <p
+                  className={remoteModeStatusClassName}
+                  data-testid="remote-mode-status"
+                >
+                  {isConnecting ? "Remote mode is starting..." : "Remote mode is off."}
+                </p>
+                {remoteModeError && (
+                  <p
+                    className={remoteModeErrorClassName}
+                    data-testid="remote-mode-error"
+                    role="alert"
+                  >
+                    {remoteModeError}
+                  </p>
+                )}
                 <p>
                   <button
                     className={actionLinkClassName}
+                    disabled={isConnecting}
                     onClick={async () => {
                       const id = await connectRemote()
                       if (!remoteId && id) {
@@ -113,7 +137,9 @@ export default function Settings({
                     }}
                     type="button"
                   >
-                    Switch to remote mode
+                    {isConnecting
+                      ? "Starting remote mode..."
+                      : "Switch to remote mode"}
                   </button>{" "}
                   in case you want to remote control the timer in another window
                   / on another device.
@@ -124,6 +150,9 @@ export default function Settings({
               <>
                 {peerData.peerId ? (
                   <div>
+                    <p data-testid="remote-mode-status">
+                      Remote mode is ready.
+                    </p>
                     <p>
                       Open as many client windows on as many devices as you want
                       to view the timer.
@@ -151,7 +180,23 @@ export default function Settings({
                     />
                   </div>
                 ) : (
-                  <p>Connecting to server...</p>
+                  <p
+                    className={remoteModeStatusClassName}
+                    data-testid="remote-mode-status"
+                  >
+                    {isConnecting
+                      ? "Remote mode is starting..."
+                      : "Remote mode is connecting to the server..."}
+                  </p>
+                )}
+                {remoteModeError && (
+                  <p
+                    className={remoteModeErrorClassName}
+                    data-testid="remote-mode-error"
+                    role="alert"
+                  >
+                    {remoteModeError}
+                  </p>
                 )}
                 <p>
                   <button

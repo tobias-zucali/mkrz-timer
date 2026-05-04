@@ -38,6 +38,9 @@ export async function enableRemoteMode(page: Page) {
   ).toBeVisible()
 
   await page.getByRole("button", { name: "Switch to remote mode" }).click()
+  await expect(page.getByTestId("remote-mode-status")).toHaveText(
+    /Remote mode is (starting\.\.\.|ready\.)/,
+  )
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Readonly Client URL",
   })
