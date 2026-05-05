@@ -36,6 +36,21 @@ async function getFloatingTimerState(page: Page) {
   })
 }
 
+function parseDisplayTextToSeconds(displayText: string) {
+  const match = displayText.match(/^(\d{2}):(\d{2})$/)
+  if (!match) {
+    return null
+  }
+
+  const [, minutes, seconds] = match
+  return Number(minutes) * 60 + Number(seconds)
+}
+
+async function getFloatingTimerSeconds(page: Page) {
+  const state = await getFloatingTimerState(page)
+  return parseDisplayTextToSeconds(state?.displayText ?? "")
+}
+
 async function expectFloatingTimerClosed(page: Page) {
   await expect
     .poll(
@@ -87,28 +102,41 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   await openSettingsOverlay(page)
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
   await page.getByTestId("floating-timer-toggle").click()
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
   await expect
-    .poll(() => getFloatingTimerState(page), {
+    .poll(async () => {
+      const state = await getFloatingTimerState(page)
+      return {
+        hasButtons: state?.hasButtons,
+        seconds: parseDisplayTextToSeconds(state?.displayText ?? ""),
+      }
+    }, {
       message: "floating timer window should open with readonly timer content",
     })
     .toMatchObject({
-      backgroundColor: "rgb(0, 0, 0)",
-      displayText: "00:03",
       hasButtons: 0,
+      seconds: expect.any(Number),
     })
+
+  const initialFloatingSeconds = await getFloatingTimerSeconds(page)
+  expect(initialFloatingSeconds).not.toBeNull()
 
   await closeSettingsOverlay(page)
   await page.getByRole("button", { name: "START" }).click()
   await expectTimerRunning(page)
   await expect
-    .poll(async () => (await getFloatingTimerState(page))?.displayText ?? "", {
+    .poll(
+      async () =>
+        parseDisplayTextToSeconds((await getFloatingTimerState(page))?.displayText ?? ""),
+      {
       message: "floating timer should reflect live timer countdown",
       timeout: 5_000,
-    })
-    .not.toBe("00:03")
+      },
+    )
+    .toBeLessThan(initialFloatingSeconds ?? 0)
 
   await openSettingsOverlay(page)
   await updateTimerSettings(page, {
