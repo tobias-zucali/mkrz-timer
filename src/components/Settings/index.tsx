@@ -11,7 +11,7 @@ import classNames from "classnames"
 import { useId } from "react"
 
 const panelClassName =
-  "rounded-2xl border border-foreground/12 bg-foreground/[0.04] shadow-xl shadow-background/30"
+  "rounded-2xl border border-foreground/12 bg-foreground/4 shadow-xl shadow-background/30"
 const sectionClassName = `${panelClassName} p-6 sm:p-7`
 const actionButtonClassName =
   "inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
@@ -212,7 +212,7 @@ export default function Settings({
             </div>
             <button
               aria-label="Close"
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-foreground/12 bg-foreground/[0.04] text-foreground/72 transition hover:bg-foreground/[0.08] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-foreground/12 bg-foreground/4 text-foreground/72 transition hover:bg-foreground/8 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               onClick={closeSettings}
               type="button"
             >

@@ -67,7 +67,7 @@ export default function FloatingTimerContent({
         style={{ fontSize: titleFontSize }}
       >
         <EditableHtml
-          className="mx-auto max-w-full whitespace-pre-wrap break-words"
+          className="mx-auto max-w-full whitespace-pre-wrap wrap-break-word"
           disabled
           html={title}
           onChange={() => {}}
