@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useRef, useState } from "react"
 
 import debug, { IS_DEBUGGING } from "@/utils/debug"
+import buildErrorReportBody from "@/utils/buildErrorReportBody"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import { getPeerServerLabel } from "@/utils/usePeer/PeerConnection"
@@ -12,6 +13,7 @@ import CloseButton from "@/components/CloseButton"
 import Settings from "@/components/Settings"
 import SettingsButton from "@/components/SettingsButton"
 import Timer from "@/components/Timer"
+import Mailto from "@/components/Mailto"
 
 export default function App() {
   return (
@@ -179,6 +181,29 @@ function TimerApp() {
   const peerStatus = peerId ? "connected" : "disconnected"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
   const peerServerLabel = getPeerServerLabel()
+  const errorReportBody = buildErrorReportBody({
+    errorText,
+    remoteIdParam,
+    peerId,
+    hostPeerId: peerData.peerId,
+    peerRole,
+    peerStatus,
+    isReadonlyClient,
+    connectionsCount: connections.length,
+    connectionDetails,
+    peerServerLabel,
+    error,
+    params,
+    isOnline:
+      typeof navigator !== "undefined" ? navigator.onLine : "unavailable",
+    visibilityState:
+      typeof document !== "undefined"
+        ? document.visibilityState
+        : "unavailable",
+    hasFocus:
+      typeof document !== "undefined" ? document.hasFocus() : "unavailable",
+    peerEventTimeline: peerData.peerEventTimeline ?? [],
+  })
   const floatingTimerData = useFloatingTimerPiP({
     setErrorText,
     state: {
@@ -235,7 +260,18 @@ function TimerApp() {
             className="absolute inset-0 flex flex-row-reverse p-1 text-white/50 hover:text-white cursor-pointer"
             onClick={() => setErrorText(null)}
           />
-          {errorText}
+          <div className="pr-8">
+            {errorText}
+            <div className="mt-2 text-sm">
+              <Mailto
+                email="timer@mkrz.at"
+                subject="Error Report"
+                body={errorReportBody}
+              >
+                Report this issue
+              </Mailto>
+            </div>
+          </div>
         </div>
       )}
       {IS_DEBUGGING && (

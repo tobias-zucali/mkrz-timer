@@ -12,6 +12,16 @@ type ConnectionInfo = {
   isAlive: boolean
 }
 
+export type PeerConnectionDetails = {
+  id: string
+  isAlive: boolean
+  isOpen: boolean
+  lastPing: number
+  webRtcConnectionState: string
+  webRtcIceConnectionState: string
+  webRtcSignalingState: string
+}
+
 const getPeerPath = () => process.env.NEXT_PUBLIC_PEERJS_PATH || "/"
 
 export const getPeerServerLabel = () => {
@@ -420,10 +430,21 @@ class PeerConnection {
     return connectionsAlive
   }
 
-  public getAllConnections() {
-    const connectionsAlive: Array<{ id: string; isAlive: boolean }> = []
-    for (const [id, { isAlive }] of this.connectionMap.entries()) {
-      connectionsAlive.push({ id, isAlive })
+  public getAllConnections(): PeerConnectionDetails[] {
+    const connectionsAlive: PeerConnectionDetails[] = []
+    for (const [id, { conn, isAlive, lastPing }] of this.connectionMap.entries()) {
+      const rtcConnection = (
+        conn as unknown as { peerConnection?: RTCPeerConnection }
+      ).peerConnection
+      connectionsAlive.push({
+        id,
+        isAlive,
+        isOpen: Boolean(conn.open),
+        lastPing,
+        webRtcConnectionState: rtcConnection?.connectionState ?? "unknown",
+        webRtcIceConnectionState: rtcConnection?.iceConnectionState ?? "unknown",
+        webRtcSignalingState: rtcConnection?.signalingState ?? "unknown",
+      })
     }
     return connectionsAlive
   }

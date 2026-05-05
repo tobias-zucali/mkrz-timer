@@ -73,6 +73,12 @@ export default function usePeer({
   const [isConnecting, setIsConnecting] = useState(false)
   const [remoteLost, setRemoteLost] = useState(false)
   const [peerId, setPeerId] = useState<string | undefined>()
+  const [peerEventTimeline, setPeerEventTimeline] = useState<string[]>([])
+
+  const pushPeerEvent = useCallback((event: string) => {
+    const entry = `${new Date().toISOString()} ${event}`
+    setPeerEventTimeline((current) => [...current, entry].slice(-20))
+  }, [])
 
   const isRemote = peerId && remoteIdParam === peerId
 
@@ -87,9 +93,15 @@ export default function usePeer({
 
   const createPeer = () => {
     const newPeer = new PeerConnection({
-      onError: debug.wrap("usePeer onError", setError),
-      onOpen: debug.wrap("usePeer onOpen", () => {}),
+      onError: debug.wrap("usePeer onError", (nextError) => {
+        setError(nextError)
+        pushPeerEvent(`peer_error: ${nextError.message}`)
+      }),
+      onOpen: debug.wrap("usePeer onOpen", () => {
+        pushPeerEvent("peer_open")
+      }),
       onConnection: debug.wrap("usePeer onConnection", (senderId: string) => {
+        pushPeerEvent(`incoming_connection: ${senderId}`)
         newPeer.send(
           senderId,
           getSyncAction({
@@ -124,11 +136,13 @@ export default function usePeer({
       ),
       onClose: debug.wrap("usePeer onClose", (id?: string) => {
         debug.log("Peer closed", id)
+        pushPeerEvent(`peer_close: ${id ?? "unknown"}`)
         setPeerId(undefined)
       }),
       onConnectionClose: debug.wrap(
         "usePeer onConnectionClose",
         (id: string) => {
+          pushPeerEvent(`connection_close: ${id}`)
           if (memoRefs.current.remoteIdParam === id) {
             debug.log("remote lost", id)
             setRemoteLost(true)
@@ -138,6 +152,7 @@ export default function usePeer({
       onConnectionsChange: debug.wrap(
         "usePeer onConnectionsChange",
         (connections: string[]) => {
+          pushPeerEvent(`connections_change: ${connections.length}`)
           setConnections(connections)
         },
       ),
@@ -275,9 +290,19 @@ export default function usePeer({
       disconnect: () => peer.closePeerSession(),
       error,
       isConnecting,
+      peerEventTimeline,
       peerId,
       syncAll,
     }),
-    [connectRemote, connections, error, isConnecting, peer, peerId, syncAll],
+    [
+      connectRemote,
+      connections,
+      error,
+      isConnecting,
+      peer,
+      peerEventTimeline,
+      peerId,
+      syncAll,
+    ],
   )
 }

@@ -143,6 +143,27 @@ test(
       "Remote mode could not start.",
       { timeout: 15_000 },
     )
+    const reportIssueLink = page.getByRole("link", { name: "Report this issue" })
+    await expect(reportIssueLink).toBeVisible()
+    const href = await reportIssueLink.getAttribute("href")
+    expect(href).toBeTruthy()
+    expect(href).toContain("mailto:timer@mkrz.at")
+
+    const bodyMatch = href?.match(/[?&]body=([^&]*)/)
+    expect(bodyMatch?.[1]).toBeTruthy()
+    const decodedBody = decodeURIComponent(bodyMatch?.[1] ?? "")
+
+    expect(decodedBody).toContain("Remote mode could not start.")
+    expect(decodedBody).toContain("- Peer role:")
+    expect(decodedBody).toContain("- Peer status: disconnected")
+    expect(decodedBody).toContain("- Active connections:")
+    expect(decodedBody).toContain("- Peer server:")
+    expect(decodedBody).toContain("- Browser online:")
+    expect(decodedBody).toContain("- Visibility state:")
+    expect(decodedBody).toContain("- Has focus:")
+    expect(decodedBody).toContain("- Peer events (last")
+    expect(decodedBody).toContain("- Query params snapshot:")
+
     await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeChecked()
 
     await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
