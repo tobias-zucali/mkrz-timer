@@ -1,4 +1,5 @@
 import { expect, Page } from "@playwright/test"
+import { hexToRgbChannels } from "../../src/utils/colors"
 
 const timerUrl = "/?m=01&s=00&bg=000000&fg=ffffff&pc=d61f69"
 
@@ -281,22 +282,6 @@ async function getBodyCssVariable(page: Page, name: string) {
   }, name)
 }
 
-function hexToRgb(hex: string): string {
-  // Remove # if present
-  hex = hex.replace(/^#/, '')
-
-  // Convert 3-digit hex to 6-digit
-  if (hex.length === 3) {
-    hex = hex.split('').map(char => char + char).join('')
-  }
-
-  const r = parseInt(hex.slice(0, 2), 16)
-  const g = parseInt(hex.slice(2, 4), 16)
-  const b = parseInt(hex.slice(4, 6), 16)
-
-  return `${r} ${g} ${b}`
-}
-
 export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
     const editableTitle = page.getByTitle("Click to edit title")
@@ -326,21 +311,21 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
       .poll(() => getBodyCssVariable(page, "--background"), {
         message: "background color should be applied",
       })
-      .toBe(hexToRgb(settings.backgroundColor))
+      .toBe(hexToRgbChannels(settings.backgroundColor))
   }
   if (settings.foregroundColor !== undefined) {
     await expect
       .poll(() => getBodyCssVariable(page, "--foreground"), {
         message: "foreground color should be applied",
       })
-      .toBe(hexToRgb(settings.foregroundColor))
+      .toBe(hexToRgbChannels(settings.foregroundColor))
   }
   if (settings.primaryColor !== undefined) {
     await expect
       .poll(() => getBodyCssVariable(page, "--primary"), {
         message: "primary color should be applied",
       })
-      .toBe(hexToRgb(settings.primaryColor))
+      .toBe(hexToRgbChannels(settings.primaryColor))
   }
 }
 

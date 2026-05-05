@@ -1,5 +1,6 @@
 import EditableHtml from "@/components/EditableHtml"
 import Pie from "@/components/Pie"
+import { hexToRgbChannels } from "@/utils/colors"
 
 function getFloatingTitleFontSize(title: string) {
   const plainText = title
@@ -57,9 +58,9 @@ export default function FloatingTimerContent({
       className="flex h-screen flex-col overflow-hidden bg-background text-foreground"
       data-testid="floating-timer-root"
       style={{
-        ["--background"]: backgroundColor,
-        ["--foreground"]: foregroundColor,
-        ["--primary"]: primaryColor,
+        ["--background"]: hexToRgbChannels(backgroundColor),
+        ["--foreground"]: hexToRgbChannels(foregroundColor),
+        ["--primary"]: hexToRgbChannels(primaryColor),
       }}
     >
       <div
