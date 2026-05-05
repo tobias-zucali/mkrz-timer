@@ -23,7 +23,6 @@ export default function useParams() {
     pid: searchParams.get("pid") || "", // peer id
     rid: searchParams.get("rid") || "", // remote peer id
     control: searchParams.get("control") || null, // client control mode
-    settings: searchParams.get("settings") || null, // settings open
   })
 
   useEffect(() => {

@@ -76,8 +76,8 @@ test("hides the floating timer action when document PiP is unsupported", async (
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
-  await expect(page.getByTestId("floating-timer-toggle")).toHaveCount(0)
-  await expect(page.getByText(/does not currently expose/i)).toBeVisible()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeDisabled()
+  await expect(page.getByText(/document picture-in-picture/i)).toBeVisible()
 })
 
 test("opens a readonly floating timer in local mode and keeps it synced", async ({
@@ -89,16 +89,14 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
   await page.getByTestId("floating-timer-toggle").click()
 
-  await expect(page.getByTestId("floating-timer-toggle")).toHaveText(
-    "Close Floating Timer",
-  )
+  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
   await expect
     .poll(() => getFloatingTimerState(page), {
       message: "floating timer window should open with readonly timer content",
     })
     .toMatchObject({
       backgroundColor: "rgb(0, 0, 0)",
-      displayText: "01:00",
+      displayText: "00:03",
       hasButtons: 0,
     })
 
@@ -110,7 +108,7 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
       message: "floating timer should reflect live timer countdown",
       timeout: 5_000,
     })
-    .not.toBe("01:00")
+    .not.toBe("00:03")
 
   await openSettingsOverlay(page)
   await updateTimerSettings(page, {
@@ -130,8 +128,6 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
     .toContain("Floating title")
 
   await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).toHaveText(
-    "Open Floating Timer",
-  )
+  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
   await expectFloatingTimerClosed(page)
 })

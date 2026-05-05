@@ -133,7 +133,7 @@ test("keeps mixed readonly and control clients synced after main failover", asyn
     page,
     readonlyClientUrl,
     2,
-    "Readonly Client URL",
+    "Viewer Link",
   )
   const clients = [...controlClients, ...readonlyClients]
 

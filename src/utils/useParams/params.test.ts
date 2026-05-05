@@ -32,29 +32,12 @@ test("buildPathWithParams serializes inherited params without color hashes", () 
   )
 })
 
-test("buildPathWithParams can omit inherited params", () => {
-  assert.equal(
-    buildPathWithParams(
-      {
-        m: "01",
-        s: "00",
-        settings: "true",
-      },
-      {
-        omit: ["settings"],
-      },
-    ),
-    "/?m=01&s=00",
-  )
-})
-
 test("buildPathWithParams can skip inheritance for client URLs", () => {
   assert.equal(
     buildPathWithParams(
       {
         m: "01",
         rid: "old-main",
-        settings: "true",
       },
       {
         inherit: false,

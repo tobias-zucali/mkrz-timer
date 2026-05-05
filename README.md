@@ -29,6 +29,8 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+UI layout and controls are styled with Tailwind CSS v4 utilities, using the shared theme tokens defined in [`src/app/globals.css`](./src/app/globals.css).
+
 Useful commands:
 
 ```bash

@@ -8,7 +8,7 @@ import CloseButton from "@/components/CloseButton"
 import InputField from "../InputField"
 
 const iconButtonClassName =
-  "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-primary/60 text-foreground hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+  "ml-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.06] text-foreground/80 transition hover:bg-foreground/[0.12] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 function ArrowTopRightOnSquareIcon() {
   return (
@@ -117,10 +117,10 @@ export default function UrlCopyField({
   return (
     <>
       <InputField
+        className="text-sm text-foreground/75"
         id={fieldId}
         value={isClient ? value : ""}
         readOnly={true}
-        disabled={true}
         label={label}
         {...otherProps}
       >

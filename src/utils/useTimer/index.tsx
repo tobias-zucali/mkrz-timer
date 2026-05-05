@@ -25,10 +25,12 @@ export default function useTimer({
   onAction,
   syncStateRef,
   params,
+  shortcutsEnabled = true,
 }: {
   params: SyncParams
   syncStateRef: React.RefObject<TimerState>
   onAction: (action: TimerActions, state: TimerState) => void
+  shortcutsEnabled?: boolean
 }) {
   const paramsRef = useRef(params)
   paramsRef.current = params
@@ -103,6 +105,10 @@ export default function useTimer({
   )
 
   useGlobalKeyUp((event: KeyboardEvent) => {
+    if (!shortcutsEnabled) {
+      return
+    }
+
     const target = event.target
     if (
       target instanceof HTMLElement &&

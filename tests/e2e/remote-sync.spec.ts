@@ -206,7 +206,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   }
 
   await openSettingsOverlay(page)
-  await expectUrlQrCode(page, "Control Client URL")
+  await expectUrlQrCode(page, "Control Link")
   await updateTimerSettings(page, mainSettings)
   await closeSettingsOverlay(page)
 

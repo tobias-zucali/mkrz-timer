@@ -35,12 +35,11 @@ test("marks the main remote page as control and clears remote params when ending
   await enableRemoteModeWithClientUrls(page)
 
   await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
-  await page.getByRole("button", { name: "End remote mode" }).click()
+  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
+  await page.getByRole("switch", { name: "Remote mode" }).click()
   await expect(page).not.toHaveURL(/(?:\?|&)control=42(?:&|$)/)
   await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
-  await expect(
-    page.getByRole("button", { name: "Switch to remote mode" }),
-  ).toBeVisible()
+  await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeChecked()
 })
 
 test(
@@ -51,7 +50,7 @@ test(
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
-      "Readonly Client URL",
+      "Viewer Link",
     )
 
     await closeSettingsOverlay(page)
@@ -89,7 +88,7 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     page,
     readonlyClientUrl,
     2,
-    "Readonly Client URL",
+    "Viewer Link",
   )
   const allPages = [page, ...controlClients, ...readonlyClients]
 
@@ -135,22 +134,21 @@ test(
     await openTimer(page, 3)
     await openSettingsOverlay(page)
 
-    await page.getByRole("button", { name: "Switch to remote mode" }).click()
+    await page.getByRole("switch", { name: "Remote mode" }).click()
 
-    await expect(page.getByTestId("remote-mode-status")).toHaveText(
-      "Remote mode is starting...",
-    )
+    await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
+    await expect(page.getByRole("switch", { name: "Remote mode" })).toBeDisabled()
+
     await expect(page.getByTestId("global-error-alert")).toContainText(
       "Remote mode could not start.",
       { timeout: 15_000 },
     )
-    await expect(page.getByTestId("remote-mode-status")).toHaveText(
-      "Remote mode is off.",
-    )
+    await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeChecked()
+
     await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
     await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
     await expect(
-      page.getByRole("button", { name: "Switch to remote mode" }),
+      page.getByRole("switch", { name: "Remote mode" }),
     ).toBeVisible()
   },
 )

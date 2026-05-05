@@ -17,27 +17,23 @@ test(
     await openTimer(page, 3)
     await openSettingsOverlay(page)
 
-    await page.getByRole("button", { name: "Show Timer URL" }).click()
-    const qrCodeDialog = page.getByRole("dialog", { name: "Timer URL" })
+    await page.getByRole("button", { name: "Show Share Link" }).click()
+    const qrCodeDialog = page.getByRole("dialog", { name: "Share Link" })
 
     await expect(qrCodeDialog).toBeVisible()
     await expect(
-      qrCodeDialog.getByRole("heading", { name: "Timer URL" }),
+      qrCodeDialog.getByRole("heading", { name: "Share Link" }),
     ).toBeVisible()
     await expect(
-      qrCodeDialog.getByRole("img", { name: "Timer URL" }),
+      qrCodeDialog.getByRole("img", { name: "Share Link" }),
     ).toBeVisible()
     await expect(qrCodeDialog).toContainText("m=00")
     await expect(qrCodeDialog).toContainText("s=03")
-    await expect(qrCodeDialog).not.toContainText("settings=true")
 
     await qrCodeDialog.click()
 
     await expect(qrCodeDialog).not.toBeVisible()
-    await expect(page.getByRole("textbox", { name: "Timer URL" })).toBeVisible()
-    await expect(
-      page.getByRole("textbox", { name: "Timer URL" }),
-    ).not.toHaveValue(/settings=true/)
+    await expect(page.getByRole("textbox", { name: "Share Link" })).toBeVisible()
   },
 )
 
@@ -57,7 +53,7 @@ test(
     }
 
     await openSettingsOverlay(page)
-    await expectUrlQrCode(page, "Timer URL")
+    await expectUrlQrCode(page, "Share Link")
     await updateTimerSettings(page, settings)
     await closeSettingsOverlay(page)
 
@@ -65,3 +61,15 @@ test(
     await expectTimerUrlParams(page, settings)
   },
 )
+
+test.fixme("keeps timer shortcuts local to the settings drawer", async ({ page }) => {
+  await openTimer(page, 3)
+  await openSettingsOverlay(page)
+
+  await page.getByLabel("Title").press(" ")
+  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+
+  await page.getByLabel("Title").press("Escape")
+  await expect(page.getByTestId("settings-drawer")).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+})

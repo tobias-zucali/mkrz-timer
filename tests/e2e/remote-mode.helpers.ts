@@ -62,20 +62,19 @@ export async function expectScreenshotWithoutDebugInfo(
 export async function enableRemoteMode(page: Page) {
   await page.goto(timerUrl)
 
-  await page.getByRole("button", { name: "Settings" }).click()
-  await expect(
-    page.getByRole("button", { name: "Switch to remote mode" }),
-  ).toBeVisible()
+  await openSettingsOverlay(page)
+  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeVisible()
 
-  await page.getByRole("button", { name: "Switch to remote mode" }).click()
-  await expect(page.getByTestId("remote-mode-status")).toHaveText(
-    /Remote mode is (starting\.\.\.|ready\.)/,
-  )
+  await page.getByRole("switch", { name: "Remote mode" }).click()
+
+  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
+  await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeDisabled({ timeout: 15_000 })
+
   const readonlyClientUrlInput = page.getByRole("textbox", {
-    name: "Readonly Client URL",
+    name: "Viewer Link",
   })
   const controlClientUrlInput = page.getByRole("textbox", {
-    name: "Control Client URL",
+    name: "Control Link",
   })
   await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect(controlClientUrlInput).toBeVisible()
@@ -103,7 +102,7 @@ export async function enableRemoteModeWithClientUrls(
 ): Promise<RemoteClientUrls> {
   const controlClientUrl = await enableRemoteMode(page)
   const readonlyClientUrl = await page
-    .getByRole("textbox", { name: "Readonly Client URL" })
+    .getByRole("textbox", { name: "Viewer Link" })
     .inputValue()
 
   return {
@@ -115,7 +114,7 @@ export async function enableRemoteModeWithClientUrls(
 export async function openClientFromSettings(
   page: Page,
   clientUrl: string,
-  label = "Control Client URL",
+  label = "Control Link",
 ) {
   const clientPagePromise = page.waitForEvent("popup")
   await page
@@ -134,7 +133,7 @@ export async function openClientsFromSettings(
   page: Page,
   clientUrl: string,
   count: number,
-  label = "Control Client URL",
+  label = "Control Link",
 ) {
   const clients: Page[] = []
 
@@ -146,8 +145,8 @@ export async function openClientsFromSettings(
 }
 
 export async function closeSettingsOverlay(page: Page) {
-  await page.getByRole("button", { exact: true, name: "Close" }).click()
-  await expect(page).not.toHaveURL(/settings=true/)
+  await page.getByRole("button", { name: "Done" }).click()
+  await expect(page.getByTestId("settings-drawer")).toHaveCount(0)
 }
 
 export async function expectUrlQrCode(page: Page, label: string) {
@@ -168,6 +167,7 @@ export async function expectUrlQrCode(page: Page, label: string) {
 
 export async function openSettingsOverlay(page: Page) {
   await page.getByRole("button", { name: "Settings" }).click()
+  await expect(page.getByTestId("settings-drawer")).toBeVisible()
   await expect(page.getByLabel("Title")).toBeVisible()
 }
 
@@ -192,13 +192,13 @@ export async function updateTimerSettings(
     await page.getByLabel("Seconds").fill(seconds)
   }
   if (backgroundColor !== undefined) {
-    await page.getByLabel("Background Color").fill(backgroundColor)
+    await page.getByLabel("Background").fill(backgroundColor)
   }
   if (foregroundColor !== undefined) {
-    await page.getByLabel("Foreground Color").fill(foregroundColor)
+    await page.getByLabel("Foreground").fill(foregroundColor)
   }
   if (primaryColor !== undefined) {
-    await page.getByLabel("Primary Color").fill(primaryColor)
+    await page.getByLabel("Primary").fill(primaryColor)
   }
 }
 
@@ -281,6 +281,22 @@ async function getBodyCssVariable(page: Page, name: string) {
   }, name)
 }
 
+function hexToRgb(hex: string): string {
+  // Remove # if present
+  hex = hex.replace(/^#/, '')
+
+  // Convert 3-digit hex to 6-digit
+  if (hex.length === 3) {
+    hex = hex.split('').map(char => char + char).join('')
+  }
+
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+
+  return `${r} ${g} ${b}`
+}
+
 export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
     const editableTitle = page.getByTitle("Click to edit title")
@@ -310,21 +326,21 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
       .poll(() => getBodyCssVariable(page, "--background"), {
         message: "background color should be applied",
       })
-      .toBe(settings.backgroundColor)
+      .toBe(hexToRgb(settings.backgroundColor))
   }
   if (settings.foregroundColor !== undefined) {
     await expect
       .poll(() => getBodyCssVariable(page, "--foreground"), {
         message: "foreground color should be applied",
       })
-      .toBe(settings.foregroundColor)
+      .toBe(hexToRgb(settings.foregroundColor))
   }
   if (settings.primaryColor !== undefined) {
     await expect
       .poll(() => getBodyCssVariable(page, "--primary"), {
         message: "primary color should be applied",
       })
-      .toBe(settings.primaryColor)
+      .toBe(hexToRgb(settings.primaryColor))
   }
 }
 
