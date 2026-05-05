@@ -17,6 +17,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - The Playwright config starts the Next.js dev server on `http://127.0.0.1:3100` and a local PeerJS server on `http://127.0.0.1:9100`; it reuses existing servers when they are already running.
 - Use `pnpm dev:peer` when you need the local PeerJS server outside Playwright.
 - `pnpm test` is the regular verification gate and runs lint, unit tests, and the smoke Playwright suite.
+- `pnpm check` is the fast local gate for code changes and runs lint (including typecheck) plus unit tests.
 - `pnpm test:ci` runs lint, unit tests, and the CI-safe Playwright suite with `@visual` tests excluded.
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.

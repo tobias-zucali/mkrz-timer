@@ -11,6 +11,7 @@
     "dev:peer": "node scripts/dev-peer.mjs",
     "build": "pnpm test:full && next build",
     "start": "next start",
+    "check": "pnpm lint && pnpm test:unit",
     "test": "pnpm lint && pnpm test:unit && pnpm test:e2e",
     "test:ci": "pnpm lint && pnpm test:unit && pnpm test:e2e:ci",
     "test:full": "pnpm lint && pnpm test:unit && pnpm test:e2e:full",
