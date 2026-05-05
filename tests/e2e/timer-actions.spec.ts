@@ -7,8 +7,9 @@ import {
 } from "./remote-mode.helpers"
 
 async function setTimer(page: Page, minutes: string, seconds: string) {
-  await page.getByLabel("Minutes").fill(minutes)
-  await page.getByLabel("Seconds").fill(seconds)
+  const timerDisplay = page.getByTestId("timer-display")
+  await timerDisplay.getByLabel("Minutes").fill(minutes)
+  await timerDisplay.getByLabel("Seconds").fill(seconds)
 }
 
 const durationCases = [
@@ -39,8 +40,9 @@ test("keeps the timer usable after strange duration input", async ({
 }) => {
   await openTimer(page, 3)
 
-  const minutesInput = page.getByLabel("Minutes")
-  const secondsInput = page.getByLabel("Seconds")
+  const timerDisplay = page.getByTestId("timer-display")
+  const minutesInput = timerDisplay.getByLabel("Minutes")
+  const secondsInput = timerDisplay.getByLabel("Seconds")
 
   await minutesInput.selectText()
   await minutesInput.pressSequentially("abc-+e")

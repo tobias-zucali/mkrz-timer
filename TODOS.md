@@ -2,11 +2,8 @@
 
 ## BUGS
 
-- floating timer: the pie-animation is not visible anymore.
 - QR Code overlays are not fullscreen anymore.
   - also chose better titles for the overlays – the context to the timer needs to be clear
-- Page.tsx: the isSettingsRendered is pretty complex… simplify it. I would prefer to leave the drawer and the timer always in the dom, just disable the inputs and move the drawer out of view when not needed. I would prefer if the timer is visible in the background while the drawer is open. Make sure no elements of the drawer block the UI when it's closed.
-  - fix test "keeps timer shortcuts local to the settings drawer"
 
 ## UX
 

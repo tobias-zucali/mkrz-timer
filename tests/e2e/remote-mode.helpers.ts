@@ -147,7 +147,7 @@ export async function openClientsFromSettings(
 
 export async function closeSettingsOverlay(page: Page) {
   await page.getByRole("button", { name: "Done" }).click()
-  await expect(page.getByTestId("settings-drawer")).toHaveCount(0)
+  await expect(page.getByTestId("settings-drawer")).not.toBeVisible()
 }
 
 export async function expectUrlQrCode(page: Page, label: string) {
@@ -168,8 +168,9 @@ export async function expectUrlQrCode(page: Page, label: string) {
 
 export async function openSettingsOverlay(page: Page) {
   await page.getByRole("button", { name: "Settings" }).click()
-  await expect(page.getByTestId("settings-drawer")).toBeVisible()
-  await expect(page.getByLabel("Title")).toBeVisible()
+  const settingsDrawer = page.getByTestId("settings-drawer")
+  await expect(settingsDrawer).toBeVisible()
+  await expect(settingsDrawer.getByLabel("Title")).toBeVisible()
 }
 
 export async function updateTimerSettings(
@@ -183,23 +184,25 @@ export async function updateTimerSettings(
     title,
   }: TimerSettings,
 ) {
+  const settingsDrawer = page.getByTestId("settings-drawer")
+
   if (title !== undefined) {
-    await page.getByLabel("Title").fill(title)
+    await settingsDrawer.getByLabel("Title").fill(title)
   }
   if (minutes !== undefined) {
-    await page.getByLabel("Minutes").fill(minutes)
+    await settingsDrawer.getByLabel("Minutes").fill(minutes)
   }
   if (seconds !== undefined) {
-    await page.getByLabel("Seconds").fill(seconds)
+    await settingsDrawer.getByLabel("Seconds").fill(seconds)
   }
   if (backgroundColor !== undefined) {
-    await page.getByLabel("Background").fill(backgroundColor)
+    await settingsDrawer.getByLabel("Background").fill(backgroundColor)
   }
   if (foregroundColor !== undefined) {
-    await page.getByLabel("Foreground").fill(foregroundColor)
+    await settingsDrawer.getByLabel("Foreground").fill(foregroundColor)
   }
   if (primaryColor !== undefined) {
-    await page.getByLabel("Primary").fill(primaryColor)
+    await settingsDrawer.getByLabel("Primary").fill(primaryColor)
   }
 }
 
@@ -222,12 +225,13 @@ export async function expectTimerDisplayRunning(page: Page) {
 }
 
 export async function expectReadonlyTimerControls(page: Page) {
+  const timerDisplay = page.getByTestId("timer-display")
   await expect(page.getByRole("button", { name: "START" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "PAUSE" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "RESET" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
-  await expect(page.getByLabel("Minutes")).toHaveAttribute("readonly", "")
-  await expect(page.getByLabel("Seconds")).toHaveAttribute("readonly", "")
+  await expect(timerDisplay.getByLabel("Minutes")).toHaveAttribute("readonly", "")
+  await expect(timerDisplay.getByLabel("Seconds")).toHaveAttribute("readonly", "")
 }
 
 export async function expectTimerPaused(page: Page) {
@@ -270,8 +274,9 @@ export async function expectTimerControlsToMatch(pages: Page[]) {
 }
 
 export async function getDisplayedSeconds(page: Page) {
-  const minutes = Number(await page.getByLabel("Minutes").inputValue())
-  const seconds = Number(await page.getByLabel("Seconds").inputValue())
+  const timerDisplay = page.getByTestId("timer-display")
+  const minutes = Number(await timerDisplay.getByLabel("Minutes").inputValue())
+  const seconds = Number(await timerDisplay.getByLabel("Seconds").inputValue())
 
   return minutes * 60 + seconds
 }

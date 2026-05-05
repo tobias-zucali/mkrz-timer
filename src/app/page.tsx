@@ -24,7 +24,6 @@ export default function App() {
 }
 
 function TimerApp() {
-  const SETTINGS_TRANSITION_MS = 300
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
   const paramData = useParams()
@@ -53,38 +52,9 @@ function TimerApp() {
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
 
-  const [isSettingsRendered, setIsSettingsRendered] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const closeSettings = () => setIsSettingsOpen(false)
-  const openSettings = () => setIsSettingsRendered(true)
-
-  useEffect(() => {
-    if (isSettingsRendered) {
-      const frameId = window.requestAnimationFrame(() => {
-        setIsSettingsOpen(true)
-      })
-
-      return () => {
-        window.cancelAnimationFrame(frameId)
-      }
-    }
-
-    setIsSettingsOpen(false)
-  }, [isSettingsRendered])
-
-  useEffect(() => {
-    if (isSettingsOpen || !isSettingsRendered) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setIsSettingsRendered(false)
-    }, SETTINGS_TRANSITION_MS)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [isSettingsOpen, isSettingsRendered])
+  const openSettings = () => setIsSettingsOpen(true)
 
   const [syncKeys, setSyncKeys] = useState<string[]>([])
 
@@ -159,7 +129,7 @@ function TimerApp() {
   }, [error, remoteIdParam])
 
   useEffect(() => {
-    if (!isSettingsRendered) {
+    if (!isSettingsOpen) {
       return
     }
 
@@ -173,7 +143,7 @@ function TimerApp() {
     return () => {
       window.removeEventListener("keyup", onKeyUp, false)
     }
-  }, [isSettingsRendered])
+  }, [isSettingsOpen])
 
   const connectionDetails = peer.getAllConnections()
   const peerRole =
@@ -220,7 +190,7 @@ function TimerApp() {
 
   return (
     <>
-      {isSettingsRendered && !isReadonlyClient ? (
+      {!isReadonlyClient && (
         <Settings
           floatingTimerData={floatingTimerData}
           isOpen={isSettingsOpen}
@@ -229,25 +199,22 @@ function TimerApp() {
           closeSettings={closeSettings}
           handleChange={handleChange}
         />
-      ) : (
-        <>
-          <Timer
-            isReadonly={isReadonlyClient}
-            title={title}
-            handleChange={handleChange}
-            timer={timer}
-          />
-          {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
-          {remoteIdParam && (
-            <div className="absolute bottom-0 left-0 p-4 text-foreground/50">
-              {peerData.peerId
-                ? peerData.peerId === remoteIdParam
-                  ? `Remote Mode, ${connections.length} connected`
-                  : "Connected"
-                : "Connecting..."}
-            </div>
-          )}
-        </>
+      )}
+      <Timer
+        isReadonly={isReadonlyClient}
+        title={title}
+        handleChange={handleChange}
+        timer={timer}
+      />
+      {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
+      {remoteIdParam && (
+        <div className="absolute bottom-0 left-0 p-4 text-foreground/50">
+          {peerData.peerId
+            ? peerData.peerId === remoteIdParam
+              ? `Remote Mode, ${connections.length} connected`
+              : "Connected"
+            : "Connecting..."}
+        </div>
       )}
       {errorText && (
         <div

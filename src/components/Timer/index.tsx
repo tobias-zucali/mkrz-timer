@@ -51,6 +51,7 @@ export default function Timer({
 
         <div className="flex flex-col items-center justify-center grow absolute inset-0">
           <DigitalDisplay
+            data-testid="timer-display"
             isAlert={isTimedOut}
             isReadonly={isReadonly || isStarted}
             minutes={minutes}

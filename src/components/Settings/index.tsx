@@ -169,8 +169,11 @@ export default function Settings({
   return (
     <div
       aria-labelledby={settingsId}
-      aria-modal="true"
-      className="fixed inset-0 z-40"
+      aria-modal={isOpen ? "true" : "false"}
+      aria-hidden={!isOpen}
+      className={`fixed inset-0 z-40 transition-[visibility] duration-300 motion-reduce:transition-none ${
+        isOpen ? "visible" : "invisible pointer-events-none"
+      }`}
       role="dialog"
     >
       <button
@@ -182,12 +185,21 @@ export default function Settings({
         type="button"
       />
       <aside
-        className={`absolute inset-y-0 left-0 flex w-full max-w-4xl flex-col border-r border-foreground/12 bg-background/88 shadow-2xl shadow-background/45 ring-1 ring-foreground/6 transition duration-300 ease-out motion-reduce:transition-none ${
-          isOpen ? "translate-x-0 opacity-100" : "-translate-x-10 opacity-0"
+        className={`absolute inset-y-0 left-0 flex w-full max-w-4xl flex-col border-r border-foreground/12 bg-background shadow-2xl shadow-background/45 ring-1 ring-foreground/6 transition duration-300 ease-out motion-reduce:transition-none ${
+          isOpen
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0 pointer-events-none"
         }`}
         data-testid="settings-drawer"
-        onKeyDownCapture={(event) => event.stopPropagation()}
+        onKeyDownCapture={(event) => {
+          if (isOpen) {
+            event.stopPropagation()
+          }
+        }}
         onKeyUpCapture={(event) => {
+          if (!isOpen) {
+            return
+          }
           if (event.key === "Escape") {
             closeSettings()
           }
@@ -238,6 +250,7 @@ export default function Settings({
         <div className="overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
           <div className="max-w-4xl">
             <form className="space-y-8">
+              <fieldset className="space-y-8" disabled={!isOpen}>
               <DrawerSection
                 title="Timer"
               >
@@ -390,6 +403,7 @@ export default function Settings({
                   Done
                 </button>
               </div>
+              </fieldset>
             </form>
           </div>
         </div>
