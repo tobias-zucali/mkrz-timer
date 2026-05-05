@@ -18,11 +18,13 @@ test(
     await openSettingsOverlay(page)
 
     await page.getByRole("button", { name: "Show Share Link" }).click()
-    const qrCodeDialog = page.getByRole("dialog", { name: "Share Link" })
+    const qrCodeDialog = page.getByRole("dialog", {
+      name: "Timer · Share Link",
+    })
 
     await expect(qrCodeDialog).toBeVisible()
     await expect(
-      qrCodeDialog.getByRole("heading", { name: "Share Link" }),
+      qrCodeDialog.getByRole("heading", { name: "Timer · Share Link" }),
     ).toBeVisible()
     await expect(
       qrCodeDialog.getByRole("img", { name: "Share Link" }),

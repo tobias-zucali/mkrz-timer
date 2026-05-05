@@ -166,16 +166,22 @@ export default function UrlCopyField({
         <div
           aria-labelledby={`${fieldId}_qr_title`}
           aria-modal="true"
-          className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-8 bg-black p-8 text-center text-white"
+          className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-8 bg-black p-8 text-center text-white sm:p-10"
           onClick={() => setIsQrCodeOpen(false)}
           role="dialog"
         >
-          <CloseButton aria-label={`Close ${label}`} title={`Close ${label}`} />
+          <CloseButton
+            className="absolute right-5 top-5 z-[1] border-white/20 bg-white/10 text-white/85 hover:bg-white/16 hover:text-white focus:outline-white sm:right-8"
+            onClick={(event) => {
+              event.stopPropagation()
+              setIsQrCodeOpen(false)
+            }}
+          />
           <h1
             className="text-3xl font-bold sm:text-5xl"
             id={`${fieldId}_qr_title`}
           >
-            {label}
+            Timer · {label}
           </h1>
           <span className="rounded-md bg-white p-4">
             <QRCodeSVG

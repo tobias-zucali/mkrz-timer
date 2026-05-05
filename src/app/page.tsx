@@ -210,15 +210,16 @@ function TimerApp() {
       {errorText && (
         <div
           aria-live="assertive"
-          className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-700 px-8 py-3 font-bold text-white"
+          className="absolute bottom-4 left-1/2 z-50 max-w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl bg-red-700 py-3 pl-5 pr-14 font-bold text-white sm:pl-6 sm:pr-16"
           data-testid="global-error-alert"
           role="alert"
         >
           <CloseButton
-            className="absolute inset-0 flex flex-row-reverse p-1 text-white/50 hover:text-white cursor-pointer"
+            aria-label="Dismiss error"
+            className="absolute right-2 top-1/2 -translate-y-1/2 border-white/25 bg-white/10 text-white/85 hover:bg-white/16 hover:text-white focus:outline-white"
             onClick={() => setErrorText(null)}
           />
-          <div className="pr-8">
+          <div>
             {errorText}
             <div className="mt-2 text-sm">
               <Mailto

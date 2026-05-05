@@ -4,6 +4,7 @@ import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import usePeer from "@/utils/usePeer"
 
+import CloseButton from "@/components/CloseButton"
 import HelpText from "@/components/HelpText"
 import InputField from "@/components/InputField"
 import UrlCopyField from "@/components/UrlCopyField"
@@ -226,28 +227,7 @@ export default function Settings({
                 Changes apply live to connected control clients.
               </p>
             </div>
-            <button
-              aria-label="Close"
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-foreground/12 bg-foreground/4 text-foreground/72 transition hover:bg-foreground/8 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-              onClick={closeSettings}
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="m6 6 12 12M18 6 6 18"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                />
-              </svg>
-            </button>
+            <CloseButton onClick={closeSettings} />
           </div>
         </header>
 
@@ -289,10 +269,7 @@ export default function Settings({
                   </div>
                 </DrawerSection>
 
-                <DrawerSection
-                  title="Appearance"
-                  // description="Choose high-contrast colors that stay legible from a distance."
-                >
+                <DrawerSection title="Appearance">
                   <div className="grid gap-3 sm:grid-cols-3">
                     <ColorSwatchField
                       id="bg"

@@ -1,33 +1,45 @@
+import classNames from "classnames"
 import type { ButtonHTMLAttributes } from "react"
+
+const closeButtonClassName =
+  "inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-foreground/12 bg-foreground/4 text-foreground/72 transition hover:bg-foreground/8 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+
+function CloseGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m6 6 12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
 
 export default function CloseButton({
   title = "Close",
+  className,
+  children,
+  "aria-label": ariaLabel,
   ...otherProps
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className="fixed top-0 left-0 z-50 p-4 text-foreground/50 hover:text-primary cursor-pointer"
-      type="button"
+      aria-label={ariaLabel ?? title}
+      className={classNames(closeButtonClassName, className)}
       title={title}
+      type="button"
       {...otherProps}
     >
-      <svg
-        className="w-6 h-6"
-        aria-hidden="true"
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="m15 9-6 6m0-6 6 6m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-        />
-      </svg>
+      {children ?? <CloseGlyph />}
     </button>
   )
 }

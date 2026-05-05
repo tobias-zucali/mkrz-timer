@@ -154,9 +154,10 @@ export async function closeSettingsOverlay(page: Page) {
 
 export async function expectUrlQrCode(page: Page, label: string) {
   await page.getByRole("button", { name: `Show ${label}` }).click()
-  const heading = label.endsWith("Client URL")
+  const baseLabel = label.endsWith("Client URL")
     ? label.replace(/\s+URL$/, "")
     : `${label}`
+  const heading = `Timer · ${baseLabel}`
   const qrCodeDialog = page.getByRole("dialog", { name: heading })
 
   await expect(qrCodeDialog).toBeVisible()
