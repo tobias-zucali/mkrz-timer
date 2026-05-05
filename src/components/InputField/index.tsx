@@ -26,7 +26,7 @@ export default function InputField({
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   const hasInsetPadding =
     otherProps.type !== "color" && otherProps.type !== "number"
-  
+
   const fallbackId = useId()
   const inputId = id || fallbackId
 

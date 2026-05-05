@@ -69,7 +69,9 @@ export async function enableRemoteMode(page: Page) {
   await page.getByRole("switch", { name: "Remote mode" }).click()
 
   await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
-  await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeDisabled({ timeout: 15_000 })
+  await expect(
+    page.getByRole("switch", { name: "Remote mode" }),
+  ).not.toBeDisabled({ timeout: 15_000 })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Viewer Link",
@@ -230,8 +232,14 @@ export async function expectReadonlyTimerControls(page: Page) {
   await expect(page.getByRole("button", { name: "PAUSE" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "RESET" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
-  await expect(timerDisplay.getByLabel("Minutes")).toHaveAttribute("readonly", "")
-  await expect(timerDisplay.getByLabel("Seconds")).toHaveAttribute("readonly", "")
+  await expect(timerDisplay.getByLabel("Minutes")).toHaveAttribute(
+    "readonly",
+    "",
+  )
+  await expect(timerDisplay.getByLabel("Seconds")).toHaveAttribute(
+    "readonly",
+    "",
+  )
 }
 
 export async function expectTimerPaused(page: Page) {

@@ -22,13 +22,16 @@ async function getFloatingTimerState(page: Page) {
       return null
     }
 
-    const root = pipWindow.document.querySelector('[data-testid="floating-timer-root"]')
+    const root = pipWindow.document.querySelector(
+      '[data-testid="floating-timer-root"]',
+    )
     const display = pipWindow.document.querySelector(
       '[data-testid="floating-timer-display"]',
     )
 
     return {
-      backgroundColor: getComputedStyle(pipWindow.document.body).backgroundColor,
+      backgroundColor: getComputedStyle(pipWindow.document.body)
+        .backgroundColor,
       displayText: display?.textContent?.replace(/\s+/g, " ").trim() || "",
       hasButtons: pipWindow.document.querySelectorAll("button").length,
       rootText: root?.textContent?.replace(/\s+/g, " ").trim() || "",
@@ -53,20 +56,18 @@ async function getFloatingTimerSeconds(page: Page) {
 
 async function expectFloatingTimerClosed(page: Page) {
   await expect
-    .poll(
-      () =>
-        page.evaluate(
-          () =>
-            Boolean(
-              (
-                window as Window & {
-                  documentPictureInPicture?: {
-                    window?: Window | null
-                  }
-                }
-              ).documentPictureInPicture?.window,
-            ),
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean(
+          (
+            window as Window & {
+              documentPictureInPicture?: {
+                window?: Window | null
+              }
+            }
+          ).documentPictureInPicture?.window,
         ),
+      ),
     )
     .toBe(false)
 }
@@ -107,15 +108,19 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
   await expect
-    .poll(async () => {
-      const state = await getFloatingTimerState(page)
-      return {
-        hasButtons: state?.hasButtons,
-        seconds: parseDisplayTextToSeconds(state?.displayText ?? ""),
-      }
-    }, {
-      message: "floating timer window should open with readonly timer content",
-    })
+    .poll(
+      async () => {
+        const state = await getFloatingTimerState(page)
+        return {
+          hasButtons: state?.hasButtons,
+          seconds: parseDisplayTextToSeconds(state?.displayText ?? ""),
+        }
+      },
+      {
+        message:
+          "floating timer window should open with readonly timer content",
+      },
+    )
     .toMatchObject({
       hasButtons: 0,
       seconds: expect.any(Number),
@@ -130,10 +135,12 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   await expect
     .poll(
       async () =>
-        parseDisplayTextToSeconds((await getFloatingTimerState(page))?.displayText ?? ""),
+        parseDisplayTextToSeconds(
+          (await getFloatingTimerState(page))?.displayText ?? "",
+        ),
       {
-      message: "floating timer should reflect live timer countdown",
-      timeout: 5_000,
+        message: "floating timer should reflect live timer countdown",
+        timeout: 5_000,
       },
     )
     .toBeLessThan(initialFloatingSeconds ?? 0)

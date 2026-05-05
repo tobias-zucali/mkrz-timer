@@ -23,7 +23,9 @@ test(
   async ({ page }) => {
     const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
     const clientPage = await openClientFromSettings(page, controlClientUrl)
-    await expect(clientPage.getByRole("button", { name: "START" })).toBeVisible()
+    await expect(
+      clientPage.getByRole("button", { name: "START" }),
+    ).toBeVisible()
     await closeSettingsOverlay(page)
     await expect(page.getByRole("button", { name: "START" })).toBeVisible()
   },
@@ -39,7 +41,9 @@ test("marks the main remote page as control and clears remote params when ending
   await page.getByRole("switch", { name: "Remote mode" }).click()
   await expect(page).not.toHaveURL(/(?:\?|&)control=42(?:&|$)/)
   await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
-  await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeChecked()
+  await expect(
+    page.getByRole("switch", { name: "Remote mode" }),
+  ).not.toBeChecked()
 })
 
 test(
@@ -136,14 +140,20 @@ test(
 
     await page.getByRole("switch", { name: "Remote mode" }).click()
 
-    await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
-    await expect(page.getByRole("switch", { name: "Remote mode" })).toBeDisabled()
+    await expect(
+      page.getByRole("switch", { name: "Remote mode" }),
+    ).toBeChecked()
+    await expect(
+      page.getByRole("switch", { name: "Remote mode" }),
+    ).toBeDisabled()
 
     await expect(page.getByTestId("global-error-alert")).toContainText(
       "Remote mode could not start.",
       { timeout: 15_000 },
     )
-    const reportIssueLink = page.getByRole("link", { name: "Report this issue" })
+    const reportIssueLink = page.getByRole("link", {
+      name: "Report this issue",
+    })
     await expect(reportIssueLink).toBeVisible()
     const href = await reportIssueLink.getAttribute("href")
     expect(href).toBeTruthy()
@@ -164,7 +174,9 @@ test(
     expect(decodedBody).toContain("- Peer events (last")
     expect(decodedBody).toContain("- Query params snapshot:")
 
-    await expect(page.getByRole("switch", { name: "Remote mode" })).not.toBeChecked()
+    await expect(
+      page.getByRole("switch", { name: "Remote mode" }),
+    ).not.toBeChecked()
 
     await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
     await expect(page).not.toHaveURL(/(?:\?|&)rid=/)

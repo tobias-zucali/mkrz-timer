@@ -6,6 +6,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `22.6.0` or newer.
+- After substantive code edits, run `pnpm format:fix` before considering the task done (or confirm `pnpm format` still passes). This keeps Prettier output aligned without relying on manual formatting.
 - Keep this file focused on durable repo guidance for agents, not one-off debugging notes.
 - Spread `...otherProps` last on the rendered element so callers can override defaults intentionally.
 - Prefer Tailwind utilities for standard application layout, spacing, and control styling; keep custom CSS or CSS modules for specialized visuals when utility classes alone would be awkward.

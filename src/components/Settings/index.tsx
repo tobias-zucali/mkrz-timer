@@ -28,10 +28,12 @@ function DrawerSection({
 }) {
   return (
     <section className={sectionClassName}>
-      <div className={classNames(
-        "pb-4",
-        description && "mb-5 border-b border-foreground/10"
-      )}>
+      <div
+        className={classNames(
+          "pb-4",
+          description && "mb-5 border-b border-foreground/10",
+        )}
+      >
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         {description ? (
           <p className="mt-1 text-sm leading-6 text-foreground/68">
@@ -119,7 +121,9 @@ function ColorSwatchField({
         value={value}
       />
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">{label}</span>
+        <span className="block text-sm font-medium text-foreground">
+          {label}
+        </span>
         <span className="mt-0.5 block font-mono text-xs uppercase tracking-[0.08em] text-foreground/55">
           {value}
         </span>
@@ -251,158 +255,164 @@ export default function Settings({
           <div className="max-w-4xl">
             <form className="space-y-8">
               <fieldset className="space-y-8" disabled={!isOpen}>
-              <DrawerSection
-                title="Timer"
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <InputField
-                    containerClassName="sm:col-span-2"
-                    id="title"
-                    label="Title"
-                    value={params.title}
-                    onChange={(event) => handleChange("title", event.target.value)}
-                  />
-                  <InputField
-                    id="minutes"
-                    inputMode="numeric"
-                    label="Minutes"
-                    type="number"
-                    value={params.m || 1}
-                    onChange={(event) => handleChange("m", event.target.value)}
-                  />
-                  <InputField
-                    id="seconds"
-                    inputMode="numeric"
-                    label="Seconds"
-                    type="number"
-                    value={params.s || 0}
-                    onChange={(event) => handleChange("s", event.target.value)}
-                  />
-                </div>
-              </DrawerSection>
-
-              <DrawerSection
-                title="Appearance"
-                // description="Choose high-contrast colors that stay legible from a distance."
-              >
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <ColorSwatchField
-                    id="bg"
-                    label="Background"
-                    value={params.bg}
-                    onChange={(event) => handleChange("bg", event.target.value)}
-                  />
-                  <ColorSwatchField
-                    id="fg"
-                    label="Foreground"
-                    value={params.fg}
-                    onChange={(event) => handleChange("fg", event.target.value)}
-                  />
-                  <ColorSwatchField
-                    id="pc"
-                    label="Primary"
-                    value={params.pc}
-                    onChange={(event) => handleChange("pc", event.target.value)}
-                  />
-                </div>
-              </DrawerSection>
-
-              <DrawerSection
-                title="Sharing"
-              >
-                <div className="space-y-5">
-                  <ToggleRow
-                    checked={Boolean(remoteId || isConnecting)}
-                    description="Use remote mode when another screen should view or control the timer."
-                    disabled={isConnecting || Boolean(remoteErrorText)}
-                    label="Remote mode"
-                    onChange={async () => {
-                      if (remoteId) {
-                        disconnect()
-                        setParams({ control: null, rid: undefined })
-                        return
+                <DrawerSection title="Timer">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <InputField
+                      containerClassName="sm:col-span-2"
+                      id="title"
+                      label="Title"
+                      value={params.title}
+                      onChange={(event) =>
+                        handleChange("title", event.target.value)
                       }
-
-                      const id = await connectRemote()
-                      if (!remoteId && id) {
-                        setParams({ control: "42", rid: id })
+                    />
+                    <InputField
+                      id="minutes"
+                      inputMode="numeric"
+                      label="Minutes"
+                      type="number"
+                      value={params.m || 1}
+                      onChange={(event) =>
+                        handleChange("m", event.target.value)
                       }
-                    }}
-                  />
+                    />
+                    <InputField
+                      id="seconds"
+                      inputMode="numeric"
+                      label="Seconds"
+                      type="number"
+                      value={params.s || 0}
+                      onChange={(event) =>
+                        handleChange("s", event.target.value)
+                      }
+                    />
+                  </div>
+                </DrawerSection>
 
-                  {!remoteId && (
-                    <div className="border-t border-foreground/10 pt-5">
-                      <div className="space-y-4">
-                        <UrlCopyField
-                          label="Share Link"
-                          description="Use this link to reopen the current timer setup."
-                          value={timerUrl}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {remoteId && isRemoteReady ? (
-                    <div className="border-t border-foreground/10 pt-5">
-                      <div className="space-y-5">
-                        <div className="space-y-3">
-                          <UrlCopyField
-                            label="Viewer Link"
-                            showOpenButton={true}
-                            value={readonlyClientUrl}
-                            description="Share this with viewers to watch the timer."
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <UrlCopyField
-                            label="Control Link"
-                            showOpenButton={true}
-                            value={controlClientUrl}
-                            description="Share this with someone who should control the timer and settings."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </DrawerSection>
-
-              <DrawerSection
-                title="Floating Timer"
-              >
-                <ToggleRow
-                  checked={floatingTimerData.isOpen}
-                  description={
-                    floatingTimerData.isSupported
-                      ? "Keep a small timer visible above other windows."
-                      : floatingTimerData.unsupportedReason ??
-                        "Floating Timer is not available in this browser."
-                  }
-                  disabled={!floatingTimerData.isSupported}
-                  label="Always-on-top window"
-                  onChange={() => {
-                    void floatingTimerData.toggle()
-                  }}
-                  testId="floating-timer-toggle"
-                />
-              </DrawerSection>
-
-              <DrawerSection
-                title="Keyboard Shortcuts"
-                description="Global timer shortcuts stay available when the drawer is closed."
-              >
-                <HelpText />
-              </DrawerSection>
-
-              <div className="flex items-center justify-end">
-                <button
-                  className={primaryActionButtonClassName}
-                  onClick={closeSettings}
-                  type="button"
+                <DrawerSection
+                  title="Appearance"
+                  // description="Choose high-contrast colors that stay legible from a distance."
                 >
-                  Done
-                </button>
-              </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <ColorSwatchField
+                      id="bg"
+                      label="Background"
+                      value={params.bg}
+                      onChange={(event) =>
+                        handleChange("bg", event.target.value)
+                      }
+                    />
+                    <ColorSwatchField
+                      id="fg"
+                      label="Foreground"
+                      value={params.fg}
+                      onChange={(event) =>
+                        handleChange("fg", event.target.value)
+                      }
+                    />
+                    <ColorSwatchField
+                      id="pc"
+                      label="Primary"
+                      value={params.pc}
+                      onChange={(event) =>
+                        handleChange("pc", event.target.value)
+                      }
+                    />
+                  </div>
+                </DrawerSection>
+
+                <DrawerSection title="Sharing">
+                  <div className="space-y-5">
+                    <ToggleRow
+                      checked={Boolean(remoteId || isConnecting)}
+                      description="Use remote mode when another screen should view or control the timer."
+                      disabled={isConnecting || Boolean(remoteErrorText)}
+                      label="Remote mode"
+                      onChange={async () => {
+                        if (remoteId) {
+                          disconnect()
+                          setParams({ control: null, rid: undefined })
+                          return
+                        }
+
+                        const id = await connectRemote()
+                        if (!remoteId && id) {
+                          setParams({ control: "42", rid: id })
+                        }
+                      }}
+                    />
+
+                    {!remoteId && (
+                      <div className="border-t border-foreground/10 pt-5">
+                        <div className="space-y-4">
+                          <UrlCopyField
+                            label="Share Link"
+                            description="Use this link to reopen the current timer setup."
+                            value={timerUrl}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {remoteId && isRemoteReady ? (
+                      <div className="border-t border-foreground/10 pt-5">
+                        <div className="space-y-5">
+                          <div className="space-y-3">
+                            <UrlCopyField
+                              label="Viewer Link"
+                              showOpenButton={true}
+                              value={readonlyClientUrl}
+                              description="Share this with viewers to watch the timer."
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <UrlCopyField
+                              label="Control Link"
+                              showOpenButton={true}
+                              value={controlClientUrl}
+                              description="Share this with someone who should control the timer and settings."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </DrawerSection>
+
+                <DrawerSection title="Floating Timer">
+                  <ToggleRow
+                    checked={floatingTimerData.isOpen}
+                    description={
+                      floatingTimerData.isSupported
+                        ? "Keep a small timer visible above other windows."
+                        : (floatingTimerData.unsupportedReason ??
+                          "Floating Timer is not available in this browser.")
+                    }
+                    disabled={!floatingTimerData.isSupported}
+                    label="Always-on-top window"
+                    onChange={() => {
+                      void floatingTimerData.toggle()
+                    }}
+                    testId="floating-timer-toggle"
+                  />
+                </DrawerSection>
+
+                <DrawerSection
+                  title="Keyboard Shortcuts"
+                  description="Global timer shortcuts stay available when the drawer is closed."
+                >
+                  <HelpText />
+                </DrawerSection>
+
+                <div className="flex items-center justify-end">
+                  <button
+                    className={primaryActionButtonClassName}
+                    onClick={closeSettings}
+                    type="button"
+                  >
+                    Done
+                  </button>
+                </div>
               </fieldset>
             </form>
           </div>

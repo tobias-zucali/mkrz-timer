@@ -33,7 +33,9 @@ test(
     await qrCodeDialog.click()
 
     await expect(qrCodeDialog).not.toBeVisible()
-    await expect(page.getByRole("textbox", { name: "Share Link" })).toBeVisible()
+    await expect(
+      page.getByRole("textbox", { name: "Share Link" }),
+    ).toBeVisible()
   },
 )
 

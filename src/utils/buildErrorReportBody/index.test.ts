@@ -36,7 +36,9 @@ test("buildErrorReportBody includes expected diagnostics", () => {
     ],
   })
 
-  assert.ok(report.includes("Error: Remote mode could not start. Connection failed"))
+  assert.ok(
+    report.includes("Error: Remote mode could not start. Connection failed"),
+  )
   assert.ok(report.includes("- Remote id param: remote-123"))
   assert.ok(report.includes("- Local peer id: local-456"))
   assert.ok(report.includes("- Host peer id: host-789"))

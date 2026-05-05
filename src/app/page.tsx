@@ -29,16 +29,7 @@ function TimerApp() {
   const paramData = useParams()
   const { params, setParams } = paramData
 
-  const {
-    title,
-    rid: remoteIdParam,
-    bg,
-    fg,
-    pc,
-    m,
-    s,
-    control,
-  } = params
+  const { title, rid: remoteIdParam, bg, fg, pc, m, s, control } = params
 
   const syncParams = {
     title,

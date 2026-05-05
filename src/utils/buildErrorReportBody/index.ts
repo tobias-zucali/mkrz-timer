@@ -50,8 +50,11 @@ export default function buildErrorReportBody({
   }
 
   const now =
-    typeof window !== "undefined" ? new Date().toISOString() : new Date().toString()
-  const location = typeof window !== "undefined" ? window.location.href : "unavailable"
+    typeof window !== "undefined"
+      ? new Date().toISOString()
+      : new Date().toString()
+  const location =
+    typeof window !== "undefined" ? window.location.href : "unavailable"
   const userAgent =
     typeof navigator !== "undefined" ? navigator.userAgent : "unavailable"
   const timezone =

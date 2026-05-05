@@ -61,7 +61,10 @@ function getDocumentPictureInPictureSupportReason() {
     return `Floating Timer requires Chrome or Edge 116 or newer. Current Chromium version: ${chromiumVersion}.`
   }
 
-  if (!("documentPictureInPicture" in window) || !window.documentPictureInPicture) {
+  if (
+    !("documentPictureInPicture" in window) ||
+    !window.documentPictureInPicture
+  ) {
     return "This Chromium build does not currently expose Document Picture-in-Picture."
   }
 
@@ -82,7 +85,9 @@ function getDocumentPictureInPicture() {
 
 function copyDocumentStyles(targetDocument: Document) {
   targetDocument.head.innerHTML = ""
-  for (const node of document.head.querySelectorAll('style, link[rel="stylesheet"]')) {
+  for (const node of document.head.querySelectorAll(
+    'style, link[rel="stylesheet"]',
+  )) {
     targetDocument.head.appendChild(node.cloneNode(true))
   }
 }
@@ -109,7 +114,9 @@ export default function useFloatingTimerPiP({
   const pipWindowRef = useRef<DocumentPictureInPictureWindow | null>(null)
   const pipCloseHandlerRef = useRef<(() => void) | null>(null)
 
-  const [unsupportedReason, setUnsupportedReason] = useState<string | null>(null)
+  const [unsupportedReason, setUnsupportedReason] = useState<string | null>(
+    null,
+  )
   const [isOpen, setIsOpen] = useState(false)
 
   const renderPiPWindow = useCallback(() => {

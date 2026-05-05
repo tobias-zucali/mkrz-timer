@@ -156,7 +156,9 @@ test(
       const devicePage = await context.newPage()
 
       await openTimer(devicePage, 3, baseURL)
-      await expect(devicePage.getByRole("button", { name: "START" })).toBeVisible()
+      await expect(
+        devicePage.getByRole("button", { name: "START" }),
+      ).toBeVisible()
 
       await expectScreenshotWithoutDebugInfo(devicePage, {
         fullPage: true,

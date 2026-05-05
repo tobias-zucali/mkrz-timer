@@ -432,7 +432,10 @@ class PeerConnection {
 
   public getAllConnections(): PeerConnectionDetails[] {
     const connectionsAlive: PeerConnectionDetails[] = []
-    for (const [id, { conn, isAlive, lastPing }] of this.connectionMap.entries()) {
+    for (const [
+      id,
+      { conn, isAlive, lastPing },
+    ] of this.connectionMap.entries()) {
       const rtcConnection = (
         conn as unknown as { peerConnection?: RTCPeerConnection }
       ).peerConnection
@@ -442,7 +445,8 @@ class PeerConnection {
         isOpen: Boolean(conn.open),
         lastPing,
         webRtcConnectionState: rtcConnection?.connectionState ?? "unknown",
-        webRtcIceConnectionState: rtcConnection?.iceConnectionState ?? "unknown",
+        webRtcIceConnectionState:
+          rtcConnection?.iceConnectionState ?? "unknown",
         webRtcSignalingState: rtcConnection?.signalingState ?? "unknown",
       })
     }
