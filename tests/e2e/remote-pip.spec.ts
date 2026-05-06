@@ -2,11 +2,36 @@ import { expect, Page, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
+  expectScreenshotWithoutDebugInfo,
   expectTimerRunning,
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
 } from "./remote-mode.helpers"
+
+// Helper functions for Floating Timer
+async function openFloatingTimer(page: Page) {
+  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
+  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+
+  const pipPromise = page.context().waitForEvent('page')
+  await page.getByTestId("floating-timer-toggle").click()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+  const pipPage = await pipPromise
+  await pipPage.waitForLoadState('domcontentloaded')
+  return pipPage
+}
+
+async function closeFloatingTimer(page: Page) {
+  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
+  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+
+  await page.getByTestId("floating-timer-toggle").click()
+  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  await expectFloatingTimerClosed(page)
+}
 
 async function getFloatingTimerState(page: Page) {
   return page.evaluate(() => {
@@ -22,8 +47,8 @@ async function getFloatingTimerState(page: Page) {
       return null
     }
 
-    const root = pipWindow.document.querySelector(
-      '[data-testid="floating-timer-root"]',
+    const title = pipWindow.document.querySelector(
+      '[data-testid="floating-timer-title"]',
     )
     const display = pipWindow.document.querySelector(
       '[data-testid="floating-timer-display"]',
@@ -34,7 +59,7 @@ async function getFloatingTimerState(page: Page) {
         .backgroundColor,
       displayText: display?.textContent?.replace(/\s+/g, " ").trim() || "",
       hasButtons: pipWindow.document.querySelectorAll("button").length,
-      rootText: root?.textContent?.replace(/\s+/g, " ").trim() || "",
+      titleText: title?.textContent?.replace(/\s+/g, " ").trim() || "",
     }
   })
 }
@@ -96,73 +121,107 @@ test("hides the floating timer action when document PiP is unsupported", async (
   await expect(page.getByText(/document picture-in-picture/i)).toBeVisible()
 })
 
-test("opens a readonly floating timer in local mode and keeps it synced", async ({
-  page,
-}) => {
-  await openTimer(page, 3)
-  await openSettingsOverlay(page)
+// Test focusing on sync
+test(
+  "opens a readonly floating timer in local mode and keeps it synced",
+  async ({ page }) => {
+    await openTimer(page, 3)
+    await openSettingsOverlay(page)
+    await openFloatingTimer(page)
 
-  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
-  await page.getByTestId("floating-timer-toggle").click()
+    await expect
+      .poll(
+        async () => {
+          const state = await getFloatingTimerState(page)
+          return {
+            hasButtons: state?.hasButtons,
+            seconds: parseDisplayTextToSeconds(state?.displayText ?? ""),
+          }
+        },
+        {
+          message:
+            "floating timer window should open with readonly timer content",
+        },
+      )
+      .toMatchObject({
+        hasButtons: 0,
+        seconds: expect.any(Number),
+      })
 
-  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
-  await expect
-    .poll(
-      async () => {
-        const state = await getFloatingTimerState(page)
-        return {
-          hasButtons: state?.hasButtons,
-          seconds: parseDisplayTextToSeconds(state?.displayText ?? ""),
-        }
-      },
-      {
-        message:
-          "floating timer window should open with readonly timer content",
-      },
-    )
-    .toMatchObject({
-      hasButtons: 0,
-      seconds: expect.any(Number),
+    const initialFloatingSeconds = await getFloatingTimerSeconds(page)
+    expect(initialFloatingSeconds).not.toBeNull()
+
+    await closeSettingsOverlay(page)
+    await page.getByRole("button", { name: "START" }).click()
+    await expectTimerRunning(page)
+    await expect
+      .poll(
+        async () =>
+          parseDisplayTextToSeconds(
+            (await getFloatingTimerState(page))?.displayText ?? "",
+          ),
+        {
+          message: "floating timer should reflect live timer countdown",
+          timeout: 5_000,
+        },
+      )
+      .toBeLessThan(initialFloatingSeconds ?? 0)
+
+    await page.getByRole("button", { name: "RESET" }).click()
+    await openSettingsOverlay(page)
+    await updateTimerSettings(page, {
+      backgroundColor: "#123456",
+      title: "Floating title",
+      minutes: "12",
+      seconds: "34",
     })
 
-  const initialFloatingSeconds = await getFloatingTimerSeconds(page)
-  expect(initialFloatingSeconds).not.toBeNull()
+    await expect
+      .poll(() => getFloatingTimerState(page), {
+        message: "floating timer should reflect title and color updates",
+      })
+      .toMatchObject({
+        backgroundColor: "rgb(18, 52, 86)",
+        displayText: "12:34",
+        titleText: "Floating title",
+      })
 
-  await closeSettingsOverlay(page)
-  await page.getByRole("button", { name: "START" }).click()
-  await expectTimerRunning(page)
-  await expect
-    .poll(
-      async () =>
-        parseDisplayTextToSeconds(
-          (await getFloatingTimerState(page))?.displayText ?? "",
-        ),
-      {
-        message: "floating timer should reflect live timer countdown",
-        timeout: 5_000,
-      },
-    )
-    .toBeLessThan(initialFloatingSeconds ?? 0)
+    await page.getByTestId("floating-timer-toggle").click()
+    await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+    await expectFloatingTimerClosed(page)
+  },
+)
 
-  await openSettingsOverlay(page)
-  await updateTimerSettings(page, {
-    backgroundColor: "#123456",
-    title: "Floating title",
-  })
+// Test focusing on snapshots with multiple sizes
+const snapshotSizes = [
+  { width: 300, height: 200 },
+  { width: 520, height: 520 },
+  { width: 1024, height: 768 },
+]
 
-  await expect
-    .poll(() => getFloatingTimerState(page), {
-      message: "floating timer should reflect title and color updates",
+test(
+  "captures snapshots of floating timer in multiple sizes",
+  { tag: "@visual" },
+  async ({ page }) => {
+    await openTimer(page, 3)
+    await openSettingsOverlay(page)
+    await updateTimerSettings(page, {
+      backgroundColor: "#123456",
+      title: "Floating title",
+      minutes: "12",
+      seconds: "34",
     })
-    .toMatchObject({
-      backgroundColor: "rgb(18, 52, 86)",
-    })
-  await expect
-    .poll(async () => (await getFloatingTimerState(page))?.rootText ?? "")
-    .toContain("Floating title")
+    const pipPage = await openFloatingTimer(page)
 
-  await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
-  await expectFloatingTimerClosed(page)
-})
+    for (const size of snapshotSizes) {
+      await pipPage.setViewportSize(size)
+      await expectScreenshotWithoutDebugInfo(pipPage, {
+        fullPage: true,
+        message: `PiP layout should stay visually stable at ${size.width}x${size.height}`,
+        name: `PiP-layout-${size.width}x${size.height}.png`,
+      })
+    }
+
+    await closeFloatingTimer(page)
+  },
+)

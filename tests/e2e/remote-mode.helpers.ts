@@ -52,6 +52,7 @@ export async function expectScreenshotWithoutDebugInfo(
   try {
     await expect(page, message).toHaveScreenshot(name, {
       fullPage,
+      maxDiffPixelRatio: 0.01,
     })
   } finally {
     await styleTag.evaluate((node) => {

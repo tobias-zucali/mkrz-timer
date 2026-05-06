@@ -72,6 +72,7 @@ export default function FloatingTimerContent({
           disabled
           html={title}
           onChange={() => {}}
+          data-testid="floating-timer-title"
         />
       </div>
       <div className="relative min-h-0 grow p-4">

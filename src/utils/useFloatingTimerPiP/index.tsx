@@ -167,7 +167,7 @@ export default function useFloatingTimerPiP({
       const pipWindow = await documentPictureInPicture.requestWindow({
         width: 520,
         height: 520,
-        disallowReturnToOpener: true,
+        disallowReturnToOpener: false,
         preferInitialWindowPlacement: true,
       })
       const pipDocument = pipWindow.document
