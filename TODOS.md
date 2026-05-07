@@ -1,16 +1,15 @@
 # TODOS
 
-## BUGS
+## Features
 
-- QR Code overlays are not fullscreen anymore.
-  - also chose better titles for the overlays – the context to the timer needs to be clear
+- Make sound on timer end configurable (public/sounds/*.mp3 + off)
 
-## UX
+## UI/UX
 
 - improve alert & debug boxes <https://tailwindcss.com/plus/ui-blocks/application-ui/feedback/alerts> <https://tailwindcss.com/plus/ui-blocks/application-ui/overlays/notifications>
 - add arrow up/down to change the values: Minutes when focus in minutes input or outside, seconds when focus in seconds input. Not at all in readonly mode, but allow it while it is running/paused as well.
 - Calculate foreground color (black or white, depending on contrast to background color). Introduce a calculated primary-foreground color as well.
-- Make sound on timer end configurable (there are different mp3 and off)
+- Hide title input in case there is no tile & focus is not in input -> more space for timer
 
 ## CODE QUALITY
 
@@ -20,4 +19,11 @@
 
 ## Connections
 
-- In case of network problems: make it explicit when connection is lost and try to reconect
+- Analyse the remote mode and add a info section in the README.md
+  - Add a link to this info section in AGENTS.md to always keep it up to data
+  - Analyze for potentials for improvement
+- In case of main connection lost:
+  - Try to recover/reconnect automatically
+  - Always reflect current state in info area src/app/page.tsx@205
+  - In control clients ask explicitly (tailwind dialog) to switch main to current instance. Recover in case sb else became main
+  - Readonly clients can not become main, if not connected show "connecting…" instead of timer
