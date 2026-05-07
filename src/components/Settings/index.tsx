@@ -190,7 +190,7 @@ export default function Settings({
         type="button"
       />
       <aside
-        className={`absolute inset-y-0 left-0 flex w-full max-w-4xl flex-col border-r border-foreground/12 bg-background shadow-2xl shadow-background/45 ring-1 ring-foreground/6 transition duration-300 ease-out motion-reduce:transition-none ${
+        className={`absolute inset-y-0 left-0 flex w-full max-w-4xl flex-col border-r border-foreground/12 bg-background/95 shadow-2xl shadow-background/45 ring-1 ring-foreground/6 transition duration-300 ease-out motion-reduce:transition-none ${
           isOpen
             ? "translate-x-0 opacity-100"
             : "-translate-x-full opacity-0 pointer-events-none"
