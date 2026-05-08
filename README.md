@@ -43,11 +43,42 @@ pnpm lint
 pnpm format
 ```
 
+## Remote Mode
+
+Remote mode uses PeerJS for peer discovery and signalling, then keeps the timer state, timer actions, and timer settings synchronized across browsers. In production, the app uses the default PeerJS cloud server unless a different PeerJS endpoint is configured.
+
+### How it works
+
+Turn on `Remote mode` in settings on the page that should host the session first.
+
+- That page starts a PeerJS session and rewrites its own URL to include `rid=<peerId>&control=42`.
+- `rid` identifies the shared remote session.
+- `control=42` marks a page as a control client. Without it, a remote page becomes a readonly viewer.
+
+When remote mode is active, the settings drawer exposes two dedicated links:
+
+- `Viewer Link`: `?rid=<peerId>` joins as a readonly client. Viewers see the live timer but do not get timer buttons, settings, or editable inputs.
+- `Control Link`: `?rid=<peerId>&control=42` joins as a control client. Control clients can start, pause, reset, and change timer settings.
+
+Readonly and control clients can be mixed in the same session. Remote client links are intentionally generated without inheriting the current timer query params, because the host pushes the canonical state to new peers after they connect.
+
+### Sync and failover behavior
+
+- Starting, pausing, resetting, and settings changes sync across connected control clients.
+- New clients receive the current timer state when they join.
+- If the current main page goes away, another control-capable client can take over the session by claiming the existing `rid`.
+- The original main can later rejoin as a client.
+- Readonly clients stay readonly after failover and continue receiving updates.
+
+The UI shows a small remote status label while a page is connected to a remote session:
+
+- Main page: `Remote Mode, n connected`
+- Client page: `Connected`
+- While reconnecting: `Connecting...`
+
+If remote startup or connectivity fails, the app shows a dismissible error banner and includes a prefilled error-report mail link with peer status and query-param context.
+
 ## PeerJS Server
-
-Remote mode uses PeerJS for peer-to-peer timer synchronization. In production, the app uses the default PeerJS cloud server unless a different PeerJS endpoint is configured.
-
-Remote mode offers two client URLs. The readonly client URL only includes the remote peer id, for example `rid=<peerId>`, and joins as a viewer without timer controls or settings. The control client URL adds `control=42`, for example `?rid=<peerId>&control=42`, and can start, pause, reset, and update timer settings. Readonly and control clients can be mixed in the same remote session.
 
 For local end-to-end tests, the repository runs its own PeerJS server so tests do not depend on the public PeerJS service:
 
@@ -55,7 +86,7 @@ For local end-to-end tests, the repository runs its own PeerJS server so tests d
 pnpm dev:peer
 ```
 
-This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE`.
+This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
 
 ## Testing
 
@@ -97,3 +128,9 @@ pnpm test:e2e:report
 `pnpm test` is the fast default verification gate. `pnpm test:ci` is the stable CI lane. `pnpm test:full` and `pnpm build` run the deeper local regression lane including `@visual` screenshot coverage.
 
 Use `pnpm test:e2e:debug` to step through the tests with Playwright Inspector.
+
+Remote-mode coverage is split by concern:
+
+- `tests/e2e/remote-client.spec.ts`: settings flow, viewer vs control links, startup failures
+- `tests/e2e/remote-sync.spec.ts`: timer action sync, settings sync, rejoin behavior
+- `tests/e2e/remote-failover.spec.ts`: main re-election and mixed-client failover

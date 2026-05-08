@@ -29,12 +29,17 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 ## PeerJS server
 
 - Remote mode uses PeerJS for peer discovery/signalling before browser-to-browser data connections are established.
-- Remote client URLs are readonly by default. Add `control=42` to the URL only for clients that should expose timer controls and settings.
+- The page that enables remote mode becomes the initial main by setting its own URL to `rid=<peerId>&control=42`.
+- Remote client URLs are readonly by default. Add `control=42` only for clients that should expose timer controls and settings.
+- Remote viewer/control links are intentionally built with `inherit: false`; they should only carry remote-session params, not a copy of the current timer params.
+- New peers receive the current timer params and timer state from the active main immediately after connecting.
+- Control clients may become the new main after a disconnect by reclaiming the existing `rid`. Readonly clients must stay readonly through failover.
 - The app uses the default PeerJS cloud server unless `NEXT_PUBLIC_PEERJS_HOST` is set.
 - `pnpm dev:peer` starts the local PeerJS server on `127.0.0.1:9100` with root path `/`, so the PeerJS health endpoint is `http://127.0.0.1:9100/peerjs/id`.
 - Playwright starts `pnpm dev:peer` and `pnpm dev:e2e` through `playwright.config.ts`.
 - The e2e Next.js server is configured with `NEXT_PUBLIC_PEERJS_HOST=127.0.0.1`, `NEXT_PUBLIC_PEERJS_PORT=9100`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
 - If e2e tests fail with a port bind error, check for stale listeners on ports `3100` or `9100` before changing test logic.
+- If remote-mode behavior changes, update both `README.md` and the remote-mode Playwright coverage in the same change.
 
 ## Test conventions
 
@@ -46,6 +51,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
   - `remote-client.spec.ts`
   - `remote-sync.spec.ts`
   - `remote-failover.spec.ts`
+  - `remote-pip.spec.ts`
   - `timer-actions.spec.ts`
 - Shared Playwright helpers live in `tests/e2e/remote-mode.helpers.ts`.
 

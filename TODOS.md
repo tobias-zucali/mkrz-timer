@@ -2,7 +2,7 @@
 
 ## Features
 
-- Make sound on timer end configurable (public/sounds/*.mp3 + off)
+- Make sound on timer end configurable (public/sounds/\*.mp3 + off)
 
 ## UI/UX
 
@@ -19,9 +19,13 @@
 
 ## Connections
 
-- Analyse the remote mode and add a info section in the README.md
-  - Add a link to this info section in AGENTS.md to always keep it up to data
-  - Analyze for potentials for improvement
+- Make the remote status area more explicit for all roles and states: main, control client, readonly client, reconnecting, and degraded connection.
+- Add a visible readonly-state placeholder while a viewer is still connecting, instead of showing a normal timer that has not synced yet.
+- Show which peer is currently main and when a failover/re-election happened, so remote sessions are easier to debug without the hidden debug panel.
+- Improve auto-reconnect so remote sessions recover reliably without user action, with clear UI for reconnecting, recovered, and failed states.
+- Add a manual retry action only as a fallback when auto-reconnect cannot recover within a reasonable time.
+- Clarify or harden ownership rules when two control clients try to claim the same session during failover at the same time.
+- Keep role selection with the sharer: if the UX changes, recipients must not be able to self-upgrade from readonly to controlling without an explicit host decision.
 - In case of main connection lost:
   - Try to recover/reconnect automatically
   - Always reflect current state in info area src/app/page.tsx@205
