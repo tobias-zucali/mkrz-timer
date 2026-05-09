@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   enableRemoteMode,
   enableRemoteModeWithClientUrls,
+  expectRemoteStatus,
   expectReadonlyTimerControls,
   expectTimerDisplayRunning,
   expectTimerPaused,
@@ -24,7 +25,7 @@ test("elects a new main when the original main closes and lets the original main
 
   await closeSettingsOverlay(page)
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
     "3",
     {
@@ -40,6 +41,14 @@ test("elects a new main when the original main closes and lets the original main
     message: "two clients should reconnect to the newly elected main",
   })
 
+  const electedMain = await getMainPage(clients)
+  await expectRemoteStatus(electedMain, {
+    connectionSummary: "2 connected peers",
+    description: "Hosting the remote timer session.",
+    role: "Main host",
+    state: "Connected",
+  })
+
   const rejoinedMain = await clients[0].context().newPage()
   await rejoinedMain.goto(clientUrl)
   await expect(
@@ -53,14 +62,20 @@ test("elects a new main when the original main closes and lets the original main
       "the original main should rejoin as a client after the cluster stabilizes",
   })
 
-  await expect(rejoinedMain.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(rejoinedMain.getByTestId("remote-status")).toHaveAttribute(
     "data-peer-role",
     "client",
   )
-  await expect(rejoinedMain.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(rejoinedMain.getByTestId("remote-status")).toHaveAttribute(
     "data-peer-status",
     "connected",
   )
+  await expectRemoteStatus(rejoinedMain, {
+    connectionSummary: "Connected to host",
+    description: "Can control the shared timer and settings.",
+    role: "Control client",
+    state: "Connected",
+  })
 })
 
 test("survives two consecutive main failovers while timer actions stay in sync", async ({
@@ -73,7 +88,7 @@ test("survives two consecutive main failovers while timer actions stay in sync",
 
   await closeSettingsOverlay(page)
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
     "4",
     {
@@ -158,8 +173,38 @@ test("keeps mixed readonly and control clients synced after main failover", asyn
     message: "mixed clients should reconnect after the original main closes",
   })
 
+  await expectRemoteStatus(readonlyClients[0], {
+    connectionSummary: "Connected to host",
+    description: "Viewing the shared timer without controls.",
+    role: "Readonly client",
+    state: "Connected",
+  })
+
   await controlClients[0].getByRole("button", { name: "PAUSE" }).click()
   await Promise.all(controlClients.map(expectTimerPaused))
   await expectTimersToMatch(clients)
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
+})
+
+test("shows connecting status while a control client cannot reach the host session", async ({
+  page,
+}) => {
+  const clientUrl = await enableRemoteMode(page)
+  const blockedClient = await page.context().newPage()
+  await blockedClient.route(
+    "http://127.0.0.1:9100/peerjs/**",
+    async (route) => {
+      await route.abort()
+    },
+  )
+  await blockedClient.goto(clientUrl)
+
+  await closeSettingsOverlay(page)
+  await expectRemoteStatus(blockedClient, {
+    connectionSummary: "Waiting for host connection",
+    description: "Joining the shared timer with control access.",
+    peerServerReachability: "Unreachable",
+    role: "Control client",
+    state: "Connecting",
+  })
 })

@@ -22,24 +22,6 @@ export type PeerConnectionDetails = {
   webRtcSignalingState: string
 }
 
-const getPeerPath = () => process.env.NEXT_PUBLIC_PEERJS_PATH || "/"
-
-export const getPeerServerLabel = () => {
-  const host = process.env.NEXT_PUBLIC_PEERJS_HOST
-  if (!host) {
-    return "PeerJS: cloud"
-  }
-
-  const secure = process.env.NEXT_PUBLIC_PEERJS_SECURE === "true"
-  const port = Number(process.env.NEXT_PUBLIC_PEERJS_PORT)
-  const protocol = secure ? "https" : "http"
-  const portSegment = Number.isFinite(port) ? `:${port}` : ""
-
-  const path = getPeerPath()
-  const pathSegment = path === "/" ? "" : path
-  return `PeerJS: ${protocol}://${host}${portSegment}${pathSegment}`
-}
-
 const getPeerOptions = (): PeerOptions | undefined => {
   const host = process.env.NEXT_PUBLIC_PEERJS_HOST
   if (!host) {
@@ -51,7 +33,7 @@ const getPeerOptions = (): PeerOptions | undefined => {
   return {
     host,
     port: Number.isFinite(port) ? port : undefined,
-    path: getPeerPath(),
+    path: process.env.NEXT_PUBLIC_PEERJS_PATH || "/",
     secure: process.env.NEXT_PUBLIC_PEERJS_SECURE === "true",
   }
 }

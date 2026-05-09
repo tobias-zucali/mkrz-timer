@@ -10,6 +10,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Keep this file focused on durable repo guidance for agents, not one-off debugging notes.
 - Spread `...otherProps` last on the rendered element so callers can override defaults intentionally.
 - Prefer Tailwind utilities for standard application layout, spacing, and control styling; keep custom CSS or CSS modules for specialized visuals when utility classes alone would be awkward.
+- For UI icons, prefer inline SVGs sourced from [heroicons.com](https://heroicons.com/) and style them through `currentColor` using the configured theme colors (`background`, `foreground`, `primary`) or other high-contrast colors when state severity needs stronger differentiation.
 - Before making architectural changes, creating new components, adding dependencies, or introducing cross-cutting state/ownership patterns, pause and ask for confirmation. If the tradeoffs are not obvious, switch to planning mode or propose a short plan first.
 
 ## End-to-end tests

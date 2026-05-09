@@ -28,33 +28,33 @@ test(
 
     await closeSettingsOverlay(page)
 
-    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    await expect(page.getByTestId("remote-status")).toHaveAttribute(
       "data-connection-count",
       "3",
       {
         timeout: 30_000,
       },
     )
-    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    await expect(page.getByTestId("remote-status")).toHaveAttribute(
       "data-peer-role",
       "main",
     )
-    await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+    await expect(page.getByTestId("remote-status")).toHaveAttribute(
       "data-peer-status",
       "connected",
     )
 
     await Promise.all(
       clients.map(async (client) => {
-        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        await expect(client.getByTestId("remote-status")).toHaveAttribute(
           "data-peer-role",
           "client",
         )
-        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        await expect(client.getByTestId("remote-status")).toHaveAttribute(
           "data-peer-status",
           "connected",
         )
-        await expect(client.getByTestId("peer-debug-state")).toHaveAttribute(
+        await expect(client.getByTestId("remote-status")).toHaveAttribute(
           "data-connection-count",
           "1",
         )
@@ -86,7 +86,7 @@ test("keeps state consistent when multiple peers control the timer quickly", asy
 
   await closeSettingsOverlay(page)
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
     "3",
     {
@@ -134,7 +134,7 @@ test("syncs the current timer state to a client that rejoins during active contr
 
   await closeSettingsOverlay(page)
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
     "3",
     {
@@ -148,7 +148,7 @@ test("syncs the current timer state to a client that rejoins during active contr
   await clients[2].close({ runBeforeUnload: true })
   const activePages = [page, clients[0], clients[1]]
 
-  await expect(page.getByTestId("peer-debug-state")).toHaveAttribute(
+  await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
     "2",
     {

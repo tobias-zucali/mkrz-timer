@@ -31,7 +31,6 @@ type ScreenshotMaskOptions = {
 }
 
 const DEBUG_INFO_SELECTORS = [
-  '[data-testid="peer-debug-state"]',
   "nextjs-portal",
   '[data-nextjs-dev-overlay="true"]',
 ]
@@ -244,6 +243,59 @@ export async function expectReadonlyTimerControls(page: Page) {
   )
 }
 
+export async function expectRemoteStatus(
+  page: Page,
+  {
+    connectionSummary,
+    description,
+    networkStatus,
+    peerServerReachability,
+    role,
+    state,
+  }: {
+    connectionSummary: string
+    description?: string
+    networkStatus?: string
+    peerServerReachability?: string
+    role: string
+    state: string
+  },
+) {
+  const remoteStatus = page.getByTestId("remote-status")
+  const toggle = remoteStatus.getByTestId("remote-status-toggle")
+  const panel = remoteStatus.getByTestId("remote-status-panel")
+
+  await expect(remoteStatus).toHaveAttribute("role", "status")
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click()
+  }
+
+  await expect(panel).toBeVisible()
+  await expect(
+    panel.getByRole("heading", { name: "Remote status" }),
+  ).toBeVisible()
+  await expect(panel.getByTestId("remote-status-role")).toHaveText(role)
+  await expect(panel.getByTestId("remote-status-state")).toHaveText(state)
+  await expect(panel.getByTestId("remote-status-link")).toHaveText(
+    connectionSummary,
+  )
+  if (networkStatus !== undefined) {
+    await expect(panel.getByTestId("remote-status-network")).toHaveText(
+      networkStatus,
+    )
+  }
+  if (peerServerReachability !== undefined) {
+    await expect(
+      panel.getByTestId("remote-status-peer-reachability"),
+    ).toHaveText(peerServerReachability)
+  }
+  if (description !== undefined) {
+    await expect(panel.getByTestId("remote-status-description")).toHaveText(
+      description,
+    )
+  }
+}
+
 export async function expectTimerPaused(page: Page) {
   await expect(page.getByRole("button", { name: "START" })).toBeVisible({
     timeout: 15_000,
@@ -391,7 +443,7 @@ export async function expectTimersToMatch(
 }
 
 export async function getPeerDebugState(page: Page): Promise<PeerDebugState> {
-  const debugState = page.getByTestId("peer-debug-state")
+  const debugState = page.getByTestId("remote-status")
 
   return {
     connectionCount:

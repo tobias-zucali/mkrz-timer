@@ -73,6 +73,7 @@ export default function usePeer({
   const [isConnecting, setIsConnecting] = useState(false)
   const [remoteLost, setRemoteLost] = useState(false)
   const [peerId, setPeerId] = useState<string | undefined>()
+  const [hasConnectedOnce, setHasConnectedOnce] = useState(false)
   const [peerEventTimeline, setPeerEventTimeline] = useState<string[]>([])
 
   const pushPeerEvent = useCallback((event: string) => {
@@ -249,6 +250,7 @@ export default function usePeer({
           await peer.connectPeer(remoteId)
         }
         setError(null)
+        setHasConnectedOnce(true)
         setPeerId(peerId)
         return peerId
       } catch (error) {
@@ -286,8 +288,15 @@ export default function usePeer({
     () => ({
       connectRemote,
       connections,
+      hasConnectedOnce,
       peer: peer,
-      disconnect: () => peer.closePeerSession(),
+      disconnect: () => {
+        setHasConnectedOnce(false)
+        setError(null)
+        setIsConnecting(false)
+        setPeerId(undefined)
+        return peer.closePeerSession()
+      },
       error,
       isConnecting,
       peerEventTimeline,
@@ -298,6 +307,7 @@ export default function usePeer({
       connectRemote,
       connections,
       error,
+      hasConnectedOnce,
       isConnecting,
       peer,
       peerEventTimeline,

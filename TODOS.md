@@ -19,9 +19,8 @@
 
 ## Connections
 
-- Make the remote status area more explicit for all roles and states: main, control client, readonly client, reconnecting, and degraded connection.
+- Integrate Remote Status in email error report.
 - Add a visible readonly-state placeholder while a viewer is still connecting, instead of showing a normal timer that has not synced yet.
-- Show which peer is currently main and when a failover/re-election happened, so remote sessions are easier to debug without the hidden debug panel.
 - Improve auto-reconnect so remote sessions recover reliably without user action, with clear UI for reconnecting, recovered, and failed states.
 - Add a manual retry action only as a fallback when auto-reconnect cannot recover within a reasonable time.
 - Clarify or harden ownership rules when two control clients try to claim the same session during failover at the same time.

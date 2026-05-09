@@ -1,15 +1,19 @@
 "use client"
 import { Suspense, useEffect, useRef, useState } from "react"
 
-import debug, { IS_DEBUGGING } from "@/utils/debug"
+import debug from "@/utils/debug"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
+import { getPeerServerLabel } from "@/utils/peerServerConfig"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
-import { getPeerServerLabel } from "@/utils/usePeer/PeerConnection"
+import getRemoteStatus from "@/utils/remoteStatus"
+import useNetworkStatus from "@/utils/useNetworkStatus"
+import usePeerServerReachability from "@/utils/usePeerServerReachability"
 import usePeer, { SyncParams } from "@/utils/usePeer"
 import useTimer, { TimerState } from "@/utils/useTimer"
 
 import CloseButton from "@/components/CloseButton"
+import RemoteStatus from "@/components/RemoteStatus"
 import Settings from "@/components/Settings"
 import SettingsButton from "@/components/SettingsButton"
 import Timer from "@/components/Timer"
@@ -87,7 +91,15 @@ function TimerApp() {
     },
   })
 
-  const { connections, peer, syncAll, error, peerId } = peerData
+  const {
+    connections,
+    hasConnectedOnce,
+    isConnecting,
+    peer,
+    syncAll,
+    error,
+    peerId,
+  } = peerData
 
   // debounced sync params
   useEffect(() => {
@@ -141,7 +153,20 @@ function TimerApp() {
     peerData.peerId && peerData.peerId === remoteIdParam ? "main" : "client"
   const peerStatus = peerId ? "connected" : "disconnected"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
+  const isOnline = useNetworkStatus()
   const peerServerLabel = getPeerServerLabel()
+  const peerServerReachability = usePeerServerReachability(
+    Boolean(remoteIdParam),
+  )
+  const remoteStatus = getRemoteStatus({
+    control,
+    connectionDetails,
+    connectionsCount: connections.length,
+    hasConnectedOnce,
+    isConnecting,
+    peerId,
+    remoteIdParam,
+  })
   const errorReportBody = buildErrorReportBody({
     errorText,
     remoteIdParam,
@@ -155,8 +180,7 @@ function TimerApp() {
     peerServerLabel,
     error,
     params,
-    isOnline:
-      typeof navigator !== "undefined" ? navigator.onLine : "unavailable",
+    isOnline: isOnline ?? "unavailable",
     visibilityState:
       typeof document !== "undefined"
         ? document.visibilityState
@@ -198,14 +222,18 @@ function TimerApp() {
         timer={timer}
       />
       {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
-      {remoteIdParam && (
-        <div className="absolute bottom-0 left-0 p-4 text-foreground/50">
-          {peerData.peerId
-            ? peerData.peerId === remoteIdParam
-              ? `Remote Mode, ${connections.length} connected`
-              : "Connected"
-            : "Connecting..."}
-        </div>
+      {remoteStatus && (
+        <RemoteStatus
+          connectionCount={connections.length}
+          connectionDetails={connectionDetails}
+          isOnline={isOnline}
+          peerId={peerId}
+          peerRole={peerRole}
+          peerServerLabel={peerServerLabel}
+          peerServerReachability={peerServerReachability}
+          peerStatus={peerStatus}
+          remoteStatus={remoteStatus}
+        />
       )}
       {errorText && (
         <div
@@ -231,42 +259,6 @@ function TimerApp() {
               </Mailto>
             </div>
           </div>
-        </div>
-      )}
-      {IS_DEBUGGING && (
-        <div
-          aria-live="polite"
-          className="fixed bottom-4 left-4 max-w-full z-50 rounded-xl bg-blue-700/40 px-8 py-3 text-white"
-          data-connection-count={connections.length}
-          data-peer-id={peerId ?? ""}
-          data-peer-role={peerRole}
-          data-peer-status={peerStatus}
-          data-testid="peer-debug-state"
-        >
-          <p className="font-bold">
-            {peerId ? (
-              <>
-                {connections.length} Connections,{" "}
-                {peerRole === "main" ? "main , " : ""}
-                id {peerId.slice(-4)}
-              </>
-            ) : (
-              "Local mode"
-            )}
-          </p>
-          <p className="mt-1 text-sm text-white/80">{peerServerLabel}</p>
-          {connectionDetails.length > 0 && (
-            <div className="mt-2 text-sm font-bold">
-              {connectionDetails.map(({ id, isAlive }) => (
-                <p
-                  key={id}
-                  data-connection-id={id}
-                  data-connection-state={isAlive ? "alive" : "lost"}
-                  data-testid="peer-debug-connection"
-                >{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</p>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </>

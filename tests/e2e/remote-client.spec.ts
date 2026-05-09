@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test"
 import {
   closeSettingsOverlay,
   enableRemoteModeWithClientUrls,
+  expectRemoteStatus,
   expectReadonlyTimerControls,
   expectTimerDisplayRunning,
   expectTimerPaused,
@@ -64,6 +65,21 @@ test(
       message: "readonly client should connect to the main timer",
     })
 
+    await expectRemoteStatus(page, {
+      connectionSummary: "1 connected peer",
+      networkStatus: "Online",
+      peerServerReachability: "Reachable",
+      role: "Main host",
+      state: "Connected",
+    })
+    await expectRemoteStatus(readonlyClient, {
+      connectionSummary: "Connected to host",
+      networkStatus: "Online",
+      peerServerReachability: "Reachable",
+      role: "Readonly client",
+      state: "Connected",
+    })
+
     await expect(readonlyClient).not.toHaveURL(/control=42/)
     await expectReadonlyTimerControls(readonlyClient)
 
@@ -103,6 +119,28 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     message: "mixed readonly and control clients should connect",
   })
 
+  await expectRemoteStatus(page, {
+    connectionSummary: "4 connected peers",
+    networkStatus: "Online",
+    peerServerReachability: "Reachable",
+    role: "Main host",
+    state: "Connected",
+  })
+  await expectRemoteStatus(controlClients[0], {
+    connectionSummary: "Connected to host",
+    networkStatus: "Online",
+    peerServerReachability: "Reachable",
+    role: "Control client",
+    state: "Connected",
+  })
+  await expectRemoteStatus(readonlyClients[0], {
+    connectionSummary: "Connected to host",
+    networkStatus: "Online",
+    peerServerReachability: "Reachable",
+    role: "Readonly client",
+    state: "Connected",
+  })
+
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 
   await page.getByRole("button", { name: "START" }).click()
@@ -125,6 +163,31 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     allPages.map((remotePage) => expectTimerSettings(remotePage, settings)),
   )
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
+})
+
+test("shows offline network status when the browser loses connectivity", async ({
+  page,
+}) => {
+  const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const controlClient = await openClientFromSettings(page, controlClientUrl)
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, controlClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "control client should connect before offline status test",
+  })
+
+  await controlClient.context().setOffline(true)
+
+  await expectRemoteStatus(controlClient, {
+    connectionSummary: "Connected to host",
+    networkStatus: "Offline",
+    role: "Control client",
+    state: "Connected",
+  })
+
+  await controlClient.context().setOffline(false)
 })
 
 test(
