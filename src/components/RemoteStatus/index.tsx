@@ -141,6 +141,13 @@ function getCompactStatusAppearance({
     }
   }
 
+  if (state === "failed") {
+    return {
+      icon: XCircleIcon,
+      iconClassName: "text-red-300/90",
+    }
+  }
+
   if (
     state === "degraded" ||
     state === "connecting" ||
@@ -155,7 +162,7 @@ function getCompactStatusAppearance({
 
   return {
     icon: CheckCircleIcon,
-    iconClassName: "text-primary/90",
+    iconClassName: "text-emerald-400/90",
   }
 }
 
@@ -163,6 +170,8 @@ export default function RemoteStatus({
   connectionCount,
   connectionDetails,
   isOnline,
+  isRetrying,
+  onRetry,
   peerId,
   peerRole,
   peerServerLabel,
@@ -173,6 +182,8 @@ export default function RemoteStatus({
   connectionCount: number
   connectionDetails: RemoteStatusConnection[]
   isOnline: boolean | null
+  isRetrying: boolean
+  onRetry: () => void
   peerId?: string
   peerRole: "main" | "client"
   peerServerLabel: string
@@ -321,6 +332,17 @@ export default function RemoteStatus({
         >
           {remoteStatus.description}
         </p>
+        {remoteStatus.canRetryManually && (
+          <button
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90 focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:cursor-default disabled:opacity-60"
+            data-testid="remote-status-retry"
+            disabled={isRetrying}
+            type="button"
+            onClick={onRetry}
+          >
+            {isRetrying ? "Retrying..." : "Retry connection"}
+          </button>
+        )}
         {connectionDetails.length > 0 && (
           <>
             <h3 className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-foreground/58">

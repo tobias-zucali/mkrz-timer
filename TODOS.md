@@ -15,15 +15,11 @@
 
 - improve structure. I prefer to have a own directory for each component, util, hook etc containing styles, tests etc next to implementation. What are good patterns for this approach?
   - document in README.md/AGENTS.md
-- Allow dev server next to e2e server, so I don't block the ports when using it
+- Prepare for internationalization https://nextjs.org/docs/app/guides/internationalization & move all strings to dictionaries/en.json
 
 ## Connections
 
 - Integrate Remote Status in email error report.
-- Add a visible readonly-state placeholder while a viewer is still connecting, instead of showing a normal timer that has not synced yet.
-- Improve auto-reconnect so remote sessions recover reliably without user action, with clear UI for reconnecting, recovered, and failed states.
-- Add a manual retry action only as a fallback when auto-reconnect cannot recover within a reasonable time.
-- Clarify or harden ownership rules when two control clients try to claim the same session during failover at the same time.
 - Keep role selection with the sharer: if the UX changes, recipients must not be able to self-upgrade from readonly to controlling without an explicit host decision.
 - In case of main connection lost:
   - Try to recover/reconnect automatically

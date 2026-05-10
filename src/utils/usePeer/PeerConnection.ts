@@ -39,6 +39,13 @@ const getPeerOptions = (): PeerOptions | undefined => {
 }
 
 class PeerConnection {
+  private readonly RECOVERABLE_SESSION_ERRORS = new Set<`${PeerErrorType}`>([
+    PeerErrorType.Network,
+    PeerErrorType.ServerError,
+    PeerErrorType.SocketClosed,
+    PeerErrorType.SocketError,
+  ])
+
   private peer: Peer | undefined
   private connectionMap = new Map<string, ConnectionInfo>()
   private locallyClosedConnections = new WeakSet<DataConnection>()
@@ -99,10 +106,10 @@ class PeerConnection {
   private readonly onConnectionClose: ((id: string) => void) | undefined
   private readonly onClose: ((id?: string) => void) | undefined
   private readonly onConnectionsChange: (connections: string[]) => void
-  private readonly onOpen: () => void
+  private readonly onPeerOpen: () => void
 
   constructor({
-    onOpen,
+    onPeerOpen,
     onError,
     onConnection,
     onReceiveData,
@@ -110,7 +117,7 @@ class PeerConnection {
     onClose,
     onConnectionsChange,
   }: {
-    onOpen: () => void
+    onPeerOpen: () => void
     onError: (error: Error, id?: string) => void
     onConnection: (id: string) => void
     onReceiveData: (id: string, data: unknown) => void
@@ -118,7 +125,7 @@ class PeerConnection {
     onConnectionClose?: (id: string) => void
     onConnectionsChange: (connections: string[]) => void
   }) {
-    this.onOpen = onOpen
+    this.onPeerOpen = onPeerOpen
     this.onError = onError
     this.onConnection = onConnection
     this.onReceiveData = onReceiveData
@@ -145,7 +152,6 @@ class PeerConnection {
         if (isAlive === true) {
           debug.log("Connection timed out:", id)
           this.setConnection(conn, false)
-          this.onConnectionClose?.(id)
         }
       } else {
         if (isAlive === false) {
@@ -191,6 +197,7 @@ class PeerConnection {
               this.PING_INTERVAL,
             )
             isInitialized = true
+            this.onPeerOpen?.()
 
             window.addEventListener("beforeunload", this.beforeUnload)
             resolve(id)
@@ -203,12 +210,6 @@ class PeerConnection {
             window.clearInterval(this.healthInterval)
             if (isInitialized) {
               this.onError?.(error)
-
-              window.clearInterval(this.reconnectInterval)
-              this.reconnectInterval = window.setInterval(
-                () => this.createPeer(id, true),
-                2000,
-              )
             } else {
               reject(error)
             }
@@ -249,7 +250,6 @@ class PeerConnection {
   private initializeConnection(conn: DataConnection) {
     const id = conn.peer
     this.setConnection(conn)
-    this.onOpen?.()
 
     conn.on("close", () => {
       debug.log("Connection closed:", id)

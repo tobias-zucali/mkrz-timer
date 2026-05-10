@@ -5,6 +5,7 @@ import {
   enableRemoteModeWithClientUrls,
   expectRemoteStatus,
   expectReadonlyTimerControls,
+  expectReadonlyPlaceholder,
   expectTimerDisplayRunning,
   expectTimerPaused,
   expectTimerRunning,
@@ -14,6 +15,7 @@ import {
   openClientFromSettings,
   openClientsFromSettings,
   openTimer,
+  peerServerRoutePattern,
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
@@ -57,6 +59,8 @@ test(
       readonlyClientUrl,
       "Viewer Link",
     )
+
+    await expectReadonlyPlaceholder(readonlyClient)
 
     await closeSettingsOverlay(page)
     await waitForRemoteCluster([page, readonlyClient], {
@@ -194,7 +198,7 @@ test(
   "shows a remote mode start error when the PeerJS server is unavailable",
   { tag: "@smoke" },
   async ({ page }) => {
-    await page.route("http://127.0.0.1:9100/peerjs/**", async (route) => {
+    await page.route(peerServerRoutePattern, async (route) => {
       await route.abort()
     })
 

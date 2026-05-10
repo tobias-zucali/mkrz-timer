@@ -7,6 +7,7 @@ import { getPeerServerLabel } from "@/utils/peerServerConfig"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import getRemoteStatus from "@/utils/remoteStatus"
+import type { RemoteStatusState } from "@/utils/remoteStatus"
 import useNetworkStatus from "@/utils/useNetworkStatus"
 import usePeerServerReachability from "@/utils/usePeerServerReachability"
 import usePeer, { SyncParams } from "@/utils/usePeer"
@@ -73,6 +74,7 @@ function TimerApp() {
 
   // handle connection
   const peerData = usePeer({
+    canControlSession: control === "42",
     remoteIdParam,
     syncParamsRef,
     syncStateRef,
@@ -93,12 +95,16 @@ function TimerApp() {
 
   const {
     connections,
+    canRetryManually,
     hasConnectedOnce,
+    hasReceivedInitialSync,
     isConnecting,
+    lifecycleState,
     peer,
     syncAll,
     error,
     peerId,
+    retryConnection,
   } = peerData
 
   // debounced sync params
@@ -159,14 +165,27 @@ function TimerApp() {
     Boolean(remoteIdParam),
   )
   const remoteStatus = getRemoteStatus({
+    canRetryManually,
     control,
     connectionDetails,
     connectionsCount: connections.length,
     hasConnectedOnce,
-    isConnecting,
+    hasReceivedInitialSync,
+    lifecycleState,
     peerId,
     remoteIdParam,
   })
+  const readonlyPlaceholderStateByRemoteState: Partial<
+    Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
+  > = {
+    connecting: "connecting",
+    failed: "failed",
+    reconnecting: "reconnecting",
+  }
+  const readonlyPlaceholderState =
+    isReadonlyClient && remoteStatus
+      ? readonlyPlaceholderStateByRemoteState[remoteStatus.state]
+      : undefined
   const errorReportBody = buildErrorReportBody({
     errorText,
     remoteIdParam,
@@ -217,6 +236,7 @@ function TimerApp() {
       )}
       <Timer
         isReadonly={isReadonlyClient}
+        readonlyPlaceholderState={readonlyPlaceholderState}
         title={title}
         handleChange={handleChange}
         timer={timer}
@@ -227,6 +247,8 @@ function TimerApp() {
           connectionCount={connections.length}
           connectionDetails={connectionDetails}
           isOnline={isOnline}
+          isRetrying={isConnecting}
+          onRetry={retryConnection}
           peerId={peerId}
           peerRole={peerRole}
           peerServerLabel={peerServerLabel}

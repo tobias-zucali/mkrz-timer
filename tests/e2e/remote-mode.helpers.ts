@@ -2,10 +2,14 @@ import { expect, Page } from "@playwright/test"
 import { hexToRgbChannels } from "../../src/utils/colors"
 
 const timerUrl = "/?m=01&s=00&bg=000000&fg=ffffff&pc=d61f69"
+export const peerServerUrl =
+  process.env.PLAYWRIGHT_PEER_SERVER_URL || "http://127.0.0.1:9100"
+export const peerServerRoutePattern = `${peerServerUrl}/peerjs/**`
 
 type PeerDebugState = {
   connectionCount: string
   peerId: string
+  remoteState: string
   role: string
   status: string
 }
@@ -253,12 +257,12 @@ export async function expectRemoteStatus(
     role,
     state,
   }: {
-    connectionSummary: string
-    description?: string
-    networkStatus?: string
-    peerServerReachability?: string
-    role: string
-    state: string
+    connectionSummary: RegExp | string
+    description?: RegExp | string
+    networkStatus?: RegExp | string
+    peerServerReachability?: RegExp | string
+    role: RegExp | string
+    state: RegExp | string
   },
 ) {
   const remoteStatus = page.getByTestId("remote-status")
@@ -294,6 +298,32 @@ export async function expectRemoteStatus(
       description,
     )
   }
+}
+
+export async function expectReadonlyPlaceholder(page: Page) {
+  const placeholder = page.getByTestId("readonly-timer-placeholder")
+  const timerDisplay = page.getByTestId("timer-display")
+
+  await expect
+    .poll(
+      async () =>
+        (await placeholder.isVisible().catch(() => false)) ||
+        (await timerDisplay.isVisible().catch(() => false)),
+      {
+        message:
+          "readonly client should either wait for sync with a placeholder or already show the readonly timer",
+        timeout: 5_000,
+      },
+    )
+    .toBe(true)
+
+  if (await placeholder.isVisible().catch(() => false)) {
+    await expect(timerDisplay).toHaveCount(0)
+    return
+  }
+
+  await expect(timerDisplay).toBeVisible()
+  await expectReadonlyTimerControls(page)
 }
 
 export async function expectTimerPaused(page: Page) {
@@ -449,9 +479,34 @@ export async function getPeerDebugState(page: Page): Promise<PeerDebugState> {
     connectionCount:
       (await debugState.getAttribute("data-connection-count")) ?? "",
     peerId: (await debugState.getAttribute("data-peer-id")) ?? "",
+    remoteState: (await debugState.getAttribute("data-remote-state")) ?? "",
     role: (await debugState.getAttribute("data-peer-role")) ?? "",
     status: (await debugState.getAttribute("data-peer-status")) ?? "",
   }
+}
+
+export async function expectNoStaleConnectedClient(page: Page) {
+  await expect
+    .poll(
+      async () => {
+        const state = await getPeerDebugState(page)
+        return {
+          connectionCount: state.connectionCount,
+          remoteState: state.remoteState,
+          status: state.status,
+        }
+      },
+      {
+        message:
+          "joined clients should not stay marked connected when they have no live host link",
+        timeout: 10_000,
+      },
+    )
+    .not.toEqual({
+      connectionCount: "0",
+      remoteState: "connected",
+      status: "connected",
+    })
 }
 
 export async function waitForRemoteCluster(

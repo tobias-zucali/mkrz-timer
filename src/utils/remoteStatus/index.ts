@@ -1,8 +1,20 @@
+import {
+  getClientConnectionSummary,
+  getControlClientDescription,
+  getMainConnectionSummary,
+  getMainDescription,
+  getReadonlyClientDescription,
+  ROLE_LABELS,
+  STATE_LABELS,
+} from "./copy"
+
 export type RemoteStatusRole = "main" | "control-client" | "readonly-client"
 export type RemoteStatusState =
   | "connecting"
   | "connected"
   | "degraded"
+  | "failed"
+  | "recovered"
   | "reconnecting"
 
 type RemoteStatusConnection = {
@@ -10,6 +22,7 @@ type RemoteStatusConnection = {
 }
 
 export type RemoteStatusModel = {
+  canRetryManually: boolean
   connectionSummary: string
   description: string
   role: RemoteStatusRole
@@ -18,20 +31,64 @@ export type RemoteStatusModel = {
   stateLabel: string
 }
 
+function getRemoteState({
+  hasConnectedOnce,
+  hasReceivedInitialSync,
+  lifecycleState,
+  peerId,
+  role,
+  unstableConnections,
+}: {
+  hasConnectedOnce: boolean
+  hasReceivedInitialSync: boolean
+  lifecycleState: RemoteStatusModel["state"]
+  peerId?: string
+  role: RemoteStatusRole
+  unstableConnections: number
+}) {
+  if (lifecycleState === "failed" || lifecycleState === "recovered") {
+    return lifecycleState
+  }
+
+  const isUnsyncedClient = role !== "main" && !hasReceivedInitialSync
+  if (!peerId || isUnsyncedClient) {
+    return hasConnectedOnce ? "reconnecting" : "connecting"
+  }
+
+  if (unstableConnections > 0) {
+    return "degraded"
+  }
+
+  if (lifecycleState === "reconnecting") {
+    return "reconnecting"
+  }
+
+  return "connected"
+}
+
 export default function getRemoteStatus({
+  canRetryManually,
   control,
   connectionDetails,
   connectionsCount,
   hasConnectedOnce,
-  isConnecting,
+  hasReceivedInitialSync,
+  lifecycleState,
   peerId,
   remoteIdParam,
 }: {
+  canRetryManually: boolean
   control?: string | null
   connectionDetails: RemoteStatusConnection[]
   connectionsCount: number
   hasConnectedOnce: boolean
-  isConnecting: boolean
+  hasReceivedInitialSync: boolean
+  lifecycleState:
+    | "connected"
+    | "connecting"
+    | "failed"
+    | "recovered"
+    | "reconnecting"
   peerId?: string
   remoteIdParam?: string | null
 }): RemoteStatusModel | null {
@@ -45,52 +102,33 @@ export default function getRemoteStatus({
     : peerId === remoteIdParam
       ? "main"
       : "control-client"
-
-  const roleLabel =
-    role === "main"
-      ? "Main host"
-      : role === "control-client"
-        ? "Control client"
-        : "Readonly client"
+  const roleLabel = ROLE_LABELS[role]
 
   const unstableConnections = connectionDetails.filter(
     ({ isAlive }) => !isAlive,
   ).length
   const healthyConnections = Math.max(connectionsCount - unstableConnections, 0)
+  const isUnsyncedClient = role !== "main" && !hasReceivedInitialSync
 
-  const state: RemoteStatusState = !peerId
-    ? hasConnectedOnce
-      ? "reconnecting"
-      : "connecting"
-    : unstableConnections > 0 || isConnecting
-      ? unstableConnections > 0
-        ? "degraded"
-        : "reconnecting"
-      : "connected"
-
-  const stateLabel =
-    state === "connecting"
-      ? "Connecting"
-      : state === "reconnecting"
-        ? "Reconnecting"
-        : state === "degraded"
-          ? "Degraded connection"
-          : "Connected"
+  const state = getRemoteState({
+    hasConnectedOnce,
+    hasReceivedInitialSync,
+    lifecycleState,
+    peerId,
+    role,
+    unstableConnections,
+  })
+  const stateLabel = STATE_LABELS[state]
 
   if (role === "main") {
     return {
-      connectionSummary:
-        state === "degraded"
-          ? `${healthyConnections} of ${connectionsCount} peer links healthy`
-          : `${connectionsCount} connected ${connectionsCount === 1 ? "peer" : "peers"}`,
-      description:
-        state === "connecting"
-          ? "Starting the remote session."
-          : state === "reconnecting"
-            ? "Trying to restore the host session for connected peers."
-            : state === "degraded"
-              ? "Some connected peers are delayed or temporarily unavailable."
-              : "Hosting the remote timer session.",
+      canRetryManually,
+      connectionSummary: getMainConnectionSummary({
+        connectionsCount,
+        healthyConnections,
+        state,
+      }),
+      description: getMainDescription(state),
       role,
       roleLabel,
       state,
@@ -99,24 +137,15 @@ export default function getRemoteStatus({
   }
 
   return {
-    connectionSummary:
-      state === "degraded"
-        ? "Host link is unstable"
-        : state === "connected"
-          ? "Connected to host"
-          : "Waiting for host connection",
+    canRetryManually,
+    connectionSummary: getClientConnectionSummary({
+      isUnsyncedClient,
+      state,
+    }),
     description:
       role === "control-client"
-        ? state === "degraded"
-          ? "Control access remains available once the host link recovers."
-          : state === "connected"
-            ? "Can control the shared timer and settings."
-            : "Joining the shared timer with control access."
-        : state === "degraded"
-          ? "Timer updates may lag until the host link recovers."
-          : state === "connected"
-            ? "Viewing the shared timer without controls."
-            : "Joining the shared timer as a viewer.",
+        ? getControlClientDescription({ isUnsyncedClient, state })
+        : getReadonlyClientDescription({ isUnsyncedClient, state }),
     role,
     roleLabel,
     state,

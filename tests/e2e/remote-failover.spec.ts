@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   enableRemoteMode,
   enableRemoteModeWithClientUrls,
+  expectNoStaleConnectedClient,
   expectRemoteStatus,
   expectReadonlyTimerControls,
   expectTimerDisplayRunning,
@@ -12,8 +13,11 @@ import {
   expectTimersToMatch,
   getMainPage,
   openClientsFromSettings,
+  peerServerRoutePattern,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
+
+test.describe.configure({ mode: "serial" })
 
 test("elects a new main when the original main closes and lets the original main rejoin as a client", async ({
   page,
@@ -44,9 +48,10 @@ test("elects a new main when the original main closes and lets the original main
   const electedMain = await getMainPage(clients)
   await expectRemoteStatus(electedMain, {
     connectionSummary: "2 connected peers",
-    description: "Hosting the remote timer session.",
+    description:
+      /Hosting the remote timer session\.|This page recovered the host session and is syncing peers again\./,
     role: "Main host",
-    state: "Connected",
+    state: /Connected|Recovered/,
   })
 
   const rejoinedMain = await clients[0].context().newPage()
@@ -72,9 +77,10 @@ test("elects a new main when the original main closes and lets the original main
   )
   await expectRemoteStatus(rejoinedMain, {
     connectionSummary: "Connected to host",
-    description: "Can control the shared timer and settings.",
+    description:
+      /Can control the shared timer and settings\.|Connection recovered\. Control access is live again\./,
     role: "Control client",
-    state: "Connected",
+    state: /Connected|Recovered/,
   })
 })
 
@@ -175,9 +181,10 @@ test("keeps mixed readonly and control clients synced after main failover", asyn
 
   await expectRemoteStatus(readonlyClients[0], {
     connectionSummary: "Connected to host",
-    description: "Viewing the shared timer without controls.",
+    description:
+      /Viewing the shared timer without controls\.|Viewer connection recovered and the timer is live again\./,
     role: "Readonly client",
-    state: "Connected",
+    state: /Connected|Recovered/,
   })
 
   await controlClients[0].getByRole("button", { name: "PAUSE" }).click()
@@ -186,23 +193,71 @@ test("keeps mixed readonly and control clients synced after main failover", asyn
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })
 
+test("does not leave joined clients marked connected after the main closes when recovery is unavailable", async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
+
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const controlClients = await openClientsFromSettings(
+    page,
+    controlClientUrl,
+    2,
+  )
+  const readonlyClients = await openClientsFromSettings(
+    page,
+    readonlyClientUrl,
+    2,
+    "Viewer Link",
+  )
+  const clients = [...controlClients, ...readonlyClients]
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, ...clients], {
+    clientCount: 4,
+    mainConnectionCount: 4,
+    message: "mixed clients should connect before the stale-connected check",
+  })
+
+  await Promise.all(
+    clients.map(async (client) => {
+      await client.route(peerServerRoutePattern, async (route) => {
+        await route.abort()
+      })
+    }),
+  )
+
+  await page.close({ runBeforeUnload: true })
+
+  await Promise.all(clients.map(expectNoStaleConnectedClient))
+  await Promise.all(
+    clients.map((client) =>
+      expectRemoteStatus(client, {
+        connectionSummary:
+          /Recovery needs a retry|Waiting for host connection|Waiting for timer sync/,
+        role: /Control client|Readonly client/,
+        state: /Reconnecting|Reconnect failed|Connecting/,
+      }),
+    ),
+  )
+})
+
 test("shows connecting status while a control client cannot reach the host session", async ({
   page,
 }) => {
   const clientUrl = await enableRemoteMode(page)
   const blockedClient = await page.context().newPage()
-  await blockedClient.route(
-    "http://127.0.0.1:9100/peerjs/**",
-    async (route) => {
-      await route.abort()
-    },
-  )
+  await blockedClient.route(peerServerRoutePattern, async (route) => {
+    await route.abort()
+  })
   await blockedClient.goto(clientUrl)
 
   await closeSettingsOverlay(page)
   await expectRemoteStatus(blockedClient, {
-    connectionSummary: "Waiting for host connection",
-    description: "Joining the shared timer with control access.",
+    connectionSummary: "Waiting for timer sync",
+    description:
+      "Joining the shared timer with control access and waiting for the first sync.",
     peerServerReachability: "Unreachable",
     role: "Control client",
     state: "Connecting",

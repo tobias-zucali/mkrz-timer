@@ -24,8 +24,6 @@ export default function usePeerServerReachability(isEnabled: boolean) {
     }
 
     let isDisposed = false
-    let intervalId: number | undefined
-
     const probe = async () => {
       setState((current) => (current === "reachable" ? current : "checking"))
 
@@ -46,7 +44,7 @@ export default function usePeerServerReachability(isEnabled: boolean) {
     }
 
     void probe()
-    intervalId = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       void probe()
     }, 15000)
 

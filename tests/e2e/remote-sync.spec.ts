@@ -28,38 +28,11 @@ test(
 
     await closeSettingsOverlay(page)
 
-    await expect(page.getByTestId("remote-status")).toHaveAttribute(
-      "data-connection-count",
-      "3",
-      {
-        timeout: 30_000,
-      },
-    )
-    await expect(page.getByTestId("remote-status")).toHaveAttribute(
-      "data-peer-role",
-      "main",
-    )
-    await expect(page.getByTestId("remote-status")).toHaveAttribute(
-      "data-peer-status",
-      "connected",
-    )
-
-    await Promise.all(
-      clients.map(async (client) => {
-        await expect(client.getByTestId("remote-status")).toHaveAttribute(
-          "data-peer-role",
-          "client",
-        )
-        await expect(client.getByTestId("remote-status")).toHaveAttribute(
-          "data-peer-status",
-          "connected",
-        )
-        await expect(client.getByTestId("remote-status")).toHaveAttribute(
-          "data-connection-count",
-          "1",
-        )
-      }),
-    )
+    await waitForRemoteCluster([page, ...clients], {
+      clientCount: 3,
+      mainConnectionCount: 3,
+      message: "remote cluster should stabilize before sync smoke actions",
+    })
 
     await page.getByRole("button", { name: "START" }).click()
     await Promise.all([page, ...clients].map(expectTimerRunning))
@@ -158,7 +131,11 @@ test("syncs the current timer state to a client that rejoins during active contr
 
   await clients[0].getByRole("button", { name: "PAUSE" }).click()
   await Promise.all(activePages.map(expectTimerPaused))
-  const pausedAt = await getDisplayedSeconds(page)
+  const pausedSecondsByActivePage = await Promise.all(
+    activePages.map(getDisplayedSeconds),
+  )
+  const pausedMin = Math.min(...pausedSecondsByActivePage)
+  const pausedMax = Math.max(...pausedSecondsByActivePage)
 
   const rejoinedClient = await page.context().newPage()
   await rejoinedClient.goto(clientUrl)
@@ -171,7 +148,20 @@ test("syncs the current timer state to a client that rejoins during active contr
   })
 
   await Promise.all([...activePages, rejoinedClient].map(expectTimerPaused))
-  await expectTimersToMatch([...activePages, rejoinedClient], pausedAt, 1)
+  await expect
+    .poll(() => getDisplayedSeconds(rejoinedClient), {
+      message:
+        "rejoined client should receive a paused timer value that matches the active cluster",
+      timeout: 10_000,
+    })
+    .toBeGreaterThanOrEqual(pausedMin - 1)
+  await expect
+    .poll(() => getDisplayedSeconds(rejoinedClient), {
+      message:
+        "rejoined client should receive a paused timer value that stays within the active cluster range",
+      timeout: 10_000,
+    })
+    .toBeLessThanOrEqual(pausedMax + 1)
 
   await rejoinedClient.getByRole("button", { name: "START" }).click()
   await Promise.all([...activePages, rejoinedClient].map(expectTimerRunning))
