@@ -1,6 +1,8 @@
 import os from "node:os"
 import type { NextConfig } from "next"
 
+const distDir = process.env.NEXT_DIST_DIR
+
 function getLocalIPv4Addresses() {
   return Object.values(os.networkInterfaces()).flatMap((networks) =>
     (networks ?? [])
@@ -10,6 +12,7 @@ function getLocalIPv4Addresses() {
 }
 
 const nextConfig: NextConfig = {
+  ...(distDir ? { distDir } : {}),
   output: "export",
   turbopack: {
     root: process.cwd(),

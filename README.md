@@ -36,6 +36,8 @@ Useful commands:
 ```bash
 pnpm dev
 pnpm dev:peer
+pnpm dev:agent
+pnpm dev:peer:agent
 pnpm test
 pnpm test:full
 pnpm build
@@ -66,15 +68,16 @@ Readonly and control clients can be mixed in the same session. Remote client lin
 
 - Starting, pausing, resetting, and settings changes sync across connected control clients.
 - New clients receive the current timer state when they join.
+- Readonly viewers stay in a visible waiting state until the first remote sync arrives, instead of rendering an unsynced timer.
 - If the current main page goes away, another control-capable client can take over the session by claiming the existing `rid`.
+- Control-capable clients use the last shared control roster as a deterministic failover queue. They try to reclaim the session in that shared order, which prevents two control clients from promoting themselves at the same time.
 - The original main can later rejoin as a client.
 - Readonly clients stay readonly after failover and continue receiving updates.
 
 The UI shows a small remote status label while a page is connected to a remote session:
 
-- Main page: `Remote Mode, n connected`
-- Client page: `Connected`
-- While reconnecting: `Connecting...`
+- The label reflects whether the page is connected, reconnecting, degraded, or needs a retry.
+- Manual retry is only shown after automatic recovery times out.
 
 If remote startup or connectivity fails, the app shows a dismissible error banner and includes a prefilled error-report mail link with peer status and query-param context.
 
@@ -87,6 +90,15 @@ pnpm dev:peer
 ```
 
 This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
+
+For separate local lanes, these commands use different ports and build artifacts:
+
+- `pnpm dev`: `http://127.0.0.1:3000` with `.next`
+- `pnpm test:e2e:*`: `http://127.0.0.1:3100` with `.next-e2e` and PeerJS on `9100`
+- `pnpm dev:agent`: `http://127.0.0.1:3200` with `.next-agent`
+- `pnpm test:e2e:*:agent`: `http://127.0.0.1:3300` with `.next-agent-e2e` and PeerJS on `9200`
+
+Agent-facing Playwright workflows and troubleshooting notes live in [AGENTS.md](./AGENTS.md).
 
 ## Testing
 

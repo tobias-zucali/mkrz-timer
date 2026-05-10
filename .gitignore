@@ -13,10 +13,15 @@
 # testing
 /coverage
 /playwright-report
+/playwright-report-agent
 /test-results
+/test-results-agent
 
 # next.js
 /.next/
+/.next-e2e/
+/.next-agent/
+/.next-agent-e2e/
 /out/
 
 # production
