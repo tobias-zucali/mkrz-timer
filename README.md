@@ -72,7 +72,6 @@ Readonly and control clients can be mixed in the same session. Remote client lin
 - New clients receive the current timer state when they join.
 - Readonly viewers stay in a visible waiting state until the first remote sync arrives, instead of rendering an unsynced timer.
 - If the current main page goes away, another control-capable client can take over the session by claiming the existing `rid`.
-- Control-capable clients use the last shared control roster as a deterministic failover queue. They try to reclaim the session in that shared order, which prevents two control clients from promoting themselves at the same time.
 - The original main can later rejoin as a client.
 - Readonly clients stay readonly after failover and continue receiving updates.
 

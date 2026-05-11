@@ -276,9 +276,21 @@ export async function expectRemoteStatus(
     expected instanceof RegExp ? expected.test(actual) : actual === expected
 
   await expect(remoteStatus).toHaveAttribute("role", "status")
-  if ((await toggle.getAttribute("aria-pressed")) !== "true") {
-    await toggle.click()
-  }
+  await expect
+    .poll(
+      async () => {
+        if ((await toggle.getAttribute("aria-expanded")) === "true") {
+          return true
+        }
+
+        await toggle.click()
+        return (await toggle.getAttribute("aria-expanded")) === "true"
+      },
+      {
+        message: "remote status panel should open before reading its contents",
+      },
+    )
+    .toBe(true)
 
   await expect(panel).toBeVisible()
   await expect(

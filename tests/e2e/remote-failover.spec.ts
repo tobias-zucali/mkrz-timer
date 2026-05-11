@@ -193,6 +193,96 @@ test("keeps mixed readonly and control clients synced after main failover", asyn
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })
 
+test("lets a single control client reclaim the session while a readonly viewer stays connected", async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
+
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const readonlyClient = await openClientsFromSettings(
+    page,
+    readonlyClientUrl,
+    1,
+    "Viewer Link",
+  )
+  const controlClient = await openClientsFromSettings(page, controlClientUrl, 1)
+  const clients = [...controlClient, ...readonlyClient]
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, ...clients], {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message:
+      "single control client and readonly viewer should connect before host shutdown",
+  })
+
+  await page.close({ runBeforeUnload: true })
+
+  await waitForRemoteCluster(clients, {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message:
+      "single control client should reclaim the session and host the readonly viewer",
+  })
+
+  const electedMain = await getMainPage(clients)
+  await expectRemoteStatus(electedMain, {
+    connectionSummary: "1 connected peer",
+    description:
+      /Hosting the remote timer session\.|This page recovered the host session and is syncing peers again\./,
+    role: "Main host",
+    state: /Connected|Recovered/,
+  })
+})
+
+test("lets a reloaded single control client reclaim the session after the host closes", async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
+
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const readonlyClient = await openClientsFromSettings(
+    page,
+    readonlyClientUrl,
+    1,
+    "Viewer Link",
+  )
+  const [controlClient] = await openClientsFromSettings(
+    page,
+    controlClientUrl,
+    1,
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, controlClient, readonlyClient[0]], {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message:
+      "single control client and readonly viewer should connect before host shutdown",
+  })
+
+  await page.close({ runBeforeUnload: true })
+  await controlClient.reload()
+
+  await waitForRemoteCluster([controlClient, readonlyClient[0]], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message:
+      "reloaded control client should reclaim the session and host the readonly viewer",
+  })
+
+  const electedMain = await getMainPage([controlClient, readonlyClient[0]])
+  await expectRemoteStatus(electedMain, {
+    connectionSummary: "1 connected peer",
+    description:
+      /Hosting the remote timer session\.|This page recovered the host session and is syncing peers again\./,
+    role: "Main host",
+    state: /Connected|Recovered/,
+  })
+})
+
 test("does not leave joined clients marked connected after the main closes when recovery is unavailable", async ({
   page,
 }) => {

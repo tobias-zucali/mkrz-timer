@@ -61,9 +61,11 @@ export type PeerLifecycleState =
   | "reconnecting"
 
 const AUTO_RECOVERY_TIMEOUT_MS = 18_000
-const CLAIM_RETRY_MS = 2_000
-const HOST_LINK_LOSS_GRACE_MS = 1_500
-const INITIAL_CLAIM_DELAY_MS = 1_000
+const CLAIM_RETRY_MS = 1_000
+const CLAIM_ROSTER_STAGGER_MS = 350
+const HOST_LINK_LOSS_GRACE_MS = 500
+const INITIAL_CLAIM_DELAY_MS = 250
+const RECOVERY_RETRY_INTERVAL_MS = 250
 const RECOVERED_BADGE_TIMEOUT_MS = 4_000
 
 const RETRYABLE_PEER_ERRORS = new Set<`${PeerErrorType}`>([
@@ -118,6 +120,12 @@ const createLocalClientId = () => {
   return `client-${Math.random().toString(36).slice(2, 10)}`
 }
 
+const sortPeersByClientId = (peers: SessionPeer[]) =>
+  [...peers].sort((a, b) => a.clientId.localeCompare(b.clientId))
+
+const getControlPeers = (peers: SessionPeer[]) =>
+  sortPeersByClientId(peers.filter((sessionPeer) => sessionPeer.canControl))
+
 export default function usePeer({
   canControlSession = false,
   remoteIdParam,
@@ -146,9 +154,11 @@ export default function usePeer({
   const localClientIdRef = useRef(createLocalClientId())
   const knownPeersRef = useRef(new Map<string, SessionPeer>())
   const latestSessionRef = useRef<SessionMetadata | null>(null)
+  const latestControlRosterRef = useRef<SessionPeer[]>([])
   const peerRef = useRef<PeerConnection | null>(null)
   const recoveryRunIdRef = useRef(0)
   const recoveredTimeoutRef = useRef<number | undefined>(undefined)
+  const hostDisconnectSignalRef = useRef(false)
   const hasRequestedRemoteConnectionRef = useRef(false)
   const syncAllRef = useRef<
     | (({
@@ -211,14 +221,14 @@ export default function usePeer({
 
       const activeConnectionIds =
         peerRef.current?.getConnections() ?? connections
-      const peers = [
+      const peers = sortPeersByClientId([
         ownPeer,
         ...Array.from(knownPeersRef.current.values()).filter(
           (peer) =>
             activeConnectionIds.includes(peer.peerId) &&
             peer.peerId !== ownerPeerId,
         ),
-      ].sort((a, b) => a.clientId.localeCompare(b.clientId))
+      ])
 
       const session = {
         epoch: nextEpoch,
@@ -229,6 +239,7 @@ export default function usePeer({
       }
 
       latestSessionRef.current = session
+      latestControlRosterRef.current = getControlPeers(peers)
       return session
     },
     [connections, remoteIdParam],
@@ -242,6 +253,20 @@ export default function usePeer({
 
     return buildSessionMetadata(activePeerId)
   }, [buildSessionMetadata])
+
+  const getClaimDelayMs = useCallback(() => {
+    const controlPeers = latestControlRosterRef.current
+
+    const controlPeerIndex = controlPeers.findIndex(
+      ({ clientId }) => clientId === localClientIdRef.current,
+    )
+
+    if (controlPeerIndex < 0) {
+      return INITIAL_CLAIM_DELAY_MS
+    }
+
+    return INITIAL_CLAIM_DELAY_MS + controlPeerIndex * CLAIM_ROSTER_STAGGER_MS
+  }, [])
 
   const sendPresence = useCallback(
     async (id: string) => {
@@ -331,10 +356,14 @@ export default function usePeer({
 
               if (action.session) {
                 latestSessionRef.current = action.session
+                latestControlRosterRef.current = getControlPeers(
+                  action.session.peers,
+                )
               }
 
               memoRefs.current.onHandleAction(action)
               setHasReceivedInitialSync(true)
+              hostDisconnectSignalRef.current = false
               setRemoteLost(false)
               setError(null)
 
@@ -374,7 +403,7 @@ export default function usePeer({
       }),
       onConnectionClose: debug.wrap(
         "usePeer onConnectionClose",
-        (id: string) => {
+        (id: string, reason?: "disconnect") => {
           pushPeerEvent(`connection_close: ${id}`)
           knownPeersRef.current.delete(id)
 
@@ -384,6 +413,7 @@ export default function usePeer({
 
           if (memoRefs.current.remoteIdParam === id) {
             debug.log("remote lost", id)
+            hostDisconnectSignalRef.current = reason === "disconnect"
             setRemoteLost(true)
             setLifecycleState("reconnecting")
           }
@@ -497,6 +527,13 @@ export default function usePeer({
         if (!remoteId) {
           const nextPeerId = await createPeerWithRetry()
           if (nextPeerId) {
+            latestControlRosterRef.current = [
+              {
+                canControl: true,
+                clientId: localClientIdRef.current,
+                peerId: nextPeerId,
+              },
+            ]
             latestSessionRef.current = {
               epoch: 0,
               ownerClientId: localClientIdRef.current,
@@ -521,6 +558,14 @@ export default function usePeer({
             : undefined
 
         if (claimedRemoteId) {
+          latestControlRosterRef.current = getControlPeers([
+            ...latestControlRosterRef.current,
+            {
+              canControl: true,
+              clientId: localClientIdRef.current,
+              peerId: claimedRemoteId,
+            },
+          ])
           latestSessionRef.current = {
             epoch: (latestSessionRef.current?.epoch ?? -1) + 1,
             ownerClientId: localClientIdRef.current,
@@ -611,7 +656,10 @@ export default function usePeer({
 
     const recover = async () => {
       const startedAt = Date.now()
-      let nextClaimAttemptAt = INITIAL_CLAIM_DELAY_MS
+      const initialClaimDelayMs = hostDisconnectSignalRef.current
+        ? 0
+        : getClaimDelayMs()
+      let nextClaimAttemptAt = initialClaimDelayMs
 
       setCanRetryManually(false)
       setError(null)
@@ -653,6 +701,14 @@ export default function usePeer({
             try {
               const claimedPeerId = await createPeerWithRetry(remoteIdParam)
               if (claimedPeerId === remoteIdParam) {
+                latestControlRosterRef.current = getControlPeers([
+                  ...latestControlRosterRef.current,
+                  {
+                    canControl: true,
+                    clientId: localClientIdRef.current,
+                    peerId: claimedPeerId,
+                  },
+                ])
                 latestSessionRef.current = {
                   epoch: (latestSessionRef.current?.epoch ?? -1) + 1,
                   ownerClientId: localClientIdRef.current,
@@ -669,6 +725,7 @@ export default function usePeer({
                 }
                 setRemoteLost(false)
                 setIsConnecting(false)
+                hostDisconnectSignalRef.current = false
                 markRecovered()
                 return
               }
@@ -696,7 +753,7 @@ export default function usePeer({
           }
         }
 
-        await wait(1_000)
+        await wait(RECOVERY_RETRY_INTERVAL_MS)
       }
     }
 
@@ -714,6 +771,7 @@ export default function usePeer({
   }, [
     canControlSession,
     createPeerWithRetry,
+    getClaimDelayMs,
     markRecovered,
     peer,
     peerId,
@@ -748,6 +806,7 @@ export default function usePeer({
       }
 
       pushPeerEvent("host_link_missing")
+      hostDisconnectSignalRef.current = false
       setRemoteLost(true)
       setLifecycleState((current) =>
         current === "failed" ? current : "reconnecting",
@@ -782,6 +841,8 @@ export default function usePeer({
     hasRequestedRemoteConnectionRef.current = false
     knownPeersRef.current.clear()
     latestSessionRef.current = null
+    latestControlRosterRef.current = []
+    hostDisconnectSignalRef.current = false
     setCanRetryManually(false)
     setError(null)
     setHasReceivedInitialSync(false)

@@ -6,7 +6,7 @@ import {
   getReadonlyClientDescription,
   ROLE_LABELS,
   STATE_LABELS,
-} from "./copy"
+} from "./copy.ts"
 
 export type RemoteStatusRole = "main" | "control-client" | "readonly-client"
 export type RemoteStatusState =

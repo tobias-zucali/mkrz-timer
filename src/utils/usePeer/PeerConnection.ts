@@ -97,13 +97,15 @@ class PeerConnection {
 
   private readonly pingAction = { type: "ping" }
   private readonly pongAction = { type: "pong" }
-  private readonly ALIVE_TIMEOUT = 2000 // ms
-  private readonly PING_INTERVAL = 1000 // ms
+  private readonly ALIVE_TIMEOUT = 1200 // ms
+  private readonly PING_INTERVAL = 500 // ms
 
   private readonly onError: (error: Error, id?: string) => void
   private readonly onConnection: (id: string) => void
   private readonly onReceiveData: (id: string, data: unknown) => void
-  private readonly onConnectionClose: ((id: string) => void) | undefined
+  private readonly onConnectionClose:
+    | ((id: string, reason?: "disconnect") => void)
+    | undefined
   private readonly onClose: ((id?: string) => void) | undefined
   private readonly onConnectionsChange: (connections: string[]) => void
   private readonly onPeerOpen: () => void
@@ -136,7 +138,7 @@ class PeerConnection {
     onConnection: (id: string) => void
     onReceiveData: (id: string, data: unknown) => void
     onClose?: (id?: string) => void
-    onConnectionClose?: (id: string) => void
+    onConnectionClose?: (id: string, reason?: "disconnect") => void
     onConnectionsChange: (connections: string[]) => void
   }) {
     this.onPeerOpen = onPeerOpen
@@ -291,7 +293,7 @@ class PeerConnection {
             debug.log("Disconnect from:", id.slice(-4))
             this.deleteConnection(id, true, conn)
             conn.close()
-            this.onConnectionClose?.(id)
+            this.onConnectionClose?.(id, "disconnect")
             return
         }
       }
