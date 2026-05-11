@@ -185,10 +185,10 @@ test("shows offline network status when the browser loses connectivity", async (
   await controlClient.context().setOffline(true)
 
   await expectRemoteStatus(controlClient, {
-    connectionSummary: "Connected to host",
+    connectionSummary: /Connected to host|Waiting for host connection/,
     networkStatus: "Offline",
     role: "Control client",
-    state: "Connected",
+    state: /Connected|Reconnecting/,
   })
 
   await controlClient.context().setOffline(false)

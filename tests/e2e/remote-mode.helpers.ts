@@ -268,6 +268,12 @@ export async function expectRemoteStatus(
   const remoteStatus = page.getByTestId("remote-status")
   const toggle = remoteStatus.getByTestId("remote-status-toggle")
   const panel = remoteStatus.getByTestId("remote-status-panel")
+  const getFieldText = async (testId: string) =>
+    ((await panel.getByTestId(testId).textContent()) ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+  const matches = (actual: string, expected: RegExp | string) =>
+    expected instanceof RegExp ? expected.test(actual) : actual === expected
 
   await expect(remoteStatus).toHaveAttribute("role", "status")
   if ((await toggle.getAttribute("aria-pressed")) !== "true") {
@@ -278,26 +284,37 @@ export async function expectRemoteStatus(
   await expect(
     panel.getByRole("heading", { name: "Remote status" }),
   ).toBeVisible()
-  await expect(panel.getByTestId("remote-status-role")).toHaveText(role)
-  await expect(panel.getByTestId("remote-status-state")).toHaveText(state)
-  await expect(panel.getByTestId("remote-status-link")).toHaveText(
-    connectionSummary,
-  )
-  if (networkStatus !== undefined) {
-    await expect(panel.getByTestId("remote-status-network")).toHaveText(
-      networkStatus,
+  await expect
+    .poll(
+      async () => {
+        const snapshot = {
+          connectionSummary: await getFieldText("remote-status-link"),
+          description: await getFieldText("remote-status-description"),
+          networkStatus: await getFieldText("remote-status-network"),
+          peerServerReachability: await getFieldText(
+            "remote-status-peer-reachability",
+          ),
+          role: await getFieldText("remote-status-role"),
+          state: await getFieldText("remote-status-state"),
+        }
+
+        return (
+          matches(snapshot.role, role) &&
+          matches(snapshot.state, state) &&
+          matches(snapshot.connectionSummary, connectionSummary) &&
+          (networkStatus === undefined ||
+            matches(snapshot.networkStatus, networkStatus)) &&
+          (peerServerReachability === undefined ||
+            matches(snapshot.peerServerReachability, peerServerReachability)) &&
+          (description === undefined ||
+            matches(snapshot.description, description))
+        )
+      },
+      {
+        message: "remote status panel should converge to the expected values",
+      },
     )
-  }
-  if (peerServerReachability !== undefined) {
-    await expect(
-      panel.getByTestId("remote-status-peer-reachability"),
-    ).toHaveText(peerServerReachability)
-  }
-  if (description !== undefined) {
-    await expect(panel.getByTestId("remote-status-description")).toHaveText(
-      description,
-    )
-  }
+    .toBe(true)
 }
 
 export async function expectReadonlyPlaceholder(page: Page) {
