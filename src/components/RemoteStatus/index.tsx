@@ -227,7 +227,10 @@ export default function RemoteStatus({
   const peerServerReachabilityLabel = getPeerServerReachabilityLabel(
     peerServerReachability,
   )
-  const compactLabel = `${getRoleShortLabel(remoteStatus.roleLabel)} · ${remoteStatus.stateLabel}`
+  const compactRoleLabel =
+    remoteStatus.role === "main"
+      ? getRoleShortLabel(remoteStatus.roleLabel)
+      : undefined
   const compactStatusAppearance = getCompactStatusAppearance({
     isOnline,
     peerServerReachability,
@@ -257,26 +260,26 @@ export default function RemoteStatus({
         aria-expanded={isPanelOpen}
         aria-label={`Remote status: ${remoteStatus.roleLabel}, ${remoteStatus.stateLabel}`}
         aria-pressed={isPinnedOpen}
-        className="flex items-center gap-2 rounded-full border border-foreground/8 bg-background/58 px-2.5 py-1.5 text-left text-foreground/72 shadow-md shadow-background/18 backdrop-blur transition hover:border-foreground/14 hover:bg-background/74 hover:text-foreground/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+        className="flex items-center gap-1.5 rounded-full border border-foreground/8 bg-background/58 px-2 py-1 text-left text-foreground/72 shadow-md shadow-background/18 backdrop-blur transition hover:border-foreground/14 hover:bg-background/74 hover:text-foreground/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
         data-testid="remote-status-toggle"
         onClick={() => setIsPinnedOpen((current) => !current)}
         type="button"
       >
         <CompactStatusIcon
           className={classNames(
-            "h-4 w-4 shrink-0",
+            "h-3.5 w-3.5 shrink-0",
             compactStatusAppearance.iconClassName,
           )}
         />
-        <span className="min-w-0">
-          <span className="flex items-center gap-2 text-[0.94rem] font-semibold">
-            <span>{compactLabel}</span>
-          </span>
-          <span className="block text-[0.72rem] text-foreground/54">
-            {remoteStatus.connectionSummary}
-          </span>
+        <span className="flex min-w-0 items-center gap-1.5 text-[0.84rem] font-semibold">
+          <span className="truncate">{remoteStatus.stateLabel}</span>
+          {compactRoleLabel && (
+            <span className="rounded-full bg-foreground/8 px-1.5 py-0.5 text-[0.66rem] font-medium uppercase tracking-[0.08em] text-foreground/60">
+              {compactRoleLabel}
+            </span>
+          )}
         </span>
-        <ChevronUpDownIcon className="h-3.5 w-3.5 shrink-0 text-foreground/36" />
+        <ChevronUpDownIcon className="h-3 w-3 shrink-0 text-foreground/36" />
       </button>
 
       <div
