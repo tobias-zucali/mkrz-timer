@@ -40,7 +40,7 @@ const getSyncAction = ({
   session,
   state,
 }: {
-  params: Partial<SyncParams>
+  params?: Partial<SyncParams>
   connections: string[]
   session: SessionMetadata | null
   state?: TimerState
@@ -152,9 +152,11 @@ export default function usePeer({
   const hasRequestedRemoteConnectionRef = useRef(false)
   const syncAllRef = useRef<
     | (({
+        includeParams,
         keys,
         state,
       }: {
+        includeParams?: boolean
         keys?: string[]
         state?: Partial<TimerState>
       }) => void)
@@ -182,8 +184,9 @@ export default function usePeer({
 
   const isHostingSession = () =>
     Boolean(
-      memoRefs.current.peerId &&
-      (memoRefs.current.isRemote || !memoRefs.current.remoteIdParam),
+      peerRef.current?.getPeerId() &&
+      (peerRef.current.getPeerId() === memoRefs.current.remoteIdParam ||
+        !memoRefs.current.remoteIdParam),
     )
 
   const buildSessionMetadata = useCallback(
@@ -232,11 +235,12 @@ export default function usePeer({
   )
 
   const getCurrentSessionMetadata = useCallback(() => {
-    if (!memoRefs.current.isRemote || !memoRefs.current.peerId) {
+    const activePeerId = peerRef.current?.getPeerId()
+    if (!activePeerId || activePeerId !== memoRefs.current.remoteIdParam) {
       return latestSessionRef.current
     }
 
-    return buildSessionMetadata(memoRefs.current.peerId)
+    return buildSessionMetadata(activePeerId)
   }, [buildSessionMetadata])
 
   const sendPresence = useCallback(
@@ -278,6 +282,9 @@ export default function usePeer({
         pushPeerEvent(`peer_error: ${nextError.message}`)
 
         if (memoRefs.current.remoteIdParam && isRetryable) {
+          void peerRef.current?.closePeerSession(false)
+          setPeerId(undefined)
+          setRemoteLost(true)
           setLifecycleState((current) =>
             current === "failed" ? current : "reconnecting",
           )
@@ -408,32 +415,36 @@ export default function usePeer({
 
   const syncAll = useCallback(
     ({
+      includeParams = true,
       keys,
       state = {},
     }: {
+      includeParams?: boolean
       keys?: string[]
       state?: Partial<TimerState>
     }) => {
       debug.log("usePeer syncAll", { keys, state })
       peer.sendAll(
         getSyncAction({
-          params: {
-            ...(keys
-              ? keys.reduce((prev, key) => {
-                  if (Object.hasOwn(syncParamsRef.current, key)) {
-                    return {
-                      ...prev,
-                      [key]: syncParamsRef.current[key as keyof SyncParams],
-                    }
-                  }
-                  debug.warn(`usePeer syncAll: key ${key} not found`, {
-                    keys,
-                    syncParams: syncParamsRef.current,
-                  })
-                  return prev
-                }, {})
-              : syncParamsRef.current),
-          },
+          params: includeParams
+            ? {
+                ...(keys
+                  ? keys.reduce((prev, key) => {
+                      if (Object.hasOwn(syncParamsRef.current, key)) {
+                        return {
+                          ...prev,
+                          [key]: syncParamsRef.current[key as keyof SyncParams],
+                        }
+                      }
+                      debug.warn(`usePeer syncAll: key ${key} not found`, {
+                        keys,
+                        syncParams: syncParamsRef.current,
+                      })
+                      return prev
+                    }, {})
+                  : syncParamsRef.current),
+              }
+            : undefined,
           connections: peer.getConnections(),
           session: getCurrentSessionMetadata(),
           state: {

@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test"
 import {
   closeSettingsOverlay,
   enableRemoteMode,
+  expectControlClientUrlParams,
+  expectRemoteSessionOnlyUrl,
   expectTimerControlsToMatch,
   expectTimerPaused,
   expectTimerRunning,
@@ -11,6 +13,7 @@ import {
   expectUrlQrCode,
   expectTimersToMatch,
   getDisplayedSeconds,
+  openClientFromSettings,
   openSettingsOverlay,
   openClientsFromSettings,
   updateTimerSettings,
@@ -203,9 +206,10 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   await Promise.all(
     allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
   )
+  await expectTimerUrlParams(page, mainSettings)
   await Promise.all(
-    allPages.map((remotePage) =>
-      expectTimerUrlParams(remotePage, mainSettings),
+    clients.map((remotePage) =>
+      expectControlClientUrlParams(remotePage, mainSettings),
     ),
   )
 
@@ -227,9 +231,67 @@ test("syncs settings changes from main and clients", async ({ page }) => {
       expectTimerSettings(remotePage, clientSettings),
     ),
   )
+  await expectTimerUrlParams(page, clientSettings)
   await Promise.all(
-    allPages.map((remotePage) =>
-      expectTimerUrlParams(remotePage, clientSettings),
+    clients.map((remotePage) =>
+      expectControlClientUrlParams(remotePage, clientSettings),
     ),
+  )
+})
+
+test("new clients inherit host settings without resetting the session", async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+
+  const clientUrl = await enableRemoteMode(page)
+  const viewerUrl = await page
+    .getByRole("textbox", { name: "Viewer Link" })
+    .inputValue()
+
+  const mainSettings = {
+    backgroundColor: "#2456ab",
+    foregroundColor: "#f6f1de",
+    minutes: "03",
+    primaryColor: "#f97316",
+    seconds: "20",
+    title: "Host tuned",
+  }
+
+  await expectUrlQrCode(page, "Control Link")
+  await updateTimerSettings(page, mainSettings)
+
+  const controlClient = await openClientFromSettings(page, clientUrl)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    viewerUrl,
+    "Viewer Link",
+  )
+  const allPages = [page, controlClient, readonlyClient]
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster(allPages, {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message: "newly opened clients should join the tuned host session",
+  })
+
+  await Promise.all(
+    allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
+  )
+  await expectTimerUrlParams(page, mainSettings)
+  await expectControlClientUrlParams(controlClient, mainSettings)
+  await expectRemoteSessionOnlyUrl(readonlyClient)
+
+  await expect
+    .poll(() => page.url(), {
+      message:
+        "joining clients should not push default settings back to the host",
+      timeout: 5_000,
+    })
+    .toMatch(/(?:\?|&)bg=2456ab(?:&|$)/)
+
+  await Promise.all(
+    allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
   )
 })

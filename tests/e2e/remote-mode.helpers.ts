@@ -270,7 +270,7 @@ export async function expectRemoteStatus(
   const panel = remoteStatus.getByTestId("remote-status-panel")
 
   await expect(remoteStatus).toHaveAttribute("role", "status")
-  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+  if ((await toggle.getAttribute("aria-pressed")) !== "true") {
     await toggle.click()
   }
 
@@ -457,6 +457,32 @@ export async function expectTimerUrlParams(
       new RegExp(`(?:\\?|&)pc=${settings.primaryColor.slice(1)}(?:&|$)`),
     )
   }
+}
+
+export async function expectRemoteSessionOnlyUrl(
+  page: Page,
+  { control = false }: { control?: boolean } = {},
+) {
+  await expect(page).toHaveURL(/(?:\?|&)rid=/)
+
+  if (control) {
+    await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
+  }
+
+  await expect
+    .poll(() => page.url(), {
+      message: "remote client URLs should stay focused on session params",
+    })
+    .not.toMatch(/(?:\?|&)(?:bg|fg|m|pc|pid|s|title)=/)
+}
+
+export async function expectControlClientUrlParams(
+  page: Page,
+  settings: TimerSettings,
+) {
+  await expect(page).toHaveURL(/(?:\?|&)rid=/)
+  await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
+  await expectTimerUrlParams(page, settings)
 }
 
 export async function expectTimersToMatch(

@@ -256,6 +256,7 @@ export default function RemoteStatus({
         aria-controls={panelId}
         aria-expanded={isPanelOpen}
         aria-label={`Remote status: ${remoteStatus.roleLabel}, ${remoteStatus.stateLabel}`}
+        aria-pressed={isPinnedOpen}
         className="flex items-center gap-2 rounded-full border border-foreground/8 bg-background/58 px-2.5 py-1.5 text-left text-foreground/72 shadow-md shadow-background/18 backdrop-blur transition hover:border-foreground/14 hover:bg-background/74 hover:text-foreground/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
         data-testid="remote-status-toggle"
         onClick={() => setIsPinnedOpen((current) => !current)}

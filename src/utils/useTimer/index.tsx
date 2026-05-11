@@ -19,7 +19,7 @@ export type TimerState = {
   totalDuration: number
 }
 
-export type TimerActions = "reset" | "toggle"
+export type TimerActions = "pause" | "reset" | "start"
 
 export default function useTimer({
   onAction,
@@ -70,8 +70,45 @@ export default function useTimer({
   )
 
   const handleAction = useCallback(
-    (action: "reset" | "toggle") => {
+    (action: TimerActions) => {
+      const startTimer = () => {
+        if (isStarted && !isPaused) {
+          return
+        }
+
+        const newTotalDuration = getTotalDuration()
+        if (!isStarted) {
+          setTotalDuration(newTotalDuration)
+          setIsStarted(true)
+          setElapsedTime(0)
+        }
+        setIsPaused(false)
+        onAction("start", {
+          elapsedTime,
+          isPaused: false,
+          isStarted: true,
+          totalDuration: newTotalDuration,
+        })
+      }
+
+      const pauseTimer = () => {
+        if (!isStarted || isPaused) {
+          return
+        }
+
+        onAction("pause", {
+          elapsedTime,
+          isPaused: true,
+          isStarted: true,
+          totalDuration: getTotalDuration(),
+        })
+        setIsPaused(true)
+      }
+
       switch (action) {
+        case "pause":
+          pauseTimer()
+          break
         case "reset":
           setIsPaused(true)
           setIsStarted(false)
@@ -83,21 +120,8 @@ export default function useTimer({
             totalDuration: getTotalDuration(),
           })
           break
-        case "toggle":
-          const newTotalDuration = getTotalDuration()
-          const newIsPaused = !isPaused
-          if (!isStarted) {
-            setTotalDuration(newTotalDuration)
-            setIsStarted(true)
-            setElapsedTime(0)
-          }
-          setIsPaused(newIsPaused)
-          onAction(action, {
-            elapsedTime,
-            isPaused: newIsPaused,
-            isStarted: true,
-            totalDuration: newTotalDuration,
-          })
+        case "start":
+          startTimer()
           break
       }
     },
@@ -124,11 +148,11 @@ export default function useTimer({
         break
       case "Enter":
       case " ":
-        handleAction(isTimedOut ? "reset" : "toggle")
+        handleAction(isTimedOut ? "reset" : isPaused ? "start" : "pause")
         break
       case "p":
         if (!isTimedOut) {
-          handleAction("toggle")
+          handleAction(isPaused ? "start" : "pause")
         }
         break
     }

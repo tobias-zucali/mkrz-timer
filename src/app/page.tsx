@@ -120,7 +120,7 @@ function TimerApp() {
 
   // immediately sync state
   useEffect(() => {
-    syncAll({ state: syncState })
+    syncAll({ includeParams: false, state: syncState })
   }, [syncState, syncAll])
 
   const [errorText, setErrorText] = useState<string | null>(null)

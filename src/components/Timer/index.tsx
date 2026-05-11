@@ -133,7 +133,7 @@ export default function Timer({
                 <button
                   className={timerButtonClassName}
                   disabled={isTimedOut}
-                  onClick={() => handleAction("toggle")}
+                  onClick={() => handleAction(isPaused ? "start" : "pause")}
                 >
                   {isPaused ? "START" : "PAUSE"}
                 </button>

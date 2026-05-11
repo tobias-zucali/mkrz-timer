@@ -108,6 +108,20 @@ class PeerConnection {
   private readonly onConnectionsChange: (connections: string[]) => void
   private readonly onPeerOpen: () => void
 
+  private cleanupPeerInstance(peer: Peer) {
+    if (this.peer === peer) {
+      this.peer = undefined
+    }
+
+    peer.removeAllListeners()
+    peer.destroy()
+    window.clearInterval(this.healthInterval)
+    window.clearInterval(this.reconnectInterval)
+    this.healthInterval = undefined
+    this.reconnectInterval = undefined
+    window.removeEventListener("beforeunload", this.beforeUnload)
+  }
+
   constructor({
     onPeerOpen,
     onError,
@@ -211,6 +225,7 @@ class PeerConnection {
             if (isInitialized) {
               this.onError?.(error)
             } else {
+              this.cleanupPeerInstance(peer)
               reject(error)
             }
           })
@@ -225,6 +240,7 @@ class PeerConnection {
             if (isInitialized) {
               this.onClose?.()
             } else {
+              this.cleanupPeerInstance(peer)
               reject(new Error("Peer session closed"))
             }
           })

@@ -3,7 +3,11 @@ import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
 
 import type { ParamBuildOptions } from "./params"
-import { buildPathWithParams, withColorHash } from "./params"
+import {
+  buildPathWithParams,
+  getRemoteSessionOnlyOmitKeys,
+  withColorHash,
+} from "./params"
 
 export default function useParams() {
   const searchParams = useSearchParams()
@@ -66,14 +70,17 @@ export default function useParams() {
   // debounced replace url
   useEffect(() => {
     const handler = setTimeout(() => {
-      const newUrl = getPathWithParams({ params: currentParams })
+      const newUrl = getPathWithParams({
+        omit: getRemoteSessionOnlyOmitKeys(currentParams, searchParams.keys()),
+        params: currentParams,
+      })
       router.replace(newUrl)
     }, 500)
 
     return () => {
       clearTimeout(handler)
     }
-  }, [currentParams, getPathWithParams, router])
+  }, [currentParams, getPathWithParams, router, searchParams])
 
   return useMemo(
     () => ({

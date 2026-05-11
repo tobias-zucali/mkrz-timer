@@ -3,6 +3,7 @@ import { test } from "node:test"
 
 import {
   buildPathWithParams,
+  getRemoteSessionOnlyOmitKeys,
   serializeParamValue,
   withColorHash,
 } from "./params.ts"
@@ -79,5 +80,43 @@ test("buildPathWithParams can use a custom pathname", () => {
       },
     ),
     "/timer?m=01",
+  )
+})
+
+test("getRemoteSessionOnlyOmitKeys keeps readonly client URLs free of timer params", () => {
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(
+      {
+        bg: "#000000",
+        control: null,
+        fg: "#ffffff",
+        m: "01",
+        pc: "#d61f69",
+        rid: "remote-main",
+        s: "00",
+        title: "Shared timer",
+      },
+      ["rid"],
+    ),
+    ["bg", "fg", "m", "pc", "pid", "s", "title"],
+  )
+})
+
+test("getRemoteSessionOnlyOmitKeys lets control clients retain synced timer params", () => {
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(
+      {
+        bg: "#000000",
+        control: "42",
+        fg: "#ffffff",
+        m: "01",
+        pc: "#d61f69",
+        rid: "remote-main",
+        s: "00",
+        title: "Shared timer",
+      },
+      ["rid", "control"],
+    ),
+    [],
   )
 })
