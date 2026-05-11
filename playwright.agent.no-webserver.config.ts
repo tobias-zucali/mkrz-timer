@@ -1,6 +1,8 @@
 import config from "./playwright.agent.config"
 
-export default {
+const noWebServerConfig = {
   ...config,
   webServer: undefined,
 }
+
+export default noWebServerConfig

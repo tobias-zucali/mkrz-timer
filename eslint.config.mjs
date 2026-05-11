@@ -11,11 +11,16 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-e2e/**",
+    ".next-agent/**",
+    ".next-agent-e2e/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
     "playwright-report/**",
+    "playwright-report-agent/**",
     "test-results/**",
+    "test-results-agent/**",
   ]),
   {
     rules: {

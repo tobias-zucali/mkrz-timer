@@ -40,6 +40,7 @@ if (!isVersionAtLeast(process.version, minNodeVersion)) {
   const scriptName = path.basename(
     process.argv[1] ?? "scripts/agent-playwright.mjs",
   )
+  // eslint-disable-next-line no-console
   console.error(
     [
       `Node.js ${minNodeVersion}+ is required for the agent Playwright lane.`,
