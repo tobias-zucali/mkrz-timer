@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
+import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 import type { ParamBuildOptions } from "./params"
 import {
@@ -67,20 +68,30 @@ export default function useParams() {
     }))
   }, [])
 
-  // debounced replace url
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const newUrl = getPathWithParams({
+  const targetUrl = useMemo(
+    () =>
+      getPathWithParams({
         omit: getRemoteSessionOnlyOmitKeys(currentParams, searchParams.keys()),
         params: currentParams,
-      })
-      router.replace(newUrl)
-    }, 500)
+      }),
+    [currentParams, getPathWithParams, searchParams],
+  )
 
-    return () => {
-      clearTimeout(handler)
+  const currentUrl = useMemo(
+    () =>
+      `${pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+    [pathname, searchParams],
+  )
+
+  const replaceUrlIfChanged = useCallback(() => {
+    if (targetUrl === currentUrl) {
+      return
     }
-  }, [currentParams, getPathWithParams, router, searchParams])
+
+    router.replace(targetUrl)
+  }, [currentUrl, router, targetUrl])
+
+  useDebouncedEffect(replaceUrlIfChanged, 500)
 
   return useMemo(
     () => ({
