@@ -17,11 +17,17 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 
 - Playwright tests live in `./tests/e2e`.
 - The default Playwright config starts the Next.js dev server on `http://127.0.0.1:3100` and a local PeerJS server on `http://127.0.0.1:9100`; it reuses existing servers when they are already running.
-- The isolated agent Playwright config lives in `./playwright.agent.config.ts` and uses `http://127.0.0.1:3300` plus a local PeerJS server on `http://127.0.0.1:9200`.
-- The no-`webServer` agent repro config lives in `./playwright.agent.no-webserver.config.ts`; use it when you want Playwright to target already-running agent servers instead of starting its own.
+- The tracked agent lane uses one app port, `http://127.0.0.1:3300`, and one PeerJS port, `http://127.0.0.1:9200`.
+- `./playwright.agent.config.ts` is the managed agent config. It starts tracked lane wrappers for the app and PeerJS server.
+- `./playwright.agent.no-webserver.config.ts` is the attach config. It targets already-running tracked lane servers and skips `webServer`.
 - Use `pnpm dev:peer` when you need the local PeerJS server outside Playwright.
-- When you need an agent-owned lane that must not interfere with a user-run `pnpm dev` or `pnpm test:e2e:ui`, use `pnpm dev:agent`, `pnpm dev:peer:agent`, and `pnpm test:e2e:agent`.
-- `node scripts/agent-playwright.mjs ...` is the supported entrypoint for agent Playwright runs. It fails fast on unsupported Node versions, sets `PLAYWRIGHT_NODE` to the current runtime, and keeps Playwright `webServer` children on that same Node binary.
+- `pnpm lane:agent` is the canonical agent Playwright entrypoint. It owns the preflight, verifies ports `3300` and `9200`, and automatically chooses managed or attach mode.
+- `pnpm lane:agent:managed` forces a fresh managed run. `pnpm lane:agent:attach` attaches only to an already-running tracked lane.
+- `pnpm dev:agent:manual` is the agent-owned manual app server on `3300` using `.next-agent`.
+- `pnpm dev:agent:test` is the attach/debug app server on `3300` using `.next-agent-e2e`.
+- `pnpm dev:peer:agent` starts the tracked PeerJS server on `9200` for attach/debug work.
+- `node scripts/agent-playwright.mjs ...` remains as a compatibility shim, but `scripts/agent-lane.mjs` is the real owner of lane policy, preflight, and tracked process metadata.
+- Use `pnpm lane:agent:status` to inspect the tracked lane and port ownership. Use `pnpm lane:agent:stop` to stop only tracked agent-lane processes.
 - In Codex, starting the isolated agent e2e lane may require escalated permissions because the sandbox can block local port binding for the agent servers on `127.0.0.1:3300` and `127.0.0.1:9200`.
 - `pnpm test` is the regular verification gate and runs lint, unit tests, and the smoke Playwright suite.
 - `pnpm check` is the fast local gate for code changes and runs lint (including typecheck) plus unit tests.
@@ -29,8 +35,16 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.
 - GitHub Pages deploys the static export from `out/`.
-- The repo isolates Next build artifacts by lane: `.next` for `pnpm dev`, `.next-e2e` for default Playwright, `.next-agent` for `pnpm dev:agent`, and `.next-agent-e2e` for agent Playwright.
+- The repo isolates Next build artifacts by lane: `.next` for `pnpm dev`, `.next-e2e` for default Playwright, `.next-agent` for `pnpm dev:agent:manual`, and `.next-agent-e2e` for the agent test lane.
 - Test scripts clean old `test-results` and `playwright-report` output before each run. Agent Playwright scripts clean `test-results-agent` and `playwright-report-agent`.
+
+## Agent Lane Policy
+
+- Use `managed` for normal agent runs. `pnpm lane:agent` is the default wrapper.
+- Use `attach` only if you already started `pnpm dev:peer:agent` and `pnpm dev:agent:test`.
+- If ports `3300` or `9200` are occupied by unknown processes, run `pnpm lane:agent:status` before changing test logic.
+- Use `pnpm lane:agent:stop` to stop tracked agent-lane processes without killing arbitrary listeners.
+- In Codex, expect escalation for port binding on `3300` and `9200`.
 
 ## PeerJS server
 
@@ -42,11 +56,11 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Control clients may become the new main after a disconnect by reclaiming the existing `rid`. Readonly clients must stay readonly through failover.
 - The app uses the default PeerJS cloud server unless `NEXT_PUBLIC_PEERJS_HOST` is set.
 - `pnpm dev:peer` starts the local PeerJS server on `127.0.0.1:9100` with root path `/`, so the PeerJS health endpoint is `http://127.0.0.1:9100/peerjs/id`.
-- `pnpm dev:peer:agent` starts an isolated local PeerJS server on `127.0.0.1:9200` with root path `/`, so the agent health endpoint is `http://127.0.0.1:9200/peerjs/id`.
+- `pnpm dev:peer:agent` starts the tracked agent PeerJS server on `127.0.0.1:9200` with root path `/`, so the agent health endpoint is `http://127.0.0.1:9200/peerjs/id`.
 - Playwright starts `pnpm dev:peer` and `pnpm dev:e2e` through `playwright.config.ts`.
-- Agent Playwright starts the local PeerJS server and Next.js dev server through explicit Node commands in `playwright.agent.config.ts`, using `PLAYWRIGHT_NODE` when it is set.
+- The tracked agent lane starts the local PeerJS server and Next.js dev server through `scripts/agent-lane.mjs`, including port preflight, health probes, and tracked PID metadata.
 - If default e2e tests fail with a port bind error, check for stale listeners on ports `3100` or `9100` before changing test logic.
-- If the agent e2e lane fails with a port bind error, check for stale listeners on ports `3300` or `9200` before changing test logic.
+- If the agent e2e lane fails, use `pnpm lane:agent:status` first instead of manually guessing which listener owns `3300` or `9200`.
 - If remote-mode behavior changes, update both `README.md` and the remote-mode Playwright coverage in the same change.
 
 ## Test conventions

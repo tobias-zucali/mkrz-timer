@@ -36,8 +36,10 @@ Useful commands:
 ```bash
 pnpm dev
 pnpm dev:peer
-pnpm dev:agent
-pnpm dev:peer:agent
+pnpm dev:agent:manual
+pnpm lane:agent
+pnpm lane:agent:attach
+pnpm lane:agent:status
 pnpm test
 pnpm test:full
 pnpm build
@@ -91,12 +93,31 @@ pnpm dev:peer
 
 This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
 
-For separate local lanes, these commands use different ports and build artifacts:
+For separate local lanes, these commands use these ports and build artifacts:
 
 - `pnpm dev`: `http://127.0.0.1:3000` with `.next`
 - `pnpm test:e2e:*`: `http://127.0.0.1:3100` with `.next-e2e` and PeerJS on `9100`
-- `pnpm dev:agent`: `http://127.0.0.1:3200` with `.next-agent`
-- `pnpm test:e2e:*:agent`: `http://127.0.0.1:3300` with `.next-agent-e2e` and PeerJS on `9200`
+- `pnpm dev:agent:manual`: `http://127.0.0.1:3300` with `.next-agent`
+- `pnpm dev:agent:test`: `http://127.0.0.1:3300` with `.next-agent-e2e`
+- `pnpm lane:agent*`: `http://127.0.0.1:3300` with PeerJS on `9200`
+
+The agent lane now has one canonical launcher:
+
+- `pnpm lane:agent`: default agent smoke lane. It checks whether ports `3300` and `9200` are free, already owned by the tracked agent lane, or blocked by something else. It then chooses managed or attach mode automatically.
+- `pnpm lane:agent:managed`: force a fresh managed run.
+- `pnpm lane:agent:attach`: attach only to already-running tracked agent lane servers.
+- `pnpm lane:agent:full`: run the full agent Playwright lane.
+- `pnpm lane:agent:debug`: attach with Playwright Inspector for debugging.
+- `pnpm lane:agent:status`: show which processes own the agent-lane ports, whether health checks pass, and which tracked role is active.
+- `pnpm lane:agent:stop`: stop only tracked agent-lane processes.
+
+For manual debugging against already-running agent servers, start:
+
+```bash
+pnpm dev:peer:agent
+pnpm dev:agent:test
+pnpm lane:agent:attach
+```
 
 Agent-facing Playwright workflows and troubleshooting notes live in [AGENTS.md](./AGENTS.md).
 
