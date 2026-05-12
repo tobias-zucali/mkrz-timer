@@ -13,6 +13,7 @@ function getLocalIPv4Addresses() {
 
 const nextConfig: NextConfig = {
   ...(distDir ? { distDir } : {}),
+  output: "export",
   turbopack: {
     root: process.cwd(),
     rules: {

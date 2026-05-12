@@ -3,20 +3,15 @@ import { test } from "node:test"
 
 import getRemoteStatus from "./index.ts"
 
-const baseArgs = {
-  canRetryManually: false,
-  connectionDetails: [],
-  connectionsCount: 0,
-  hasConnectedOnce: false,
-  hasReceivedInitialSync: false,
-  isHostingSession: false,
-  lifecycleState: "connecting" as const,
-}
-
 test("returns null outside remote mode", () => {
   assert.equal(
     getRemoteStatus({
-      ...baseArgs,
+      canRetryManually: false,
+      connectionDetails: [],
+      connectionsCount: 0,
+      hasConnectedOnce: false,
+      hasReceivedInitialSync: false,
+      lifecycleState: "connecting",
       remoteIdParam: "",
     }),
     null,
@@ -25,9 +20,13 @@ test("returns null outside remote mode", () => {
 
 test("describes pending host startup before the remote id exists", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
+    connectionDetails: [],
+    connectionsCount: 0,
     control: "42",
-    isHostingSession: true,
+    hasConnectedOnce: false,
+    hasReceivedInitialSync: false,
+    lifecycleState: "connecting",
     showPendingHostStatus: true,
   })
 
@@ -44,16 +43,15 @@ test("describes pending host startup before the remote id exists", () => {
 
 test("describes the connected main host state", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
     connectionDetails: [{ isAlive: true }, { isAlive: true }],
     connectionsCount: 2,
     control: "42",
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
     lifecycleState: "connected",
-    isHostingSession: true,
     peerId: "host-1",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.deepEqual(status, {
@@ -69,16 +67,15 @@ test("describes the connected main host state", () => {
 
 test("describes a connected control client", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
     connectionDetails: [{ isAlive: true }],
     connectionsCount: 1,
     control: "42",
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
     lifecycleState: "connected",
-    isHostingSession: false,
     peerId: "client-1",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.deepEqual(status, {
@@ -94,15 +91,14 @@ test("describes a connected control client", () => {
 
 test("describes a connected readonly client", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
     connectionDetails: [{ isAlive: true }],
     connectionsCount: 1,
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
     lifecycleState: "connected",
-    isHostingSession: false,
     peerId: "viewer-1",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.deepEqual(status, {
@@ -118,13 +114,14 @@ test("describes a connected readonly client", () => {
 
 test("describes reconnecting after a prior connection", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
+    connectionDetails: [],
+    connectionsCount: 0,
     control: "42",
     hasConnectedOnce: true,
     hasReceivedInitialSync: false,
-    isHostingSession: false,
     lifecycleState: "reconnecting",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.equal(status?.state, "reconnecting")
@@ -134,16 +131,15 @@ test("describes reconnecting after a prior connection", () => {
 
 test("describes degraded connections", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
+    canRetryManually: false,
     connectionDetails: [{ isAlive: true }, { isAlive: false }],
     connectionsCount: 2,
     control: "42",
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
     lifecycleState: "connected",
-    isHostingSession: true,
     peerId: "host-1",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.deepEqual(status, {
@@ -159,14 +155,14 @@ test("describes degraded connections", () => {
 
 test("describes a failed readonly recovery with retry available", () => {
   const status = getRemoteStatus({
-    ...baseArgs,
     canRetryManually: true,
+    connectionDetails: [],
+    connectionsCount: 0,
     hasConnectedOnce: true,
     hasReceivedInitialSync: false,
     lifecycleState: "failed",
-    isHostingSession: false,
     peerId: "viewer-1",
-    remoteIdParam: "session-1",
+    remoteIdParam: "host-1",
   })
 
   assert.deepEqual(status, {
