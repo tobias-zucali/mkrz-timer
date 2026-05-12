@@ -6,6 +6,7 @@
 
 ## UI/UX
 
+- Change name of app and repository to mkrz timer
 - improve alert & debug boxes <https://tailwindcss.com/plus/ui-blocks/application-ui/feedback/alerts> <https://tailwindcss.com/plus/ui-blocks/application-ui/overlays/notifications>
 - add arrow up/down to change the values: Minutes when focus in minutes input or outside, seconds when focus in seconds input. Not at all in readonly mode, but allow it while it is running/paused as well.
 - Calculate foreground color (black or white, depending on contrast to background color). Introduce a calculated primary-foreground color as well.
@@ -19,10 +20,5 @@
 
 ## Connections
 
-- Integrate Remote Status in email error report.
-- Keep role selection with the sharer: if the UX changes, recipients must not be able to self-upgrade from readonly to controlling without an explicit host decision.
-- In case of main connection lost:
-  - Try to recover/reconnect automatically
-  - Always reflect current state in info area src/app/page.tsx@205
-  - In control clients ask explicitly (tailwind dialog) to switch main to current instance. Recover in case sb else became main
-  - Readonly clients can not become main, if not connected show "connecting…" instead of timer
+- investigate server-relayed WebSocket transport, switching to Hetzner CX11 or a similar small VPS
+- In control clients ask explicitly (tailwind dialog) to switch main to current instance. Recover in case sb else became main
