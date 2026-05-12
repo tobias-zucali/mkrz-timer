@@ -1,4 +1,4 @@
-# Time Timer
+# mkrz timer
 
 ## AI
 
@@ -6,7 +6,7 @@ This repository includes agent-specific working notes in [AGENTS.md](./AGENTS.md
 
 ## About
 
-This project is inspired by the wonderful [Time Timer](https://www.timetimer.com/) device. I built it mainly to be used in my own workshops – get in touch @ [mkrz.at](https://mkrz.at/).
+`mkrz timer` is a simple workshop timer built for my own use. It takes inspiration from the wonderful [Time Timer](https://www.timetimer.com/) device. Get in touch @ [mkrz.at](https://mkrz.at/).
 
 ## Where to find it
 

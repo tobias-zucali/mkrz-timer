@@ -6,7 +6,6 @@
 
 ## UI/UX
 
-- Change name of app and repository to mkrz timer
 - improve alert & debug boxes <https://tailwindcss.com/plus/ui-blocks/application-ui/feedback/alerts> <https://tailwindcss.com/plus/ui-blocks/application-ui/overlays/notifications>
 - add arrow up/down to change the values: Minutes when focus in minutes input or outside, seconds when focus in seconds input. Not at all in readonly mode, but allow it while it is running/paused as well.
 - Calculate foreground color (black or white, depending on contrast to background color). Introduce a calculated primary-foreground color as well.
