@@ -34,7 +34,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - `pnpm test:ci` runs lint, unit tests, and the CI-safe Playwright suite with `@visual` tests excluded.
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.
-- GitHub Pages deploys the static export from `out/`.
+- The app now uses Next.js server route handlers for remote-session coordination and is no longer compatible with a pure static `out/` export.
 - The repo isolates Next build artifacts by lane: `.next` for `pnpm dev`, `.next-e2e` for default Playwright, `.next-agent` for `pnpm dev:agent:manual`, and `.next-agent-e2e` for the agent test lane.
 - Test scripts clean old `test-results` and `playwright-report` output before each run. Agent Playwright scripts clean `test-results-agent` and `playwright-report-agent`.
 
@@ -49,16 +49,18 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 ## PeerJS server
 
 - Remote mode uses PeerJS for peer discovery/signalling before browser-to-browser data connections are established.
-- The page that enables remote mode becomes the initial main by setting its own URL to `rid=<peerId>&control=42`.
+- Remote mode also uses a Next.js server-side session directory for stable session ids, owner election, and lease heartbeats.
+- The page that enables remote mode becomes the initial main by setting its own URL to `rid=<sessionId>&control=42`.
 - Remote client URLs are readonly by default. Add `control=42` only for clients that should expose timer controls and settings.
 - Remote viewer/control links are intentionally built with `inherit: false`; they should only carry remote-session params, not a copy of the current timer params.
 - New peers receive the current timer params and timer state from the active main immediately after connecting.
-- Control clients may become the new main after a disconnect by reclaiming the existing `rid`. Readonly clients must stay readonly through failover.
+- Control clients may become the new main after a disconnect by claiming the existing session id in the server-side directory and publishing a new current host peer id. Readonly clients must stay readonly through failover.
 - The app uses the default PeerJS cloud server unless `NEXT_PUBLIC_PEERJS_HOST` is set.
 - `pnpm dev:peer` starts the local PeerJS server on `127.0.0.1:9100` with root path `/`, so the PeerJS health endpoint is `http://127.0.0.1:9100/peerjs/id`.
 - `pnpm dev:peer:agent` starts the tracked agent PeerJS server on `127.0.0.1:9200` with root path `/`, so the agent health endpoint is `http://127.0.0.1:9200/peerjs/id`.
 - Playwright starts `pnpm dev:peer` and `pnpm dev:e2e` through `playwright.config.ts`.
 - The tracked agent lane starts the local PeerJS server and Next.js dev server through `scripts/agent-lane.mjs`, including port preflight, health probes, and tracked PID metadata.
+- Because remote mode now depends on Next route handlers, any production deployment must provide a Node-capable app server in addition to any PeerJS server choice.
 - If default e2e tests fail with a port bind error, check for stale listeners on ports `3100` or `9100` before changing test logic.
 - If the agent e2e lane fails, use `pnpm lane:agent:status` first instead of manually guessing which listener owns `3300` or `9200`.
 - If remote-mode behavior changes, update both `README.md` and the remote-mode Playwright coverage in the same change.

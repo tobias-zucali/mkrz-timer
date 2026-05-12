@@ -12,7 +12,7 @@ This project is inspired by the wonderful [Time Timer](https://www.timetimer.com
 
 The timer is deployed at [time.mkrz.at](https://time.mkrz.at).
 
-The GitHub Pages workflow builds a static export and uploads the generated `out/` directory.
+The app now uses Next.js server features for remote-session coordination and is no longer a pure static export.
 
 ## Getting Started
 
@@ -49,20 +49,26 @@ pnpm format
 
 ## Remote Mode
 
-Remote mode uses PeerJS for peer discovery and signalling, then keeps the timer state, timer actions, and timer settings synchronized across browsers. In production, the app uses the default PeerJS cloud server unless a different PeerJS endpoint is configured.
+Remote mode uses two layers:
+
+- a Next.js server-side session directory for session identity, ownership election, and lease heartbeats
+- PeerJS/WebRTC for peer discovery, signalling, and direct browser-to-browser timer sync
+
+In production, the app still uses the default PeerJS cloud server unless a different PeerJS endpoint is configured.
 
 ### How it works
 
 Turn on `Remote mode` in settings on the page that should host the session first.
 
-- That page starts a PeerJS session and rewrites its own URL to include `rid=<peerId>&control=42`.
-- `rid` identifies the shared remote session.
+- That page creates a stable remote session id and starts a PeerJS host peer.
+- The page rewrites its own URL to include `rid=<sessionId>&control=42`.
+- `rid` identifies the shared remote session, not the current host peer id.
 - `control=42` marks a page as a control client. Without it, a remote page becomes a readonly viewer.
 
 When remote mode is active, the settings drawer exposes two dedicated links:
 
-- `Viewer Link`: `?rid=<peerId>` joins as a readonly client. Viewers see the live timer but do not get timer buttons, settings, or editable inputs.
-- `Control Link`: `?rid=<peerId>&control=42` joins as a control client. Control clients can start, pause, reset, and change timer settings.
+- `Viewer Link`: `?rid=<sessionId>` joins as a readonly client. Viewers see the live timer but do not get timer buttons, settings, or editable inputs.
+- `Control Link`: `?rid=<sessionId>&control=42` joins as a control client. Control clients can start, pause, reset, and change timer settings.
 
 Readonly and control clients can be mixed in the same session. Remote client links are intentionally generated without inheriting the current timer query params, because the host pushes the canonical state to new peers after they connect.
 
@@ -71,7 +77,7 @@ Readonly and control clients can be mixed in the same session. Remote client lin
 - Starting, pausing, resetting, and settings changes sync across connected control clients.
 - New clients receive the current timer state when they join.
 - Readonly viewers stay in a visible waiting state until the first remote sync arrives, instead of rendering an unsynced timer.
-- If the current main page goes away, another control-capable client can take over the session by claiming the existing `rid`.
+- If the current main page goes away, another control-capable client can take over the session by claiming the session in the server-side directory and publishing its current host peer id.
 - The original main can later rejoin as a client.
 - Readonly clients stay readonly after failover and continue receiving updates.
 
@@ -83,6 +89,12 @@ The UI keeps a small status label visible in the lower-left corner:
 
 If remote startup or connectivity fails, the same popup expands with the latest caught error, a recent peer activity log, and a prefilled "Send to developer" mail link with peer status and query-param context.
 
+## Hosting Notes
+
+The current remote-session implementation depends on Next.js route handlers under `src/app/api/remote-sessions`. That means the app now requires a Node-capable deployment target for remote mode and can no longer rely on a static GitHub Pages export alone.
+
+If the Pages workflow is kept, it must be changed to deploy a server-capable build target instead of uploading `out/`.
+
 ## PeerJS Server
 
 For local end-to-end tests, the repository runs its own PeerJS server so tests do not depend on the public PeerJS service:
@@ -91,7 +103,7 @@ For local end-to-end tests, the repository runs its own PeerJS server so tests d
 pnpm dev:peer
 ```
 
-This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`.
+This starts PeerJS on [http://127.0.0.1:9100](http://127.0.0.1:9100). Playwright starts it automatically for the `test:e2e` scripts, runs the Next.js app on `http://127.0.0.1:3100`, and points that app at the local PeerJS server with `NEXT_PUBLIC_PEERJS_HOST`, `NEXT_PUBLIC_PEERJS_PORT`, `NEXT_PUBLIC_PEERJS_PATH=/`, and `NEXT_PUBLIC_PEERJS_SECURE=false`. The Next app itself also serves the remote-session directory API.
 
 For separate local lanes, these commands use these ports and build artifacts:
 

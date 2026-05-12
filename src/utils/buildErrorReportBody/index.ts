@@ -14,9 +14,12 @@ type BuildErrorReportBodyParams = {
   remoteIdParam?: string
   peerId?: string
   hostPeerId?: string
+  ownerSource?: "directory" | "local" | "sync"
   peerRole: "main" | "client"
   peerStatus: "connected" | "disconnected"
   isReadonlyClient: boolean
+  sessionEpoch?: number
+  sessionId?: string
   statusModeLabel: string
   statusStateLabel: string
   statusDescription: string
@@ -41,9 +44,12 @@ export default function buildErrorReportBody({
   remoteIdParam,
   peerId,
   hostPeerId,
+  ownerSource,
   peerRole,
   peerStatus,
   isReadonlyClient,
+  sessionEpoch,
+  sessionId,
   statusModeLabel,
   statusStateLabel,
   statusDescription,
@@ -95,8 +101,11 @@ export default function buildErrorReportBody({
     `- Timestamp: ${now}`,
     `- URL: ${location}`,
     `- Remote id param: ${remoteIdParam ?? "none"}`,
+    `- Session id: ${sessionId ?? "none"}`,
+    `- Session epoch: ${sessionEpoch ?? "none"}`,
     `- Local peer id: ${peerId ?? "none"}`,
     `- Host peer id: ${hostPeerId ?? "none"}`,
+    `- Host resolution source: ${ownerSource ?? "none"}`,
     `- Peer role: ${peerRole}`,
     `- Peer status: ${peerStatus}`,
     `- Readonly client: ${isReadonlyClient ? "yes" : "no"}`,

@@ -254,6 +254,10 @@ export default function StatusPopover({
   peerServerLabel,
   peerServerReachability,
   remoteStatus,
+  sessionEpoch,
+  sessionId,
+  sessionOwnerPeerId,
+  sessionOwnerSource,
 }: {
   activityLog: string[]
   connectionCount: number
@@ -269,6 +273,10 @@ export default function StatusPopover({
   peerServerLabel: string
   peerServerReachability: PeerServerReachabilityState
   remoteStatus: RemoteStatusModel | null
+  sessionEpoch?: number
+  sessionId?: string
+  sessionOwnerPeerId?: string
+  sessionOwnerSource?: "directory" | "local" | "sync"
 }) {
   const [isPinnedOpen, setIsPinnedOpen] = useState(false)
   const [isReportOverlayOpen, setIsReportOverlayOpen] = useState(false)
@@ -482,6 +490,30 @@ export default function StatusPopover({
                   data-testid="remote-status-peer-id"
                 >
                   {peerId ?? "Unavailable"}
+                </dd>
+                <dt className="font-medium text-foreground">Session id</dt>
+                <dd
+                  className="font-mono text-xs text-foreground/72"
+                  data-testid="remote-status-session-id"
+                >
+                  {sessionId ?? "Unavailable"}
+                </dd>
+                <dt className="font-medium text-foreground">
+                  Current owner peer
+                </dt>
+                <dd
+                  className="font-mono text-xs text-foreground/72"
+                  data-testid="remote-status-owner-peer-id"
+                >
+                  {sessionOwnerPeerId ?? "Unavailable"}
+                </dd>
+                <dt className="font-medium text-foreground">Session epoch</dt>
+                <dd data-testid="remote-status-session-epoch">
+                  {sessionEpoch ?? "Unavailable"}
+                </dd>
+                <dt className="font-medium text-foreground">Owner source</dt>
+                <dd data-testid="remote-status-owner-source">
+                  {sessionOwnerSource ?? "Unavailable"}
                 </dd>
                 <dt className="font-medium text-foreground">
                   Peer server reachability

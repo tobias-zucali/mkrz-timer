@@ -179,9 +179,7 @@ function TimerApp() {
 
   const connectionDetails = peer.getAllConnections()
   const peerRole =
-    !remoteIdParam || (peerData.peerId && peerData.peerId === remoteIdParam)
-      ? "main"
-      : "client"
+    peerData.isHostingSession || !remoteIdParam ? "main" : "client"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
   const isOnline = useNetworkStatus()
   const peerServerLabel = getPeerServerLabel()
@@ -195,6 +193,7 @@ function TimerApp() {
     connectionsCount: connections.length,
     hasConnectedOnce,
     hasReceivedInitialSync,
+    isHostingSession: peerData.isHostingSession,
     lifecycleState,
     peerId,
     remoteIdParam,
@@ -240,7 +239,10 @@ function TimerApp() {
       floatingTimerErrorText,
       remoteIdParam,
       peerId,
-      hostPeerId: peerData.peerId,
+      ownerSource: peerData.sessionSource,
+      sessionEpoch: peerData.session?.epoch,
+      sessionId: peerData.session?.sessionId,
+      hostPeerId: peerData.session?.ownerPeerId,
       peerRole,
       peerStatus: peerId ? "connected" : "disconnected",
       isReadonlyClient,
@@ -314,6 +316,10 @@ function TimerApp() {
         peerServerLabel={peerServerLabel}
         peerServerReachability={peerServerReachability}
         remoteStatus={remoteStatus}
+        sessionEpoch={peerData.session?.epoch}
+        sessionId={peerData.session?.sessionId}
+        sessionOwnerPeerId={peerData.session?.ownerPeerId}
+        sessionOwnerSource={peerData.sessionSource}
       />
     </>
   )

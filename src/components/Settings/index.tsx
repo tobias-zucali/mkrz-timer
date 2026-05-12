@@ -157,13 +157,13 @@ export default function Settings({
   const readonlyClientUrl = getUrlWithParams({
     inherit: false,
     params: {
-      rid: peerId,
+      rid: remoteId,
     },
   })
   const controlClientUrl = getUrlWithParams({
     inherit: false,
     params: {
-      rid: peerId,
+      rid: remoteId,
       control: "42",
     },
   })
@@ -312,9 +312,9 @@ export default function Settings({
                           return
                         }
 
-                        const id = await connectRemote()
-                        if (!remoteId && id) {
-                          setParams({ control: "42", rid: id })
+                        const sessionId = await connectRemote()
+                        if (!remoteId && sessionId) {
+                          setParams({ control: "42", rid: sessionId })
                         }
                       }}
                     />

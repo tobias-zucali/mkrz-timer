@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { PeerErrorType } from "peerjs"
 
-import PeerConnection from "./PeerConnection"
+import {
+  claimRemoteSession,
+  createRemoteSession,
+  getRemoteSession,
+  heartbeatRemoteSession,
+} from "@/utils/remoteSessionDirectory"
+import {
+  type SessionDirectorySource,
+  SessionDirectoryError,
+  type SessionMetadata,
+  type SessionPeer,
+} from "@/utils/remoteSession/types"
 import { TimerState } from "@/utils/useTimer"
 import debug from "@/utils/debug"
+
+import PeerConnection from "./PeerConnection"
 
 export type SyncParams = {
   m: string
@@ -12,20 +25,6 @@ export type SyncParams = {
   bg: string
   fg: string
   pc: string
-}
-
-export type SessionPeer = {
-  canControl: boolean
-  clientId: string
-  peerId: string
-}
-
-export type SessionMetadata = {
-  epoch: number
-  ownerClientId: string
-  ownerPeerId: string
-  peers: SessionPeer[]
-  sessionId: string
 }
 
 type PresenceAction = {
@@ -67,6 +66,8 @@ const HOST_LINK_LOSS_GRACE_MS = 500
 const INITIAL_CLAIM_DELAY_MS = 250
 const RECOVERY_RETRY_INTERVAL_MS = 250
 const RECOVERED_BADGE_TIMEOUT_MS = 4_000
+const SESSION_HEARTBEAT_MS = 1_000
+const SESSION_POLL_MS = 1_000
 
 const RETRYABLE_PEER_ERRORS = new Set<`${PeerErrorType}`>([
   PeerErrorType.Network,
@@ -120,11 +121,25 @@ const createLocalClientId = () => {
   return `client-${Math.random().toString(36).slice(2, 10)}`
 }
 
+const createSessionId = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID()
+  }
+
+  return `session-${Math.random().toString(36).slice(2, 10)}`
+}
+
 const sortPeersByClientId = (peers: SessionPeer[]) =>
   [...peers].sort((a, b) => a.clientId.localeCompare(b.clientId))
 
 const getControlPeers = (peers: SessionPeer[]) =>
   sortPeersByClientId(peers.filter((sessionPeer) => sessionPeer.canControl))
+
+const isSessionHost = (session: SessionMetadata | null, peerId?: string) =>
+  Boolean(session?.ownerPeerId && peerId && session.ownerPeerId === peerId)
 
 export default function usePeer({
   canControlSession = false,
@@ -150,6 +165,9 @@ export default function usePeer({
     useState<PeerLifecycleState>("connecting")
   const [canRetryManually, setCanRetryManually] = useState(false)
   const [peerEventTimeline, setPeerEventTimeline] = useState<string[]>([])
+  const [session, setSession] = useState<SessionMetadata | null>(null)
+  const [sessionSource, setSessionSource] =
+    useState<SessionDirectorySource>("local")
 
   const localClientIdRef = useRef(createLocalClientId())
   const knownPeersRef = useRef(new Map<string, SessionPeer>())
@@ -160,6 +178,7 @@ export default function usePeer({
   const recoveredTimeoutRef = useRef<number | undefined>(undefined)
   const hostDisconnectSignalRef = useRef(false)
   const hasRequestedRemoteConnectionRef = useRef(false)
+  const heartbeatIntervalRef = useRef<number | undefined>(undefined)
   const syncAllRef = useRef<
     | (({
         includeParams,
@@ -178,49 +197,57 @@ export default function usePeer({
     setPeerEventTimeline((current) => [...current, entry].slice(-20))
   }, [])
 
-  const isRemote = Boolean(peerId && remoteIdParam === peerId)
-
   const currentMemoRefs = {
     canControlSession,
     connections,
-    isRemote,
     lifecycleState,
     onHandleAction,
     peerId,
     remoteIdParam,
+    session,
   }
   const memoRefs = useRef(currentMemoRefs)
   memoRefs.current = currentMemoRefs
 
   const isHostingSession = () =>
-    Boolean(
-      peerRef.current?.getPeerId() &&
-      (peerRef.current.getPeerId() === memoRefs.current.remoteIdParam ||
-        !memoRefs.current.remoteIdParam),
-    )
+    isSessionHost(latestSessionRef.current, peerRef.current?.getPeerId())
 
-  const buildSessionMetadata = useCallback(
-    (ownerPeerId: string): SessionMetadata => {
-      const previousSession = latestSessionRef.current
-      const sessionId =
-        previousSession?.sessionId || remoteIdParam || ownerPeerId
-      const nextEpoch =
-        previousSession &&
-        previousSession.ownerClientId !== localClientIdRef.current
-          ? previousSession.epoch + 1
-          : (previousSession?.epoch ?? 0)
+  const updateSessionState = useCallback(
+    (
+      nextSession: SessionMetadata | null,
+      source: SessionDirectorySource = "sync",
+    ) => {
+      latestSessionRef.current = nextSession
+      latestControlRosterRef.current = nextSession
+        ? getControlPeers(nextSession.peers)
+        : []
+      setSession(nextSession)
+      setSessionSource(source)
+    },
+    [],
+  )
 
+  const buildHostedSessionMetadata = useCallback(
+    ({
+      epoch,
+      leaseExpiresAt,
+      ownerPeerId,
+      sessionId,
+    }: {
+      epoch: number
+      leaseExpiresAt: number
+      ownerPeerId: string
+      sessionId: string
+    }): SessionMetadata => {
       const ownPeer: SessionPeer = {
-        canControl:
-          memoRefs.current.canControlSession ||
-          memoRefs.current.isRemote ||
-          !memoRefs.current.remoteIdParam,
+        canControl: true,
         clientId: localClientIdRef.current,
         peerId: ownerPeerId,
       }
 
       const activeConnectionIds =
-        peerRef.current?.getConnections() ?? connections
+        peerRef.current?.getConnections() ?? memoRefs.current.connections
+
       const peers = sortPeersByClientId([
         ownPeer,
         ...Array.from(knownPeersRef.current.values()).filter(
@@ -230,29 +257,21 @@ export default function usePeer({
         ),
       ])
 
-      const session = {
-        epoch: nextEpoch,
+      return {
+        epoch,
+        leaseExpiresAt,
         ownerClientId: localClientIdRef.current,
         ownerPeerId,
         peers,
         sessionId,
       }
-
-      latestSessionRef.current = session
-      latestControlRosterRef.current = getControlPeers(peers)
-      return session
     },
-    [connections, remoteIdParam],
+    [],
   )
 
   const getCurrentSessionMetadata = useCallback(() => {
-    const activePeerId = peerRef.current?.getPeerId()
-    if (!activePeerId || activePeerId !== memoRefs.current.remoteIdParam) {
-      return latestSessionRef.current
-    }
-
-    return buildSessionMetadata(activePeerId)
-  }, [buildSessionMetadata])
+    return latestSessionRef.current
+  }, [])
 
   const getClaimDelayMs = useCallback(() => {
     const controlPeers = latestControlRosterRef.current
@@ -281,8 +300,8 @@ export default function usePeer({
           type: "presence",
         } satisfies PresenceAction)
         pushPeerEvent(`presence_sent: ${id}`)
-      } catch (error) {
-        debug.log("Error sending presence", error)
+      } catch (nextError) {
+        debug.log("Error sending presence", nextError)
       }
     },
     [pushPeerEvent],
@@ -296,6 +315,16 @@ export default function usePeer({
       setLifecycleState("connected")
     }, RECOVERED_BADGE_TIMEOUT_MS)
   }, [])
+
+  const resolveSessionFromDirectory = useCallback(
+    async (sessionId: string) => {
+      const nextSession = await getRemoteSession(sessionId)
+      pushPeerEvent(`session_resolved: ${nextSession.ownerPeerId.slice(-4)}`)
+      updateSessionState(nextSession, "directory")
+      return nextSession
+    },
+    [pushPeerEvent, updateSessionState],
+  )
 
   const createPeer = () => {
     const newPeer = new PeerConnection({
@@ -355,10 +384,7 @@ export default function usePeer({
               const action = data as SyncAction
 
               if (action.session) {
-                latestSessionRef.current = action.session
-                latestControlRosterRef.current = getControlPeers(
-                  action.session.peers,
-                )
+                updateSessionState(action.session, "sync")
               }
 
               memoRefs.current.onHandleAction(action)
@@ -372,19 +398,24 @@ export default function usePeer({
                 memoRefs.current.lifecycleState === "failed"
               ) {
                 markRecovered()
-              } else if (!memoRefs.current.isRemote) {
+              } else if (
+                !isSessionHost(action.session ?? null, memoRefs.current.peerId)
+              ) {
                 setLifecycleState("connected")
               }
 
               if (
-                !memoRefs.current.isRemote &&
-                senderId === memoRefs.current.remoteIdParam
+                action.session?.ownerPeerId &&
+                !isSessionHost(action.session, memoRefs.current.peerId) &&
+                senderId === action.session.ownerPeerId
               ) {
                 void sendPresence(senderId)
               }
 
-              if (memoRefs.current.isRemote) {
-                debug.log("is remote, syncing others", senderId, data)
+              if (
+                isSessionHost(action.session ?? null, memoRefs.current.peerId)
+              ) {
+                debug.log("is remote host, syncing others", senderId, data)
                 newPeer.getConnections().forEach((connId) => {
                   if (connId !== senderId) {
                     newPeer.send(connId, data)
@@ -411,7 +442,7 @@ export default function usePeer({
             syncAllRef.current?.({})
           }
 
-          if (memoRefs.current.remoteIdParam === id) {
+          if (latestSessionRef.current?.ownerPeerId === id) {
             debug.log("remote lost", id)
             hostDisconnectSignalRef.current = reason === "disconnect"
             setRemoteLost(true)
@@ -421,14 +452,14 @@ export default function usePeer({
       ),
       onConnectionsChange: debug.wrap(
         "usePeer onConnectionsChange",
-        (connections: string[]) => {
-          pushPeerEvent(`connections_change: ${connections.length}`)
-          setConnections(connections)
+        (nextConnections: string[]) => {
+          pushPeerEvent(`connections_change: ${nextConnections.length}`)
+          setConnections(nextConnections)
 
-          const activeConnections = new Set(connections)
-          for (const peerId of Array.from(knownPeersRef.current.keys())) {
-            if (!activeConnections.has(peerId)) {
-              knownPeersRef.current.delete(peerId)
+          const activeConnections = new Set(nextConnections)
+          for (const nextPeerId of Array.from(knownPeersRef.current.keys())) {
+            if (!activeConnections.has(nextPeerId)) {
+              knownPeersRef.current.delete(nextPeerId)
             }
           }
         },
@@ -498,24 +529,142 @@ export default function usePeer({
           setPeerId(nextPeerId)
           setHasConnectedOnce(true)
           return nextPeerId
-        } catch (error) {
-          const peerErrorType = getPeerErrorType(error)
+        } catch (nextError) {
+          const peerErrorType = getPeerErrorType(nextError)
           if (peerErrorType === PeerErrorType.UnavailableID) {
             return
           }
-          if (isRetryablePeerError(error) && attempt < maxAttempts) {
+          if (isRetryablePeerError(nextError) && attempt < maxAttempts) {
             await wait(400 * attempt)
             continue
           }
-          throw error
+          throw nextError
         }
       }
     },
     [peer],
   )
 
+  const createHostedSession = useCallback(
+    async (ownerPeerId: string) => {
+      const sessionId = createSessionId()
+      const createdSession = await createRemoteSession({
+        ownerClientId: localClientIdRef.current,
+        ownerPeerId,
+        sessionId,
+      })
+      updateSessionState(
+        buildHostedSessionMetadata({
+          epoch: createdSession.epoch,
+          leaseExpiresAt: createdSession.leaseExpiresAt,
+          ownerPeerId,
+          sessionId,
+        }),
+        "local",
+      )
+      return sessionId
+    },
+    [buildHostedSessionMetadata, updateSessionState],
+  )
+
+  const reconnectKnownPeers = useCallback(
+    async (nextSession: SessionMetadata, currentPeerId: string) => {
+      const peerIds = nextSession.peers
+        .map((nextPeer) => nextPeer.peerId)
+        .filter((nextPeerId) => nextPeerId !== currentPeerId)
+
+      await Promise.allSettled(
+        peerIds.map(async (nextPeerId) => {
+          try {
+            await peer.connectPeer(nextPeerId)
+            await sendPresence(nextPeerId)
+          } catch (nextError) {
+            debug.log("Known peer reconnect failed", nextPeerId, nextError)
+          }
+        }),
+      )
+    },
+    [peer, sendPresence],
+  )
+
+  const claimHostedSession = useCallback(
+    async (sessionId: string) => {
+      const currentPeerId = peer.getPeerId() || (await createPeerWithRetry())
+      if (!currentPeerId) {
+        return
+      }
+
+      const currentSession =
+        latestSessionRef.current?.sessionId === sessionId
+          ? latestSessionRef.current
+          : await resolveSessionFromDirectory(sessionId)
+
+      const localPeer: SessionPeer = {
+        canControl: true,
+        clientId: localClientIdRef.current,
+        peerId: currentPeerId,
+      }
+
+      const peersByClientId = new Map<string, SessionPeer>(
+        currentSession.peers.map((nextPeer) => [nextPeer.clientId, nextPeer]),
+      )
+      peersByClientId.set(localPeer.clientId, localPeer)
+
+      const claimedSession = await claimRemoteSession({
+        expectedEpoch: currentSession.epoch,
+        ownerClientId: localClientIdRef.current,
+        ownerPeerId: currentPeerId,
+        peers: sortPeersByClientId(Array.from(peersByClientId.values())),
+        sessionId,
+      })
+
+      updateSessionState(
+        buildHostedSessionMetadata({
+          epoch: claimedSession.epoch,
+          leaseExpiresAt: claimedSession.leaseExpiresAt,
+          ownerPeerId: currentPeerId,
+          sessionId,
+        }),
+        "directory",
+      )
+
+      await reconnectKnownPeers(claimedSession, currentPeerId)
+
+      return claimedSession
+    },
+    [
+      buildHostedSessionMetadata,
+      createPeerWithRetry,
+      peer,
+      reconnectKnownPeers,
+      resolveSessionFromDirectory,
+      updateSessionState,
+    ],
+  )
+
+  const connectToSessionOwner = useCallback(
+    async (nextSession: SessionMetadata) => {
+      const currentPeerId = peer.getPeerId() || (await createPeerWithRetry())
+      if (!currentPeerId) {
+        return
+      }
+
+      if (nextSession.ownerPeerId === currentPeerId) {
+        updateSessionState(nextSession, "directory")
+        setLifecycleState("connected")
+        return currentPeerId
+      }
+
+      await peer.connectPeer(nextSession.ownerPeerId)
+      await sendPresence(nextSession.ownerPeerId)
+      updateSessionState(nextSession, "directory")
+      return currentPeerId
+    },
+    [createPeerWithRetry, peer, sendPresence, updateSessionState],
+  )
+
   const connectRemote = useCallback(
-    async (remoteId?: string | null) => {
+    async (sessionId?: string | null) => {
       recoveryRunIdRef.current += 1
       hasRequestedRemoteConnectionRef.current = true
       setCanRetryManually(false)
@@ -524,85 +673,31 @@ export default function usePeer({
       setLifecycleState(hasConnectedOnce ? "reconnecting" : "connecting")
 
       try {
-        if (!remoteId) {
+        if (!sessionId) {
           const nextPeerId = await createPeerWithRetry()
           if (nextPeerId) {
-            latestControlRosterRef.current = [
-              {
-                canControl: true,
-                clientId: localClientIdRef.current,
-                peerId: nextPeerId,
-              },
-            ]
-            latestSessionRef.current = {
-              epoch: 0,
-              ownerClientId: localClientIdRef.current,
-              ownerPeerId: nextPeerId,
-              peers: [
-                {
-                  canControl: true,
-                  clientId: localClientIdRef.current,
-                  peerId: nextPeerId,
-                },
-              ],
-              sessionId: nextPeerId,
-            }
+            const createdSessionId = await createHostedSession(nextPeerId)
             setLifecycleState("connected")
+            return createdSessionId
           }
-          return nextPeerId
-        }
-
-        const claimedRemoteId =
-          canControlSession && !hasConnectedOnce
-            ? await createPeerWithRetry(remoteId)
-            : undefined
-
-        if (claimedRemoteId) {
-          latestControlRosterRef.current = getControlPeers([
-            ...latestControlRosterRef.current,
-            {
-              canControl: true,
-              clientId: localClientIdRef.current,
-              peerId: claimedRemoteId,
-            },
-          ])
-          latestSessionRef.current = {
-            epoch: (latestSessionRef.current?.epoch ?? -1) + 1,
-            ownerClientId: localClientIdRef.current,
-            ownerPeerId: claimedRemoteId,
-            peers: [
-              {
-                canControl: true,
-                clientId: localClientIdRef.current,
-                peerId: claimedRemoteId,
-              },
-            ],
-            sessionId: latestSessionRef.current?.sessionId ?? remoteId,
-          }
-          setLifecycleState(hasConnectedOnce ? "recovered" : "connected")
-          return claimedRemoteId
-        }
-
-        const currentPeerId = peer.getPeerId() || (await createPeerWithRetry())
-        if (!currentPeerId) {
           return
         }
 
-        await peer.connectPeer(remoteId)
-        await sendPresence(remoteId)
+        const nextSession = await resolveSessionFromDirectory(sessionId)
+        const currentPeerId = await connectToSessionOwner(nextSession)
         setLifecycleState(hasConnectedOnce ? "recovered" : "connecting")
         return currentPeerId
-      } catch (error) {
-        debug.error(error)
-        const nextError = toError(error)
-        if (remoteId) {
+      } catch (nextError) {
+        debug.error(nextError)
+        const errorValue = toError(nextError)
+        if (sessionId) {
           setRemoteLost(true)
           setLifecycleState(hasConnectedOnce ? "reconnecting" : "connecting")
-          if (!isRetryablePeerError(error)) {
-            setError(nextError)
+          if (!isRetryablePeerError(nextError)) {
+            setError(errorValue)
           }
         } else {
-          setError(nextError)
+          setError(errorValue)
           setLifecycleState("failed")
         }
       } finally {
@@ -610,11 +705,11 @@ export default function usePeer({
       }
     },
     [
-      canControlSession,
+      connectToSessionOwner,
+      createHostedSession,
       createPeerWithRetry,
       hasConnectedOnce,
-      peer,
-      sendPresence,
+      resolveSessionFromDirectory,
     ],
   )
 
@@ -669,7 +764,7 @@ export default function usePeer({
       while (!isCancelled && recoveryRunIdRef.current === recoveryRunId) {
         const elapsed = Date.now() - startedAt
 
-        if (!remoteIdParam || memoRefs.current.isRemote) {
+        if (!remoteIdParam) {
           setRemoteLost(false)
           setIsConnecting(false)
           return
@@ -686,83 +781,106 @@ export default function usePeer({
         }
 
         try {
-          if (!peer.getPeerId()) {
-            await createPeerWithRetry()
+          const currentPeerId =
+            peer.getPeerId() || (await createPeerWithRetry())
+          if (!currentPeerId) {
+            await wait(RECOVERY_RETRY_INTERVAL_MS)
+            continue
           }
 
-          await peer.connectPeer(remoteIdParam)
-          await sendPresence(remoteIdParam)
-          setIsConnecting(false)
-          return
-        } catch (error) {
-          if (canControlSession && elapsed >= nextClaimAttemptAt) {
-            nextClaimAttemptAt += CLAIM_RETRY_MS
-            const previousPeerId = peer.getPeerId()
-            try {
-              const claimedPeerId = await createPeerWithRetry(remoteIdParam)
-              if (claimedPeerId === remoteIdParam) {
-                latestControlRosterRef.current = getControlPeers([
-                  ...latestControlRosterRef.current,
-                  {
-                    canControl: true,
-                    clientId: localClientIdRef.current,
-                    peerId: claimedPeerId,
-                  },
-                ])
-                latestSessionRef.current = {
-                  epoch: (latestSessionRef.current?.epoch ?? -1) + 1,
-                  ownerClientId: localClientIdRef.current,
-                  ownerPeerId: claimedPeerId,
-                  peers: [
-                    {
-                      canControl: true,
-                      clientId: localClientIdRef.current,
-                      peerId: claimedPeerId,
-                    },
-                  ],
-                  sessionId:
-                    latestSessionRef.current?.sessionId ?? remoteIdParam,
-                }
-                setRemoteLost(false)
-                setIsConnecting(false)
-                hostDisconnectSignalRef.current = false
-                markRecovered()
-                return
-              }
+          let resolvedSession =
+            latestSessionRef.current?.sessionId === remoteIdParam
+              ? latestSessionRef.current
+              : null
 
-              if (
-                previousPeerId &&
-                previousPeerId !== remoteIdParam &&
-                !peer.getPeerId()
-              ) {
-                await createPeerWithRetry(previousPeerId)
+          if (!resolvedSession) {
+            resolvedSession = await resolveSessionFromDirectory(remoteIdParam)
+          }
+
+          if (resolvedSession.ownerPeerId === currentPeerId) {
+            setRemoteLost(false)
+            setIsConnecting(false)
+            return
+          }
+
+          try {
+            await peer.connectPeer(resolvedSession.ownerPeerId)
+            await sendPresence(resolvedSession.ownerPeerId)
+            setRemoteLost(false)
+            setIsConnecting(false)
+            return
+          } catch (connectError) {
+            const refreshedSession = await resolveSessionFromDirectory(
+              remoteIdParam,
+            ).catch((directoryError) => {
+              if (directoryError instanceof SessionDirectoryError) {
+                return directoryError.currentSession ?? resolvedSession
               }
-            } catch (claimError) {
-              debug.log("Failover claim attempt failed", claimError)
+              throw directoryError
+            })
+
+            const currentSession = refreshedSession ?? resolvedSession
+            updateSessionState(currentSession, "directory")
+
+            const leaseExpired =
+              currentSession.leaseExpiresAt <= Date.now() ||
+              hostDisconnectSignalRef.current
+
+            if (
+              canControlSession &&
+              leaseExpired &&
+              elapsed >= nextClaimAttemptAt
+            ) {
+              nextClaimAttemptAt += CLAIM_RETRY_MS
+
+              try {
+                const claimedSession = await claimHostedSession(remoteIdParam)
+                if (claimedSession) {
+                  setRemoteLost(false)
+                  setIsConnecting(false)
+                  hostDisconnectSignalRef.current = false
+                  markRecovered()
+                  return
+                }
+              } catch (claimError) {
+                if (
+                  claimError instanceof SessionDirectoryError &&
+                  claimError.currentSession
+                ) {
+                  updateSessionState(claimError.currentSession, "directory")
+                } else {
+                  debug.log("Failover claim attempt failed", claimError)
+                }
+              }
+            }
+
+            const peerErrorType = getPeerErrorType(connectError)
+            if (
+              peerErrorType &&
+              peerErrorType !== PeerErrorType.UnavailableID &&
+              !isUnavailablePeerError(
+                connectError,
+                currentSession.ownerPeerId,
+              ) &&
+              !isRetryablePeerError(connectError)
+            ) {
+              setError(toError(connectError))
             }
           }
-
-          const peerErrorType = getPeerErrorType(error)
-          if (
-            peerErrorType &&
-            peerErrorType !== PeerErrorType.UnavailableID &&
-            !isUnavailablePeerError(error, remoteIdParam) &&
-            !isRetryablePeerError(error)
-          ) {
-            setError(toError(error))
-          }
+        } catch (nextError) {
+          debug.error(nextError)
         }
 
         await wait(RECOVERY_RETRY_INTERVAL_MS)
       }
     }
 
-    recover().catch((error) => {
-      debug.error(error)
+    recover().catch((nextError) => {
+      debug.error(nextError)
       setIsConnecting(false)
       setLifecycleState("failed")
       setCanRetryManually(true)
-      setError(toError(error))
+      setError(toError(nextError))
     })
 
     return () => {
@@ -770,14 +888,16 @@ export default function usePeer({
     }
   }, [
     canControlSession,
+    claimHostedSession,
     createPeerWithRetry,
     getClaimDelayMs,
     markRecovered,
     peer,
-    peerId,
     remoteIdParam,
     remoteLost,
+    resolveSessionFromDirectory,
     sendPresence,
+    updateSessionState,
   ])
 
   const allConnectionCount = peer.getAllConnections().length
@@ -785,7 +905,7 @@ export default function usePeer({
   useEffect(() => {
     if (
       !remoteIdParam ||
-      memoRefs.current.isRemote ||
+      isSessionHost(session, peerId) ||
       !hasReceivedInitialSync ||
       remoteLost
     ) {
@@ -799,7 +919,7 @@ export default function usePeer({
     const markHostLinkMissing = () => {
       if (
         !memoRefs.current.remoteIdParam ||
-        memoRefs.current.isRemote ||
+        isSessionHost(memoRefs.current.session, memoRefs.current.peerId) ||
         memoRefs.current.connections.length > 0
       ) {
         return
@@ -830,18 +950,126 @@ export default function usePeer({
     allConnectionCount,
     connections.length,
     hasReceivedInitialSync,
-    lifecycleState,
+    peerId,
     pushPeerEvent,
     remoteIdParam,
     remoteLost,
+    session,
   ])
+
+  useEffect(() => {
+    window.clearInterval(heartbeatIntervalRef.current)
+    heartbeatIntervalRef.current = undefined
+
+    if (!session || !peerId || !isSessionHost(session, peerId)) {
+      return
+    }
+
+    const syncHeartbeat = async () => {
+      try {
+        const nextSession = await heartbeatRemoteSession({
+          epoch: session.epoch,
+          ownerClientId: session.ownerClientId,
+          ownerPeerId: session.ownerPeerId,
+          peers: session.peers,
+          sessionId: session.sessionId,
+        })
+        updateSessionState(
+          buildHostedSessionMetadata({
+            epoch: nextSession.epoch,
+            leaseExpiresAt: nextSession.leaseExpiresAt,
+            ownerPeerId: session.ownerPeerId,
+            sessionId: session.sessionId,
+          }),
+          "local",
+        )
+      } catch (nextError) {
+        debug.log("Session heartbeat failed", nextError)
+      }
+    }
+
+    void syncHeartbeat()
+    heartbeatIntervalRef.current = window.setInterval(() => {
+      void syncHeartbeat()
+    }, SESSION_HEARTBEAT_MS)
+
+    return () => {
+      window.clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = undefined
+    }
+  }, [buildHostedSessionMetadata, peerId, session, updateSessionState])
+
+  useEffect(() => {
+    if (!remoteIdParam || isSessionHost(session, peerId)) {
+      return
+    }
+
+    let isCancelled = false
+    let previousOwnerPeerId = session?.ownerPeerId ?? null
+    let previousEpoch = session?.epoch ?? null
+
+    const pollSession = async () => {
+      try {
+        const nextSession = await getRemoteSession(remoteIdParam)
+        if (isCancelled) {
+          return
+        }
+
+        updateSessionState(nextSession, "directory")
+
+        const ownerChanged =
+          nextSession.ownerPeerId !== previousOwnerPeerId ||
+          nextSession.epoch !== previousEpoch
+
+        previousOwnerPeerId = nextSession.ownerPeerId
+        previousEpoch = nextSession.epoch
+
+        if (
+          nextSession.ownerPeerId &&
+          memoRefs.current.peerId &&
+          nextSession.ownerPeerId === memoRefs.current.peerId
+        ) {
+          setRemoteLost(false)
+          setCanRetryManually(false)
+          setError(null)
+          return
+        }
+
+        if (
+          ownerChanged &&
+          (memoRefs.current.lifecycleState === "failed" || remoteLost)
+        ) {
+          await peerRef.current?.closePeerSession(false)
+          setPeerId(undefined)
+          setCanRetryManually(false)
+          setError(null)
+          recoveryRunIdRef.current += 1
+          setRemoteLost(false)
+          window.setTimeout(() => {
+            setRemoteLost(true)
+          }, 0)
+        }
+      } catch (nextError) {
+        debug.log("Session poll failed", nextError)
+      }
+    }
+
+    void pollSession()
+    const intervalId = window.setInterval(() => {
+      void pollSession()
+    }, SESSION_POLL_MS)
+
+    return () => {
+      isCancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [peerId, remoteIdParam, remoteLost, session, updateSessionState])
 
   const disconnect = useCallback(async () => {
     recoveryRunIdRef.current += 1
     hasRequestedRemoteConnectionRef.current = false
     knownPeersRef.current.clear()
-    latestSessionRef.current = null
-    latestControlRosterRef.current = []
+    updateSessionState(null, "local")
     hostDisconnectSignalRef.current = false
     setCanRetryManually(false)
     setError(null)
@@ -851,11 +1079,12 @@ export default function usePeer({
     setLifecycleState("connected")
     setRemoteLost(false)
     return peer.closePeerSession()
-  }, [peer])
+  }, [peer, updateSessionState])
 
   useEffect(() => {
     return () => {
       window.clearTimeout(recoveredTimeoutRef.current)
+      window.clearInterval(heartbeatIntervalRef.current)
     }
   }, [])
 
@@ -869,13 +1098,15 @@ export default function usePeer({
       hasConnectedOnce,
       hasReceivedInitialSync,
       isConnecting,
+      isHostingSession: isSessionHost(session, peerId),
       lifecycleState,
       peer,
       peerEventTimeline,
       peerId,
       remoteLost,
       retryConnection,
-      session: latestSessionRef.current,
+      session,
+      sessionSource,
       syncAll,
     }),
     [
@@ -893,6 +1124,8 @@ export default function usePeer({
       peerId,
       remoteLost,
       retryConnection,
+      session,
+      sessionSource,
       syncAll,
     ],
   )
