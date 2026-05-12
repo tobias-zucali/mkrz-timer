@@ -52,7 +52,8 @@ jobs:
             --exclude='.env.*' \
             --exclude='README.md' \
             --exclude='docs' \
-            -czf deploy.tar.gz .
+            -czf /tmp/deploy.tar.gz .
+          mv /tmp/deploy.tar.gz deploy.tar.gz
 
       - name: Upload deployment bundle
         uses: appleboy/scp-action@v0.1.7
