@@ -102,7 +102,7 @@ test("getRemoteSessionOnlyOmitKeys keeps readonly client URLs free of timer para
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys lets control clients retain synced timer params", () => {
+test("getRemoteSessionOnlyOmitKeys keeps control session URLs free of timer params", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
       {
@@ -117,6 +117,6 @@ test("getRemoteSessionOnlyOmitKeys lets control clients retain synced timer para
       },
       ["rid", "control"],
     ),
-    [],
+    ["bg", "fg", "m", "pc", "pid", "s", "title"],
   )
 })

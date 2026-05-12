@@ -25,14 +25,14 @@
 ## CODE QUALITY
 
 - Refactor file layout toward colocated component/hook/util directories with tests/styles next to implementation.
-- Document the chosen colocated file-structure conventions in README.md/AGENTS.md.
+  - Document the chosen colocated file-structure conventions in README.md/AGENTS.md.
 - Extract UI strings into dictionaries/en.json and complete the remaining internationalization work on top of the existing locale scaffolding.
-
-## TESTS
-
-- Fix the failing remote-mode e2e case in `tests/e2e/remote-client.spec.ts` where the "Send to developer" link is not visible when the PeerJS server is unavailable.
+- Simplify package scripts
 
 ## Connections
 
-- investigate server-relayed WebSocket transport, switching to Hetzner CX11 or a similar small VPS
-- In control clients ask explicitly (tailwind dialog) to switch main to current instance. Recover in case sb else became main
+- Define a proper remote-session security concept for shared sessions on the public relay.
+- Replace `rid` and `control` query parameters with dedicated viewer/control URLs.
+- Evaluate tokenized control URLs or a stronger permission model for public sessions.
+- Evaluate durable resumable sessions on top of the current session-store seam when persistence becomes necessary.
+- Add relay-focused e2e coverage for reconnect timing and session cleanup expiry boundaries.

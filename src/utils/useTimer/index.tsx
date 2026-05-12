@@ -7,9 +7,9 @@ import {
   getSecondsDuration,
   getMinutesSeconds,
 } from "@/utils/timeInputHelpers"
+import type { SyncParams } from "@/shared/remoteSession/types"
 import useAnimationFrame from "@/utils/useAnimationFrame"
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp"
-import { SyncParams } from "@/utils/usePeer"
 import debug from "@/utils/debug"
 
 export type TimerState = {

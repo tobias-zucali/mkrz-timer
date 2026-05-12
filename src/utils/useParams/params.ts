@@ -35,22 +35,15 @@ export const serializeParamValue = (key: string, value: string) => {
 
 export const getRemoteSessionOnlyOmitKeys = (
   currentParams: TimerParams,
-  initialParamKeys: Iterable<string>,
+  _unusedInitialParamKeys: Iterable<string>,
 ) => {
+  void _unusedInitialParamKeys
+
   if (!currentParams.rid) {
     return []
   }
 
-  const initialKeys = new Set(initialParamKeys)
-  const isRemoteSessionOnlyUrl =
-    initialKeys.has("rid") &&
-    remoteSessionOnlyOmitKeys.every((key) => !initialKeys.has(key))
-
-  if (currentParams.control === "42") {
-    return []
-  }
-
-  return isRemoteSessionOnlyUrl ? [...remoteSessionOnlyOmitKeys] : []
+  return [...remoteSessionOnlyOmitKeys]
 }
 
 export const buildPathWithParams = (

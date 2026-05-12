@@ -20,8 +20,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `${nodeExec} ${laneScriptPath} serve peer`,
-      url: "http://127.0.0.1:9200/peerjs/id",
+      command: `${nodeExec} ${laneScriptPath} serve relay`,
+      url: "http://127.0.0.1:9200/health",
       reuseExistingServer: true,
       timeout: 120_000,
     },

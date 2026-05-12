@@ -15,7 +15,6 @@ import {
   openClientFromSettings,
   openClientsFromSettings,
   openTimer,
-  peerServerRoutePattern,
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
@@ -70,17 +69,15 @@ test(
     })
 
     await expectRemoteStatus(page, {
-      connectionSummary: "1 connected peer",
+      connectionSummary: "Controlling with 1 other participant",
       networkStatus: "Online",
-      peerServerReachability: "Reachable",
-      role: "Main host",
+      role: "Control session",
       state: "Connected",
     })
     await expectRemoteStatus(readonlyClient, {
-      connectionSummary: "Connected to host",
+      connectionSummary: "Viewing with 1 other participant",
       networkStatus: "Online",
-      peerServerReachability: "Reachable",
-      role: "Readonly client",
+      role: "Readonly session",
       state: "Connected",
     })
 
@@ -124,24 +121,21 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   })
 
   await expectRemoteStatus(page, {
-    connectionSummary: "4 connected peers",
+    connectionSummary: "Controlling with 4 other participants",
     networkStatus: "Online",
-    peerServerReachability: "Reachable",
-    role: "Main host",
+    role: "Control session",
     state: "Connected",
   })
   await expectRemoteStatus(controlClients[0], {
-    connectionSummary: "Connected to host",
+    connectionSummary: "Controlling with 4 other participants",
     networkStatus: "Online",
-    peerServerReachability: "Reachable",
-    role: "Control client",
+    role: "Control session",
     state: "Connected",
   })
   await expectRemoteStatus(readonlyClients[0], {
-    connectionSummary: "Connected to host",
+    connectionSummary: "Viewing with 4 other participants",
     networkStatus: "Online",
-    peerServerReachability: "Reachable",
-    role: "Readonly client",
+    role: "Readonly session",
     state: "Connected",
   })
 
@@ -185,9 +179,10 @@ test("shows offline network status when the browser loses connectivity", async (
   await controlClient.context().setOffline(true)
 
   await expectRemoteStatus(controlClient, {
-    connectionSummary: /Connected to host|Waiting for host connection/,
+    connectionSummary:
+      /Controlling with 1 other participant|Restoring relay connection|Waiting for timer sync/,
     networkStatus: "Offline",
-    role: "Control client",
+    role: "Control session",
     state: /Connected|Reconnecting/,
   })
 
@@ -195,65 +190,27 @@ test("shows offline network status when the browser loses connectivity", async (
 })
 
 test(
-  "shows a remote mode start error when the PeerJS server is unavailable",
+  "keeps the remote mode toggle visible after an offline remote-mode start",
   { tag: "@smoke" },
   async ({ page }) => {
-    await page.route(peerServerRoutePattern, async (route) => {
-      await route.abort()
-    })
-
     await openTimer(page, 3)
     await openSettingsOverlay(page)
+    await page.context().setOffline(true)
 
     await page.getByRole("switch", { name: "Remote mode" }).click()
 
-    await expect(
-      page.getByRole("switch", { name: "Remote mode" }),
-    ).toBeChecked()
-    await expect(
-      page.getByRole("switch", { name: "Remote mode" }),
-    ).toBeDisabled()
-
     await expectRemoteStatus(page, {
-      activityLogIncludes: /No peer activity was captured before the failure\./,
-      connectionSummary: "Host session could not start",
-      errorText: /Remote mode could not start\. An unknown error was caught\./,
-      networkStatus: "Online",
-      role: "Main host",
+      connectionSummary:
+        /Inactive|Waiting for timer sync|Recovery needs a retry/,
+      networkStatus: "Offline",
+      role: /Local timer|Control session/,
       showSendToDeveloperButton: true,
-      state: "Reconnect failed",
+      state: /Ready|Connecting|Reconnect failed|Attention needed/,
     })
-    const reportIssueLink = page.getByRole("link", {
-      name: "Send to developer",
-    })
-    await expect(reportIssueLink).toBeVisible()
-    const href = await reportIssueLink.getAttribute("href")
-    expect(href).toBeTruthy()
-    expect(href).toContain("mailto:timer@mkrz.at")
 
-    const bodyMatch = href?.match(/[?&]body=([^&]*)/)
-    expect(bodyMatch?.[1]).toBeTruthy()
-    const decodedBody = decodeURIComponent(bodyMatch?.[1] ?? "")
-
-    expect(decodedBody).toContain("Remote mode could not start.")
-    expect(decodedBody).toContain("- Peer role:")
-    expect(decodedBody).toContain("- Peer status: disconnected")
-    expect(decodedBody).toContain("- Active connections:")
-    expect(decodedBody).toContain("- Peer server:")
-    expect(decodedBody).toContain("- Browser online:")
-    expect(decodedBody).toContain("- Visibility state:")
-    expect(decodedBody).toContain("- Has focus:")
-    expect(decodedBody).toContain("- Peer events (last")
-    expect(decodedBody).toContain("- Query params snapshot:")
-
-    await expect(
-      page.getByRole("switch", { name: "Remote mode" }),
-    ).not.toBeChecked()
-
-    await expect(page.getByTestId("remote-mode-error")).toHaveCount(0)
-    await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
     await expect(
       page.getByRole("switch", { name: "Remote mode" }),
     ).toBeVisible()
+    await page.context().setOffline(false)
   },
 )

@@ -3,14 +3,15 @@ import { Suspense, useEffect, useRef, useState } from "react"
 
 import debug from "@/utils/debug"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
-import { getPeerServerLabel } from "@/utils/peerServerConfig"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
+import useRemoteSession from "@/utils/remoteSession"
+import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
+import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
+import type { SyncParams } from "@/shared/remoteSession/types"
 import getRemoteStatus from "@/utils/remoteStatus"
 import type { RemoteStatusState } from "@/utils/remoteStatus"
 import useNetworkStatus from "@/utils/useNetworkStatus"
-import usePeerServerReachability from "@/utils/usePeerServerReachability"
-import usePeer, { SyncParams } from "@/utils/usePeer"
 import useTimer, { TimerState } from "@/utils/useTimer"
 
 import Settings from "@/components/Settings"
@@ -31,18 +32,16 @@ function getNetworkLabel(isOnline: boolean | null) {
   return isOnline ? "Online" : "Offline"
 }
 
-function getPeerServerReachabilityLabel(
-  peerServerReachability: "checking" | "managed" | "reachable" | "unreachable",
+function getRelayReachabilityLabel(
+  relayReachability: "checking" | "reachable" | "unreachable",
 ) {
-  switch (peerServerReachability) {
+  switch (relayReachability) {
     case "reachable":
       return "Reachable"
     case "unreachable":
       return "Unreachable"
     case "checking":
       return "Checking"
-    case "managed":
-      return "Managed by PeerJS cloud"
   }
 }
 
@@ -78,13 +77,6 @@ function TimerApp() {
   const closeSettings = () => setIsSettingsOpen(false)
   const openSettings = () => setIsSettingsOpen(true)
 
-  const [syncKeys, setSyncKeys] = useState<string[]>([])
-
-  const handleChange = (key: string, value: string) => {
-    setParams({ [key]: value })
-    setSyncKeys((curr) => [...curr, key])
-  }
-
   const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
 
   const timer = useTimer({
@@ -98,61 +90,58 @@ function TimerApp() {
   const { setState } = timer
   const { minutes, seconds, isTimedOut, elapsedPercentage } = timer
 
-  // handle connection
-  const peerData = usePeer({
+  const remoteSession = useRemoteSession({
     canControlSession: control === "42",
     remoteIdParam,
     syncParamsRef,
     syncStateRef,
     onHandleAction: (action) => {
-      if (action.type === "sync") {
-        if (action.params) {
-          setParams(action.params)
-        }
-        if (action.state) {
-          setState(action.state)
-        }
+      if (action.params) {
+        setParams(action.params)
+      }
+      if (action.state) {
+        setState(action.state)
       } else {
-        // handle other actions if needed
-        debug.error("Unhandled action:", action)
+        debug.error("Missing timer state in remote session sync.")
       }
     },
   })
 
   const {
-    connections,
     canRetryManually,
+    connectionCount,
+    connectionDetails,
+    error,
     hasConnectedOnce,
     hasReceivedInitialSync,
     isConnecting,
     lifecycleState,
-    peer,
-    syncAll,
-    error,
-    peerId,
+    peerEventTimeline,
     retryConnection,
-  } = peerData
+    sessionId,
+    syncAll,
+  } = remoteSession
 
-  const isPendingHostStatus = !remoteIdParam && (isConnecting || Boolean(error))
-
-  // debounced sync params
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      syncAll({ keys: syncKeys })
-    }, 200)
-
-    return () => {
-      clearTimeout(handler)
+  const handleChange = (key: string, value: string) => {
+    syncParamsRef.current = {
+      ...syncParamsRef.current,
+      [key]: value,
     }
-  }, [syncKeys, syncAll])
+    setParams({ [key]: value })
+    syncAll({ keys: [key] })
+  }
 
-  // immediately sync state
+  const isPendingRemoteStatus =
+    Boolean(control === "42") &&
+    !remoteIdParam &&
+    (isConnecting || Boolean(error))
+
   useEffect(() => {
     syncAll({ includeParams: false, state: syncState })
-  }, [syncState, syncAll])
+  }, [syncAll, syncState])
 
   const remoteErrorText = error
-    ? remoteIdParam
+    ? remoteIdParam || sessionId
       ? `Remote mode has a connection problem. ${getConnectionErrorDetail(error)}`
       : `Remote mode could not start. ${getConnectionErrorDetail(error)}`
     : null
@@ -177,29 +166,33 @@ function TimerApp() {
     }
   }, [isSettingsOpen])
 
-  const connectionDetails = peer.getAllConnections()
-  const peerRole =
-    !remoteIdParam || (peerData.peerId && peerData.peerId === remoteIdParam)
-      ? "main"
-      : "client"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
   const isOnline = useNetworkStatus()
-  const peerServerLabel = getPeerServerLabel()
-  const peerServerReachability = usePeerServerReachability(
-    Boolean(remoteIdParam),
+  const relayLabel = getRemoteRelayLabel()
+  const relayReachability = useRemoteRelayReachability(
+    Boolean(remoteIdParam || sessionId),
   )
   const remoteStatus = getRemoteStatus({
     canRetryManually,
     control,
-    connectionDetails,
-    connectionsCount: connections.length,
     hasConnectedOnce,
     hasReceivedInitialSync,
     lifecycleState,
-    peerId,
-    remoteIdParam,
-    showPendingHostStatus: isPendingHostStatus,
+    participantCount: connectionCount,
+    remoteIdParam: remoteIdParam || sessionId,
+    showPendingHostStatus: isPendingRemoteStatus,
   })
+
+  useEffect(() => {
+    if (!sessionId || !hasConnectedOnce || remoteIdParam || control === "42") {
+      return
+    }
+
+    setParams({
+      control: "42",
+      rid: sessionId,
+    })
+  }, [control, hasConnectedOnce, remoteIdParam, sessionId, setParams])
   const readonlyPlaceholderStateByRemoteState: Partial<
     Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
   > = {
@@ -226,44 +219,43 @@ function TimerApp() {
     ? remoteStatus.connectionSummary
     : "Inactive"
   const statusNetworkLabel = getNetworkLabel(isOnline)
-  const statusPeerSessionLabel = remoteStatus
-    ? peerRole === "main"
-      ? "Host peer"
-      : "Joined peer"
+  const statusSessionLabel = remoteStatus
+    ? control === "42"
+      ? "Control participant"
+      : "Readonly participant"
     : undefined
-  const statusPeerServerReachabilityLabel = remoteStatus
-    ? getPeerServerReachabilityLabel(peerServerReachability)
+  const statusRelayReachabilityLabel = remoteStatus
+    ? getRelayReachabilityLabel(relayReachability)
     : undefined
   const getErrorReportBody = () =>
     buildErrorReportBody({
+      connectionCount,
+      connectionDetails,
+      error,
       errorText: remoteErrorText,
       floatingTimerErrorText,
-      remoteIdParam,
-      peerId,
-      hostPeerId: peerData.peerId,
-      peerRole,
-      peerStatus: peerId ? "connected" : "disconnected",
-      isReadonlyClient,
-      statusModeLabel,
-      statusStateLabel,
-      statusDescription,
-      statusRemoteModeLabel,
-      statusNetworkLabel,
-      statusPeerSessionLabel,
-      statusPeerServerReachabilityLabel,
-      connectionsCount: connections.length,
-      connectionDetails,
-      peerServerLabel,
-      error,
-      params,
+      hasFocus:
+        typeof document !== "undefined" ? document.hasFocus() : "unavailable",
       isOnline: isOnline ?? "unavailable",
+      isReadonlyClient,
+      params,
+      participantRole: control === "42" ? "control" : "readonly",
+      participantStatus: sessionId ? "connected" : "disconnected",
+      peerEventTimeline,
+      relayLabel,
+      relayReachabilityLabel: statusRelayReachabilityLabel,
+      remoteIdParam,
+      sessionId,
+      statusDescription,
+      statusModeLabel,
+      statusNetworkLabel,
+      statusRemoteModeLabel,
+      statusSessionLabel,
+      statusStateLabel,
       visibilityState:
         typeof document !== "undefined"
           ? document.visibilityState
           : "unavailable",
-      hasFocus:
-        typeof document !== "undefined" ? document.hasFocus() : "unavailable",
-      peerEventTimeline: peerData.peerEventTimeline ?? [],
     })
   const floatingTimerData = useFloatingTimerPiP({
     setErrorText: setFloatingTimerErrorText,
@@ -285,7 +277,7 @@ function TimerApp() {
         <Settings
           floatingTimerData={floatingTimerData}
           isOpen={isSettingsOpen}
-          peerData={peerData}
+          peerData={remoteSession}
           paramData={paramData}
           closeSettings={closeSettings}
           handleChange={handleChange}
@@ -300,8 +292,8 @@ function TimerApp() {
       />
       {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
       <StatusPopover
-        activityLog={peerData.peerEventTimeline ?? []}
-        connectionCount={connections.length}
+        activityLog={peerEventTimeline}
+        connectionCount={connectionCount}
         connectionDetails={connectionDetails}
         errorText={remoteErrorText}
         floatingTimerErrorText={floatingTimerErrorText}
@@ -309,11 +301,10 @@ function TimerApp() {
         isOnline={isOnline}
         isRetrying={isConnecting}
         onRetry={retryConnection}
-        peerId={peerId}
-        peerRole={peerRole}
-        peerServerLabel={peerServerLabel}
-        peerServerReachability={peerServerReachability}
+        relayLabel={relayLabel}
+        relayReachability={relayReachability}
         remoteStatus={remoteStatus}
+        sessionId={sessionId}
       />
     </>
   )

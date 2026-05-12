@@ -7,19 +7,13 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "hetzner-deploy"
   cancel-in-progress: true
 
 jobs:
   build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
 
     steps:
@@ -47,14 +41,39 @@ jobs:
       - name: Build
         run: pnpm exec next build
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Create deployment bundle
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='README.md' \
+            --exclude='docs' \
+            -czf deploy.tar.gz .
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Upload deployment bundle
+        uses: appleboy/scp-action@v0.1.7
         with:
-          path: "out"
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "/srv/time-timer"
+          overwrite: true
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Restart remote stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            cd /srv/time-timer
+            tar -xzf deploy.tar.gz
+            rm deploy.tar.gz
+            docker compose build
+            docker compose up -d
+            docker compose ps

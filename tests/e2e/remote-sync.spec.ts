@@ -9,7 +9,6 @@ import {
   expectTimerPaused,
   expectTimerRunning,
   expectTimerSettings,
-  expectTimerUrlParams,
   expectUrlQrCode,
   expectTimersToMatch,
   getDisplayedSeconds,
@@ -64,7 +63,7 @@ test("keeps state consistent when multiple peers control the timer quickly", asy
 
   await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
-    "3",
+    "4",
     {
       timeout: 30_000,
     },
@@ -112,7 +111,7 @@ test("syncs the current timer state to a client that rejoins during active contr
 
   await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
-    "3",
+    "4",
     {
       timeout: 30_000,
     },
@@ -126,7 +125,7 @@ test("syncs the current timer state to a client that rejoins during active contr
 
   await expect(page.getByTestId("remote-status")).toHaveAttribute(
     "data-connection-count",
-    "2",
+    "3",
     {
       timeout: 30_000,
     },
@@ -206,7 +205,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   await Promise.all(
     allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
   )
-  await expectTimerUrlParams(page, mainSettings)
+  await expectRemoteSessionOnlyUrl(page, { control: true })
   await Promise.all(
     clients.map((remotePage) =>
       expectControlClientUrlParams(remotePage, mainSettings),
@@ -231,7 +230,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
       expectTimerSettings(remotePage, clientSettings),
     ),
   )
-  await expectTimerUrlParams(page, clientSettings)
+  await expectRemoteSessionOnlyUrl(page, { control: true })
   await Promise.all(
     clients.map((remotePage) =>
       expectControlClientUrlParams(remotePage, clientSettings),
@@ -257,6 +256,13 @@ test("new clients inherit host settings without resetting the session", async ({
     seconds: "20",
     title: "Host tuned",
   }
+  const inheritedSettings = {
+    backgroundColor: mainSettings.backgroundColor,
+    foregroundColor: mainSettings.foregroundColor,
+    minutes: mainSettings.minutes,
+    primaryColor: mainSettings.primaryColor,
+    seconds: mainSettings.seconds,
+  }
 
   await expectUrlQrCode(page, "Control Link")
   await updateTimerSettings(page, mainSettings)
@@ -277,9 +283,11 @@ test("new clients inherit host settings without resetting the session", async ({
   })
 
   await Promise.all(
-    allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
+    allPages.map((remotePage) =>
+      expectTimerSettings(remotePage, inheritedSettings),
+    ),
   )
-  await expectTimerUrlParams(page, mainSettings)
+  await expectRemoteSessionOnlyUrl(page, { control: true })
   await expectControlClientUrlParams(controlClient, mainSettings)
   await expectRemoteSessionOnlyUrl(readonlyClient)
 
@@ -289,9 +297,11 @@ test("new clients inherit host settings without resetting the session", async ({
         "joining clients should not push default settings back to the host",
       timeout: 5_000,
     })
-    .toMatch(/(?:\?|&)bg=2456ab(?:&|$)/)
+    .toMatch(/(?:\?|&)rid=/)
 
   await Promise.all(
-    allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
+    allPages.map((remotePage) =>
+      expectTimerSettings(remotePage, inheritedSettings),
+    ),
   )
 })

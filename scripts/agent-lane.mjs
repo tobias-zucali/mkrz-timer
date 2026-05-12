@@ -19,15 +19,15 @@ const minNodeVersion =
 const LANE_DIR = path.join(repoRoot, ".agent-lane")
 const APP_HOST = "127.0.0.1"
 const APP_PORT = 3300
-const PEER_PORT = 9200
+const RELAY_PORT = 9200
 const APP_URL = `http://${APP_HOST}:${APP_PORT}`
-const PEER_URL = `http://${APP_HOST}:${PEER_PORT}/peerjs/id`
+const RELAY_URL = `http://${APP_HOST}:${RELAY_PORT}/health`
 const DEFAULT_MANAGED_CONFIG = "playwright.agent.config.ts"
 const DEFAULT_ATTACH_CONFIG = "playwright.agent.no-webserver.config.ts"
 
 const nodeExec = process.execPath
 const nextBinPath = path.join(repoRoot, "node_modules/next/dist/bin/next")
-const peerScriptPath = path.join(repoRoot, "scripts/dev-peer.mjs")
+const relayScriptPath = path.join(repoRoot, "src/server/relay/index.ts")
 const playwrightCliPath = path.join(
   repoRoot,
   "node_modules/@playwright/test/cli.js",
@@ -53,10 +53,7 @@ const serviceDefinitions = {
     ],
     env: {
       NEXT_DIST_DIR: ".next-agent",
-      NEXT_PUBLIC_PEERJS_HOST: APP_HOST,
-      NEXT_PUBLIC_PEERJS_PATH: "/",
-      NEXT_PUBLIC_PEERJS_PORT: `${PEER_PORT}`,
-      NEXT_PUBLIC_PEERJS_SECURE: "false",
+      NEXT_PUBLIC_REMOTE_WS_URL: `ws://${APP_HOST}:${RELAY_PORT}/ws`,
     },
   },
   "app-test": {
@@ -78,22 +75,25 @@ const serviceDefinitions = {
     ],
     env: {
       NEXT_DIST_DIR: ".next-agent-e2e",
-      NEXT_PUBLIC_PEERJS_HOST: APP_HOST,
-      NEXT_PUBLIC_PEERJS_PATH: "/",
-      NEXT_PUBLIC_PEERJS_PORT: `${PEER_PORT}`,
-      NEXT_PUBLIC_PEERJS_SECURE: "false",
+      NEXT_PUBLIC_REMOTE_WS_URL: `ws://${APP_HOST}:${RELAY_PORT}/ws`,
     },
   },
-  peer: {
-    id: "peer",
-    kind: "peer",
+  relay: {
+    id: "relay",
+    kind: "relay",
     role: "test",
-    metadataPath: path.join(LANE_DIR, "peer.json"),
-    port: PEER_PORT,
-    url: PEER_URL,
-    command: [nodeExec, peerScriptPath],
+    metadataPath: path.join(LANE_DIR, "relay.json"),
+    port: RELAY_PORT,
+    url: RELAY_URL,
+    command: [
+      nodeExec,
+      "--no-warnings=ExperimentalWarning",
+      "--experimental-strip-types",
+      "--experimental-default-type=module",
+      relayScriptPath,
+    ],
     env: {
-      PEERJS_PORT: `${PEER_PORT}`,
+      RELAY_PORT: `${RELAY_PORT}`,
     },
   },
 }
@@ -412,7 +412,7 @@ const assertServiceReadyForAttach = (status, commandLabel) => {
       [
         `${commandLabel} needs a live tracked ${status.service.id} service on ${status.service.url}, but it is not ready.`,
         renderServiceStatus(status),
-        `Start the attach lane with \`pnpm dev:peer:agent\` and \`pnpm dev:agent:test\`, or run \`pnpm lane:agent\` for the managed default.`,
+        `Start the attach lane with \`pnpm dev:relay:agent\` and \`pnpm dev:agent:test\`, or run \`pnpm lane:agent\` for the managed default.`,
       ].join("\n"),
     )
   }
@@ -501,7 +501,7 @@ const replaceConfigArg = (args, configPath) => {
 const runPlaywright = async (rawArgs) => {
   const options = parseTestOptions(rawArgs)
   const appStatus = await getServiceStatus(serviceDefinitions["app-test"])
-  const peerStatus = await getServiceStatus(serviceDefinitions.peer)
+  const peerStatus = await getServiceStatus(serviceDefinitions.relay)
 
   const pairStatuses = [peerStatus, appStatus]
   let resolvedMode = options.requestedMode
@@ -563,9 +563,9 @@ const runPlaywright = async (rawArgs) => {
       env: {
         ...process.env,
         PLAYWRIGHT_NODE: nodeExec,
-        PLAYWRIGHT_PEER_SERVER_URL:
-          process.env.PLAYWRIGHT_PEER_SERVER_URL ||
-          `http://${APP_HOST}:${PEER_PORT}`,
+        NEXT_PUBLIC_REMOTE_WS_URL:
+          process.env.NEXT_PUBLIC_REMOTE_WS_URL ||
+          `ws://${APP_HOST}:${RELAY_PORT}/ws`,
       },
       stdio: "inherit",
     },
@@ -603,7 +603,7 @@ const stopPid = async (pid) => {
 
 const stopLane = async () => {
   const services = [
-    serviceDefinitions.peer,
+    serviceDefinitions.relay,
     serviceDefinitions["app-test"],
     serviceDefinitions["app-manual"],
   ]
@@ -637,7 +637,7 @@ const showStatus = async () => {
   const statuses = await Promise.all([
     getServiceStatus(serviceDefinitions["app-manual"]),
     getServiceStatus(serviceDefinitions["app-test"]),
-    getServiceStatus(serviceDefinitions.peer),
+    getServiceStatus(serviceDefinitions.relay),
   ])
 
   process.stdout.write("Agent lane status\n")
@@ -779,13 +779,13 @@ const main = async () => {
         break
       }
 
-      if (kind === "peer") {
-        await serveService(serviceDefinitions.peer)
+      if (kind === "relay") {
+        await serveService(serviceDefinitions.relay)
         break
       }
 
       fail(
-        "Usage: node scripts/agent-lane.mjs serve app --role=manual|test | serve peer",
+        "Usage: node scripts/agent-lane.mjs serve app --role=manual|test | serve relay",
       )
       break
     }
@@ -797,7 +797,7 @@ const main = async () => {
           "  node scripts/agent-lane.mjs status",
           "  node scripts/agent-lane.mjs stop",
           "  node scripts/agent-lane.mjs serve app --role=manual|test",
-          "  node scripts/agent-lane.mjs serve peer",
+          "  node scripts/agent-lane.mjs serve relay",
         ].join("\n"),
       )
   }

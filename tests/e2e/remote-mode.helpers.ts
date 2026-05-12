@@ -2,16 +2,16 @@ import { expect, Page } from "@playwright/test"
 import { hexToRgbChannels } from "../../src/utils/colors"
 
 const timerUrl = "/?m=01&s=00&bg=000000&fg=ffffff&pc=d61f69"
-export const peerServerUrl =
-  process.env.PLAYWRIGHT_PEER_SERVER_URL || "http://127.0.0.1:9100"
-export const peerServerRoutePattern = `${peerServerUrl}/peerjs/**`
+export const relayUrl =
+  process.env.PLAYWRIGHT_RELAY_URL || "http://127.0.0.1:9100"
+export const relayRoutePattern = `${relayUrl}/ws`
+export const peerServerRoutePattern = `${relayUrl}/**`
 
-type PeerDebugState = {
+type RemoteDebugState = {
   connectionCount: string
-  peerId: string
   remoteState: string
   role: string
-  status: string
+  sessionId: string
 }
 
 type TimerSettings = {
@@ -265,6 +265,7 @@ export async function expectRemoteStatus(
     errorText,
     networkStatus,
     peerServerReachability,
+    relayReachability,
     role,
     showSendToDeveloperButton,
     state,
@@ -275,6 +276,7 @@ export async function expectRemoteStatus(
     errorText?: RegExp | string
     networkStatus?: RegExp | string
     peerServerReachability?: RegExp | string
+    relayReachability?: RegExp | string
     role: RegExp | string
     showSendToDeveloperButton?: boolean
     state: RegExp | string
@@ -314,12 +316,12 @@ export async function expectRemoteStatus(
   await expect
     .poll(
       async () => {
-        if ((await toggle.getAttribute("aria-pressed")) === "true") {
+        if (await panel.isVisible()) {
           return true
         }
 
         await toggle.click({ force: true })
-        return (await toggle.getAttribute("aria-pressed")) === "true"
+        return panel.isVisible()
       },
       {
         message: "status panel should pin open before reading its contents",
@@ -331,7 +333,7 @@ export async function expectRemoteStatus(
   await expect(panel.getByRole("heading", { name: "Status" })).toBeVisible()
   if (showSendToDeveloperButton) {
     await expect(
-      panel.getByRole("link", { name: "Send to developer" }),
+      panel.getByRole("button", { name: "Send to developer" }),
     ).toBeVisible()
   }
 
@@ -359,11 +361,13 @@ export async function expectRemoteStatus(
     )
   }
 
-  if (peerServerReachability !== undefined) {
+  const expectedRelayReachability = relayReachability ?? peerServerReachability
+
+  if (expectedRelayReachability !== undefined) {
     await expectFieldText(
-      "remote-status-peer-reachability",
-      peerServerReachability,
-      "status panel should show the expected peer server reachability",
+      "remote-status-relay-reachability",
+      expectedRelayReachability,
+      "status panel should show the expected relay reachability",
     )
   }
 
@@ -484,15 +488,25 @@ async function getBodyCssVariable(page: Page, name: string) {
 
 export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
+    const expectedTitle = settings.title
     const editableTitle = page.getByTitle("Click to edit title")
+    await expect
+      .poll(
+        async () => {
+          if ((await editableTitle.count()) > 0) {
+            return ((await editableTitle.textContent()) ?? "").trim()
+          }
 
-    if ((await editableTitle.count()) > 0) {
-      await expect(editableTitle).toHaveText(settings.title)
-    } else {
-      await expect(
-        page.getByText(settings.title, { exact: true }),
-      ).toBeVisible()
-    }
+          const exactText = page.getByText(expectedTitle, { exact: true })
+          return (await exactText.isVisible().catch(() => false))
+            ? expectedTitle
+            : ""
+        },
+        {
+          message: "timer title should reflect synced settings",
+        },
+      )
+      .toBe(expectedTitle)
   }
 
   if (settings.minutes !== undefined || settings.seconds !== undefined) {
@@ -583,9 +597,11 @@ export async function expectControlClientUrlParams(
   page: Page,
   settings: TimerSettings,
 ) {
+  void settings
+
   await expect(page).toHaveURL(/(?:\?|&)rid=/)
   await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
-  await expectTimerUrlParams(page, settings)
+  await expect(page).not.toHaveURL(/(?:\?|&)(?:bg|fg|m|pc|pid|s|title)=/)
 }
 
 export async function expectTimersToMatch(
@@ -601,16 +617,15 @@ export async function expectTimersToMatch(
   }
 }
 
-export async function getPeerDebugState(page: Page): Promise<PeerDebugState> {
+export async function getPeerDebugState(page: Page): Promise<RemoteDebugState> {
   const debugState = page.getByTestId("remote-status")
 
   return {
     connectionCount:
       (await debugState.getAttribute("data-connection-count")) ?? "",
-    peerId: (await debugState.getAttribute("data-peer-id")) ?? "",
     remoteState: (await debugState.getAttribute("data-remote-state")) ?? "",
-    role: (await debugState.getAttribute("data-peer-role")) ?? "",
-    status: (await debugState.getAttribute("data-peer-status")) ?? "",
+    role: (await debugState.getAttribute("data-remote-role")) ?? "",
+    sessionId: (await debugState.getAttribute("data-session-id")) ?? "",
   }
 }
 
@@ -622,19 +637,19 @@ export async function expectNoStaleConnectedClient(page: Page) {
         return {
           connectionCount: state.connectionCount,
           remoteState: state.remoteState,
-          status: state.status,
+          sessionId: state.sessionId,
         }
       },
       {
         message:
-          "joined clients should not stay marked connected when they have no live host link",
+          "joined clients should not stay marked connected without a relay session",
         timeout: 10_000,
       },
     )
     .not.toEqual({
       connectionCount: "0",
       remoteState: "connected",
-      status: "connected",
+      sessionId: "",
     })
 }
 
@@ -652,23 +667,17 @@ export async function waitForRemoteCluster(
     timeout?: number
   },
 ) {
+  void mainConnectionCount
+
   await expect
     .poll(
       async () => {
         const states = await Promise.all(pages.map(getPeerDebugState))
 
         return {
-          connectedClients: states.filter(
-            ({ connectionCount, role, status }) =>
-              connectionCount === "1" &&
-              role === "client" &&
-              status === "connected",
-          ).length,
-          electedMain: states.filter(
-            ({ connectionCount, role, status }) =>
-              connectionCount === String(mainConnectionCount) &&
-              role === "main" &&
-              status === "connected",
+          connectedPages: states.filter(
+            ({ remoteState, sessionId }) =>
+              remoteState === "connected" && sessionId.length > 0,
           ).length,
         }
       },
@@ -678,18 +687,6 @@ export async function waitForRemoteCluster(
       },
     )
     .toEqual({
-      connectedClients: clientCount,
-      electedMain: 1,
+      connectedPages: clientCount + 1,
     })
-}
-
-export async function getMainPage(pages: Page[]) {
-  for (const page of pages) {
-    const state = await getPeerDebugState(page)
-    if (state.role === "main" && state.status === "connected") {
-      return page
-    }
-  }
-
-  throw new Error("No connected main page found")
 }

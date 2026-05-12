@@ -11,19 +11,13 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "pnpm dev:peer",
-      url: "http://127.0.0.1:9100/peerjs/id",
+      command: "pnpm dev:relay",
+      url: "http://127.0.0.1:9100/health",
       reuseExistingServer: true,
       timeout: 120_000,
     },
     {
       command: "pnpm dev:e2e",
-      env: {
-        NEXT_PUBLIC_PEERJS_HOST: "127.0.0.1",
-        NEXT_PUBLIC_PEERJS_PORT: "9100",
-        NEXT_PUBLIC_PEERJS_PATH: "/",
-        NEXT_PUBLIC_PEERJS_SECURE: "false",
-      },
       url: "http://127.0.0.1:3100",
       reuseExistingServer: true,
       timeout: 120_000,

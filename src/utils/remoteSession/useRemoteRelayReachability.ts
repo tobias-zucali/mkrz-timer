@@ -1,25 +1,20 @@
+"use client"
+
 import { useEffect, useState } from "react"
 
-import { getPeerServerReachabilityUrl } from "@/utils/peerServerConfig"
+import { getRemoteRelayHealthcheckUrl } from "./config"
 
-export type PeerServerReachabilityState =
+export type RemoteRelayReachabilityState =
   | "checking"
   | "reachable"
   | "unreachable"
-  | "managed"
 
-export default function usePeerServerReachability(isEnabled: boolean) {
-  const [state, setState] = useState<PeerServerReachabilityState>(() =>
-    getPeerServerReachabilityUrl() ? "checking" : "managed",
-  )
+export default function useRemoteRelayReachability(isEnabled: boolean) {
+  const [state, setState] = useState<RemoteRelayReachabilityState>("checking")
 
   useEffect(() => {
-    const url = getPeerServerReachabilityUrl()
-    if (!isEnabled) {
-      return
-    }
-    if (!url) {
-      setState("managed")
+    const url = getRemoteRelayHealthcheckUrl()
+    if (!isEnabled || !url) {
       return
     }
 
@@ -28,13 +23,13 @@ export default function usePeerServerReachability(isEnabled: boolean) {
       setState((current) => (current === "reachable" ? current : "checking"))
 
       try {
-        await fetch(url, {
+        const response = await fetch(url, {
           cache: "no-store",
           method: "GET",
-          mode: "no-cors",
         })
+
         if (!isDisposed) {
-          setState("reachable")
+          setState(response.ok ? "reachable" : "unreachable")
         }
       } catch {
         if (!isDisposed) {
@@ -46,13 +41,11 @@ export default function usePeerServerReachability(isEnabled: boolean) {
     void probe()
     const intervalId = window.setInterval(() => {
       void probe()
-    }, 15000)
+    }, 15_000)
 
     return () => {
       isDisposed = true
-      if (intervalId !== undefined) {
-        window.clearInterval(intervalId)
-      }
+      window.clearInterval(intervalId)
     }
   }, [isEnabled])
 

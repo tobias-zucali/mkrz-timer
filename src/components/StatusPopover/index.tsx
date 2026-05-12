@@ -7,7 +7,7 @@ import classNames from "classnames"
 import CloseButton from "@/components/CloseButton"
 import { getDocumentLocale } from "@/i18n/locale"
 import useClipboardCopy from "@/utils/useClipboardCopy"
-import type { PeerServerReachabilityState } from "@/utils/usePeerServerReachability"
+import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { RemoteStatusModel } from "@/utils/remoteStatus"
 
 type RemoteStatusConnection = {
@@ -95,27 +95,12 @@ function XCircleIcon({ className }: { className?: string }) {
   )
 }
 
-function getRoleShortLabel(roleLabel: RemoteStatusModel["roleLabel"]) {
-  switch (roleLabel) {
-    case "Main host":
-      return "Host"
-    case "Control client":
-      return "Control"
-    case "Readonly client":
-      return "Viewer"
-  }
-}
-
 function getCompactBadgeLabel(remoteStatus: RemoteStatusModel | null) {
   if (!remoteStatus) {
     return "Local"
   }
 
-  if (remoteStatus.role === "main") {
-    return getRoleShortLabel(remoteStatus.roleLabel)
-  }
-
-  return null
+  return remoteStatus.role === "control" ? "Control" : "Viewer"
 }
 
 function getNetworkLabel(isOnline: boolean | null) {
@@ -125,58 +110,59 @@ function getNetworkLabel(isOnline: boolean | null) {
   return isOnline ? "Online" : "Offline"
 }
 
-function getPeerServerReachabilityLabel(
-  peerServerReachability: PeerServerReachabilityState,
+function getRelayReachabilityLabel(
+  relayReachability: RemoteRelayReachabilityState,
 ) {
-  switch (peerServerReachability) {
+  switch (relayReachability) {
     case "reachable":
       return "Reachable"
     case "unreachable":
       return "Unreachable"
     case "checking":
       return "Checking"
-    case "managed":
-      return "Managed by PeerJS cloud"
   }
 }
 
 function getCompactStatusAppearance({
   errorText,
+  hasRemoteStatus,
   isOnline,
-  peerServerReachability,
+  relayReachability,
   state,
 }: {
   errorText: string | null
+  hasRemoteStatus: boolean
   isOnline: boolean | null
-  peerServerReachability: PeerServerReachabilityState
+  relayReachability: RemoteRelayReachabilityState
   state: RemoteStatusModel["state"]
 }) {
-  if (errorText) {
+  if (!hasRemoteStatus && !errorText) {
+    return {
+      icon: CheckCircleIcon,
+      iconClassName: "text-emerald-400/90",
+    }
+  }
+
+  if (errorText || isOnline === false) {
     return {
       icon: XCircleIcon,
       iconClassName: "text-red-300/90",
     }
   }
 
-  if (isOnline === false || peerServerReachability === "unreachable") {
+  if (state === "connected" || state === "recovered") {
     return {
-      icon: XCircleIcon,
-      iconClassName: "text-red-300/90",
-    }
-  }
-
-  if (state === "failed") {
-    return {
-      icon: XCircleIcon,
-      iconClassName: "text-red-300/90",
+      icon: CheckCircleIcon,
+      iconClassName: "text-emerald-400/90",
     }
   }
 
   if (
-    state === "degraded" ||
+    state === "failed" ||
     state === "connecting" ||
     state === "reconnecting" ||
-    peerServerReachability === "checking"
+    relayReachability === "unreachable" ||
+    relayReachability === "checking"
   ) {
     return {
       icon: ExclamationTriangleIcon,
@@ -249,11 +235,10 @@ export default function StatusPopover({
   isOnline,
   isRetrying,
   onRetry,
-  peerId,
-  peerRole,
-  peerServerLabel,
-  peerServerReachability,
+  relayLabel,
+  relayReachability,
   remoteStatus,
+  sessionId,
 }: {
   activityLog: string[]
   connectionCount: number
@@ -264,11 +249,10 @@ export default function StatusPopover({
   isOnline: boolean | null
   isRetrying: boolean
   onRetry: () => void
-  peerId?: string
-  peerRole: "main" | "client"
-  peerServerLabel: string
-  peerServerReachability: PeerServerReachabilityState
+  relayLabel: string
+  relayReachability: RemoteRelayReachabilityState
   remoteStatus: RemoteStatusModel | null
+  sessionId?: string
 }) {
   const [isPinnedOpen, setIsPinnedOpen] = useState(false)
   const [isReportOverlayOpen, setIsReportOverlayOpen] = useState(false)
@@ -330,10 +314,7 @@ export default function StatusPopover({
   }, [isPanelOpen])
 
   const networkLabel = getNetworkLabel(isOnline)
-  const peerServerReachabilityLabel = getPeerServerReachabilityLabel(
-    peerServerReachability,
-  )
-  const peerStatus = peerId ? "connected" : "disconnected"
+  const relayReachabilityLabel = getRelayReachabilityLabel(relayReachability)
   const displayRoleLabel = remoteStatus?.roleLabel ?? "Local timer"
   const displayStateLabel = errorText
     ? (remoteStatus?.stateLabel ?? "Attention needed")
@@ -348,8 +329,9 @@ export default function StatusPopover({
   const compactRoleLabel = getCompactBadgeLabel(remoteStatus)
   const compactStatusAppearance = getCompactStatusAppearance({
     errorText: errorText ?? floatingTimerErrorText,
+    hasRemoteStatus: Boolean(remoteStatus),
     isOnline,
-    peerServerReachability,
+    relayReachability,
     state: remoteStatus?.state ?? "connected",
   })
   const trimmedReportComment = reportComment.trim()
@@ -373,11 +355,9 @@ export default function StatusPopover({
         aria-live="polite"
         className="absolute bottom-4 left-4 z-50"
         data-connection-count={connectionCount}
-        data-peer-id={peerId ?? ""}
-        data-peer-role={peerRole}
-        data-peer-status={peerStatus}
         data-remote-role={remoteStatus?.role ?? "inactive"}
         data-remote-state={remoteStatus?.state ?? "inactive"}
+        data-session-id={sessionId ?? ""}
         data-testid="remote-status"
         ref={containerRef}
         role="status"
@@ -472,27 +452,25 @@ export default function StatusPopover({
             <dd data-testid="remote-status-network">{networkLabel}</dd>
             {remoteStatus && (
               <>
-                <dt className="font-medium text-foreground">Peer session</dt>
-                <dd data-testid="remote-status-peer-role">
-                  {peerRole === "main" ? "Host peer" : "Joined peer"}
+                <dt className="font-medium text-foreground">Session</dt>
+                <dd data-testid="remote-status-session-role">
+                  {compactRoleLabel}
                 </dd>
-                <dt className="font-medium text-foreground">Peer id</dt>
+                <dt className="font-medium text-foreground">Session id</dt>
                 <dd
                   className="font-mono text-xs text-foreground/72"
-                  data-testid="remote-status-peer-id"
+                  data-testid="remote-status-session-id"
                 >
-                  {peerId ?? "Unavailable"}
+                  {sessionId ?? "Unavailable"}
                 </dd>
                 <dt className="font-medium text-foreground">
-                  Peer server reachability
+                  Relay reachability
                 </dt>
-                <dd data-testid="remote-status-peer-reachability">
-                  {peerServerReachabilityLabel}
+                <dd data-testid="remote-status-relay-reachability">
+                  {relayReachabilityLabel}
                 </dd>
-                <dt className="font-medium text-foreground">Peer server</dt>
-                <dd data-testid="remote-status-peer-server">
-                  {peerServerLabel}
-                </dd>
+                <dt className="font-medium text-foreground">Relay</dt>
+                <dd data-testid="remote-status-relay">{relayLabel}</dd>
               </>
             )}
           </dl>
@@ -516,71 +494,58 @@ export default function StatusPopover({
           {remoteStatus && connectionDetails.length > 0 && (
             <>
               <h3 className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-foreground/58">
-                Peer links
+                Participants
               </h3>
               <ul
-                className="mt-2 grid gap-1 text-xs text-foreground/72"
+                className="mt-2 space-y-2 rounded-2xl border border-foreground/10 bg-foreground/[0.04] px-3 py-3"
                 data-testid="remote-status-connections"
               >
-                {connectionDetails.map(({ id, isAlive }) => (
+                {connectionDetails.map((detail) => (
                   <li
-                    key={id}
-                    data-connection-id={id}
-                    data-connection-state={isAlive ? "alive" : "lost"}
+                    className="flex items-center justify-between gap-3 text-sm"
                     data-testid="remote-status-connection"
-                  >{`${id.slice(-4)} (${isAlive ? "alive" : "lost"})`}</li>
+                    key={detail.id}
+                  >
+                    <span className="font-mono text-xs text-foreground/68">
+                      {detail.id}
+                    </span>
+                    <span className="text-foreground/72">
+                      {detail.isAlive ? "live" : "stale"}
+                    </span>
+                  </li>
                 ))}
               </ul>
             </>
           )}
-          {remoteStatus && (activityLog.length > 0 || errorText) && (
+          {(activityLog.length > 0 || errorText) && (
             <>
               <h3 className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-foreground/58">
-                Activity log
+                Activity
               </h3>
-              <ol
-                className="mt-2 grid max-h-44 gap-1.5 overflow-y-auto rounded-2xl border border-foreground/8 bg-foreground/[0.03] p-3 text-xs text-foreground/72"
+              <ul
+                className="mt-2 space-y-2 rounded-2xl border border-foreground/10 bg-foreground/[0.04] px-3 py-3"
                 data-testid="remote-status-activity-log"
               >
-                {activityLog.length > 0 ? (
-                  activityLog
-                    .slice()
-                    .reverse()
-                    .map((entry, index) => {
-                      const { detail, timestamp } = splitTimelineEntry(entry)
-
-                      return (
-                        <li
-                          key={`${entry}-${index}`}
-                          className="grid grid-cols-[1fr_auto] items-start gap-x-3 gap-y-0.5 rounded-lg border border-transparent px-1 py-0.5"
-                          data-testid="remote-status-activity-entry"
-                        >
-                          <span className="break-words leading-5">
-                            {detail}
-                          </span>
-                          <time
-                            className="text-right font-mono text-[0.68rem] text-foreground/46"
-                            dateTime={timestamp}
-                            title={timestamp}
-                          >
-                            {formatRelativeTimestamp(
-                              timestamp,
-                              relativeNow,
-                              locale,
-                            )}
-                          </time>
-                        </li>
-                      )
-                    })
-                ) : (
-                  <li
-                    className="leading-5 text-foreground/58"
-                    data-testid="remote-status-activity-entry"
-                  >
-                    No peer activity was captured before the failure.
-                  </li>
-                )}
-              </ol>
+                {activityLog.map((entry, index) => {
+                  const { detail, timestamp } = splitTimelineEntry(entry)
+                  return (
+                    <li
+                      className="flex items-start justify-between gap-3 text-sm"
+                      data-testid="remote-status-activity-entry"
+                      key={`${entry}-${index}`}
+                    >
+                      <span className="text-foreground/72">{detail}</span>
+                      <span className="shrink-0 text-xs text-foreground/52">
+                        {formatRelativeTimestamp(
+                          timestamp,
+                          relativeNow,
+                          locale,
+                        )}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
             </>
           )}
         </div>
@@ -588,91 +553,47 @@ export default function StatusPopover({
 
       {isReportOverlayOpen && (
         <div
-          aria-labelledby={`${panelId}-report-title`}
           aria-modal="true"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px] sm:p-6"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 px-4 py-6 backdrop-blur"
           role="dialog"
         >
-          <div className="relative flex max-h-[min(90vh,56rem)] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-foreground/12 bg-background shadow-2xl shadow-black/30">
-            <CloseButton
-              className="absolute right-4 top-4 z-[1]"
-              onClick={() => setIsReportOverlayOpen(false)}
-            />
-            <div className="border-b border-foreground/10 px-6 py-6 sm:px-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-                Status Report
-              </p>
-              <h2
-                className="mt-2 text-2xl font-semibold text-foreground"
-                id={`${panelId}-report-title`}
-              >
-                Send details to the developer
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground/68">
-                Sending this report helps the developer reproduce the issue and
-                fix potential problems faster. You can add your own description
-                below before copying the report or opening your mail app.
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
-              <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <label
-                    className="text-sm font-medium text-foreground"
-                    htmlFor={`${panelId}-report-comment`}
-                  >
-                    What happened?
-                  </label>
-                  <textarea
-                    className="min-h-28 rounded-2xl border border-foreground/12 bg-foreground/[0.03] px-4 py-3 text-sm text-foreground shadow-sm shadow-background/15 outline-none transition placeholder:text-foreground/40 focus:border-primary/40 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                    id={`${panelId}-report-comment`}
-                    onChange={(event) => setReportComment(event.target.value)}
-                    placeholder="Describe what you were trying to do, what went wrong, and how to reproduce it."
-                    value={reportComment}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <label
-                      className="text-sm font-medium text-foreground"
-                      htmlFor={`${panelId}-report-body`}
-                    >
-                      Mail body
-                    </label>
-                    {canCopy && (
-                      <button
-                        className="inline-flex min-h-9 items-center justify-center rounded-lg border border-foreground/12 bg-foreground/[0.06] px-3 py-1.5 text-xs font-semibold text-foreground/78 transition hover:border-foreground/18 hover:bg-foreground/[0.1] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                        onClick={() => void copyText(mailBody)}
-                        type="button"
-                      >
-                        {isCopied ? "Copied" : "Copy report"}
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    className="min-h-72 rounded-2xl border border-foreground/12 bg-foreground/[0.03] px-4 py-3 font-mono text-xs leading-5 text-foreground/78 shadow-sm shadow-background/15 outline-none"
-                    id={`${panelId}-report-body`}
-                    readOnly={true}
-                    value={mailBody}
-                  />
-                </div>
+          <div className="w-full max-w-xl rounded-3xl border border-foreground/12 bg-background p-6 shadow-2xl shadow-background/35">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">
+                  Support
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                  Send diagnostics
+                </h2>
               </div>
+              <CloseButton onClick={() => setIsReportOverlayOpen(false)} />
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-foreground/10 px-6 py-5 sm:px-8">
+            <label className="mt-5 block text-sm font-medium text-foreground">
+              What happened?
+              <textarea
+                className="mt-2 min-h-28 w-full rounded-2xl border border-foreground/12 bg-foreground/[0.04] px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
+                onChange={(event) => setReportComment(event.target.value)}
+                value={reportComment}
+              />
+            </label>
+            <div className="mt-5 space-y-3">
               <button
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-foreground/12 bg-foreground/[0.05] px-4 py-2.5 text-sm font-semibold text-foreground/80 transition hover:bg-foreground/[0.1] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-                onClick={() => setIsReportOverlayOpen(false)}
-                type="button"
-              >
-                Close
-              </button>
-              <button
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-background transition hover:bg-primary/85 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                 onClick={openMailApp}
                 type="button"
               >
                 Open mail app
               </button>
+              {canCopy && (
+                <button
+                  className="ml-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-foreground/12 bg-foreground/[0.04] px-4 py-2 text-sm font-semibold text-foreground transition hover:border-foreground/18 hover:bg-foreground/[0.08] focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                  onClick={() => copyText(mailBody)}
+                  type="button"
+                >
+                  {isCopied ? "Copied" : "Copy report"}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,32 +1,26 @@
 type ConnectionDetail = {
   id: string
   isAlive: boolean
-  isOpen?: boolean
-  lastPing?: number
-  webRtcConnectionState?: string
-  webRtcIceConnectionState?: string
-  webRtcSignalingState?: string
 }
 
 type BuildErrorReportBodyParams = {
+  connectionCount: number
+  connectionDetails: ConnectionDetail[]
   errorText: string | null
   floatingTimerErrorText?: string | null
   remoteIdParam?: string
-  peerId?: string
-  hostPeerId?: string
-  peerRole: "main" | "client"
-  peerStatus: "connected" | "disconnected"
+  sessionId?: string
+  participantRole: "control" | "readonly"
+  participantStatus: "connected" | "disconnected"
   isReadonlyClient: boolean
   statusModeLabel: string
   statusStateLabel: string
   statusDescription: string
   statusRemoteModeLabel: string
   statusNetworkLabel: string
-  statusPeerSessionLabel?: string
-  statusPeerServerReachabilityLabel?: string
-  connectionsCount: number
-  connectionDetails: ConnectionDetail[]
-  peerServerLabel: string
+  statusSessionLabel?: string
+  relayReachabilityLabel?: string
+  relayLabel: string
   error?: Error | null
   params: Record<string, string | null | undefined>
   isOnline: boolean | "unavailable"
@@ -36,24 +30,23 @@ type BuildErrorReportBodyParams = {
 }
 
 export default function buildErrorReportBody({
+  connectionCount,
+  connectionDetails,
   errorText,
   floatingTimerErrorText,
   remoteIdParam,
-  peerId,
-  hostPeerId,
-  peerRole,
-  peerStatus,
+  sessionId,
+  participantRole,
+  participantStatus,
   isReadonlyClient,
   statusModeLabel,
   statusStateLabel,
   statusDescription,
   statusRemoteModeLabel,
   statusNetworkLabel,
-  statusPeerSessionLabel,
-  statusPeerServerReachabilityLabel,
-  connectionsCount,
-  connectionDetails,
-  peerServerLabel,
+  statusSessionLabel,
+  relayReachabilityLabel,
+  relayLabel,
   error,
   params,
   isOnline,
@@ -86,8 +79,8 @@ export default function buildErrorReportBody({
     `- Remote mode: ${statusRemoteModeLabel}`,
     `- Description: ${statusDescription}`,
     `- Network: ${statusNetworkLabel}`,
-    `- Peer session: ${statusPeerSessionLabel ?? "inactive"}`,
-    `- Peer server reachability: ${statusPeerServerReachabilityLabel ?? "inactive"}`,
+    `- Session: ${statusSessionLabel ?? "inactive"}`,
+    `- Relay reachability: ${relayReachabilityLabel ?? "inactive"}`,
     `- Visible remote issue: ${errorText ?? "none"}`,
     `- Visible floating timer issue: ${floatingTimerErrorText ?? "none"}`,
     "",
@@ -95,14 +88,13 @@ export default function buildErrorReportBody({
     `- Timestamp: ${now}`,
     `- URL: ${location}`,
     `- Remote id param: ${remoteIdParam ?? "none"}`,
-    `- Local peer id: ${peerId ?? "none"}`,
-    `- Host peer id: ${hostPeerId ?? "none"}`,
-    `- Peer role: ${peerRole}`,
-    `- Peer status: ${peerStatus}`,
+    `- Session id: ${sessionId ?? "none"}`,
+    `- Participant role: ${participantRole}`,
+    `- Participant status: ${participantStatus}`,
     `- Readonly client: ${isReadonlyClient ? "yes" : "no"}`,
-    `- Active connections: ${connectionsCount}`,
-    `- Connection details: ${JSON.stringify(connectionDetails)}`,
-    `- Peer server: ${peerServerLabel}`,
+    `- Active participants: ${connectionCount}`,
+    `- Participant details: ${JSON.stringify(connectionDetails)}`,
+    `- Relay: ${relayLabel}`,
     `- Raw error message: ${error?.message ?? "none"}`,
     `- Raw error stack: ${error?.stack ?? "none"}`,
     `- User agent: ${userAgent}`,
@@ -111,6 +103,6 @@ export default function buildErrorReportBody({
     `- Has focus: ${hasFocus}`,
     `- Timezone: ${timezone}`,
     `- Query params snapshot: ${JSON.stringify(params)}`,
-    `- Peer events (last ${peerEventTimeline.length}): ${JSON.stringify(peerEventTimeline)}`,
+    `- Remote events (last ${peerEventTimeline.length}): ${JSON.stringify(peerEventTimeline)}`,
   ].join("\n")
 }

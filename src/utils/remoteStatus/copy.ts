@@ -1,140 +1,83 @@
 import type { RemoteStatusRole, RemoteStatusState } from "@/utils/remoteStatus"
 
 export const ROLE_LABELS: Record<RemoteStatusRole, string> = {
-  "control-client": "Control client",
-  main: "Main host",
-  "readonly-client": "Readonly client",
+  control: "Control session",
+  readonly: "Readonly session",
 }
 
 export const STATE_LABELS: Record<RemoteStatusState, string> = {
   connected: "Connected",
   connecting: "Connecting",
-  degraded: "Degraded connection",
   failed: "Reconnect failed",
   recovered: "Recovered",
   reconnecting: "Reconnecting",
 }
 
-const MAIN_DESCRIPTIONS: Record<RemoteStatusState, string> = {
-  connected: "Hosting the remote timer session.",
-  connecting: "Starting the remote session.",
-  degraded: "Some connected peers are delayed or temporarily unavailable.",
-  failed:
-    "Automatic recovery could not restore hosting. Retry to reopen the session.",
-  recovered: "This page recovered the host session and is syncing peers again.",
-  reconnecting: "Trying to restore the host session for connected peers.",
-}
-
-const CLIENT_CONNECTION_SUMMARY: Record<
-  Exclude<RemoteStatusState, "connecting" | "reconnecting">,
-  string
+const DESCRIPTIONS: Record<
+  RemoteStatusRole,
+  Record<RemoteStatusState, string>
 > = {
-  connected: "Connected to host",
-  degraded: "Host link is unstable",
-  failed: "Recovery needs a retry",
-  recovered: "Connected again",
+  control: {
+    connected: "Can control the shared timer and settings.",
+    connecting: "Starting or joining the shared timer with control access.",
+    failed:
+      "Automatic recovery could not restore control access yet. Retry to rejoin the session.",
+    recovered: "Connection recovered. Control access is live again.",
+    reconnecting:
+      "Trying to reconnect to the shared timer with control access.",
+  },
+  readonly: {
+    connected: "Viewing the shared timer without controls.",
+    connecting:
+      "Joining the shared timer as a viewer and waiting for the first sync.",
+    failed:
+      "Automatic recovery could not restore the viewer connection yet. Retry to request a fresh sync.",
+    recovered: "Viewer connection recovered and the timer is live again.",
+    reconnecting: "Trying to reconnect to the shared timer view.",
+  },
 }
 
-const CONTROL_CLIENT_DESCRIPTIONS: Record<
-  Exclude<RemoteStatusState, "connecting" | "reconnecting">,
-  string
-> = {
-  connected: "Can control the shared timer and settings.",
-  degraded: "Control access remains available once the host link recovers.",
-  failed:
-    "Automatic recovery could not restore control access yet. Retry to rejoin or reclaim the session.",
-  recovered: "Connection recovered. Control access is live again.",
-}
-
-const READONLY_CLIENT_DESCRIPTIONS: Record<
-  Exclude<RemoteStatusState, "connecting" | "reconnecting">,
-  string
-> = {
-  connected: "Viewing the shared timer without controls.",
-  degraded: "Timer updates may lag until the host link recovers.",
-  failed:
-    "Automatic recovery could not restore the viewer connection. Retry to request a fresh sync.",
-  recovered: "Viewer connection recovered and the timer is live again.",
-}
-
-export function getMainConnectionSummary({
-  connectionsCount,
-  healthyConnections,
+export function getConnectionSummary({
+  hasReceivedInitialSync,
+  participantCount,
+  role,
   state,
 }: {
-  connectionsCount: number
-  healthyConnections: number
+  hasReceivedInitialSync: boolean
+  participantCount: number
+  role: RemoteStatusRole
   state: RemoteStatusState
 }) {
+  if (state === "connecting" || state === "reconnecting") {
+    if (!hasReceivedInitialSync) {
+      return "Waiting for timer sync"
+    }
+
+    return "Restoring relay connection"
+  }
+
   if (state === "failed") {
-    return connectionsCount > 0
-      ? "Host session needs recovery"
-      : "Host session could not start"
+    return "Recovery needs a retry"
   }
 
-  if (state === "connecting" && connectionsCount === 0) {
-    return "Starting host session"
+  const otherParticipantCount = Math.max(participantCount - 1, 0)
+  const participantLabel =
+    otherParticipantCount === 1 ? "other participant" : "other participants"
+
+  if (role === "readonly") {
+    return otherParticipantCount > 0
+      ? `Viewing with ${otherParticipantCount} ${participantLabel}`
+      : "Viewing shared timer"
   }
 
-  if (state === "reconnecting" && connectionsCount === 0) {
-    return "Restoring host session"
-  }
-
-  if (state === "degraded") {
-    return `${healthyConnections} of ${connectionsCount} peer links healthy`
-  }
-
-  return `${connectionsCount} connected ${connectionsCount === 1 ? "peer" : "peers"}`
+  return otherParticipantCount > 0
+    ? `Controlling with ${otherParticipantCount} ${participantLabel}`
+    : "Controlling shared timer"
 }
 
-export function getMainDescription(state: RemoteStatusState) {
-  return MAIN_DESCRIPTIONS[state]
-}
-
-export function getClientConnectionSummary({
-  isUnsyncedClient,
-  state,
-}: {
-  isUnsyncedClient: boolean
-  state: RemoteStatusState
-}) {
-  if (state === "connecting" || state === "reconnecting") {
-    return isUnsyncedClient
-      ? "Waiting for timer sync"
-      : "Waiting for host connection"
-  }
-
-  return CLIENT_CONNECTION_SUMMARY[state]
-}
-
-export function getControlClientDescription({
-  isUnsyncedClient,
-  state,
-}: {
-  isUnsyncedClient: boolean
-  state: RemoteStatusState
-}) {
-  if (state === "connecting" || state === "reconnecting") {
-    return isUnsyncedClient
-      ? "Joining the shared timer with control access and waiting for the first sync."
-      : "Joining the shared timer with control access."
-  }
-
-  return CONTROL_CLIENT_DESCRIPTIONS[state]
-}
-
-export function getReadonlyClientDescription({
-  isUnsyncedClient,
-  state,
-}: {
-  isUnsyncedClient: boolean
-  state: RemoteStatusState
-}) {
-  if (state === "connecting" || state === "reconnecting") {
-    return isUnsyncedClient
-      ? "Joining the shared timer as a viewer and waiting for the first sync."
-      : "Joining the shared timer as a viewer."
-  }
-
-  return READONLY_CLIENT_DESCRIPTIONS[state]
+export function getDescription(
+  role: RemoteStatusRole,
+  state: RemoteStatusState,
+) {
+  return DESCRIPTIONS[role][state]
 }

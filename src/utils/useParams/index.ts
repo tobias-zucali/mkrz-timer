@@ -25,9 +25,9 @@ export default function useParams() {
     bg: withColorHash(searchParams.get("bg") || "000000"),
     fg: withColorHash(searchParams.get("fg") || "ffffff"),
     pc: withColorHash(searchParams.get("pc") || "d61f69"),
-    pid: searchParams.get("pid") || "", // peer id
-    rid: searchParams.get("rid") || "", // remote peer id
-    control: searchParams.get("control") || null, // client control mode
+    pid: "",
+    rid: searchParams.get("rid") || "",
+    control: searchParams.get("control") || null,
   })
 
   useEffect(() => {

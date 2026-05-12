@@ -2,7 +2,7 @@
 
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
-import usePeer from "@/utils/usePeer"
+import useRemoteSession from "@/utils/remoteSession"
 
 import CloseButton from "@/components/CloseButton"
 import HelpText from "@/components/HelpText"
@@ -143,7 +143,7 @@ export default function Settings({
 }: {
   floatingTimerData: FloatingTimerData
   isOpen: boolean
-  peerData: ReturnType<typeof usePeer>
+  peerData: ReturnType<typeof useRemoteSession>
   paramData: ReturnType<typeof useParams>
   closeSettings: () => void
   handleChange: (key: string, value: string) => void
@@ -152,22 +152,22 @@ export default function Settings({
   const { params, setParams, getUrlWithParams } = paramData
   const { rid: remoteId } = params
 
-  const { connectRemote, disconnect, isConnecting, peerId } = peerData
+  const { connectRemote, disconnect, isConnecting, sessionId } = peerData
   const timerUrl = getUrlWithParams()
   const readonlyClientUrl = getUrlWithParams({
     inherit: false,
     params: {
-      rid: peerId,
+      rid: sessionId,
     },
   })
   const controlClientUrl = getUrlWithParams({
     inherit: false,
     params: {
-      rid: peerId,
+      rid: sessionId,
       control: "42",
     },
   })
-  const isRemoteReady = Boolean(peerData.peerId)
+  const isRemoteReady = Boolean(sessionId)
   const remoteErrorText =
     !remoteId && peerData.error ? peerData.error.message : null
 
@@ -301,14 +301,19 @@ export default function Settings({
                 <DrawerSection title="Sharing">
                   <div className="space-y-5">
                     <ToggleRow
-                      checked={Boolean(remoteId || isConnecting)}
+                      checked={Boolean(
+                        remoteId ||
+                        sessionId ||
+                        isConnecting ||
+                        remoteErrorText,
+                      )}
                       description="Use remote mode when another screen should view or control the timer."
                       disabled={isConnecting || Boolean(remoteErrorText)}
                       label="Remote mode"
                       onChange={async () => {
                         if (remoteId) {
-                          disconnect()
-                          setParams({ control: null, rid: undefined })
+                          await disconnect()
+                          setParams({ control: null, rid: "" })
                           return
                         }
 
@@ -331,7 +336,7 @@ export default function Settings({
                       </div>
                     )}
 
-                    {remoteId && isRemoteReady ? (
+                    {(remoteId || sessionId) && isRemoteReady ? (
                       <div className="border-t border-foreground/10 pt-5">
                         <div className="space-y-5">
                           <div className="space-y-3">

@@ -6,13 +6,14 @@
     "node": ">=22.6.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:e2e": "NEXT_DIST_DIR=.next-e2e next dev -H 127.0.0.1 -p 3100",
-    "dev:peer": "node scripts/dev-peer.mjs",
+    "dev": "node scripts/dev-stack.mjs",
+    "dev:e2e": "NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_REMOTE_WS_URL=ws://127.0.0.1:9100/ws next dev -H 127.0.0.1 -p 3100",
+    "dev:relay": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module src/server/relay/index.ts",
     "dev:agent:manual": "node scripts/agent-lane.mjs serve app --role=manual",
     "dev:agent:test": "node scripts/agent-lane.mjs serve app --role=test",
-    "dev:peer:agent": "node scripts/agent-lane.mjs serve peer",
+    "dev:relay:agent": "node scripts/agent-lane.mjs serve relay",
     "build": "pnpm test:full && next build",
+    "build:docker": "pnpm build && docker compose build",
     "start": "next start",
     "check": "pnpm lint && pnpm test:unit",
     "test": "pnpm check && pnpm test:e2e",
@@ -28,7 +29,6 @@
     "test:e2e:visual": "pnpm test:e2e:clean && playwright test --grep @visual --headed --workers=1",
     "test:e2e:report": "playwright show-report",
     "lane:agent": "pnpm test:e2e:clean:agent && node scripts/agent-lane.mjs test --grep @smoke",
-    "lane:agent:managed": "pnpm test:e2e:clean:agent && node scripts/agent-lane.mjs test --managed --grep @smoke",
     "lane:agent:attach": "pnpm test:e2e:clean:agent && node scripts/agent-lane.mjs test --attach --grep @smoke",
     "lane:agent:full": "pnpm test:e2e:clean:agent && node scripts/agent-lane.mjs test",
     "lane:agent:debug": "pnpm test:e2e:clean:agent && node scripts/agent-lane.mjs test --attach --debug --workers=1",
@@ -45,7 +45,6 @@
   "dependencies": {
     "classnames": "^2.5.1",
     "next": "16.2.4",
-    "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",
     "react": "19.2.5",
     "react-contenteditable": "^3.3.7",
@@ -54,6 +53,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@types/ws": "^8.18.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
@@ -61,10 +61,10 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.4",
     "eslint-config-prettier": "^10.1.8",
-    "peer": "^1.0.2",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "ws": "^8.18.3"
   },
   "packageManager": "pnpm@8.11.0+sha1.01bf39424f1008f29012bbae851d2acb8a20a0d0"
 }

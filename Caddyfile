@@ -1,0 +1,7 @@
+{$TIME_DOMAIN} {
+  reverse_proxy timer-web:3000
+}
+
+{$TIME_RELAY_DOMAIN} {
+  reverse_proxy timer-relay:9100
+}

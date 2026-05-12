@@ -1,0 +1,33 @@
+services:
+  caddy:
+    image: caddy:2.10
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - timer-web
+      - timer-relay
+
+  timer-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_REMOTE_WS_URL: ${NEXT_PUBLIC_REMOTE_WS_URL:-wss://ws.time.mkrz.at/ws}
+
+  timer-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile.relay
+    environment:
+      RELAY_HOST: 0.0.0.0
+      RELAY_PORT: 9100
+      RELAY_SESSION_TTL_MS: ${RELAY_SESSION_TTL_MS:-300000}
+
+volumes:
+  caddy_data:
+  caddy_config:
