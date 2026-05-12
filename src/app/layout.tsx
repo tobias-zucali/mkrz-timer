@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
+import { defaultAppLocale } from "@/i18n/config"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang={defaultAppLocale} className="h-full">
       <head>
         {/* Favicon for general browsers */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

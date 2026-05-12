@@ -214,12 +214,17 @@ test(
       page.getByRole("switch", { name: "Remote mode" }),
     ).toBeDisabled()
 
-    await expect(page.getByTestId("global-error-alert")).toContainText(
-      "Remote mode could not start.",
-      { timeout: 15_000 },
-    )
+    await expectRemoteStatus(page, {
+      activityLogIncludes: /No peer activity was captured before the failure\./,
+      connectionSummary: "Host session could not start",
+      errorText: /Remote mode could not start\. An unknown error was caught\./,
+      networkStatus: "Online",
+      role: "Main host",
+      showSendToDeveloperButton: true,
+      state: "Reconnect failed",
+    })
     const reportIssueLink = page.getByRole("link", {
-      name: "Report this issue",
+      name: "Send to developer",
     })
     await expect(reportIssueLink).toBeVisible()
     const href = await reportIssueLink.getAttribute("href")

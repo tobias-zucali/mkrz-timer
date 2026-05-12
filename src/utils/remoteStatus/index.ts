@@ -75,6 +75,7 @@ export default function getRemoteStatus({
   hasReceivedInitialSync,
   lifecycleState,
   peerId,
+  showPendingHostStatus = false,
   remoteIdParam,
 }: {
   canRetryManually: boolean
@@ -90,16 +91,17 @@ export default function getRemoteStatus({
     | "recovered"
     | "reconnecting"
   peerId?: string
+  showPendingHostStatus?: boolean
   remoteIdParam?: string | null
 }): RemoteStatusModel | null {
-  if (!remoteIdParam) {
+  if (!remoteIdParam && !showPendingHostStatus) {
     return null
   }
 
-  const isReadonlyClient = control !== "42"
+  const isReadonlyClient = Boolean(remoteIdParam) && control !== "42"
   const role: RemoteStatusRole = isReadonlyClient
     ? "readonly-client"
-    : peerId === remoteIdParam
+    : !remoteIdParam || peerId === remoteIdParam
       ? "main"
       : "control-client"
   const roleLabel = ROLE_LABELS[role]

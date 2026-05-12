@@ -13,12 +13,38 @@ import usePeerServerReachability from "@/utils/usePeerServerReachability"
 import usePeer, { SyncParams } from "@/utils/usePeer"
 import useTimer, { TimerState } from "@/utils/useTimer"
 
-import CloseButton from "@/components/CloseButton"
-import RemoteStatus from "@/components/RemoteStatus"
 import Settings from "@/components/Settings"
 import SettingsButton from "@/components/SettingsButton"
+import StatusPopover from "@/components/StatusPopover"
 import Timer from "@/components/Timer"
-import Mailto from "@/components/Mailto"
+
+function getConnectionErrorDetail(error: Error) {
+  const detail = error.message.trim()
+  return detail || "An unknown error was caught."
+}
+
+function getNetworkLabel(isOnline: boolean | null) {
+  if (isOnline === null) {
+    return "Checking"
+  }
+
+  return isOnline ? "Online" : "Offline"
+}
+
+function getPeerServerReachabilityLabel(
+  peerServerReachability: "checking" | "managed" | "reachable" | "unreachable",
+) {
+  switch (peerServerReachability) {
+    case "reachable":
+      return "Reachable"
+    case "unreachable":
+      return "Unreachable"
+    case "checking":
+      return "Checking"
+    case "managed":
+      return "Managed by PeerJS cloud"
+  }
+}
 
 export default function App() {
   return (
@@ -107,6 +133,8 @@ function TimerApp() {
     retryConnection,
   } = peerData
 
+  const isPendingHostStatus = !remoteIdParam && (isConnecting || Boolean(error))
+
   // debounced sync params
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -123,19 +151,14 @@ function TimerApp() {
     syncAll({ includeParams: false, state: syncState })
   }, [syncState, syncAll])
 
-  const [errorText, setErrorText] = useState<string | null>(null)
-  useEffect(() => {
-    if (!error) {
-      setErrorText(null)
-      return
-    }
-
-    setErrorText(
-      remoteIdParam
-        ? `Remote mode has a connection problem. ${error.message}`
-        : `Remote mode could not start. ${error.message}`,
-    )
-  }, [error, remoteIdParam])
+  const remoteErrorText = error
+    ? remoteIdParam
+      ? `Remote mode has a connection problem. ${getConnectionErrorDetail(error)}`
+      : `Remote mode could not start. ${getConnectionErrorDetail(error)}`
+    : null
+  const [floatingTimerErrorText, setFloatingTimerErrorText] = useState<
+    string | null
+  >(null)
 
   useEffect(() => {
     if (!isSettingsOpen) {
@@ -156,8 +179,9 @@ function TimerApp() {
 
   const connectionDetails = peer.getAllConnections()
   const peerRole =
-    peerData.peerId && peerData.peerId === remoteIdParam ? "main" : "client"
-  const peerStatus = peerId ? "connected" : "disconnected"
+    !remoteIdParam || (peerData.peerId && peerData.peerId === remoteIdParam)
+      ? "main"
+      : "client"
   const isReadonlyClient = Boolean(remoteIdParam && control !== "42")
   const isOnline = useNetworkStatus()
   const peerServerLabel = getPeerServerLabel()
@@ -174,6 +198,7 @@ function TimerApp() {
     lifecycleState,
     peerId,
     remoteIdParam,
+    showPendingHostStatus: isPendingHostStatus,
   })
   const readonlyPlaceholderStateByRemoteState: Partial<
     Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
@@ -186,30 +211,62 @@ function TimerApp() {
     isReadonlyClient && remoteStatus
       ? readonlyPlaceholderStateByRemoteState[remoteStatus.state]
       : undefined
-  const errorReportBody = buildErrorReportBody({
-    errorText,
-    remoteIdParam,
-    peerId,
-    hostPeerId: peerData.peerId,
-    peerRole,
-    peerStatus,
-    isReadonlyClient,
-    connectionsCount: connections.length,
-    connectionDetails,
-    peerServerLabel,
-    error,
-    params,
-    isOnline: isOnline ?? "unavailable",
-    visibilityState:
-      typeof document !== "undefined"
-        ? document.visibilityState
-        : "unavailable",
-    hasFocus:
-      typeof document !== "undefined" ? document.hasFocus() : "unavailable",
-    peerEventTimeline: peerData.peerEventTimeline ?? [],
-  })
+  const statusModeLabel = remoteStatus?.roleLabel ?? "Local timer"
+  const statusStateLabel = remoteErrorText
+    ? (remoteStatus?.stateLabel ?? "Attention needed")
+    : floatingTimerErrorText
+      ? "Attention needed"
+      : (remoteStatus?.stateLabel ?? "Ready")
+  const statusDescription = remoteStatus
+    ? remoteStatus.description
+    : floatingTimerErrorText
+      ? "A local feature reported an issue. Review the details below."
+      : "Remote mode is off. Open settings when you want to share the timer."
+  const statusRemoteModeLabel = remoteStatus
+    ? remoteStatus.connectionSummary
+    : "Inactive"
+  const statusNetworkLabel = getNetworkLabel(isOnline)
+  const statusPeerSessionLabel = remoteStatus
+    ? peerRole === "main"
+      ? "Host peer"
+      : "Joined peer"
+    : undefined
+  const statusPeerServerReachabilityLabel = remoteStatus
+    ? getPeerServerReachabilityLabel(peerServerReachability)
+    : undefined
+  const getErrorReportBody = () =>
+    buildErrorReportBody({
+      errorText: remoteErrorText,
+      floatingTimerErrorText,
+      remoteIdParam,
+      peerId,
+      hostPeerId: peerData.peerId,
+      peerRole,
+      peerStatus: peerId ? "connected" : "disconnected",
+      isReadonlyClient,
+      statusModeLabel,
+      statusStateLabel,
+      statusDescription,
+      statusRemoteModeLabel,
+      statusNetworkLabel,
+      statusPeerSessionLabel,
+      statusPeerServerReachabilityLabel,
+      connectionsCount: connections.length,
+      connectionDetails,
+      peerServerLabel,
+      error,
+      params,
+      isOnline: isOnline ?? "unavailable",
+      visibilityState:
+        typeof document !== "undefined"
+          ? document.visibilityState
+          : "unavailable",
+      hasFocus:
+        typeof document !== "undefined" ? document.hasFocus() : "unavailable",
+      peerEventTimeline: peerData.peerEventTimeline ?? [],
+    })
   const floatingTimerData = useFloatingTimerPiP({
-    setErrorText,
+    setErrorText: setFloatingTimerErrorText,
     state: {
       backgroundColor: bg,
       elapsedPercentage,
@@ -242,47 +299,22 @@ function TimerApp() {
         timer={timer}
       />
       {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
-      {remoteStatus && (
-        <RemoteStatus
-          connectionCount={connections.length}
-          connectionDetails={connectionDetails}
-          isOnline={isOnline}
-          isRetrying={isConnecting}
-          onRetry={retryConnection}
-          peerId={peerId}
-          peerRole={peerRole}
-          peerServerLabel={peerServerLabel}
-          peerServerReachability={peerServerReachability}
-          peerStatus={peerStatus}
-          remoteStatus={remoteStatus}
-        />
-      )}
-      {errorText && (
-        <div
-          aria-live="assertive"
-          className="absolute bottom-4 left-1/2 z-50 max-w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl bg-red-700 py-3 pl-5 pr-14 font-bold text-white sm:pl-6 sm:pr-16"
-          data-testid="global-error-alert"
-          role="alert"
-        >
-          <CloseButton
-            aria-label="Dismiss error"
-            className="absolute right-2 top-1/2 -translate-y-1/2 border-white/25 bg-white/10 text-white/85 hover:bg-white/16 hover:text-white focus:outline-white"
-            onClick={() => setErrorText(null)}
-          />
-          <div>
-            {errorText}
-            <div className="mt-2 text-sm">
-              <Mailto
-                email="timer@mkrz.at"
-                subject="Error Report"
-                body={errorReportBody}
-              >
-                Report this issue
-              </Mailto>
-            </div>
-          </div>
-        </div>
-      )}
+      <StatusPopover
+        activityLog={peerData.peerEventTimeline ?? []}
+        connectionCount={connections.length}
+        connectionDetails={connectionDetails}
+        errorText={remoteErrorText}
+        floatingTimerErrorText={floatingTimerErrorText}
+        getErrorReportBody={getErrorReportBody}
+        isOnline={isOnline}
+        isRetrying={isConnecting}
+        onRetry={retryConnection}
+        peerId={peerId}
+        peerRole={peerRole}
+        peerServerLabel={peerServerLabel}
+        peerServerReachability={peerServerReachability}
+        remoteStatus={remoteStatus}
+      />
     </>
   )
 }

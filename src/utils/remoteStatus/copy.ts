@@ -67,7 +67,17 @@ export function getMainConnectionSummary({
   state: RemoteStatusState
 }) {
   if (state === "failed") {
-    return "Host session needs recovery"
+    return connectionsCount > 0
+      ? "Host session needs recovery"
+      : "Host session could not start"
+  }
+
+  if (state === "connecting" && connectionsCount === 0) {
+    return "Starting host session"
+  }
+
+  if (state === "reconnecting" && connectionsCount === 0) {
+    return "Restoring host session"
   }
 
   if (state === "degraded") {

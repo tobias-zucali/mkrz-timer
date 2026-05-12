@@ -10,12 +10,20 @@ type ConnectionDetail = {
 
 type BuildErrorReportBodyParams = {
   errorText: string | null
+  floatingTimerErrorText?: string | null
   remoteIdParam?: string
   peerId?: string
   hostPeerId?: string
   peerRole: "main" | "client"
   peerStatus: "connected" | "disconnected"
   isReadonlyClient: boolean
+  statusModeLabel: string
+  statusStateLabel: string
+  statusDescription: string
+  statusRemoteModeLabel: string
+  statusNetworkLabel: string
+  statusPeerSessionLabel?: string
+  statusPeerServerReachabilityLabel?: string
   connectionsCount: number
   connectionDetails: ConnectionDetail[]
   peerServerLabel: string
@@ -29,12 +37,20 @@ type BuildErrorReportBodyParams = {
 
 export default function buildErrorReportBody({
   errorText,
+  floatingTimerErrorText,
   remoteIdParam,
   peerId,
   hostPeerId,
   peerRole,
   peerStatus,
   isReadonlyClient,
+  statusModeLabel,
+  statusStateLabel,
+  statusDescription,
+  statusRemoteModeLabel,
+  statusNetworkLabel,
+  statusPeerSessionLabel,
+  statusPeerServerReachabilityLabel,
   connectionsCount,
   connectionDetails,
   peerServerLabel,
@@ -45,10 +61,6 @@ export default function buildErrorReportBody({
   hasFocus,
   peerEventTimeline,
 }: BuildErrorReportBodyParams): string {
-  if (!errorText) {
-    return ""
-  }
-
   const now =
     typeof window !== "undefined"
       ? new Date().toISOString()
@@ -61,9 +73,23 @@ export default function buildErrorReportBody({
     typeof Intl !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
       : "unavailable"
+  const visibleIssueSummary = [errorText, floatingTimerErrorText]
+    .filter(Boolean)
+    .join(" | ")
 
   return [
-    `Error: ${errorText}`,
+    `Status report: ${visibleIssueSummary || "No active issues visible."}`,
+    "",
+    "Status snapshot:",
+    `- Mode: ${statusModeLabel}`,
+    `- State: ${statusStateLabel}`,
+    `- Remote mode: ${statusRemoteModeLabel}`,
+    `- Description: ${statusDescription}`,
+    `- Network: ${statusNetworkLabel}`,
+    `- Peer session: ${statusPeerSessionLabel ?? "inactive"}`,
+    `- Peer server reachability: ${statusPeerServerReachabilityLabel ?? "inactive"}`,
+    `- Visible remote issue: ${errorText ?? "none"}`,
+    `- Visible floating timer issue: ${floatingTimerErrorText ?? "none"}`,
     "",
     "Debug info:",
     `- Timestamp: ${now}`,

@@ -1,9 +1,10 @@
-import { ComponentProps, useEffect, useId, useState } from "react"
+import { ComponentProps, useId, useState } from "react"
 
 import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
 
 import CloseButton from "@/components/CloseButton"
+import useClipboardCopy from "@/utils/useClipboardCopy"
 
 import InputField from "../InputField"
 
@@ -102,17 +103,8 @@ export default function UrlCopyField({
   value: string
 }) {
   const fieldId = useId()
-  const [isCopied, setIsCopied] = useState(false)
-  const [isClient, setIsClient] = useState(false)
   const [isQrCodeOpen, setIsQrCodeOpen] = useState(false)
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsClient(true)
-    }
-  }, [])
-
-  const canCopy = isClient && navigator.clipboard
+  const { canCopy, copyText, isCopied, isClient } = useClipboardCopy()
 
   return (
     <>
@@ -127,11 +119,7 @@ export default function UrlCopyField({
         {canCopy && (
           <button
             className={iconButtonClassName}
-            onClick={() => {
-              navigator.clipboard.writeText(value)
-              setIsCopied(true)
-              setTimeout(() => setIsCopied(false), 2000)
-            }}
+            onClick={() => void copyText(value)}
             type="button"
             title={isCopied ? "Copied" : "Copy URL"}
             aria-label={isCopied ? "Copied" : "Copy URL"}

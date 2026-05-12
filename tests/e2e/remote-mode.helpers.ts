@@ -123,6 +123,7 @@ export async function openClientFromSettings(
   clientUrl: string,
   label = "Control Link",
 ) {
+  const expectedUrl = new URL(clientUrl)
   const clientPagePromise = page.waitForEvent("popup")
   await page
     .getByRole("textbox", { name: label })
@@ -131,8 +132,16 @@ export async function openClientFromSettings(
     .click()
   const clientPage = await clientPagePromise
 
-  await expect(clientPage).toHaveURL(clientUrl)
-  await expect(clientPage).toHaveURL(/rid=/)
+  await expect
+    .poll(() => new URL(clientPage.url()).searchParams.get("rid"), {
+      message: "opened client page should keep the expected remote session id",
+    })
+    .toBe(expectedUrl.searchParams.get("rid"))
+
+  if (expectedUrl.searchParams.get("control") === "42") {
+    await expect(clientPage).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
+  }
+
   return clientPage
 }
 
@@ -250,18 +259,24 @@ export async function expectReadonlyTimerControls(page: Page) {
 export async function expectRemoteStatus(
   page: Page,
   {
+    activityLogIncludes,
     connectionSummary,
     description,
+    errorText,
     networkStatus,
     peerServerReachability,
     role,
+    showSendToDeveloperButton,
     state,
   }: {
+    activityLogIncludes?: RegExp | string
     connectionSummary: RegExp | string
     description?: RegExp | string
+    errorText?: RegExp | string
     networkStatus?: RegExp | string
     peerServerReachability?: RegExp | string
     role: RegExp | string
+    showSendToDeveloperButton?: boolean
     state: RegExp | string
   },
 ) {
@@ -274,59 +289,118 @@ export async function expectRemoteStatus(
       .trim()
   const matches = (actual: string, expected: RegExp | string) =>
     expected instanceof RegExp ? expected.test(actual) : actual === expected
+  const expectFieldText = async (
+    testId: string,
+    expected: RegExp | string,
+    message: string,
+  ) => {
+    await expect
+      .poll(async () => matches(await getFieldText(testId), expected), {
+        message,
+      })
+      .toBe(true)
+  }
+  const getOptionalText = async (testId: string) =>
+    (
+      (await panel
+        .getByTestId(testId)
+        .textContent()
+        .catch(() => "")) ?? ""
+    )
+      .replace(/\s+/g, " ")
+      .trim()
 
   await expect(remoteStatus).toHaveAttribute("role", "status")
   await expect
     .poll(
       async () => {
-        if ((await toggle.getAttribute("aria-expanded")) === "true") {
+        if ((await toggle.getAttribute("aria-pressed")) === "true") {
           return true
         }
 
-        await toggle.click()
-        return (await toggle.getAttribute("aria-expanded")) === "true"
+        await toggle.click({ force: true })
+        return (await toggle.getAttribute("aria-pressed")) === "true"
       },
       {
-        message: "remote status panel should open before reading its contents",
+        message: "status panel should pin open before reading its contents",
       },
     )
     .toBe(true)
 
   await expect(panel).toBeVisible()
-  await expect(
-    panel.getByRole("heading", { name: "Remote status" }),
-  ).toBeVisible()
-  await expect
-    .poll(
-      async () => {
-        const snapshot = {
-          connectionSummary: await getFieldText("remote-status-link"),
-          description: await getFieldText("remote-status-description"),
-          networkStatus: await getFieldText("remote-status-network"),
-          peerServerReachability: await getFieldText(
-            "remote-status-peer-reachability",
-          ),
-          role: await getFieldText("remote-status-role"),
-          state: await getFieldText("remote-status-state"),
-        }
+  await expect(panel.getByRole("heading", { name: "Status" })).toBeVisible()
+  if (showSendToDeveloperButton) {
+    await expect(
+      panel.getByRole("link", { name: "Send to developer" }),
+    ).toBeVisible()
+  }
 
-        return (
-          matches(snapshot.role, role) &&
-          matches(snapshot.state, state) &&
-          matches(snapshot.connectionSummary, connectionSummary) &&
-          (networkStatus === undefined ||
-            matches(snapshot.networkStatus, networkStatus)) &&
-          (peerServerReachability === undefined ||
-            matches(snapshot.peerServerReachability, peerServerReachability)) &&
-          (description === undefined ||
-            matches(snapshot.description, description))
-        )
-      },
-      {
-        message: "remote status panel should converge to the expected values",
-      },
+  await expectFieldText(
+    "remote-status-role",
+    role,
+    "status panel should show the expected role",
+  )
+  await expectFieldText(
+    "remote-status-state",
+    state,
+    "status panel should show the expected state",
+  )
+  await expectFieldText(
+    "remote-status-link",
+    connectionSummary,
+    "status panel should show the expected remote mode summary",
+  )
+
+  if (networkStatus !== undefined) {
+    await expectFieldText(
+      "remote-status-network",
+      networkStatus,
+      "status panel should show the expected network status",
     )
-    .toBe(true)
+  }
+
+  if (peerServerReachability !== undefined) {
+    await expectFieldText(
+      "remote-status-peer-reachability",
+      peerServerReachability,
+      "status panel should show the expected peer server reachability",
+    )
+  }
+
+  if (description !== undefined) {
+    await expectFieldText(
+      "remote-status-description",
+      description,
+      "status panel should show the expected description",
+    )
+  }
+
+  if (errorText !== undefined) {
+    await expect
+      .poll(
+        async () =>
+          matches(await getOptionalText("remote-status-error"), errorText),
+        {
+          message: "status panel should show the expected error text",
+        },
+      )
+      .toBe(true)
+  }
+
+  if (activityLogIncludes !== undefined) {
+    await expect
+      .poll(
+        async () =>
+          matches(
+            await getOptionalText("remote-status-activity-log"),
+            activityLogIncludes,
+          ),
+        {
+          message: "status panel should show the expected activity log details",
+        },
+      )
+      .toBe(true)
+  }
 }
 
 export async function expectReadonlyPlaceholder(page: Page) {

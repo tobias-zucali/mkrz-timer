@@ -75,12 +75,13 @@ Readonly and control clients can be mixed in the same session. Remote client lin
 - The original main can later rejoin as a client.
 - Readonly clients stay readonly after failover and continue receiving updates.
 
-The UI shows a small remote status label while a page is connected to a remote session:
+The UI keeps a small status label visible in the lower-left corner:
 
-- The label reflects whether the page is connected, reconnecting, degraded, or needs a retry.
+- When remote mode is active, it reflects whether the page is connected, reconnecting, degraded, or needs a retry.
 - Manual retry is only shown after automatic recovery times out.
+- When no extra diagnostics are needed, the popup stays minimal and simply shows local/network status.
 
-If remote startup or connectivity fails, the app shows a dismissible error banner and includes a prefilled error-report mail link with peer status and query-param context.
+If remote startup or connectivity fails, the same popup expands with the latest caught error, a recent peer activity log, and a prefilled "Send to developer" mail link with peer status and query-param context.
 
 ## PeerJS Server
 

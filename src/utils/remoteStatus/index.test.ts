@@ -18,6 +18,29 @@ test("returns null outside remote mode", () => {
   )
 })
 
+test("describes pending host startup before the remote id exists", () => {
+  const status = getRemoteStatus({
+    canRetryManually: false,
+    connectionDetails: [],
+    connectionsCount: 0,
+    control: "42",
+    hasConnectedOnce: false,
+    hasReceivedInitialSync: false,
+    lifecycleState: "connecting",
+    showPendingHostStatus: true,
+  })
+
+  assert.deepEqual(status, {
+    canRetryManually: false,
+    connectionSummary: "Starting host session",
+    description: "Starting the remote session.",
+    role: "main",
+    roleLabel: "Main host",
+    state: "connecting",
+    stateLabel: "Connecting",
+  })
+})
+
 test("describes the connected main host state", () => {
   const status = getRemoteStatus({
     canRetryManually: false,
