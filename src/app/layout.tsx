@@ -1,7 +1,8 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import { defaultAppLocale } from "@/i18n/config"
 
 const geistSans = Geist({
@@ -19,6 +20,10 @@ export const metadata: Metadata = {
   description: "simple time keeping",
 }
 
+export const viewport: Viewport = {
+  themeColor: "#dddddd",
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,10 +39,6 @@ export default function RootLayout({
         {/* Apple Touch Icon */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-        {/* Android Chrome Icons */}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#dddddd" />
-
         {/* Microsoft Tiles */}
         <meta name="msapplication-TileColor" content="#00aba9" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
@@ -48,6 +49,7 @@ export default function RootLayout({
       <ParamStyledBody
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
+        <ServiceWorkerRegistration />
         {children}
         <a
           className="absolute bottom-4 right-4 underline hover:text-primary"

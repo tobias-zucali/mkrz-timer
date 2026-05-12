@@ -22,6 +22,7 @@
     "test:e2e": "pnpm test:e2e:clean && playwright test --grep @smoke",
     "test:e2e:ci": "pnpm test:e2e:clean && playwright test --grep-invert @visual",
     "test:e2e:full": "pnpm test:e2e:clean && playwright test",
+    "test:e2e:pwa": "pnpm test:e2e:clean && pnpm exec next build && playwright test tests/e2e/pwa.spec.ts --config=playwright.pwa.config.ts",
     "test:e2e:ui": "pnpm test:e2e:clean && playwright test --ui",
     "test:e2e:debug": "pnpm test:e2e:clean && playwright test --debug --workers=1",
     "test:e2e:visual": "pnpm test:e2e:clean && playwright test --grep @visual --headed --workers=1",

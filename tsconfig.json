@@ -29,14 +29,19 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
     ".next-e2e/types/**/*.ts",
-    ".next-e2e/dev/types/**/*.ts",
     ".next-agent/types/**/*.ts",
-    ".next-agent/dev/types/**/*.ts",
     ".next-agent-e2e/types/**/*.ts",
-    ".next-agent-e2e/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next-e2e/dev/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "src/setupTests.ts"]
+  "exclude": [
+    "node_modules",
+    "src/setupTests.ts",
+    ".next/dev/types/validator.ts",
+    ".next-e2e/dev/types/validator.ts",
+    ".next-agent/dev/types/validator.ts",
+    ".next-agent-e2e/dev/types/validator.ts"
+  ]
 }

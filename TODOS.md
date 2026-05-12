@@ -4,6 +4,17 @@
 
 - Make sound on timer end configurable (public/sounds/\*.mp3 + off)
 
+## PWA
+
+- Persist local timer configuration and timer state so refresh/relaunch can restore the timer.
+- Decide and document how restored timer state should behave after long suspension or backgrounding.
+- Verify installed-app behavior on iOS Safari, Android Chrome, and desktop Chromium.
+- Add remaining app-style metadata polish: screenshots, shortcuts, and any other install-surface metadata that is actually useful.
+- Add an install UX strategy: rely on browser prompt only or add a cross-platform help surface for "Add to Home Screen".
+- Add service worker update handling so users can refresh into new versions predictably.
+- Review static-export/GitHub Pages limits for PWA headers and cache behavior; decide whether future PWA work requires different hosting.
+- If notifications are wanted later: plan Web Push separately, including permission UX, VAPID keys, subscription storage, and a non-static hosting path if needed.
+
 ## UI/UX
 
 - improve alert & debug boxes <https://tailwindcss.com/plus/ui-blocks/application-ui/feedback/alerts> <https://tailwindcss.com/plus/ui-blocks/application-ui/overlays/notifications>
@@ -13,9 +24,13 @@
 
 ## CODE QUALITY
 
-- improve structure. I prefer to have a own directory for each component, util, hook etc containing styles, tests etc next to implementation. What are good patterns for this approach?
-  - document in README.md/AGENTS.md
-- Prepare for internationalization https://nextjs.org/docs/app/guides/internationalization & move all strings to dictionaries/en.json
+- Refactor file layout toward colocated component/hook/util directories with tests/styles next to implementation.
+- Document the chosen colocated file-structure conventions in README.md/AGENTS.md.
+- Extract UI strings into dictionaries/en.json and complete the remaining internationalization work on top of the existing locale scaffolding.
+
+## TESTS
+
+- Fix the failing remote-mode e2e case in `tests/e2e/remote-client.spec.ts` where the "Send to developer" link is not visible when the PeerJS server is unavailable.
 
 ## Connections
 

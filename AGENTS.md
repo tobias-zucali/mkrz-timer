@@ -35,6 +35,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - `pnpm test:ci` runs lint, unit tests, and the CI-safe Playwright suite with `@visual` tests excluded.
 - `pnpm test:full` runs lint, unit tests, and the full Playwright suite.
 - `pnpm build` runs `pnpm test:full` first, then runs `next build`.
+- `pnpm test:e2e:pwa` builds the static export and runs the production-like PWA smoke test against a local static server on `http://127.0.0.1:3200`.
 - GitHub Pages deploys the static export from `out/`.
 - The repo isolates Next build artifacts by lane: `.next` for `pnpm dev`, `.next-e2e` for default Playwright, `.next-agent` for `pnpm dev:agent:manual`, and `.next-agent-e2e` for the agent test lane.
 - Test scripts clean old `test-results` and `playwright-report` output before each run. Agent Playwright scripts clean `test-results-agent` and `playwright-report-agent`.
@@ -70,6 +71,7 @@ This file is for agent-facing repo conventions. For normal setup and day-to-day 
 - Timer input tests should address the `Minutes` and `Seconds` fields by label.
 - Tag everyday coverage with `@smoke`. Untagged Playwright tests stay in the deeper regression lane and run via `pnpm test:full` or `pnpm test:e2e:full`.
 - Tag screenshot-only regression coverage with `@visual`. CI excludes `@visual` tests via `pnpm test:ci` and `pnpm test:e2e:ci`.
+- PWA install/offline coverage lives in `tests/e2e/pwa.spec.ts` and uses `playwright.pwa.config.ts` so service workers run against the exported app instead of the dev server.
 - Remote-mode browser tests are split by concern:
   - `remote-client.spec.ts`
   - `remote-sync.spec.ts`
