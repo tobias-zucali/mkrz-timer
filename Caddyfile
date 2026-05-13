@@ -3,5 +3,11 @@
 }
 
 {$TIME_RELAY_DOMAIN} {
+  header {
+    Access-Control-Allow-Origin https://{$TIME_DOMAIN}
+    Access-Control-Allow-Methods GET,OPTIONS
+    Access-Control-Allow-Headers *
+  }
+
   reverse_proxy timer-relay:9100
 }

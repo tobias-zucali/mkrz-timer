@@ -393,7 +393,7 @@ export default function StatusPopover({
 
         <div
           className={classNames(
-            "absolute bottom-full left-0 mb-2 w-[min(22rem,calc(100vw-2rem))] origin-bottom-left rounded-2xl border border-foreground/12 bg-background/95 p-4 shadow-2xl shadow-background/35 ring-1 ring-foreground/6 backdrop-blur transition",
+            "absolute bottom-full left-0 mb-2 w-[min(22rem,calc(100vw-2rem))] origin-bottom-left rounded-2xl border border-foreground/12 bg-background/95 p-4 shadow-2xl shadow-background/35 ring-1 ring-foreground/6 backdrop-blur transition max-h-4/6",
             isPanelOpen
               ? "pointer-events-auto translate-y-0 opacity-100"
               : "pointer-events-none translate-y-1 opacity-0",
