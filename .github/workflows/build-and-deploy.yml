@@ -77,14 +77,13 @@ jobs:
             cd /srv/mkrz-timer
             tar -xzf deploy.tar.gz
             rm deploy.tar.gz
+            cat > .env <<EOF
+            NEXT_PUBLIC_REMOTE_WS_URL=${{ secrets.NEXT_PUBLIC_REMOTE_WS_URL || 'wss://ws.time.mkrz.at/ws' }}
+            RELAY_SESSION_TTL_MS=${{ secrets.RELAY_SESSION_TTL_MS || '300000' }}
+            RELAY_PORT=${{ secrets.RELAY_PORT || '9100' }}
+            TIME_DOMAIN=${{ secrets.TIME_DOMAIN || 'time.mkrz.at' }}
+            TIME_RELAY_DOMAIN=${{ secrets.TIME_RELAY_DOMAIN || 'ws.time.mkrz.at' }}
+            EOF
             docker compose build
             docker compose up -d
             docker compose ps
-
-      - name: Export environment variables
-        run: |
-          echo "NEXT_PUBLIC_REMOTE_WS_URL=${{ secrets.NEXT_PUBLIC_REMOTE_WS_URL || 'wss://ws.time.mkrz.at/ws' }}" >> $GITHUB_ENV
-          echo "RELAY_SESSION_TTL_MS=${{ secrets.RELAY_SESSION_TTL_MS || '300000' }}" >> $GITHUB_ENV
-          echo "RELAY_PORT=${{ secrets.RELAY_PORT || '9100' }}" >> $GITHUB_ENV
-          echo "TIME_DOMAIN=${{ secrets.TIME_DOMAIN || 'time.mkrz.at' }}" >> $GITHUB_ENV
-          echo "TIME_RELAY_DOMAIN=${{ secrets.TIME_RELAY_DOMAIN || 'ws.time.mkrz.at' }}" >> $GITHUB_ENV
