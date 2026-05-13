@@ -44,78 +44,43 @@ docker version
 docker compose version
 ```
 
-## 4. Copy The Stack
+## 4. Configure GitHub Secrets
 
-Copy the repo or just the deployment assets onto the server, for example into `/srv/time-timer`.
+Add the following secrets to your GitHub repository:
 
-Required files:
+- `HETZNER_HOST`: The IP or hostname of your Hetzner server (e.g., `192.168.1.1`).
+- `HETZNER_USER`: The SSH username for the server (default: `root`).
+- `HETZNER_SSH_KEY`: The private SSH key for accessing the server.
+- `NEXT_PUBLIC_REMOTE_WS_URL`: The WebSocket URL for the relay (default: `wss://ws.time.mkrz.at/ws`).
+- `RELAY_SESSION_TTL_MS`: The session TTL for the relay (default: `300000`).
+- `RELAY_PORT`: The port for the relay (default: `9100`).
+- `TIME_DOMAIN`: The domain for the app (e.g., `time.mkrz.at`).
+- `TIME_RELAY_DOMAIN`: The domain for the relay (e.g., `ws.time.mkrz.at`).
 
-- `docker-compose.yml`
-- `Caddyfile`
-- `Dockerfile.web`
-- `Dockerfile.relay`
-- built repo contents for `docker compose build`
+## 5. Automated Deployment with GitHub Workflows
 
-## 5. Configure Environment
+The deployment process is automated using the GitHub Actions workflow defined in `.github/workflows/build-and-deploy.yml`.
 
-Create `.env` next to `docker-compose.yml`:
+### Steps:
 
-```bash
-TIME_DOMAIN=time.mkrz.at
-TIME_RELAY_DOMAIN=ws.time.mkrz.at
-RELAY_PORT=9100
-RELAY_SESSION_TTL_MS=300000
-NEXT_PUBLIC_REMOTE_WS_URL=wss://ws.time.mkrz.at/ws
-```
+1. **Trigger Deployment**:
+   - Push changes to the `main` branch or manually trigger the workflow via the GitHub Actions UI.
 
-If you use the same hostname for app and relay, set `NEXT_PUBLIC_REMOTE_WS_URL=wss://time.mkrz.at/ws`.
+2. **Workflow Actions**:
+   - Checkout the repository.
+   - Install dependencies using `pnpm`.
+   - Run tests and build the application.
+   - Create a deployment bundle excluding unnecessary files.
+   - Upload the bundle to the Hetzner server.
+   - Extract the bundle and restart the Docker stack.
 
-## 6. GitHub Automation Vs Manual Setup
+3. **Verify Deployment**:
+   - Check the application at `https://time.mkrz.at`.
+   - Verify the relay health at `https://ws.time.mkrz.at/health`.
 
-Automated by GitHub workflows:
+## 6. Logs And Health Checks
 
-- install dependencies
-- run `pnpm test:ci`
-- run `pnpm exec next build`
-- run `docker compose build`
-- upload the repo to `/srv/time-timer`
-- run `docker compose build` and `docker compose up -d` on the server
-
-Still manual:
-
-- create the Hetzner VM
-- install Docker and Docker Compose on the VM
-- point DNS at the VM
-- place the `.env` file on the server
-- keep the Caddy/Docker ports open in the firewall
-- add the required GitHub repository secrets:
-  - `HETZNER_HOST`
-  - `HETZNER_USER`
-  - `HETZNER_SSH_KEY`
-
-If you want GitHub-side environment values later, add them as repository or environment variables and reference them from the workflows explicitly. Right now the deploy workflow depends on repository secrets plus the server-side `.env` file.
-
-## 7. First Deploy
-
-```bash
-docker compose build
-docker compose up -d
-docker compose ps
-curl -I https://time.mkrz.at
-curl https://ws.time.mkrz.at/health
-```
-
-## 8. Updates
-
-```bash
-git pull
-docker compose build
-docker compose up -d
-```
-
-## 9. Logs And Health Checks
-
-Useful commands:
+Useful commands on the server:
 
 ```bash
 docker compose ps
@@ -125,17 +90,16 @@ docker compose logs -f timer-relay
 curl https://ws.time.mkrz.at/health
 ```
 
-## 10. Rollback
+## 7. Rollback
 
-Basic rollback:
+To rollback to a previous version:
 
-1. Check out the previous working revision.
-2. Rebuild the stack.
-3. Restart with `docker compose up -d`.
+1. Revert the repository to the previous working revision.
+2. Trigger the GitHub Actions workflow to redeploy.
 
-For safer rollbacks later, introduce image tags and a registry-backed deploy flow.
+For safer rollbacks, consider introducing image tags and a registry-backed deploy flow.
 
-## 11. Hosting Other Apps On The Same VM
+## 8. Hosting Other Apps On The Same VM
 
 This CAX11 can host other lightweight web apps if each app has:
 
