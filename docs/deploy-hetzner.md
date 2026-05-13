@@ -17,7 +17,7 @@ Create a Hetzner `CAX11` instance with Ubuntu or Debian. Attach your SSH key dur
 
 Recommended basics:
 
-- hostname: `time-prod`
+- hostname: `timer-prod`
 - firewall: allow `22`, `80`, `443`
 - swap: optional but reasonable on a small ARM box
 
@@ -25,8 +25,8 @@ Recommended basics:
 
 Create DNS records:
 
-- `A` or `AAAA`/`CNAME` for `time.mkrz.at`
-- `A` or `AAAA`/`CNAME` for `ws.time.mkrz.at` if you keep the relay on a dedicated subdomain
+- `A` or `AAAA`/`CNAME` for `timer.mkrz.at`
+- `A` or `AAAA`/`CNAME` for `ws.timer.mkrz.at` if you keep the relay on a dedicated subdomain
 
 If you use a single-domain setup, route `/ws` through Caddy instead.
 
@@ -51,11 +51,11 @@ Add the following secrets to your GitHub repository:
 - `HETZNER_HOST`: The IP or hostname of your Hetzner server (e.g., `192.168.1.1`).
 - `HETZNER_USER`: The SSH username for the server (default: `root`).
 - `HETZNER_SSH_KEY`: The private SSH key for accessing the server.
-- `NEXT_PUBLIC_REMOTE_WS_URL`: The WebSocket URL for the relay (default: `wss://ws.time.mkrz.at/ws`).
+- `NEXT_PUBLIC_REMOTE_WS_URL`: The WebSocket URL for the relay (default: `wss://ws.timer.mkrz.at/ws`).
 - `RELAY_SESSION_TTL_MS`: The session TTL for the relay (default: `300000`).
 - `RELAY_PORT`: The port for the relay (default: `9100`).
-- `TIME_DOMAIN`: The domain for the app (e.g., `time.mkrz.at`).
-- `TIME_RELAY_DOMAIN`: The domain for the relay (e.g., `ws.time.mkrz.at`).
+- `TIME_DOMAIN`: The domain for the app (e.g., `timer.mkrz.at`).
+- `TIME_RELAY_DOMAIN`: The domain for the relay (e.g., `ws.timer.mkrz.at`).
 
 ## 5. Automated Deployment with GitHub Workflows
 
@@ -75,8 +75,8 @@ The deployment process is automated using the GitHub Actions workflow defined in
    - Extract the bundle and restart the Docker stack.
 
 3. **Verify Deployment**:
-   - Check the application at `https://time.mkrz.at`.
-   - Verify the relay health at `https://ws.time.mkrz.at/health`.
+   - Check the application at `https://timer.mkrz.at`.
+   - Verify the relay health at `https://ws.timer.mkrz.at/health`.
 
 ## 6. Logs And Health Checks
 
@@ -87,7 +87,7 @@ docker compose ps
 docker compose logs -f caddy
 docker compose logs -f timer-web
 docker compose logs -f timer-relay
-curl https://ws.time.mkrz.at/health
+curl https://ws.timer.mkrz.at/health
 ```
 
 ## 7. Rollback

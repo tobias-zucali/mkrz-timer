@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        NEXT_PUBLIC_REMOTE_WS_URL: ${NEXT_PUBLIC_REMOTE_WS_URL:-wss://ws.time.mkrz.at/ws}
+        NEXT_PUBLIC_REMOTE_WS_URL: ${NEXT_PUBLIC_REMOTE_WS_URL:-wss://ws.timer.mkrz.at/ws}
     env_file:
       - .env
 

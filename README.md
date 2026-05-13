@@ -4,7 +4,7 @@
 
 ## About
 
-- Production target: `time.mkrz.at`
+- Production target: `timer.mkrz.at`
 - Frontend: static Next.js export
 - Remote mode: server-relayed WebSocket sessions
 - Hosting target: Hetzner CAX11 with Docker Compose and Caddy

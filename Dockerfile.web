@@ -1,6 +1,6 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-ARG NEXT_PUBLIC_REMOTE_WS_URL=wss://ws.time.mkrz.at/ws
+ARG NEXT_PUBLIC_REMOTE_WS_URL=wss://ws.timer.mkrz.at/ws
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY src ./src
 COPY public ./public
