@@ -4,6 +4,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    env_file:
+      - .env
+    environment:
+      TIME_DOMAIN: ${TIME_DOMAIN}
+      TIME_RELAY_DOMAIN: ${TIME_RELAY_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -18,11 +23,15 @@ services:
       dockerfile: Dockerfile.web
       args:
         NEXT_PUBLIC_REMOTE_WS_URL: ${NEXT_PUBLIC_REMOTE_WS_URL:-wss://ws.time.mkrz.at/ws}
+    env_file:
+      - .env
 
   timer-relay:
     build:
       context: .
       dockerfile: Dockerfile.relay
+    env_file:
+      - .env
     environment:
       RELAY_HOST: 0.0.0.0
       RELAY_PORT: 9100
