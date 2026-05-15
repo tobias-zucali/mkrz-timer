@@ -7,7 +7,7 @@ description: Accessibility goals and usability considerations for mkrz timer.
 
 mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
 
-The project is intended to support workshops, facilitation, collaborative processes, educational contexts, and shared group experiences through a simple and accessible timer interface.
+The project is intended to support collaborative, educational, and facilitation contexts through a simple and accessible timer interface.
 
 Accessibility is considered an important part of the project.
 
@@ -15,27 +15,24 @@ Accessibility is considered an important part of the project.
 
 The project aims to support:
 
-- keyboard navigation
+- keyboard-friendly interaction
 - readable and distraction-free layouts
-- mobile-friendly usage
-- responsive layouts across different screen sizes
+- responsive and mobile-friendly usage
 - clear interaction patterns
-- accessible usage in collaborative and facilitation contexts
-- reduced visual complexity during workshops and presentations
+- accessible usage across collaborative and presentation contexts
 
 The intention is to create an experience that works well across different environments, devices, and participation settings.
 
 ## Collaborative and physical spaces
 
-mkrz timer is often used in workshops, collaborative sessions, educational settings, and facilitation contexts where digital and physical interaction overlap.
+mkrz timer is often used in collaborative and facilitation contexts where digital and physical interaction overlap.
 
 This influences many design decisions, including:
 
-- readability from distance
+- readability in shared spaces
 - low-distraction presentation modes
-- compatibility with shared displays and projectors
-- support for hybrid participation across devices and locations
-- simple interaction flows during live sessions
+- compatibility across different devices and display situations
+- support for hybrid and collaborative participation
 
 ## Current status
 
@@ -45,14 +42,38 @@ While we aim to improve usability and accessibility continuously, the project ma
 
 We especially welcome accessibility-related feedback from people using assistive technologies or participating in collaborative workshop settings.
 
+## Current limitations
+
+While accessibility is considered throughout the project, some areas may still present challenges.
+
+Possible limitations can include:
+
+- incomplete accessibility optimization in some interface areas
+- differences in behavior across browsers, devices, or network conditions
+- reduced accessibility in experimental or newly introduced features
+
+Because the project is actively evolving, some accessibility issues may not yet be identified.
+
+## Planned improvements
+
+We aim to continue improving:
+
+- keyboard and screen reader accessibility
+- responsive and mobile-friendly layouts
+- readability and usability in collaborative and presentation contexts
+- accessibility testing across devices and browsers
+- accessibility considerations for collaborative and hybrid participation
+
+Feedback from users, facilitators, and participants directly helps prioritize future improvements.
+
 ## Technical considerations
 
 Depending on the features used, the application may rely on:
 
 - browser capabilities
 - local browser storage
-- synchronized shared session services
-- network connectivity for remote synchronization
+- shared session services for remote synchronization
+- network connectivity
 
 Some features may behave differently depending on browser support, device capabilities, or network conditions.
 
@@ -68,8 +89,8 @@ You can also learn more about the background of the project and the work of mkrz
 
 For accessibility feedback, workshop collaboration, usability suggestions, or technical questions:
 
-mkrz lab OG – Tobias Zucali
-Peter-Behrens-Platz 3
-4020 Linz
-Austria
+mkrz lab OG – Tobias Zucali  
+Peter-Behrens-Platz 3  
+4020 Linz  
+Austria  
 <timer@mkrz.at>
