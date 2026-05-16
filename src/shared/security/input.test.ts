@@ -5,6 +5,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   MAX_CLIENT_MESSAGE_BYTES,
   MAX_TITLE_LENGTH,
+  normalizeRemoteAccessToken,
   normalizeQueryParams,
   normalizeRelayClientMessage,
   normalizeRelayServerMessage,
@@ -41,24 +42,25 @@ test("normalizeQueryParams falls back safely for malformed values", () => {
   assert.deepEqual(
     normalizeQueryParams({
       bg: "javascript:alert(1)",
-      control: "1",
       fg: "#ABCDEF",
       m: "9999",
       pc: "ff00gg",
-      rid: '<svg onload="alert(1)">',
       s: "-5",
       title: "  Hello<script>  ",
       unexpected: "ignored",
     }),
     {
       ...DEFAULT_SYNC_PARAMS,
-      control: null,
       fg: "#abcdef",
       pid: "",
-      rid: "",
       title: "  Hello<script>  ",
     },
   )
+})
+
+test("normalizeRemoteAccessToken rejects malformed values", () => {
+  assert.equal(normalizeRemoteAccessToken("<script>"), null)
+  assert.equal(normalizeRemoteAccessToken("viewer_token"), "viewer_token")
 })
 
 test("normalizeSyncParamPatch only returns supported sanitized fields", () => {
@@ -167,8 +169,7 @@ test("normalizeRelayClientMessage rejects malformed, oversized, and unexpected p
     normalizeRelayClientMessage(
       JSON.stringify({
         clientId: "client-1",
-        sessionId: "session-1",
-        title: "bad",
+        token: "token-1",
         type: "sync",
       }),
     ),
@@ -218,10 +219,33 @@ test("normalizeRelayClientMessage sanitizes valid sync payloads", () => {
   )
 })
 
+test("normalizeRelayClientMessage accepts token-based join messages", () => {
+  assert.deepEqual(
+    normalizeRelayClientMessage(
+      JSON.stringify({
+        clientId: "client-1",
+        role: "readonly",
+        token: "viewer-1",
+        type: "join-session",
+      }),
+    ),
+    {
+      clientId: "client-1",
+      role: "readonly",
+      token: "viewer-1",
+      type: "join-session",
+    },
+  )
+})
+
 test("normalizeRelayServerMessage rejects malformed session payloads", () => {
   assert.equal(
     normalizeRelayServerMessage(
       JSON.stringify({
+        accessTokens: {
+          control: "control-token",
+          readonly: "readonly-token",
+        },
         participants: [{ canControl: true, clientId: "client-1", extra: true }],
         sessionId: "session-1",
         snapshot: {},
@@ -229,5 +253,50 @@ test("normalizeRelayServerMessage rejects malformed session payloads", () => {
       }),
     ),
     null,
+  )
+})
+
+test("normalizeRelayServerMessage accepts control access tokens on session payloads", () => {
+  assert.deepEqual(
+    normalizeRelayServerMessage(
+      JSON.stringify({
+        accessTokens: {
+          control: "control-token",
+          readonly: "readonly-token",
+        },
+        participants: [{ canControl: true, clientId: "client-1" }],
+        sessionId: "session-1",
+        snapshot: {
+          params: DEFAULT_SYNC_PARAMS,
+          state: {
+            elapsedTime: 0,
+            isPaused: true,
+            isStarted: false,
+            revision: 0,
+            totalDuration: 60,
+          },
+        },
+        type: "session",
+      }),
+    ),
+    {
+      accessTokens: {
+        control: "control-token",
+        readonly: "readonly-token",
+      },
+      participants: [{ canControl: true, clientId: "client-1" }],
+      sessionId: "session-1",
+      snapshot: {
+        params: DEFAULT_SYNC_PARAMS,
+        state: {
+          elapsedTime: 0,
+          isPaused: true,
+          isStarted: false,
+          revision: 0,
+          totalDuration: 60,
+        },
+      },
+      type: "session",
+    },
   )
 })

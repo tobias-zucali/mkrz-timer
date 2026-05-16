@@ -8,7 +8,7 @@ type BuildErrorReportBodyParams = {
   connectionDetails: ConnectionDetail[]
   errorText: string | null
   floatingTimerErrorText?: string | null
-  remoteIdParam?: string
+  remotePath?: string
   sessionId?: string
   participantRole: "control" | "readonly"
   participantStatus: "connected" | "disconnected"
@@ -34,7 +34,7 @@ export default function buildErrorReportBody({
   connectionDetails,
   errorText,
   floatingTimerErrorText,
-  remoteIdParam,
+  remotePath,
   sessionId,
   participantRole,
   participantStatus,
@@ -87,7 +87,7 @@ export default function buildErrorReportBody({
     "Debug info:",
     `- Timestamp: ${now}`,
     `- URL: ${location}`,
-    `- Remote id param: ${remoteIdParam ?? "none"}`,
+    `- Remote path: ${remotePath ?? "none"}`,
     `- Session id: ${sessionId ?? "none"}`,
     `- Participant role: ${participantRole}`,
     `- Participant status: ${participantStatus}`,

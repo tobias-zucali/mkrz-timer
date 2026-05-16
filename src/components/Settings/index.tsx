@@ -17,6 +17,7 @@ const sectionClassName = `${panelClassName} p-6 sm:p-7`
 const actionButtonClassName =
   "inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 const primaryActionButtonClassName = `${actionButtonClassName} bg-primary text-background hover:bg-primary/85`
+const REOPEN_SETTINGS_QUERY_PARAM = "settings"
 
 function DrawerSection({
   title,
@@ -140,6 +141,8 @@ export default function Settings({
   paramData,
   closeSettings,
   handleChange,
+  setShouldPromoteToControlUrl,
+  remoteRole,
 }: {
   floatingTimerData: FloatingTimerData
   isOpen: boolean
@@ -147,29 +150,31 @@ export default function Settings({
   paramData: ReturnType<typeof useParams>
   closeSettings: () => void
   handleChange: (key: string, value: string) => void
+  setShouldPromoteToControlUrl: (nextValue: boolean) => void
+  remoteRole: "control" | "readonly" | null
 }) {
   const settingsId = useId()
-  const { params, setParams, getUrlWithParams } = paramData
-  const { rid: remoteId } = params
+  const { params, getUrlWithParams } = paramData
 
-  const { connectRemote, disconnect, isConnecting, sessionId } = peerData
+  const { accessTokens, connectRemote, disconnect, isConnecting, sessionId } =
+    peerData
   const timerUrl = getUrlWithParams()
-  const readonlyClientUrl = getUrlWithParams({
-    inherit: false,
-    params: {
-      rid: sessionId,
-    },
-  })
-  const controlClientUrl = getUrlWithParams({
-    inherit: false,
-    params: {
-      rid: sessionId,
-      control: "42",
-    },
-  })
+  const readonlyClientUrl =
+    accessTokens && typeof window !== "undefined"
+      ? new URL(
+          `/view/${accessTokens.readonly}`,
+          window.location.origin,
+        ).toString()
+      : ""
+  const controlClientUrl =
+    accessTokens && typeof window !== "undefined"
+      ? new URL(
+          `/control/${accessTokens.control}`,
+          window.location.origin,
+        ).toString()
+      : ""
   const isRemoteReady = Boolean(sessionId)
-  const remoteErrorText =
-    !remoteId && peerData.error ? peerData.error.message : null
+  const remoteErrorText = peerData.error ? peerData.error.message : null
 
   return (
     <div
@@ -302,7 +307,7 @@ export default function Settings({
                   <div className="space-y-5">
                     <ToggleRow
                       checked={Boolean(
-                        remoteId ||
+                        remoteRole ||
                         sessionId ||
                         isConnecting ||
                         remoteErrorText,
@@ -311,20 +316,34 @@ export default function Settings({
                       disabled={isConnecting || Boolean(remoteErrorText)}
                       label="Remote mode"
                       onChange={async () => {
-                        if (remoteId) {
+                        if (remoteRole === "control") {
+                          const localTimerPath = getUrlWithParams({
+                            params: {
+                              [REOPEN_SETTINGS_QUERY_PARAM]: "1",
+                            },
+                            pathname: "/",
+                          })
+
+                          setShouldPromoteToControlUrl(false)
                           await disconnect()
-                          setParams({ control: null, rid: "" })
+                          if (typeof window !== "undefined") {
+                            window.location.replace(localTimerPath)
+                          }
                           return
                         }
 
-                        const id = await connectRemote()
-                        if (!remoteId && id) {
-                          setParams({ control: "42", rid: id })
+                        if (remoteRole || sessionId) {
+                          setShouldPromoteToControlUrl(false)
+                          await disconnect()
+                          return
                         }
+
+                        setShouldPromoteToControlUrl(true)
+                        await connectRemote()
                       }}
                     />
 
-                    {!remoteId && (
+                    {!remoteRole && (
                       <div className="border-t border-foreground/10 pt-5">
                         <div className="space-y-4">
                           <UrlCopyField
@@ -336,7 +355,7 @@ export default function Settings({
                       </div>
                     )}
 
-                    {(remoteId || sessionId) && isRemoteReady ? (
+                    {isRemoteReady && accessTokens ? (
                       <div className="border-t border-foreground/10 pt-5">
                         <div className="space-y-5">
                           <div className="space-y-3">
@@ -344,7 +363,7 @@ export default function Settings({
                               label="Viewer Link"
                               showOpenButton={true}
                               value={readonlyClientUrl}
-                              description="Share this with viewers to watch the timer."
+                              description="Share this to watch the timer without any controls."
                             />
                           </div>
                           <div className="space-y-3">
@@ -352,7 +371,7 @@ export default function Settings({
                               label="Control Link"
                               showOpenButton={true}
                               value={controlClientUrl}
-                              description="Share this with someone who should control the timer and settings."
+                              description="Share this to give full timer and settings control."
                             />
                           </div>
                         </div>

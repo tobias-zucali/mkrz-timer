@@ -1,9 +1,10 @@
-import type { TimerState } from "@/utils/useTimer"
+import type { TimerState } from "../useTimer"
 import type {
+  RemoteAccessRole,
   RelayClientMessage,
   SessionSnapshot,
   SyncParams,
-} from "@/shared/remoteSession/types"
+} from "../../shared/remoteSession/types.ts"
 import {
   normalizeRelayServerMessage,
   normalizeSessionSnapshot,
@@ -38,38 +39,50 @@ const createSnapshot = ({
 })
 
 export const buildJoinMessage = ({
-  canControlSession,
-  nextRemoteId,
-  retryType,
   clientId,
+  remoteRole,
+  remoteToken,
+  retryType,
   syncParams,
   syncState,
 }: {
-  canControlSession: boolean
-  nextRemoteId?: string | null
-  retryType: "create-or-join" | "retry-join"
   clientId: string
+  remoteRole?: RemoteAccessRole | null
+  remoteToken?: string | null
+  retryType: "create-session" | "join-session" | "retry-join-session"
   syncParams: SyncParams
   syncState: TimerState
 }): RelayClientMessage => {
-  if (retryType === "retry-join" && nextRemoteId) {
+  if (retryType === "create-session") {
     return {
-      type: "retry-join",
-      canControl: canControlSession,
       clientId,
-      sessionId: nextRemoteId,
-      snapshot: canControlSession
-        ? createSnapshot({ syncParams, syncState })
-        : undefined,
+      snapshot: createSnapshot({ syncParams, syncState }),
+      type: "create-session",
+    }
+  }
+
+  if (!remoteRole || !remoteToken) {
+    throw new Error("Remote join links require a role and token.")
+  }
+
+  if (retryType === "retry-join-session") {
+    return {
+      clientId,
+      role: remoteRole,
+      snapshot:
+        remoteRole === "control"
+          ? createSnapshot({ syncParams, syncState })
+          : undefined,
+      token: remoteToken,
+      type: "retry-join-session",
     }
   }
 
   return {
-    type: "create-or-join",
-    canControl: canControlSession || !nextRemoteId,
     clientId,
-    sessionId: nextRemoteId || undefined,
-    snapshot: createSnapshot({ syncParams, syncState }),
+    role: remoteRole,
+    token: remoteToken,
+    type: "join-session",
   }
 }
 

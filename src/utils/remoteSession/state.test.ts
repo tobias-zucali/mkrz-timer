@@ -59,6 +59,7 @@ const createContext = ({
         markConnected: (wasReconnect: boolean) => {
           markedReconnect = wasReconnect
         },
+        setAccessTokens: () => undefined,
         setParticipants: () => undefined,
         setSessionId: () => undefined,
       },

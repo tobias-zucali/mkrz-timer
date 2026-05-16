@@ -6,9 +6,9 @@ For the quick project overview, start with the [README](../README.md).
 
 Remote mode is relay-backed. There is no dedicated browser host.
 
-- `?rid=<sessionId>` joins as a readonly viewer
-- `?rid=<sessionId>&control=42` joins as a control-capable client
-- remote URLs carry session identity only
+- `/view/<readonlyToken>` joins as a readonly viewer
+- `/control/<controlToken>` joins as a control-capable client
+- remote URLs carry opaque capability tokens only
 - live timer state is stored in the relay session snapshot
 
 The relay owns:
@@ -22,13 +22,16 @@ The relay owns:
 - new clients receive the current timer snapshot immediately after joining
 - viewers stay readonly
 - control clients can publish timer and settings updates
+- controller links can restore the latest relay snapshot without extra setup
 - clients auto-retry after relay disconnects
 - the UI exposes both the connection state and the last connection error
+- malformed, invalid, or expired viewer links fail closed with a recoverable error state
 
 ## Trust Boundaries
 
 - URL/query params are untrusted input until normalized by the client.
 - Timer titles, session ids, and all relay message fields are untrusted input until validated.
+- Viewer and controller tokens are untrusted input until validated.
 - Relay snapshots are the only persisted shared state in the current implementation, and they stay in memory only.
 - Viewers must treat every shared field from the relay as untrusted, even when it originated from another control client.
 
@@ -38,6 +41,7 @@ The relay owns:
 - Colors must match strict `#RRGGBB` values or they fall back to safe defaults.
 - Timer minute and second params accept digits only and fall back safely when malformed or out of range.
 - Session ids and client ids must match the allowed identifier format and length limits.
+- Viewer and controller tokens must match the allowed identifier format and length limits.
 - Relay messages and snapshots are schema-validated before they can update the canonical session snapshot.
 - Invalid or oversized payloads fail closed: they are rejected or normalized to safe defaults without crashing the app.
 
@@ -46,7 +50,8 @@ The relay owns:
 - Do not use `dangerouslySetInnerHTML` for timer titles or synchronized fields.
 - Do not read raw `searchParams`, WebSocket payloads, or relay snapshots directly into state without passing through shared validators.
 - Do not add new synchronized fields by appending them to the protocol or snapshot shape without validation, normalization, and test coverage.
-- Do not assume control clients are trusted just because they already joined a session.
+- Do not assume controller links are trusted just because they already joined a session.
+- Do not collapse viewer and controller capabilities into one share link.
 
 ## Safe Field Changes
 
@@ -81,7 +86,7 @@ Options evaluated:
 
 Decision:
 
-- keep the current wire protocol, session URL format, deployment model, and controller/viewer permissions
+- keep the current deployment model and controller/viewer permissions
 - keep `ws` as the transport
 - introduce internal abstractions for client protocol/lifecycle handling and relay connection/protocol handling
 

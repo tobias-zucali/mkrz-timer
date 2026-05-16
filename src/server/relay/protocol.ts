@@ -1,11 +1,12 @@
 import type { WebSocket } from "ws"
 
 import type {
+  RemoteAccessRole,
   RelayServerMessage,
   SessionSnapshot,
-} from "@/shared/remoteSession/types.ts"
+} from "../../shared/remoteSession/types.ts"
 import { normalizeRelayClientMessage } from "../../shared/security/input.ts"
-import type { RelaySessionRecord } from "@/server/remoteSession/sessionStore.ts"
+import type { RelaySessionRecord } from "../remoteSession/sessionStore.ts"
 
 import type { RelayConnectionRegistry } from "./connectionRegistry.ts"
 
@@ -20,7 +21,9 @@ export const createErrorMessage = (message: string): RelayServerMessage => ({
 
 export const createSessionMessage = (
   session: RelaySessionRecord,
+  role: RemoteAccessRole,
 ): RelayServerMessage => ({
+  ...(role === "control" ? { accessTokens: session.accessTokens } : {}),
   type: "session",
   participants: session.participants,
   sessionId: session.id,
@@ -46,14 +49,16 @@ export const createParticipantListMessage = (
 
 export const respondWithSession = ({
   registry,
+  role,
   session,
   socket,
 }: {
   registry: RelayConnectionRegistry
+  role: RemoteAccessRole
   session: RelaySessionRecord
   socket: WebSocket
 }) => {
-  registry.sendToSocket(socket, createSessionMessage(session))
+  registry.sendToSocket(socket, createSessionMessage(session, role))
   registry.broadcastToParticipants(
     session.participants,
     createParticipantListMessage(session),

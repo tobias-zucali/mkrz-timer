@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   enableRemoteModeWithClientUrls,
   expectRemoteStatus,
+  expectScreenshotWithoutDebugInfo,
   expectReadonlyTimerControls,
   expectReadonlyPlaceholder,
   expectTimerDisplayRunning,
@@ -25,7 +26,7 @@ test(
   { tag: "@smoke" },
   async ({ page }) => {
     await page.goto(
-      "/?title=%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20&bg=javascript:alert(1)&fg=ABCDEF&pc=ff00gg&m=9999&s=-1&rid=%3Cscript%3E&control=1",
+      "/?title=%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20&bg=javascript:alert(1)&fg=ABCDEF&pc=ff00gg&m=9999&s=-1",
     )
 
     await expectTimerTitleValue(
@@ -73,16 +74,31 @@ test(
   },
 )
 
-test("marks the main remote page as control and clears remote params when ending", async ({
+test("keeps the main remote page local and ends remote mode cleanly", async ({
   page,
 }) => {
   await enableRemoteModeWithClientUrls(page)
 
-  await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
+  await expect(page).toHaveURL(/\/control\//)
   await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
   await page.getByRole("switch", { name: "Remote mode" }).click()
-  await expect(page).not.toHaveURL(/(?:\?|&)control=42(?:&|$)/)
-  await expect(page).not.toHaveURL(/(?:\?|&)rid=/)
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe("/")
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Object.fromEntries(new URLSearchParams(window.location.search)),
+      ),
+    )
+    .toEqual({
+      bg: "000000",
+      fg: "ffffff",
+      m: "01",
+      pc: "d61f69",
+      s: "00",
+    })
+  await openSettingsOverlay(page)
   await expect(
     page.getByRole("switch", { name: "Remote mode" }),
   ).not.toBeChecked()
@@ -121,13 +137,21 @@ test(
       state: "Connected",
     })
 
-    await expect(readonlyClient).not.toHaveURL(/control=42/)
+    await expect(readonlyClient).not.toHaveURL(/\/control\//)
     await expectReadonlyTimerControls(readonlyClient)
+    const initialReadonlySeconds = await getDisplayedSeconds(readonlyClient)
+
+    await readonlyClient.keyboard.press(" ")
+    await expect
+      .poll(() => getDisplayedSeconds(readonlyClient), {
+        message: "readonly client keyboard shortcuts must not start the timer",
+        timeout: 2_000,
+      })
+      .toBe(initialReadonlySeconds)
 
     await page.getByRole("button", { name: "START" }).click()
     await expectTimerRunning(page)
 
-    const initialReadonlySeconds = await getDisplayedSeconds(readonlyClient)
     await expect
       .poll(() => getDisplayedSeconds(readonlyClient), {
         message: "readonly client should keep receiving timer updates",
@@ -293,3 +317,133 @@ test("keeps the remote mode toggle visible after an offline remote-mode start", 
   await expect(remoteModeToggle).toBeVisible()
   await page.context().setOffline(false)
 })
+
+test("shows a recoverable error for malformed viewer links", async ({
+  page,
+}) => {
+  await page.goto("/view")
+
+  await expectRemoteStatus(page, {
+    connectionSummary: "Recovery needs a retry",
+    errorText:
+      /Remote session link is malformed\. Check the URL and try again\./,
+    role: "Readonly session",
+    state: "Reconnect failed",
+  })
+  await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
+    "Recovery needs a retry",
+  )
+  await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
+    "Reconnect failed",
+  )
+  await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
+    "Remote session link is malformed. Check the URL and try again.",
+  )
+  await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
+})
+
+test(
+  "matches the malformed viewer-link error state",
+  { tag: "@visual" },
+  async ({ page }) => {
+    await page.goto("/view")
+
+    const styleTag = await page.addStyleTag({
+      content: `
+        [data-testid="remote-status-activity-log"] { display: none !important; }
+      `,
+    })
+
+    try {
+      await expectScreenshotWithoutDebugInfo(page, {
+        fullPage: true,
+        message:
+          "malformed viewer-link error state should stay visually stable",
+        name: "remote-malformed-viewer-link-error.png",
+      })
+    } finally {
+      await styleTag.evaluate((node) => {
+        node.parentNode?.removeChild(node)
+      })
+    }
+  },
+)
+
+test("controller links can restore control and reused viewer links rejoin the session", async ({
+  page,
+}) => {
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+
+  await page.getByRole("switch", { name: "Remote mode" }).click()
+  await expect(
+    page.getByRole("switch", { name: "Remote mode" }),
+  ).not.toBeChecked()
+
+  const controlClient = await page.context().newPage()
+  await controlClient.goto(controlClientUrl)
+  await expect(
+    controlClient.getByRole("button", { name: "START" }),
+  ).toBeVisible({
+    timeout: 30_000,
+  })
+  await expect(controlClient).toHaveURL(/\/control\//)
+
+  const readonlyClient = await page.context().newPage()
+  await readonlyClient.goto(readonlyClientUrl)
+  await expectReadonlyPlaceholder(readonlyClient)
+  await waitForRemoteCluster([controlClient, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "restored control and reused viewer links should reconnect",
+  })
+  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expectRemoteStatus(controlClient, {
+    connectionSummary: "Controlling with 1 other participant",
+    networkStatus: "Online",
+    role: "Control session",
+    state: "Connected",
+  })
+  await expectRemoteStatus(readonlyClient, {
+    connectionSummary: "Viewing with 1 other participant",
+    networkStatus: "Online",
+    role: "Readonly session",
+    state: "Connected",
+  })
+  await expectReadonlyTimerControls(readonlyClient)
+})
+
+test(
+  "matches the expired viewer-link error state",
+  { tag: "@visual" },
+  async ({ page }) => {
+    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+
+    await page.getByRole("switch", { name: "Remote mode" }).click()
+    await expect(
+      page.getByRole("switch", { name: "Remote mode" }),
+    ).not.toBeChecked()
+    await page.waitForTimeout(250)
+
+    const expiredViewerPage = await page.context().newPage()
+    await expiredViewerPage.goto(readonlyClientUrl)
+
+    const styleTag = await expiredViewerPage.addStyleTag({
+      content: `
+        [data-testid="remote-status-activity-log"] { display: none !important; }
+      `,
+    })
+
+    try {
+      await expectScreenshotWithoutDebugInfo(expiredViewerPage, {
+        fullPage: true,
+        message: "expired viewer-link error state should stay visually stable",
+        name: "remote-expired-viewer-link-error.png",
+      })
+    } finally {
+      await styleTag.evaluate((node) => {
+        node.parentNode?.removeChild(node)
+      })
+    }
+  },
+)

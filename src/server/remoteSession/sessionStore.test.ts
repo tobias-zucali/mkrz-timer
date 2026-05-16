@@ -1,12 +1,11 @@
-import test from "node:test"
 import assert from "node:assert/strict"
+import test from "node:test"
 
 import { InMemorySessionStore } from "./sessionStore.ts"
 
-test("createOrJoin reuses a session and updates participant permissions", () => {
+test("create returns one session with separate readonly and control tokens", () => {
   const store = new InMemorySessionStore()
-  const created = store.createOrJoin({
-    canControl: true,
+  const created = store.create({
     clientId: "host",
     snapshot: {
       params: {
@@ -26,51 +25,89 @@ test("createOrJoin reuses a session and updates participant permissions", () => 
       },
     },
   })
-  assert.ok(created)
 
-  const joined = store.createOrJoin({
-    canControl: false,
-    clientId: "viewer",
-    sessionId: created.id,
+  assert.equal(created.role, "control")
+  assert.notEqual(
+    created.session.accessTokens.control,
+    created.session.accessTokens.readonly,
+  )
+  assert.equal(created.session.participants.length, 1)
+  assert.equal(created.session.participants[0]?.canControl, true)
+})
+
+test("join resolves permissions from the access token instead of client input", () => {
+  const store = new InMemorySessionStore()
+  const created = store.create({
+    clientId: "host",
   })
-  assert.ok(joined)
 
-  const upgraded = store.createOrJoin({
-    canControl: true,
+  const readonlyJoin = store.join({
     clientId: "viewer",
-    sessionId: created.id,
+    token: created.session.accessTokens.readonly,
   })
-  assert.ok(upgraded)
+  const controlJoin = store.join({
+    clientId: "controller",
+    token: created.session.accessTokens.control,
+  })
 
-  assert.equal(joined.id, created.id)
-  assert.equal(upgraded.participants.length, 2)
+  assert.equal(readonlyJoin?.role, "readonly")
+  assert.equal(controlJoin?.role, "control")
   assert.deepEqual(
-    upgraded.participants.find(
+    controlJoin?.session.participants.find(
       (participant) => participant.clientId === "viewer",
     ),
     {
-      canControl: true,
+      canControl: false,
       clientId: "viewer",
+    },
+  )
+  assert.deepEqual(
+    controlJoin?.session.participants.find(
+      (participant) => participant.clientId === "controller",
+    ),
+    {
+      canControl: true,
+      clientId: "controller",
     },
   )
 })
 
-test("restoreSession requires controller access and a snapshot to recreate an expired session", () => {
+test("restore only allows controller tokens to recreate expired sessions", () => {
   const store = new InMemorySessionStore()
+  const created = store.create({
+    clientId: "host",
+  })
+  const sessionId = created.session.id
+
+  store.leave(sessionId, "host")
 
   assert.equal(
-    store.restoreSession({
-      canControl: false,
+    store.restore({
       clientId: "viewer",
-      sessionId: "missing",
+      snapshot: {
+        params: {
+          bg: "#000000",
+          fg: "#ffffff",
+          m: "02",
+          pc: "#00ff00",
+          s: "15",
+          title: "Recovered",
+        },
+        state: {
+          elapsedTime: 5,
+          isPaused: false,
+          isStarted: true,
+          revision: 3,
+          totalDuration: 135,
+        },
+      },
+      token: created.session.accessTokens.readonly,
     }),
     null,
   )
 
-  const restored = store.restoreSession({
-    canControl: true,
+  const restored = store.restore({
     clientId: "host",
-    sessionId: "missing",
     snapshot: {
       params: {
         bg: "#000000",
@@ -88,32 +125,30 @@ test("restoreSession requires controller access and a snapshot to recreate an ex
         totalDuration: 135,
       },
     },
+    token: created.session.accessTokens.control,
   })
 
   assert.ok(restored)
-  assert.equal(restored.id, "missing")
-  assert.equal(restored.participants[0]?.clientId, "host")
+  assert.equal(restored.role, "control")
+  assert.equal(restored.session.id, sessionId)
 })
 
 test("updateSnapshot only allows control participants to publish state", () => {
   const store = new InMemorySessionStore()
-  const session = store.createOrJoin({
-    canControl: true,
+  const created = store.create({
     clientId: "host",
   })
-  assert.ok(session)
 
-  store.createOrJoin({
-    canControl: false,
+  store.join({
     clientId: "viewer",
-    sessionId: session.id,
+    token: created.session.accessTokens.readonly,
   })
 
   assert.equal(
     store.updateSnapshot({
       clientId: "viewer",
       params: { title: "Blocked" },
-      sessionId: session.id,
+      sessionId: created.session.id,
     }),
     null,
   )
@@ -121,7 +156,7 @@ test("updateSnapshot only allows control participants to publish state", () => {
   const updated = store.updateSnapshot({
     clientId: "host",
     params: { title: "Allowed" },
-    sessionId: session.id,
+    sessionId: created.session.id,
     state: {
       elapsedTime: 12,
       isPaused: false,
@@ -136,10 +171,9 @@ test("updateSnapshot only allows control participants to publish state", () => {
   assert.equal(updated.snapshot.state.elapsedTime, 12)
 })
 
-test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
+test("create and updateSnapshot normalize hostile values safely", () => {
   const store = new InMemorySessionStore()
-  const session = store.createOrJoin({
-    canControl: true,
+  const created = store.create({
     clientId: "host",
     snapshot: {
       params: {
@@ -160,18 +194,20 @@ test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
     },
   })
 
-  assert.ok(session)
-  assert.equal(session.snapshot.params.bg, "#000000")
-  assert.equal(session.snapshot.params.title, "  <script>alert(1)</script>  ")
-  assert.equal(session.snapshot.state.elapsedTime, 0)
-  assert.equal(session.snapshot.state.totalDuration, 60)
+  assert.equal(created.session.snapshot.params.bg, "#000000")
+  assert.equal(
+    created.session.snapshot.params.title,
+    "  <script>alert(1)</script>  ",
+  )
+  assert.equal(created.session.snapshot.state.elapsedTime, 0)
+  assert.equal(created.session.snapshot.state.totalDuration, 60)
 
   const updated = store.updateSnapshot({
     clientId: "host",
     params: {
       title: "\u0000Hello  world ",
     },
-    sessionId: session.id,
+    sessionId: created.session.id,
     state: {
       elapsedTime: 20,
       isPaused: false,
@@ -186,24 +222,28 @@ test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
   assert.equal(updated.snapshot.state.totalDuration, 67)
 })
 
-test("leave removes participants and sweepExpired drops idle sessions", () => {
+test("leave removes participants and sweepExpired drops idle sessions without deleting token recovery", () => {
   const store = new InMemorySessionStore(100)
-  const session = store.createOrJoin({
-    canControl: true,
+  const created = store.create({
     clientId: "host",
   })
-  assert.ok(session)
 
-  store.createOrJoin({
-    canControl: false,
+  store.join({
     clientId: "viewer",
-    sessionId: session.id,
+    token: created.session.accessTokens.readonly,
   })
 
-  const remaining = store.leave(session.id, "viewer")
+  const remaining = store.leave(created.session.id, "viewer")
   assert.ok(remaining)
   assert.equal(remaining.participants.length, 1)
 
   store.sweepExpired(remaining.lastSeenAt + 100)
-  assert.equal(store.touch(session.id), null)
+  assert.equal(store.touch(created.session.id), null)
+  assert.ok(
+    store.restore({
+      clientId: "host",
+      snapshot: created.session.snapshot,
+      token: created.session.accessTokens.control,
+    }),
+  )
 })

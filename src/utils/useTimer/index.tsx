@@ -23,11 +23,13 @@ export type TimerState = {
 export type TimerActions = "pause" | "reset" | "start"
 
 export default function useTimer({
+  canMutate = true,
   onAction,
   syncStateRef,
   params,
   shortcutsEnabled = true,
 }: {
+  canMutate?: boolean
   params: SyncParams
   syncStateRef: React.RefObject<TimerState>
   onAction: (action: TimerActions, state: TimerState) => void
@@ -97,6 +99,10 @@ export default function useTimer({
 
   const handleAction = useCallback(
     (action: TimerActions) => {
+      if (!canMutate) {
+        return
+      }
+
       const startTimer = () => {
         const currentState = latestStateRef.current
 
@@ -163,7 +169,7 @@ export default function useTimer({
           break
       }
     },
-    [commitNextState, createNextState, getTotalDuration, onAction],
+    [canMutate, commitNextState, createNextState, getTotalDuration, onAction],
   )
 
   useGlobalKeyUp((event: KeyboardEvent) => {

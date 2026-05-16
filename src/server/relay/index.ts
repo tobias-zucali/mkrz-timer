@@ -93,42 +93,67 @@ wss.on("connection", (socket: WebSocket) => {
     registry.register(message.clientId, socket)
 
     switch (message.type) {
-      case "create-or-join": {
-        const session = store.createOrJoin({
-          canControl: message.canControl,
+      case "create-session": {
+        const result = store.create({
           clientId: message.clientId,
-          sessionId: message.sessionId,
           snapshot: message.snapshot,
         })
-        if (!session) {
-          registry.sendToSocket(
-            socket,
-            createErrorMessage("Remote session request was invalid."),
-          )
-          return
-        }
-        registry.attachSession(message.clientId, session.id)
-        respondWithSession({ registry, session, socket })
+        registry.attachSession(message.clientId, result.session.id)
+        respondWithSession({
+          registry,
+          role: result.role,
+          session: result.session,
+          socket,
+        })
         return
       }
-      case "retry-join": {
-        const session = store.restoreSession({
-          canControl: message.canControl,
+      case "join-session": {
+        const result = store.join({
           clientId: message.clientId,
-          sessionId: message.sessionId,
-          snapshot: message.snapshot,
+          token: message.token,
         })
-        if (!session) {
+        if (!result) {
           registry.sendToSocket(
             socket,
             createErrorMessage(
-              "Remote session expired. Reopen remote mode from a control client.",
+              "Remote session link is invalid or expired. Ask for a fresh link and try again.",
             ),
           )
           return
         }
-        registry.attachSession(message.clientId, session.id)
-        respondWithSession({ registry, session, socket })
+        registry.attachSession(message.clientId, result.session.id)
+        respondWithSession({
+          registry,
+          role: result.role,
+          session: result.session,
+          socket,
+        })
+        return
+      }
+      case "retry-join-session": {
+        const result = store.restore({
+          clientId: message.clientId,
+          snapshot: message.snapshot,
+          token: message.token,
+        })
+        if (!result) {
+          registry.sendToSocket(
+            socket,
+            createErrorMessage(
+              message.role === "control"
+                ? "Remote session link expired. Reopen the controller link to start a fresh session."
+                : "Viewer links cannot recover expired sessions. Ask for a fresh link and try again.",
+            ),
+          )
+          return
+        }
+        registry.attachSession(message.clientId, result.session.id)
+        respondWithSession({
+          registry,
+          role: result.role,
+          session: result.session,
+          socket,
+        })
         return
       }
       case "sync": {

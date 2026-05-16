@@ -38,34 +38,15 @@ test("buildPathWithParams can skip inheritance for client URLs", () => {
     buildPathWithParams(
       {
         m: "01",
-        rid: "old-main",
       },
       {
         inherit: false,
         params: {
-          rid: "new-main",
+          m: "02",
         },
       },
     ),
-    "/?rid=new-main",
-  )
-})
-
-test("buildPathWithParams serializes control client URLs", () => {
-  assert.equal(
-    buildPathWithParams(
-      {
-        rid: "old-main",
-      },
-      {
-        inherit: false,
-        params: {
-          rid: "new-main",
-          control: "42",
-        },
-      },
-    ),
-    "/?rid=new-main&control=42",
+    "/?m=02",
   )
 })
 
@@ -73,13 +54,12 @@ test("buildPathWithParams drops invalid remote-session params", () => {
   assert.equal(
     buildPathWithParams(
       {
-        rid: "valid-session",
+        title: "Shared timer",
       },
       {
         inherit: false,
         params: {
-          control: "nope",
-          rid: "<script>",
+          title: "",
         },
       },
     ),
@@ -101,40 +81,71 @@ test("buildPathWithParams can use a custom pathname", () => {
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys keeps readonly client URLs free of timer params", () => {
+test("getRemoteSessionOnlyOmitKeys no longer strips params for tokenized routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
       {
         bg: "#000000",
-        control: null,
         fg: "#ffffff",
         m: "01",
         pc: "#d61f69",
-        rid: "remote-main",
         s: "00",
         title: "Shared timer",
       },
-      ["rid"],
+      [],
+      "/",
+    ),
+    [],
+  )
+})
+
+test("getRemoteSessionOnlyOmitKeys strips timer params on remote routes", () => {
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(
+      {
+        bg: "#000000",
+        fg: "#ffffff",
+        m: "01",
+        pc: "#d61f69",
+        s: "00",
+        title: "Shared timer",
+      },
+      [],
+      "/control/control-token",
+    ),
+    ["bg", "fg", "m", "pc", "pid", "s", "title"],
+  )
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(
+      {
+        bg: "#000000",
+        fg: "#ffffff",
+        m: "01",
+        pc: "#d61f69",
+        s: "00",
+        title: "Shared timer",
+      },
+      [],
+      "/view/viewer-token",
     ),
     ["bg", "fg", "m", "pc", "pid", "s", "title"],
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys keeps control session URLs free of timer params", () => {
+test("getRemoteSessionOnlyOmitKeys ignores non-remote route prefixes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
       {
         bg: "#000000",
-        control: "42",
         fg: "#ffffff",
         m: "01",
         pc: "#d61f69",
-        rid: "remote-main",
         s: "00",
         title: "Shared timer",
       },
-      ["rid", "control"],
+      [],
+      "/docs/control-model",
     ),
-    ["bg", "fg", "m", "pc", "pid", "s", "title"],
+    [],
   )
 })

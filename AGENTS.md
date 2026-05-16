@@ -7,8 +7,11 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `22.6.0` or newer.
 - After edits, run `pnpm lint`, `pnpm test` and `pnpm format:fix` before considering the task done.
+- After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 - Prefer `@/` imports over relative `../..` imports.
+- Exception: keep relative imports in files executed directly by the plain Node test/runtime path until alias resolution is configured there too.
+- Do not use nested inline conditionals; prefer an `if` chain or a small helper.
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
@@ -20,11 +23,12 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 - Remote mode is relay-backed. There is no dedicated browser host anymore.
 - The relay owns the canonical timer snapshot and participant roster.
-- Session links currently stay query-based:
-  - viewer: `?rid=<sessionId>`
-  - control: `?rid=<sessionId>&control=42`
+- Session links are role-specific opaque paths:
+  - viewer: `/view/<readonlyToken>`
+  - control: `/control/<controlToken>`
 - Remote session URLs should not include timer-state params like `m`, `s`, `title`, `bg`, `fg`, or `pc`.
 - When remote-mode behavior changes, update both docs and Playwright coverage in the same change.
+- Future sharing or session features must preserve strict separation between readonly and control capabilities.
 
 ## Local Dev / Test Lanes
 
