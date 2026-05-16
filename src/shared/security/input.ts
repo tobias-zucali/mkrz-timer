@@ -74,9 +74,8 @@ const normalizeFiniteNumber = ({
 
 const normalizeTextWhitespace = (value: string) =>
   value
-    .replace(/[\u0000-\u001f\u007f]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]+/g, "")
+    .replace(/[\r\n\t]+/g, " ")
 
 export const normalizeTitle = (value: unknown) => {
   if (typeof value !== "string") {
@@ -120,19 +119,52 @@ const normalizeNumericString = ({
   return parsedValue.toString().padStart(2, "0")
 }
 
-export const normalizeMinutes = (value: unknown) =>
+export const normalizeMinutes = (
+  value: unknown,
+  fallback: string = DEFAULT_SYNC_PARAMS.m,
+) =>
   normalizeNumericString({
-    fallback: DEFAULT_SYNC_PARAMS.m,
+    fallback,
     max: MAX_TIMER_MINUTES,
     value,
   })
 
-export const normalizeSeconds = (value: unknown) =>
+export const normalizeSeconds = (
+  value: unknown,
+  fallback: string = DEFAULT_SYNC_PARAMS.s,
+) =>
   normalizeNumericString({
-    fallback: DEFAULT_SYNC_PARAMS.s,
-    max: MAX_TIMER_SECONDS,
+    fallback,
+    max: MAX_TIMER_DURATION_SECONDS,
     value,
   })
+
+const normalizeDurationParams = ({
+  fallback,
+  minutesValue,
+  secondsValue,
+}: {
+  fallback: Pick<SyncParams, "m" | "s">
+  minutesValue: unknown
+  secondsValue: unknown
+}) => {
+  const normalizedMinutes = normalizeMinutes(minutesValue, fallback.m)
+  const normalizedSeconds = normalizeSeconds(secondsValue, fallback.s)
+
+  const minutesNumber = Number.parseInt(normalizedMinutes, 10)
+  const secondsNumber = Number.parseInt(normalizedSeconds, 10)
+  const totalSeconds = Math.min(
+    minutesNumber * 60 + secondsNumber,
+    MAX_TIMER_DURATION_SECONDS,
+  )
+
+  return {
+    m: Math.floor(totalSeconds / 60)
+      .toString()
+      .padStart(2, "0"),
+    s: (totalSeconds % 60).toString().padStart(2, "0"),
+  }
+}
 
 export const normalizeSessionId = (value: unknown) => {
   if (
@@ -164,13 +196,18 @@ export const normalizeSyncParams = (
   fallback: SyncParams = DEFAULT_SYNC_PARAMS,
 ): SyncParams => {
   const params = isObject(value) ? value : {}
+  const duration = normalizeDurationParams({
+    fallback,
+    minutesValue: params.m,
+    secondsValue: params.s,
+  })
 
   return {
     bg: normalizeColor(params.bg, fallback.bg),
     fg: normalizeColor(params.fg, fallback.fg),
-    m: normalizeMinutes(params.m),
+    m: duration.m,
     pc: normalizeColor(params.pc, fallback.pc),
-    s: normalizeSeconds(params.s),
+    s: duration.s,
     title: normalizeTitle(params.title),
   }
 }
@@ -189,13 +226,21 @@ export const normalizeSyncParamPatch = (value: unknown) => {
     normalizedPatch.fg = normalizeColor(value.fg, DEFAULT_SYNC_PARAMS.fg)
   }
   if ("m" in value) {
-    normalizedPatch.m = normalizeMinutes(value.m)
+    normalizedPatch.m = normalizeNumericString({
+      fallback: DEFAULT_SYNC_PARAMS.m,
+      max: MAX_TIMER_MINUTES,
+      value: value.m,
+    })
   }
   if ("pc" in value) {
     normalizedPatch.pc = normalizeColor(value.pc, DEFAULT_SYNC_PARAMS.pc)
   }
   if ("s" in value) {
-    normalizedPatch.s = normalizeSeconds(value.s)
+    normalizedPatch.s = normalizeNumericString({
+      fallback: DEFAULT_SYNC_PARAMS.s,
+      max: MAX_TIMER_DURATION_SECONDS,
+      value: value.s,
+    })
   }
   if ("title" in value) {
     normalizedPatch.title = normalizeTitle(value.title)

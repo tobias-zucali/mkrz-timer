@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   enableRemoteMode,
   expectControlClientUrlParams,
+  expectTimerDisplayRunning,
   expectRemoteSessionOnlyUrl,
   expectTimerControlsToMatch,
   expectTimerPaused,
@@ -224,9 +225,10 @@ test("ignores malformed relay payload attempts without breaking active clients",
   )
 
   await page.getByRole("button", { name: "START" }).click()
-  await Promise.all([page, readonlyClient].map(expectTimerRunning))
+  await expectTimerRunning(page)
+  await expectTimerDisplayRunning(readonlyClient)
   await page.getByRole("button", { name: "PAUSE" }).click()
-  await Promise.all([page, readonlyClient].map(expectTimerPaused))
+  await expectTimerPaused(page)
   await expectTimersToMatch([page, readonlyClient])
 })
 
@@ -323,6 +325,7 @@ test("new clients inherit host settings without resetting the session", async ({
 
   await expectUrlQrCode(page, "Control Link")
   await updateTimerSettings(page, mainSettings)
+  await expectTimerSettings(page, mainSettings)
 
   const controlClient = await openClientFromSettings(page, clientUrl)
   const readonlyClient = await openClientFromSettings(

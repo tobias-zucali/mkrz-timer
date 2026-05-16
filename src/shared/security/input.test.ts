@@ -10,18 +10,24 @@ import {
   normalizeRelayServerMessage,
   normalizeSessionSnapshot,
   normalizeSyncParamPatch,
+  normalizeSyncParams,
   normalizeTitle,
   normalizeTimerState,
 } from "./input.ts"
 
-test("normalizeTitle treats user input as plain text and trims unsafe control characters", () => {
+test("normalizeTitle treats user input as plain text and strips unsafe control characters", () => {
   const maliciousTitle =
     '  <img src=x onerror="window.__xss = 1">\u0000<script>alert(1)</script>  '
 
   assert.equal(
     normalizeTitle(maliciousTitle),
-    '<img src=x onerror="window.__xss = 1"> <script>alert(1)</script>',
+    '  <img src=x onerror="window.__xss = 1"><script>alert(1)</script>  ',
   )
+})
+
+test("normalizeTitle preserves ordinary spaces while normalizing line breaks", () => {
+  assert.equal(normalizeTitle("a b"), "a b")
+  assert.equal(normalizeTitle("a\tb\nc"), "a b c")
 })
 
 test("normalizeTitle enforces a maximum length", () => {
@@ -50,7 +56,7 @@ test("normalizeQueryParams falls back safely for malformed values", () => {
       fg: "#abcdef",
       pid: "",
       rid: "",
-      title: "Hello<script>",
+      title: "  Hello<script>  ",
     },
   )
 })
@@ -64,7 +70,34 @@ test("normalizeSyncParamPatch only returns supported sanitized fields", () => {
     }),
     {
       bg: "#ff00aa",
-      title: '<b onclick="boom()">Title</b>',
+      title: '  <b onclick="boom()">Title</b>  ',
+    },
+  )
+})
+
+test("normalizeSyncParams uses caller fallback for duration fields", () => {
+  assert.deepEqual(
+    normalizeSyncParams(
+      {
+        bg: "123456",
+        fg: "abcdef",
+        m: "nope",
+        pc: "fedcba",
+        s: "-1",
+      },
+      {
+        ...DEFAULT_SYNC_PARAMS,
+        m: "03",
+        s: "20",
+      },
+    ),
+    {
+      bg: "#123456",
+      fg: "#abcdef",
+      m: "03",
+      pc: "#fedcba",
+      s: "20",
+      title: "",
     },
   )
 })
@@ -114,7 +147,7 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
         m: "05",
         pc: "#abcdef",
         s: "07",
-        title: "Session",
+        title: " Session ",
       },
       state: {
         elapsedTime: 5,
@@ -170,7 +203,7 @@ test("normalizeRelayClientMessage sanitizes valid sync payloads", () => {
     {
       clientId: "client-1",
       params: {
-        title: "<script>alert(1)</script>",
+        title: "  <script>alert(1)</script>  ",
       },
       sessionId: "session-1",
       state: {

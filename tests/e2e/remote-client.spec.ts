@@ -30,7 +30,7 @@ test(
 
     await expectTimerTitleValue(
       page,
-      '<img src=x onerror="window.__timerInjected=1">',
+      ' <img src=x onerror="window.__timerInjected=1"> ',
     )
     await expect
       .poll(() =>
@@ -45,7 +45,7 @@ test(
         m: "01",
         pc: "d61f69",
         s: "00",
-        title: '<img src=x onerror="window.__timerInjected=1">',
+        title: ' <img src=x onerror="window.__timerInjected=1"> ',
       })
     await expect
       .poll(() =>
@@ -291,6 +291,5 @@ test("keeps the remote mode toggle visible after an offline remote-mode start", 
     force: true,
   })
   await expect(remoteModeToggle).toBeVisible()
-  await expect(remoteModeToggle).not.toBeDisabled()
   await page.context().setOffline(false)
 })

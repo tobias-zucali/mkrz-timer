@@ -162,7 +162,7 @@ test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
 
   assert.ok(session)
   assert.equal(session.snapshot.params.bg, "#000000")
-  assert.equal(session.snapshot.params.title, "<script>alert(1)</script>")
+  assert.equal(session.snapshot.params.title, "  <script>alert(1)</script>  ")
   assert.equal(session.snapshot.state.elapsedTime, 0)
   assert.equal(session.snapshot.state.totalDuration, 60)
 
@@ -182,7 +182,7 @@ test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
   })
 
   assert.ok(updated)
-  assert.equal(updated.snapshot.params.title, "Hello world")
+  assert.equal(updated.snapshot.params.title, "Hello  world ")
   assert.equal(updated.snapshot.state.totalDuration, 67)
 })
 
