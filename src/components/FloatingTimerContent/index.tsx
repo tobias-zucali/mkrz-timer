@@ -1,13 +1,8 @@
-import EditableHtml from "@/components/EditableHtml"
 import Pie from "@/components/Pie"
 import { hexToRgbChannels } from "@/utils/colors"
 
 function getFloatingTitleFontSize(title: string) {
-  const plainText = title
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .trim()
+  const plainText = title.trim()
 
   const lines = plainText
     .split("\n")
@@ -67,13 +62,12 @@ export default function FloatingTimerContent({
         className="shrink-0 overflow-hidden px-4 pt-4 text-center font-bold leading-tight"
         style={{ fontSize: titleFontSize }}
       >
-        <EditableHtml
-          className="mx-auto max-w-full whitespace-pre-wrap wrap-break-word"
-          disabled
-          html={title}
-          onChange={() => {}}
+        <p
+          className="mx-auto max-w-full whitespace-pre-wrap break-words"
           data-testid="floating-timer-title"
-        />
+        >
+          {title}
+        </p>
       </div>
       <div className="relative min-h-0 grow p-4">
         <Pie

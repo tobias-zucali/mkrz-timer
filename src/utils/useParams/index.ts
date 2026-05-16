@@ -1,14 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
+import { normalizeQueryParams } from "@/shared/security/input"
 import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 import type { ParamBuildOptions } from "./params"
-import {
-  buildPathWithParams,
-  getRemoteSessionOnlyOmitKeys,
-  withColorHash,
-} from "./params"
+import { buildPathWithParams, getRemoteSessionOnlyOmitKeys } from "./params"
 
 export default function useParams() {
   const searchParams = useSearchParams()
@@ -18,17 +15,18 @@ export default function useParams() {
 
   const isSearchParamsEmpty = searchParams.size === 0
 
-  const [currentParams, setCurrentParams] = useState({
-    m: searchParams.get("m") || "01",
-    s: searchParams.get("s") || "00",
-    title: searchParams.get("title") || "",
-    bg: withColorHash(searchParams.get("bg") || "000000"),
-    fg: withColorHash(searchParams.get("fg") || "ffffff"),
-    pc: withColorHash(searchParams.get("pc") || "d61f69"),
-    pid: "",
-    rid: searchParams.get("rid") || "",
-    control: searchParams.get("control") || null,
-  })
+  const [currentParams, setCurrentParams] = useState(() =>
+    normalizeQueryParams({
+      bg: searchParams.get("bg"),
+      control: searchParams.get("control"),
+      fg: searchParams.get("fg"),
+      m: searchParams.get("m"),
+      pc: searchParams.get("pc"),
+      rid: searchParams.get("rid"),
+      s: searchParams.get("s"),
+      title: searchParams.get("title"),
+    }),
+  )
 
   useEffect(() => {
     setColors({
@@ -63,8 +61,11 @@ export default function useParams() {
 
   const setParams = useCallback((newParams: Partial<typeof currentParams>) => {
     setCurrentParams((curr) => ({
-      ...curr,
-      ...newParams,
+      ...normalizeQueryParams({
+        ...curr,
+        ...newParams,
+      }),
+      pid: curr.pid,
     }))
   }, [])
 

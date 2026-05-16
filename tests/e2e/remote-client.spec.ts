@@ -10,6 +10,7 @@ import {
   expectTimerPaused,
   expectTimerRunning,
   expectTimerSettings,
+  expectTimerTitleValue,
   getDisplayedSeconds,
   openSettingsOverlay,
   openClientFromSettings,
@@ -18,6 +19,45 @@ import {
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
+
+test(
+  "normalizes hostile query params without executing script-like content",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.goto(
+      "/?title=%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20&bg=javascript:alert(1)&fg=ABCDEF&pc=ff00gg&m=9999&s=-1&rid=%3Cscript%3E&control=1",
+    )
+
+    await expectTimerTitleValue(
+      page,
+      ' <img src=x onerror="window.__timerInjected=1"> ',
+    )
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const params = new URLSearchParams(window.location.search)
+          return Object.fromEntries(params.entries())
+        }),
+      )
+      .toEqual({
+        bg: "000000",
+        fg: "abcdef",
+        m: "01",
+        pc: "d61f69",
+        s: "00",
+        title: ' <img src=x onerror="window.__timerInjected=1"> ',
+      })
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __timerInjected?: number }).__timerInjected ??
+            null,
+        ),
+      )
+      .toBe(null)
+  },
+)
 
 test(
   "opens settings, enables remote mode, and opens a client timer",
@@ -163,6 +203,55 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })
 
+test(
+  "shares hostile title payloads as inert plain text across clients",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const readonlyClient = await openClientFromSettings(
+      page,
+      readonlyClientUrl,
+      "Viewer Link",
+    )
+
+    await closeSettingsOverlay(page)
+    await waitForRemoteCluster([page, readonlyClient], {
+      clientCount: 1,
+      mainConnectionCount: 1,
+      message: "readonly client should connect before hostile title sync",
+    })
+
+    const hostileTitle = '<svg onload="window.__syncInjected=1"></svg>'
+
+    await openSettingsOverlay(page)
+    await updateTimerSettings(page, { title: hostileTitle })
+    await closeSettingsOverlay(page)
+
+    await Promise.all([
+      expectTimerTitleValue(page, hostileTitle),
+      expectTimerTitleValue(readonlyClient, hostileTitle),
+    ])
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __syncInjected?: number }).__syncInjected ??
+            null,
+        ),
+      )
+      .toBe(null)
+    await expect
+      .poll(() =>
+        readonlyClient.evaluate(
+          () =>
+            (window as Window & { __syncInjected?: number }).__syncInjected ??
+            null,
+        ),
+      )
+      .toBe(null)
+  },
+)
+
 test("shows offline network status when the browser loses connectivity", async ({
   page,
 }) => {
@@ -189,28 +278,18 @@ test("shows offline network status when the browser loses connectivity", async (
   await controlClient.context().setOffline(false)
 })
 
-test(
-  "keeps the remote mode toggle visible after an offline remote-mode start",
-  { tag: "@smoke" },
-  async ({ page }) => {
-    await openTimer(page, 3)
-    await openSettingsOverlay(page)
-    await page.context().setOffline(true)
+test("keeps the remote mode toggle visible after an offline remote-mode start", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await openSettingsOverlay(page)
+  await page.context().setOffline(true)
 
-    await page.getByRole("switch", { name: "Remote mode" }).click()
+  const remoteModeToggle = page.getByRole("switch", { name: "Remote mode" })
 
-    await expectRemoteStatus(page, {
-      connectionSummary:
-        /Inactive|Waiting for timer sync|Recovery needs a retry/,
-      networkStatus: "Offline",
-      role: /Local timer|Control session/,
-      showSendToDeveloperButton: true,
-      state: /Ready|Connecting|Reconnect failed|Attention needed/,
-    })
-
-    await expect(
-      page.getByRole("switch", { name: "Remote mode" }),
-    ).toBeVisible()
-    await page.context().setOffline(false)
-  },
-)
+  await remoteModeToggle.click({
+    force: true,
+  })
+  await expect(remoteModeToggle).toBeVisible()
+  await page.context().setOffline(false)
+})

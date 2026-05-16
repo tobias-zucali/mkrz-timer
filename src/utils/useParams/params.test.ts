@@ -69,6 +69,24 @@ test("buildPathWithParams serializes control client URLs", () => {
   )
 })
 
+test("buildPathWithParams drops invalid remote-session params", () => {
+  assert.equal(
+    buildPathWithParams(
+      {
+        rid: "valid-session",
+      },
+      {
+        inherit: false,
+        params: {
+          control: "nope",
+          rid: "<script>",
+        },
+      },
+    ),
+    "/?",
+  )
+})
+
 test("buildPathWithParams can use a custom pathname", () => {
   assert.equal(
     buildPathWithParams(

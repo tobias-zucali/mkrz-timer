@@ -12,6 +12,9 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
+- Treat every external or user-controlled value as untrusted by default.
+- New user-controlled fields require validation plus escaping review before merge.
+- Changes to synchronized or relay-persisted fields require an explicit security review.
 
 ## Remote Mode
 

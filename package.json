@@ -24,7 +24,7 @@
     "test": "run-s lint test:unit test:e2e:smoke",
     "test:ci": "run-s lint test:unit test:e2e:ci",
     "test:full": "run-s lint test:unit test:e2e:full",
-    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/utils/**/*.test.ts src/server/**/*.test.ts",
+    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/shared/**/*.test.ts src/utils/**/*.test.ts src/server/**/*.test.ts",
     "test:e2e:smoke": "rimraf test-results playwright-report && playwright test --grep @smoke",
     "test:e2e:ci": "rimraf test-results playwright-report && playwright test --grep-invert @visual",
     "test:e2e:full": "rimraf test-results playwright-report && playwright test",
@@ -50,9 +50,7 @@
     "next": "16.2.4",
     "qrcode.react": "^4.2.0",
     "react": "19.2.5",
-    "react-contenteditable": "^3.3.7",
-    "react-dom": "19.2.5",
-    "sanitize-html": "^2.17.3"
+    "react-dom": "19.2.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

@@ -25,6 +25,43 @@ The relay owns:
 - clients auto-retry after relay disconnects
 - the UI exposes both the connection state and the last connection error
 
+## Trust Boundaries
+
+- URL/query params are untrusted input until normalized by the client.
+- Timer titles, session ids, and all relay message fields are untrusted input until validated.
+- Relay snapshots are the only persisted shared state in the current implementation, and they stay in memory only.
+- Viewers must treat every shared field from the relay as untrusted, even when it originated from another control client.
+
+## Validation and Escaping Rules
+
+- Timer titles are plain text only. They are normalized, trimmed, length-limited, and rendered as React text or input values rather than injected HTML.
+- Colors must match strict `#RRGGBB` values or they fall back to safe defaults.
+- Timer minute and second params accept digits only and fall back safely when malformed or out of range.
+- Session ids and client ids must match the allowed identifier format and length limits.
+- Relay messages and snapshots are schema-validated before they can update the canonical session snapshot.
+- Invalid or oversized payloads fail closed: they are rejected or normalized to safe defaults without crashing the app.
+
+## Dangerous Patterns to Avoid
+
+- Do not use `dangerouslySetInnerHTML` for timer titles or synchronized fields.
+- Do not read raw `searchParams`, WebSocket payloads, or relay snapshots directly into state without passing through shared validators.
+- Do not add new synchronized fields by appending them to the protocol or snapshot shape without validation, normalization, and test coverage.
+- Do not assume control clients are trusted just because they already joined a session.
+
+## Safe Field Changes
+
+- Add new user-controlled or synchronized fields to the shared validation module first.
+- Define safe defaults, type/shape validation, and length or range limits before using the field in UI or relay code.
+- Normalize the field at every ingress point that can receive it: query params, local edits, relay payloads, and relay snapshot restore paths.
+- Add unit coverage for malformed input and Playwright coverage when the field crosses clients.
+- Update this document and `AGENTS.md` when the trust boundary or review expectations change.
+
+## Assumptions and Limitations
+
+- Current persistence scope is limited to URL-derived state and the relay's in-memory session snapshot.
+- React escaping is relied on as the final rendering defense, but only after application-level validation and normalization.
+- Transport-level controls such as CSP or additional proxy-enforced request filtering are not the main protection for remote-mode payloads today; input validation is.
+
 ## Code Layout
 
 - shared protocol types: [src/shared/remoteSession/types.ts](../src/shared/remoteSession/types.ts)

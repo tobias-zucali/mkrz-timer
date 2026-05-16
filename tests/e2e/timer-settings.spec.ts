@@ -69,11 +69,12 @@ test(
 test("keeps timer shortcuts local to the settings drawer", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
+  const settingsDrawer = page.getByTestId("settings-drawer")
 
-  await page.getByLabel("Title").press(" ")
+  await settingsDrawer.getByLabel("Title").press(" ")
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
 
-  await page.getByLabel("Title").press("Escape")
-  await expect(page.getByTestId("settings-drawer")).not.toBeVisible()
+  await settingsDrawer.getByLabel("Title").press("Escape")
+  await expect(settingsDrawer).not.toBeVisible()
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
 })

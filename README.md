@@ -16,6 +16,12 @@ Technical details live in:
 - [docs/remote-mode.md](./docs/remote-mode.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
 
+## Security Notes
+
+- Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
+- Timer titles are plain text only and shared session snapshots are validated before use.
+- See [docs/remote-mode.md](./docs/remote-mode.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
+
 ## Getting Started
 
 Use Node.js `22.6.0` or newer and `pnpm`.
