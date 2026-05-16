@@ -6,7 +6,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `22.6.0` or newer.
-- After edits, run `pnpm check`, `pnpm test` and `pnpm format:fix` before considering the task done.
+- After edits, run `pnpm lint`, `pnpm test` and `pnpm format:fix` before considering the task done.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 - Prefer `@/` imports over relative `../..` imports.
 - Spread `...otherProps` last on rendered elements.
@@ -34,21 +34,31 @@ This file captures durable repo conventions for agents. For product/setup contex
   - relay health: `http://127.0.0.1:9200/health`
   - relay websocket: `ws://127.0.0.1:9200/ws`
 - Use `pnpm dev:relay` when you need the relay outside Playwright.
-- Use `pnpm dev:relay:agent` for the tracked agent relay.
-- `pnpm lane:agent` is the canonical agent Playwright entrypoint.
-- `pnpm lane:agent:attach` is the attach-mode Playwright entrypoint.
-- `pnpm lane:agent:full` runs the full tracked agent lane.
-- Use `pnpm lane:agent:status` to inspect tracked processes and port ownership.
-- Use `pnpm lane:agent:stop` to stop only tracked lane services.
+- Use `pnpm agent:serve:relay` for the tracked agent relay.
+- `pnpm agent:test` is the canonical agent Playwright entrypoint.
+- `pnpm agent:test:attach` is the attach-mode Playwright entrypoint.
+- `pnpm agent:test:full` runs the full tracked agent lane.
+- Use `pnpm agent:status` to inspect tracked processes and port ownership.
+- Use `pnpm agent:stop` to stop only tracked lane services.
+
+## Playwright Tags
+
+- Tag smoke coverage with `@smoke` so it is exercised by `pnpm test` and `pnpm agent:test`.
+- Tag visual-regression coverage with `@visual` so it is exercised by `pnpm test:e2e:visual` and excluded from `pnpm test:ci`.
+- Leave broader end-to-end coverage untagged unless it belongs in a filtered lane.
+- When adding or changing remote-mode behavior, make sure the affected Playwright coverage carries the right tags for the intended lane.
 
 ## Commands
 
-- `pnpm test`: lint, unit tests, smoke e2e
-- `pnpm test:ci`: lint, unit tests, CI-safe e2e
+- `pnpm lint`: ESLint plus typecheck validation
+- `pnpm lint:fix`: ESLint autofixes plus a follow-up typecheck
+- `pnpm format:fix`: Prettier rewrites only
+- `pnpm test`: lint, unit tests, and Playwright tests tagged `@smoke`
+- `pnpm test:ci`: lint, unit tests, and Playwright tests except those tagged `@visual`
 - `pnpm test:full`: lint, unit tests, full e2e
-- `pnpm build`: `pnpm test:full` plus production build
-- `pnpm build:docker`: `pnpm build` plus `docker compose build`
-- `pnpm check`: lint plus unit tests
+- `pnpm build`: production app build only
+- `pnpm build:full`: `pnpm test:full` plus production app build
+- `pnpm build:docker`: `pnpm build:full` plus `docker compose build`
 
 ## Deployment
 

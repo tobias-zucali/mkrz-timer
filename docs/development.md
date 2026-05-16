@@ -30,6 +30,7 @@ Default Playwright lane:
 - app: `http://127.0.0.1:3100`
 - relay health: `http://127.0.0.1:9100/health`
 - relay websocket: `ws://127.0.0.1:9100/ws`
+- app server command: `pnpm dev:test`
 
 Tracked agent lane:
 
@@ -39,17 +40,17 @@ Tracked agent lane:
 
 Relevant commands:
 
-- `pnpm lane:agent`
-- `pnpm lane:agent:attach`
-- `pnpm lane:agent:full`
-- `pnpm lane:agent:debug`
-- `pnpm lane:agent:status`
-- `pnpm lane:agent:stop`
+- `pnpm agent:test`
+- `pnpm agent:test:attach`
+- `pnpm agent:test:full`
+- `pnpm agent:test:debug`
+- `pnpm agent:status`
+- `pnpm agent:stop`
 
 Attach mode uses these advanced commands:
 
-- `pnpm dev:agent:test`
-- `pnpm dev:relay:agent`
+- `pnpm agent:serve:test`
+- `pnpm agent:serve:relay`
 
 The lane split is still useful because it isolates Playwright ports, dist dirs, and tracked process metadata from normal local development.
 
