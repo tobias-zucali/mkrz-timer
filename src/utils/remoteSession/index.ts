@@ -7,40 +7,30 @@ import type { TimerState } from "@/utils/useTimer"
 import type {
   RelayClientMessage,
   RelayConnectionDetails,
-  RelayServerMessage,
   RelaySessionState,
   SessionParticipant,
   SyncParams,
 } from "@/shared/remoteSession/types"
 
 import { getRemoteRelayWebSocketUrl } from "./config"
-
-const AUTO_RECOVERY_TIMEOUT_MS = 18_000
-const HEARTBEAT_INTERVAL_MS = 10_000
-const RETRY_DELAY_MS = 1_000
-const RECOVERED_BADGE_TIMEOUT_MS = 4_000
-
-const toError = (error: unknown) =>
-  error instanceof Error ? error : new Error(String(error))
-
-const createLocalClientId = () => {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID()
-  }
-
-  return `client-${Math.random().toString(36).slice(2, 10)}`
-}
-
-const parseMessage = (event: MessageEvent<string>) => {
-  try {
-    return JSON.parse(event.data) as RelayServerMessage
-  } catch {
-    return null
-  }
-}
+import {
+  AUTO_RECOVERY_TIMEOUT_MS,
+  HEARTBEAT_INTERVAL_MS,
+  RECOVERED_BADGE_TIMEOUT_MS,
+  RETRY_DELAY_MS,
+  handleSocketClose,
+  handleSocketError,
+  toError,
+} from "./lifecycle"
+import {
+  buildHeartbeatMessage,
+  buildJoinMessage,
+  buildLeaveMessage,
+  buildSyncMessage,
+  createLocalClientId,
+  parseServerMessage,
+} from "./protocol"
+import { applyServerMessage } from "./state"
 
 export default function useRemoteSession({
   canControlSession = false,
@@ -179,84 +169,79 @@ export default function useRemoteSession({
 
       socket.addEventListener("open", () => {
         pushEvent("socket_open")
-        const joinMessage: RelayClientMessage =
-          retryType === "retry-join" && nextRemoteId
-            ? {
-                type: "retry-join",
-                canControl: canControlSession,
-                clientId: localClientIdRef.current,
-                sessionId: nextRemoteId,
-                snapshot: canControlSession
-                  ? {
-                      params: syncParamsRef.current,
-                      state: syncStateRef.current,
-                    }
-                  : undefined,
-              }
-            : {
-                type: "create-or-join",
-                canControl: canControlSession || !nextRemoteId,
-                clientId: localClientIdRef.current,
-                sessionId: nextRemoteId || undefined,
-                snapshot: {
-                  params: syncParamsRef.current,
-                  state: syncStateRef.current,
-                },
-              }
-        socket.send(JSON.stringify(joinMessage))
+        const joinMessage = buildJoinMessage({
+          canControlSession,
+          clientId: localClientIdRef.current,
+          nextRemoteId,
+          retryType,
+          syncParams: syncParamsRef.current,
+          syncState: syncStateRef.current,
+        })
+        socket.send(JSON.stringify(joinMessage satisfies RelayClientMessage))
       })
 
       socket.addEventListener("message", (event) => {
-        const message = parseMessage(event)
+        const message = parseServerMessage(event)
         if (!message) {
           return
         }
 
-        switch (message.type) {
-          case "session":
-          case "state-updated":
-            const wasConnected = hasConnectedOnceRef.current
-            setCurrentSessionId(message.sessionId)
-            connectPromiseRef.current?.resolve(message.sessionId)
-            connectPromiseRef.current = null
-            setConnectedOnce(true)
-            setHasReceivedInitialSync(true)
-            setIsConnecting(false)
-            setError(null)
-            updateParticipants(message.participants)
-            onHandleAction(message.snapshot)
-            if (wasConnected) {
-              markRecovered()
-            } else {
-              setLifecycleState("connected")
-            }
-            pushEvent(`session_sync: ${message.sessionId}`)
-            return
-          case "participant-list":
-            setCurrentSessionId(message.sessionId)
-            updateParticipants(message.participants)
-            pushEvent(`participants: ${message.participants.length}`)
-            if (canPublishSessionState) {
-              sendMessage({
-                type: "sync",
-                clientId: localClientIdRef.current,
-                params: syncParamsRef.current,
-                sessionId: message.sessionId,
-                state: syncStateRef.current,
-              })
-              pushEvent(`sync_sent: ${message.sessionId}`)
-            }
-            return
-          case "error":
-            setError(new Error(message.message))
-            connectPromiseRef.current?.reject(new Error(message.message))
-            connectPromiseRef.current = null
-            setLifecycleState("failed")
-            setIsConnecting(false)
-            setCanRetryManually(true)
-            pushEvent(`relay_error: ${message.message}`)
-            return
-        }
+        applyServerMessage({
+          message,
+          context: {
+            onError: {
+              failConnect: (error) => {
+                connectPromiseRef.current?.reject(error)
+                connectPromiseRef.current = null
+              },
+              log: pushEvent,
+              setRetryableFailure: (error) => {
+                setError(error)
+                setLifecycleState("failed")
+                setIsConnecting(false)
+                setCanRetryManually(true)
+              },
+            },
+            onParticipantList: {
+              canPublishSessionState,
+              clientId: localClientIdRef.current,
+              hasReceivedInitialSync,
+              log: pushEvent,
+              sendMessage,
+              setParticipants: updateParticipants,
+              setSessionId: setCurrentSessionId,
+              syncParams: syncParamsRef.current,
+              syncState: syncStateRef.current,
+            },
+            onSessionSync: {
+              applySnapshot: (snapshot) => {
+                syncParamsRef.current = snapshot.params
+                syncStateRef.current = snapshot.state
+                onHandleAction(snapshot)
+              },
+              completeConnect: (resolvedSessionId) => {
+                connectPromiseRef.current?.resolve(resolvedSessionId)
+                connectPromiseRef.current = null
+              },
+              log: pushEvent,
+              markConnected: (wasReconnect) => {
+                setConnectedOnce(true)
+                setHasReceivedInitialSync(true)
+                setIsConnecting(false)
+                setError(null)
+
+                if (wasReconnect) {
+                  markRecovered()
+                } else {
+                  setLifecycleState("connected")
+                }
+              },
+              setParticipants: updateParticipants,
+              setSessionId: setCurrentSessionId,
+            },
+            wasReconnect: hasConnectedOnceRef.current,
+          },
+        })
       })
 
       socket.addEventListener("close", () => {
@@ -265,34 +250,31 @@ export default function useRemoteSession({
         updateParticipants([])
         setIsConnecting(false)
 
-        if (isManualDisconnectRef.current) {
+        const closeResult = handleSocketClose({
+          hasConnectedOnce: hasConnectedOnceRef.current,
+          isManualDisconnect: isManualDisconnectRef.current,
+          nextRemoteId,
+          sessionId: sessionIdRef.current,
+        })
+
+        if (closeResult.type === "manual-disconnect") {
           isManualDisconnectRef.current = false
           return
         }
 
-        if (!nextRemoteId && !sessionIdRef.current) {
-          connectPromiseRef.current?.reject(
-            new Error(
-              "Remote relay connection closed before the session was ready.",
-            ),
-          )
+        if (closeResult.type === "failed-before-session") {
+          connectPromiseRef.current?.reject(closeResult.error)
           connectPromiseRef.current = null
           setLifecycleState("failed")
           setCanRetryManually(true)
           return
         }
 
-        if (!hasConnectedOnceRef.current) {
-          setError(
-            new Error(
-              "Could not connect to the remote relay. Retrying automatically.",
-            ),
-          )
+        if (closeResult.error) {
+          setError(closeResult.error)
         }
 
-        setLifecycleState(
-          hasConnectedOnceRef.current ? "reconnecting" : "connecting",
-        )
+        setLifecycleState(closeResult.lifecycleState)
         retryEnabledTimeoutRef.current = window.setTimeout(() => {
           setCanRetryManually(true)
           setError(
@@ -304,7 +286,7 @@ export default function useRemoteSession({
         reconnectTimeoutRef.current = window.setTimeout(() => {
           try {
             openSocketRef.current?.({
-              nextRemoteId: nextRemoteId || sessionIdRef.current,
+              nextRemoteId: closeResult.retrySessionId,
               retryType: "retry-join",
             })
           } catch (nextError) {
@@ -317,21 +299,14 @@ export default function useRemoteSession({
 
       socket.addEventListener("error", () => {
         pushEvent("socket_error")
-        setError((current) => {
-          if (current) {
-            return current
-          }
-
-          return new Error(
-            "Could not connect to the remote relay. Check the relay URL and try again.",
-          )
-        })
+        setError((current) => handleSocketError({ currentError: current }))
       })
     },
     [
       canControlSession,
       canPublishSessionState,
       closeSocket,
+      hasReceivedInitialSync,
       markRecovered,
       onHandleAction,
       pushEvent,
@@ -387,16 +362,17 @@ export default function useRemoteSession({
 
       try {
         if (
-          !sendMessage({
-            type: "sync",
-            clientId: localClientIdRef.current,
-            params,
-            sessionId: activeSessionId,
-            state: {
-              ...syncStateRef.current,
-              ...state,
-            },
-          })
+          !sendMessage(
+            buildSyncMessage({
+              clientId: localClientIdRef.current,
+              params,
+              sessionId: activeSessionId,
+              state: {
+                ...syncStateRef.current,
+                ...state,
+              },
+            }),
+          )
         ) {
           return
         }
@@ -422,11 +398,12 @@ export default function useRemoteSession({
     isManualDisconnectRef.current = true
     if (activeSessionId) {
       try {
-        sendMessage({
-          type: "leave",
-          clientId: localClientIdRef.current,
-          sessionId: activeSessionId,
-        })
+        sendMessage(
+          buildLeaveMessage({
+            clientId: localClientIdRef.current,
+            sessionId: activeSessionId,
+          }),
+        )
       } catch {}
     }
 
@@ -475,11 +452,12 @@ export default function useRemoteSession({
 
     const intervalId = window.setInterval(() => {
       try {
-        sendMessage({
-          type: "heartbeat",
-          clientId: localClientIdRef.current,
-          sessionId: activeSessionId,
-        })
+        sendMessage(
+          buildHeartbeatMessage({
+            clientId: localClientIdRef.current,
+            sessionId: activeSessionId,
+          }),
+        )
       } catch {}
     }, HEARTBEAT_INTERVAL_MS)
 

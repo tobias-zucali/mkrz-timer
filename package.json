@@ -19,7 +19,7 @@
     "test": "pnpm check && pnpm test:e2e",
     "test:ci": "pnpm check && pnpm test:e2e:ci",
     "test:full": "pnpm check && pnpm test:e2e:full",
-    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/utils/**/*.test.ts",
+    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/utils/**/*.test.ts src/server/**/*.test.ts",
     "test:e2e": "pnpm test:e2e:clean && playwright test --grep @smoke",
     "test:e2e:ci": "pnpm test:e2e:clean && playwright test --grep-invert @visual",
     "test:e2e:full": "pnpm test:e2e:clean && playwright test",

@@ -31,3 +31,25 @@ The relay owns:
 - client hook/config: [src/utils/remoteSession](../src/utils/remoteSession)
 - relay implementation: [src/server/relay/index.ts](../src/server/relay/index.ts)
 - relay session store: [src/server/remoteSession/sessionStore.ts](../src/server/remoteSession/sessionStore.ts)
+
+## Maintenance Decision
+
+The relay/session boilerplate is intentionally being reduced with **internal abstractions on top of `ws`**, not by migrating to a new realtime framework.
+
+Options evaluated:
+
+- keep the current implementation unchanged
+- migrate to a library such as Socket.IO or PartyKit
+- extract internal protocol and lifecycle helpers around the existing relay
+
+Decision:
+
+- keep the current wire protocol, session URL format, deployment model, and controller/viewer permissions
+- keep `ws` as the transport
+- introduce internal abstractions for client protocol/lifecycle handling and relay connection/protocol handling
+
+Why not a new library right now:
+
+- the current protocol is small and app-specific, so a framework would still need custom snapshot, recovery, and permission rules
+- controller/viewer enforcement is clearer when session mutation remains explicit in the in-memory store
+- the current deployment target is a small Node/Docker service, so a runtime shift would add migration cost without clear product benefit

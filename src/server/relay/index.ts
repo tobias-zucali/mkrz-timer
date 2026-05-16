@@ -3,18 +3,21 @@ import { createServer } from "node:http"
 import { WebSocket, WebSocketServer } from "ws"
 
 import { InMemorySessionStore } from "../remoteSession/sessionStore.ts"
-import type {
-  RelayClientMessage,
-  RelayServerMessage,
-} from "../../shared/remoteSession/types.ts"
+import { RelayConnectionRegistry } from "./connectionRegistry.ts"
+import {
+  createErrorMessage,
+  createParticipantListMessage,
+  createStateUpdatedMessage,
+  parseClientMessage,
+  respondWithSession,
+} from "./protocol.ts"
 
 const host = process.env.RELAY_HOST || "127.0.0.1"
 const port = Number(process.env.RELAY_PORT || "9100")
 const sessionTtlMs = Number(process.env.RELAY_SESSION_TTL_MS || "300000")
 
 const store = new InMemorySessionStore(sessionTtlMs)
-const socketsByClientId = new Map<string, WebSocket>()
-const sessionsByClientId = new Map<string, string>()
+const registry = new RelayConnectionRegistry()
 
 const server = createServer((request, response) => {
   const requestUrl = new URL(
@@ -34,29 +37,16 @@ const server = createServer((request, response) => {
 
 const wss = new WebSocketServer({ server, path: "/ws" })
 
-const send = (socket: WebSocket, message: RelayServerMessage) => {
-  socket.send(JSON.stringify(message))
-}
-
 const broadcastSession = (sessionId: string) => {
   const session = store.touch(sessionId)
   if (!session) {
     return
   }
 
-  const message: RelayServerMessage = {
-    type: "state-updated",
-    participants: session.participants,
-    sessionId: session.id,
-    snapshot: session.snapshot,
-  }
-
-  for (const participant of session.participants) {
-    const socket = socketsByClientId.get(participant.clientId)
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      send(socket, message)
-    }
-  }
+  registry.broadcastToParticipants(
+    session.participants,
+    createStateUpdatedMessage(session),
+  )
 }
 
 const broadcastParticipants = (sessionId: string) => {
@@ -65,17 +55,23 @@ const broadcastParticipants = (sessionId: string) => {
     return
   }
 
-  const message: RelayServerMessage = {
-    type: "participant-list",
-    participants: session.participants,
-    sessionId: session.id,
-  }
+  registry.broadcastToParticipants(
+    session.participants,
+    createParticipantListMessage(session),
+  )
+}
 
-  for (const participant of session.participants) {
-    const socket = socketsByClientId.get(participant.clientId)
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      send(socket, message)
-    }
+const leaveSession = ({
+  clientId,
+  sessionId,
+}: {
+  clientId: string
+  sessionId: string
+}) => {
+  registry.clearClient(clientId)
+  const session = store.leave(sessionId, clientId)
+  if (session) {
+    broadcastParticipants(session.id)
   }
 }
 
@@ -83,20 +79,18 @@ wss.on("connection", (socket: WebSocket) => {
   let currentClientId = ""
 
   socket.on("message", (value: WebSocket.RawData) => {
-    let message: RelayClientMessage
+    const message = parseClientMessage(value)
 
-    try {
-      message = JSON.parse(String(value)) as RelayClientMessage
-    } catch {
-      send(socket, {
-        type: "error",
-        message: "Could not parse relay message.",
-      })
+    if (!message) {
+      registry.sendToSocket(
+        socket,
+        createErrorMessage("Could not parse relay message."),
+      )
       return
     }
 
     currentClientId = message.clientId
-    socketsByClientId.set(message.clientId, socket)
+    registry.register(message.clientId, socket)
 
     switch (message.type) {
       case "create-or-join": {
@@ -106,14 +100,8 @@ wss.on("connection", (socket: WebSocket) => {
           sessionId: message.sessionId,
           snapshot: message.snapshot,
         })
-        sessionsByClientId.set(message.clientId, session.id)
-        send(socket, {
-          type: "session",
-          participants: session.participants,
-          sessionId: session.id,
-          snapshot: session.snapshot,
-        })
-        broadcastParticipants(session.id)
+        registry.attachSession(message.clientId, session.id)
+        respondWithSession({ registry, session, socket })
         return
       }
       case "retry-join": {
@@ -124,21 +112,16 @@ wss.on("connection", (socket: WebSocket) => {
           snapshot: message.snapshot,
         })
         if (!session) {
-          send(socket, {
-            type: "error",
-            message:
+          registry.sendToSocket(
+            socket,
+            createErrorMessage(
               "Remote session expired. Reopen remote mode from a control client.",
-          })
+            ),
+          )
           return
         }
-        sessionsByClientId.set(message.clientId, session.id)
-        send(socket, {
-          type: "session",
-          participants: session.participants,
-          sessionId: session.id,
-          snapshot: session.snapshot,
-        })
-        broadcastParticipants(session.id)
+        registry.attachSession(message.clientId, session.id)
+        respondWithSession({ registry, session, socket })
         return
       }
       case "sync": {
@@ -150,10 +133,10 @@ wss.on("connection", (socket: WebSocket) => {
         })
 
         if (!session) {
-          send(socket, {
-            type: "error",
-            message: "Remote session is unavailable.",
-          })
+          registry.sendToSocket(
+            socket,
+            createErrorMessage("Remote session is unavailable."),
+          )
           return
         }
 
@@ -163,15 +146,12 @@ wss.on("connection", (socket: WebSocket) => {
       case "heartbeat":
         store.touch(message.sessionId)
         return
-      case "leave": {
-        const session = store.leave(message.sessionId, message.clientId)
-        socketsByClientId.delete(message.clientId)
-        sessionsByClientId.delete(message.clientId)
-        if (session) {
-          broadcastParticipants(session.id)
-        }
+      case "leave":
+        leaveSession({
+          clientId: message.clientId,
+          sessionId: message.sessionId,
+        })
         return
-      }
     }
   })
 
@@ -180,17 +160,13 @@ wss.on("connection", (socket: WebSocket) => {
       return
     }
 
-    socketsByClientId.delete(currentClientId)
-    const sessionId = sessionsByClientId.get(currentClientId)
-    sessionsByClientId.delete(currentClientId)
+    const sessionId = registry.getSessionId(currentClientId)
     if (!sessionId) {
+      registry.clearClient(currentClientId)
       return
     }
 
-    const session = store.leave(sessionId, currentClientId)
-    if (session) {
-      broadcastParticipants(session.id)
-    }
+    leaveSession({ clientId: currentClientId, sessionId })
   })
 })
 
