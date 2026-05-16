@@ -1,8 +1,8 @@
 "use client"
 
-import EditableText from "@/components/EditableText"
 import Pie from "@/components/Pie"
 import DigitalDisplay from "@/components/DigitalDisplay"
+import TimerTitle from "@/components/TimerTitle"
 import useTimer from "@/utils/useTimer"
 
 const timerButtonClassName =
@@ -44,15 +44,10 @@ export default function Timer({
 
   return (
     <div className="flex flex-col h-full">
-      <EditableText
-        data-testid="timer-title"
+      <TimerTitle
         disabled={isReadonly}
         value={title}
         onChange={(value) => handleChange("title", value)}
-        className={`w-full bg-transparent px-4 pt-1 text-center text-[3em] font-bold md:text-[5em] ${
-          isReadonly ? "" : "hover:outline-4 hover:-outline-offset-4"
-        }`}
-        title={isReadonly ? undefined : "Click to edit title"}
       />
       <div className="flex items-center justify-center grow h-[10em] p-[1em] relative">
         <Pie

@@ -19,16 +19,18 @@ import {
 test("normalizeTitle treats user input as plain text and strips unsafe control characters", () => {
   const maliciousTitle =
     '  <img src=x onerror="window.__xss = 1">\u0000<script>alert(1)</script>  '
+  const expectedTitle =
+    '  <img src=x onerror="window.__xss = 1"><script>alert(1)</script>  '.slice(
+      0,
+      MAX_TITLE_LENGTH,
+    )
 
-  assert.equal(
-    normalizeTitle(maliciousTitle),
-    '  <img src=x onerror="window.__xss = 1"><script>alert(1)</script>  ',
-  )
+  assert.equal(normalizeTitle(maliciousTitle), expectedTitle)
 })
 
 test("normalizeTitle preserves ordinary spaces while normalizing line breaks", () => {
   assert.equal(normalizeTitle("a b"), "a b")
-  assert.equal(normalizeTitle("a\tb\nc"), "a b c")
+  assert.equal(normalizeTitle("a\tb\nc"), "a b\nc")
 })
 
 test("normalizeTitle enforces a maximum length", () => {

@@ -1,31 +1,6 @@
 import Pie from "@/components/Pie"
+import { getTimerTitleLayout } from "@/utils/timerTitleLayout"
 import { hexToRgbChannels } from "@/utils/colors"
-
-function getFloatingTitleFontSize(title: string) {
-  const plainText = title.trim()
-
-  const lines = plainText
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-
-  const lineCount = Math.max(lines.length, 1)
-  const longestLineLength = Math.max(
-    ...lines.map((line) => line.length),
-    plainText.length || 0,
-    1,
-  )
-
-  const fontSizeRem = Math.max(
-    1.05,
-    Math.min(
-      3,
-      3.2 - Math.max(0, longestLineLength - 12) * 0.07 - (lineCount - 1) * 0.4,
-    ),
-  )
-
-  return `${fontSizeRem}rem`
-}
 
 export default function FloatingTimerContent({
   title,
@@ -46,7 +21,7 @@ export default function FloatingTimerContent({
   isTimedOut: boolean
   elapsedPercentage: number
 }) {
-  const titleFontSize = getFloatingTitleFontSize(title)
+  const titleLayout = getTimerTitleLayout(title, "floating")
 
   return (
     <div
@@ -58,17 +33,28 @@ export default function FloatingTimerContent({
         ["--primary"]: hexToRgbChannels(primaryColor),
       }}
     >
-      <div
-        className="shrink-0 overflow-hidden px-4 pt-4 text-center font-bold leading-tight"
-        style={{ fontSize: titleFontSize }}
-      >
-        <p
-          className="mx-auto max-w-full whitespace-pre-wrap break-words"
-          data-testid="floating-timer-title"
+      {titleLayout.hasText ? (
+        <div
+          className="shrink-0 overflow-hidden px-4 pt-4 text-center font-bold"
+          style={{
+            fontSize: `${titleLayout.fontSizeRem}rem`,
+            lineHeight: titleLayout.lineHeight,
+            maxHeight: `${titleLayout.maxVisibleLines * titleLayout.lineHeight}em`,
+          }}
         >
-          {title}
-        </p>
-      </div>
+          <p
+            className="mx-auto m-0 block max-w-[20ch] overflow-hidden whitespace-pre-wrap break-words"
+            data-testid="floating-timer-title"
+          >
+            {title}
+          </p>
+        </div>
+      ) : (
+        <div
+          className="shrink-0 px-4 pt-2"
+          data-testid="floating-timer-title"
+        />
+      )}
       <div className="relative min-h-0 grow p-4">
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}

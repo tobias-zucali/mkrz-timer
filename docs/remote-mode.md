@@ -37,7 +37,7 @@ The relay owns:
 
 ## Validation and Escaping Rules
 
-- Timer titles are plain text only. They are normalized, trimmed, length-limited, and rendered as React text or input values rather than injected HTML.
+- Timer titles are plain text only. They preserve intentional line breaks, are limited to 64 characters, and render as React text or textarea values rather than injected HTML.
 - Colors must match strict `#RRGGBB` values or they fall back to safe defaults.
 - Timer minute and second params accept digits only and fall back safely when malformed or out of range.
 - Session ids and client ids must match the allowed identifier format and length limits.

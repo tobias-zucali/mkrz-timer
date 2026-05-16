@@ -12,6 +12,60 @@ async function setTimer(page: Page, minutes: string, seconds: string) {
   await timerDisplay.getByLabel("Seconds").fill(seconds)
 }
 
+async function setInlineTitle(page: Page, title: string) {
+  const titleRoot = page.getByTestId("timer-title")
+  const emptyAction = titleRoot.getByTestId("timer-title-empty-action")
+  const editor = titleRoot.getByTestId("timer-title-input")
+
+  if ((await emptyAction.count()) > 0) {
+    await emptyAction.click()
+  }
+
+  await editor.fill(title)
+  await page.getByTestId("timer-display").click()
+}
+
+async function getTitleMetrics(page: Page) {
+  const titleRoot = page.getByTestId("timer-title")
+  const titleText = titleRoot.getByTestId("timer-title-text")
+
+  if ((await titleText.count()) > 0) {
+    return titleText.evaluate((node) => {
+      const element = node as HTMLElement
+      const computedStyle = window.getComputedStyle(element)
+      const rootElement = document.querySelector(
+        '[data-testid="timer-title"]',
+      ) as HTMLElement | null
+
+      return {
+        fontSize: Number.parseFloat(computedStyle.fontSize),
+        rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+        text: element.textContent ?? "",
+      }
+    })
+  }
+
+  return titleRoot.getByTestId("timer-title-input").evaluate((node) => {
+    const element = node as HTMLElement
+    const computedStyle = window.getComputedStyle(element)
+    const rootElement = document.querySelector(
+      '[data-testid="timer-title"]',
+    ) as HTMLElement | null
+
+    return {
+      fontSize: Number.parseFloat(computedStyle.fontSize),
+      rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+      text: (node as HTMLTextAreaElement).value,
+    }
+  })
+}
+
+async function getTitleRootHeight(page: Page) {
+  return page
+    .getByTestId("timer-title")
+    .evaluate((node) => node.getBoundingClientRect().height)
+}
+
 const durationCases = [
   { minutes: "00", seconds: "05", totalSeconds: 5 },
   { minutes: "01", seconds: "30", totalSeconds: 90 },
@@ -64,6 +118,84 @@ test("keeps the timer usable after strange duration input", async ({
       timeout: 4_000,
     })
     .toBeLessThan(3)
+})
+
+test("supports multiline titles with adaptive scaling and a compact empty state", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+
+  const titleRoot = page.getByTestId("timer-title")
+  await expect(titleRoot).toHaveAttribute("data-title-mode", "empty")
+  await expect(
+    titleRoot.getByRole("button", { name: "Add title" }),
+  ).toBeVisible()
+  await expect(titleRoot.getByTestId("timer-title-input")).toHaveCount(1)
+  await expect(
+    titleRoot.evaluate((node) => node.getBoundingClientRect().height),
+  ).resolves.toBeLessThan(80)
+
+  await setInlineTitle(page, "Sprint")
+  const shortTitleMetrics = await getTitleMetrics(page)
+  expect(shortTitleMetrics.text).toBe("Sprint")
+
+  const displayHeight = await getTitleRootHeight(page)
+  await titleRoot.getByTestId("timer-title-input").click()
+  await expect(titleRoot.getByTestId("timer-title-input")).toBeFocused()
+  const focusHeight = await getTitleRootHeight(page)
+  expect(Math.abs(focusHeight - displayHeight)).toBeLessThan(10)
+  await page.getByTestId("timer-display").click()
+
+  await setInlineTitle(
+    page,
+    "Quarterly planning\nretrospective and facilitator notes",
+  )
+  const longTitleMetrics = await getTitleMetrics(page)
+
+  expect(longTitleMetrics.text).toBe(
+    "Quarterly planning\nretrospective and facilitator notes",
+  )
+  expect(longTitleMetrics.fontSize).toBeLessThan(shortTitleMetrics.fontSize)
+  expect(longTitleMetrics.rootHeight).toBeLessThan(160)
+
+  await setInlineTitle(page, "")
+  await expect(titleRoot).toHaveAttribute("data-title-mode", "empty")
+  await expect(
+    titleRoot.getByRole("button", { name: "Add title" }),
+  ).toBeVisible()
+  await expect(
+    titleRoot.evaluate((node) => node.getBoundingClientRect().height),
+  ).resolves.toBeLessThan(80)
+})
+
+test("keeps long multiline titles readable in fullscreen mode", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await setInlineTitle(
+    page,
+    "Quarterly planning\nretrospective and facilitator notes",
+  )
+
+  await page.locator("body").click()
+  await page.evaluate(async () => {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen()
+    }
+  })
+
+  await expect
+    .poll(() => page.evaluate(() => Boolean(document.fullscreenElement)))
+    .toBe(true)
+
+  const titleMetrics = await getTitleMetrics(page)
+  expect(titleMetrics.rootHeight).toBeLessThan(160)
+
+  await page.evaluate(async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+    }
+  })
 })
 
 test(
@@ -163,6 +295,73 @@ test(
       await expectScreenshotWithoutDebugInfo(devicePage, {
         fullPage: true,
         message: `${name} timer layout should stay visually stable`,
+        name: `timer-layout-${name}.png`,
+      })
+
+      await context.close()
+    }
+  },
+)
+
+test(
+  "matches long-title layouts across form factors and orientations",
+  { tag: "@visual" },
+  async ({ baseURL, browser }) => {
+    const encodedTitle = encodeURIComponent(
+      "Quarterly planning\nretrospective and facilitator notes",
+    )
+    const formFactors = [
+      {
+        name: "desktop-long-title",
+        contextOptions: {
+          viewport: { width: 1440, height: 1100 },
+        },
+      },
+      {
+        name: "tablet-portrait-long-title",
+        contextOptions: {
+          ...devices["iPad Mini"],
+        },
+      },
+      {
+        name: "tablet-landscape-long-title",
+        contextOptions: {
+          ...devices["iPad Mini landscape"],
+        },
+      },
+      {
+        name: "phone-portrait-long-title",
+        contextOptions: {
+          ...devices["iPhone 13"],
+        },
+      },
+      {
+        name: "phone-landscape-long-title",
+        contextOptions: {
+          ...devices["iPhone 13 landscape"],
+        },
+      },
+    ] as const
+
+    for (const { name, contextOptions } of formFactors) {
+      const context = await browser.newContext(contextOptions)
+      const devicePage = await context.newPage()
+
+      await devicePage.goto(
+        baseURL
+          ? new URL(
+              `/?m=00&s=03&bg=000000&fg=ffffff&pc=d61f69&title=${encodedTitle}`,
+              baseURL,
+            ).toString()
+          : `/?m=00&s=03&bg=000000&fg=ffffff&pc=d61f69&title=${encodedTitle}`,
+      )
+      await expect(
+        devicePage.getByRole("button", { name: "START" }),
+      ).toBeVisible()
+
+      await expectScreenshotWithoutDebugInfo(devicePage, {
+        fullPage: true,
+        message: `${name} layout should keep the long title readable`,
         name: `timer-layout-${name}.png`,
       })
 

@@ -30,7 +30,7 @@ export const MAX_SERVER_MESSAGE_BYTES = 32 * 1024
 export const MAX_CLIENT_ID_LENGTH = 64
 export const MAX_SESSION_ID_LENGTH = 64
 export const MAX_REMOTE_ACCESS_TOKEN_LENGTH = 64
-export const MAX_TITLE_LENGTH = 120
+export const MAX_TITLE_LENGTH = 64
 export const MAX_TIMER_MINUTES = 999
 export const MAX_TIMER_SECONDS = 59
 export const MAX_TIMER_DURATION_SECONDS =
@@ -79,7 +79,8 @@ const normalizeFiniteNumber = ({
 const normalizeTextWhitespace = (value: string) =>
   value
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]+/g, "")
-    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\t/g, " ")
 
 export const normalizeTitle = (value: unknown) => {
   if (typeof value !== "string") {

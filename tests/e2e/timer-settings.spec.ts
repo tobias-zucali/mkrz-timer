@@ -78,3 +78,15 @@ test("keeps timer shortcuts local to the settings drawer", async ({ page }) => {
   await expect(settingsDrawer).not.toBeVisible()
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
 })
+
+test("limits titles to 64 characters in settings", async ({ page }) => {
+  await openTimer(page, 3)
+  await openSettingsOverlay(page)
+
+  const titleField = page.getByTestId("settings-drawer").getByLabel("Title")
+  const longTitle = "Facilitator notes ".repeat(6)
+
+  await titleField.fill(longTitle)
+
+  await expect(titleField).toHaveValue(longTitle.slice(0, 64))
+})
