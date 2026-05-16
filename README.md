@@ -14,6 +14,7 @@ Technical details live in:
 
 - [docs/development.md](./docs/development.md)
 - [docs/remote-mode.md](./docs/remote-mode.md)
+- [docs/title-layout.md](./docs/title-layout.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
 
 ## Security Notes

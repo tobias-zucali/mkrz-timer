@@ -1,5 +1,6 @@
 "use client"
 
+import { MAX_TITLE_LENGTH } from "@/shared/security/input"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import useRemoteSession from "@/utils/remoteSession"
@@ -242,15 +243,31 @@ export default function Settings({
               <fieldset className="space-y-8" disabled={!isOpen}>
                 <DrawerSection title="Timer">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <InputField
-                      containerClassName="sm:col-span-2"
-                      id="title"
-                      label="Title"
-                      value={params.title}
-                      onChange={(event) =>
-                        handleChange("title", event.target.value)
-                      }
-                    />
+                    <div className="w-full sm:col-span-2">
+                      <label
+                        className="mb-2 block text-sm font-medium text-foreground"
+                        htmlFor="title"
+                      >
+                        Title
+                      </label>
+                      <textarea
+                        className="block min-h-24 w-full resize-y rounded-md border border-foreground/10 bg-background px-3 py-2 text-base text-foreground outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50 focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6"
+                        id="title"
+                        maxLength={MAX_TITLE_LENGTH}
+                        name="title"
+                        onChange={(event) =>
+                          handleChange("title", event.target.value)
+                        }
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onKeyUp={(event) => event.stopPropagation()}
+                        rows={3}
+                        value={params.title}
+                      />
+                      <p className="mt-2 text-sm leading-6 text-foreground/68">
+                        Up to 64 characters. Line breaks are preserved in the
+                        timer title.
+                      </p>
+                    </div>
                     <InputField
                       id="minutes"
                       inputMode="numeric"

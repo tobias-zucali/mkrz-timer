@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, Page, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
@@ -20,6 +20,41 @@ import {
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
+
+async function getRemoteTitleMetrics(page: Page) {
+  const titleRoot = page.getByTestId("timer-title")
+  const readonlyTitle = titleRoot.getByTestId("timer-title-text")
+
+  if ((await readonlyTitle.count()) > 0) {
+    return readonlyTitle.evaluate((node, root) => {
+      const element = node as HTMLElement
+      const rootElement = document.querySelector(
+        `[data-testid="${root}"]`,
+      ) as HTMLElement | null
+      const computedStyle = window.getComputedStyle(element)
+
+      return {
+        fontSize: Number.parseFloat(computedStyle.fontSize),
+        rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+        text: element.textContent ?? "",
+      }
+    }, "timer-title")
+  }
+
+  return titleRoot.getByTestId("timer-title-input").evaluate((node, root) => {
+    const element = node as HTMLElement
+    const rootElement = document.querySelector(
+      `[data-testid="${root}"]`,
+    ) as HTMLElement | null
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      fontSize: Number.parseFloat(computedStyle.fontSize),
+      rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+      text: (node as HTMLTextAreaElement).value,
+    }
+  }, "timer-title")
+}
 
 test(
   "normalizes hostile query params without executing script-like content",
@@ -225,6 +260,46 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     allPages.map((remotePage) => expectTimerSettings(remotePage, settings)),
   )
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
+})
+
+test("keeps long multiline titles readable in readonly remote clients", async ({
+  page,
+}) => {
+  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    readonlyClientUrl,
+    "Viewer Link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "readonly client should connect before multiline title sync",
+  })
+
+  const longTitle = "Quarterly planning\nretrospective and facilitator notes"
+
+  await openSettingsOverlay(page)
+  await updateTimerSettings(page, { title: longTitle })
+  await closeSettingsOverlay(page)
+
+  await Promise.all([
+    expectTimerTitleValue(page, longTitle),
+    expectTimerTitleValue(readonlyClient, longTitle),
+  ])
+
+  const [controlMetrics, readonlyMetrics] = await Promise.all([
+    getRemoteTitleMetrics(page),
+    getRemoteTitleMetrics(readonlyClient),
+  ])
+
+  expect(controlMetrics.text).toBe(longTitle)
+  expect(readonlyMetrics.text).toBe(longTitle)
+  expect(controlMetrics.rootHeight).toBeLessThan(160)
+  expect(readonlyMetrics.rootHeight).toBeLessThan(160)
+  expect(readonlyMetrics.fontSize).toBeGreaterThan(0)
 })
 
 test(

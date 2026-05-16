@@ -224,8 +224,37 @@ export async function expectTimerRunning(page: Page) {
   await expectTimerDisplayRunning(page)
 }
 
+export async function readTimerTitleValue(page: Page) {
+  const timerTitle = page.getByTestId("timer-title")
+  const editor = timerTitle.getByTestId("timer-title-input")
+  const display = timerTitle.getByTestId("timer-title-text")
+  const emptyAction = timerTitle.getByTestId("timer-title-empty-action")
+
+  if ((await editor.count()) > 0) {
+    return editor.inputValue()
+  }
+
+  if ((await display.count()) > 0) {
+    return ((await display.textContent()) ?? "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\u00a0/g, " ")
+  }
+
+  if ((await emptyAction.count()) > 0) {
+    return ""
+  }
+
+  return ((await timerTitle.textContent()) ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\u00a0/g, " ")
+}
+
 export async function expectTimerTitleValue(page: Page, value: string) {
-  await expect(page.getByTestId("timer-title")).toHaveValue(value)
+  await expect
+    .poll(() => readTimerTitleValue(page), {
+      message: "timer title should match the expected value",
+    })
+    .toBe(value)
 }
 
 export async function expectTimerDisplayRunning(page: Page) {
@@ -426,7 +455,7 @@ export async function expectReadonlyPlaceholder(page: Page) {
     .toBe(true)
 
   if (await placeholder.isVisible().catch(() => false)) {
-    await expect(timerDisplay).toHaveCount(0)
+    await expect(timerDisplay).not.toBeVisible()
     return
   }
 
@@ -491,22 +520,9 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
     const expectedTitle = settings.title
     await expect
-      .poll(
-        async () => {
-          const timerTitle = page.getByTestId("timer-title")
-          if ((await timerTitle.count()) > 0) {
-            return (await timerTitle.inputValue()).trim()
-          }
-
-          const exactText = page.getByText(expectedTitle, { exact: true })
-          return (await exactText.isVisible().catch(() => false))
-            ? expectedTitle
-            : ""
-        },
-        {
-          message: "timer title should reflect synced settings",
-        },
-      )
+      .poll(() => readTimerTitleValue(page), {
+        message: "timer title should reflect synced settings",
+      })
       .toBe(expectedTitle)
   }
 
