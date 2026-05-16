@@ -17,7 +17,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: "pnpm dev:e2e",
+      command: "pnpm dev:test",
       url: "http://127.0.0.1:3100",
       reuseExistingServer: true,
       timeout: 120_000,

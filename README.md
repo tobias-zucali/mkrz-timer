@@ -34,12 +34,45 @@ Open [http://localhost:3000](http://localhost:3000).
 ```bash
 pnpm dev
 pnpm dev:relay
-pnpm build:docker
 pnpm test
+pnpm test:ci
 pnpm test:full
 pnpm build
-pnpm lint
-pnpm format
+pnpm build:full
+pnpm build:docker
+pnpm lint:fix
+pnpm format:fix
+```
+
+## Common Workflows
+
+```bash
+# local development
+pnpm dev
+
+# fix lint issues ESLint can rewrite automatically
+pnpm lint:fix
+
+# fix formatting only
+pnpm format:fix
+
+# local validation
+pnpm test
+
+# CI-safe validation
+pnpm test:ci
+
+# full validation
+pnpm test:full
+
+# app build only
+pnpm build
+
+# validation + app build
+pnpm build:full
+
+# validation + app build + docker images
+pnpm build:docker
 ```
 
 ## Remote Mode
@@ -57,11 +90,16 @@ See [docs/development.md](./docs/development.md) for:
 
 ## Testing
 
+- `pnpm lint`: runs ESLint and TypeScript typechecking without touching formatting
+- `pnpm lint:fix`: applies ESLint autofixes, then reruns typechecking for validation
+- `pnpm format`: checks Prettier formatting only
+- `pnpm format:fix`: rewrites formatting only
 - `pnpm test`: lint + unit tests + smoke e2e
 - `pnpm test:ci`: lint + unit tests + CI-safe e2e
 - `pnpm test:full`: lint + unit tests + full e2e
-- `pnpm build`: runs `pnpm test:full` first, then builds the static frontend
-- `pnpm build:docker`: runs the full app build, then `docker compose build`
+- `pnpm build`: builds the app only
+- `pnpm build:full`: runs `pnpm test:full` first, then builds the app
+- `pnpm build:docker`: runs the full validated app build, then `docker compose build`
 
 ## Deployment
 

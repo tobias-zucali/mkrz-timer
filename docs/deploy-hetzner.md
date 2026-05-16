@@ -69,7 +69,7 @@ The deployment process is automated using the GitHub Actions workflow defined in
 2. **Workflow Actions**:
    - Checkout the repository.
    - Install dependencies using `pnpm`.
-   - Run tests and build the application.
+   - Run `pnpm test:ci` and `pnpm build`.
    - Create a deployment bundle excluding unnecessary files.
    - Upload the bundle to the Hetzner server.
    - Extract the bundle and restart the Docker stack.

@@ -380,7 +380,7 @@ const assertServiceAvailableForManaged = (status, commandLabel) => {
       [
         `${commandLabel} cannot use port ${status.service.port} because another process is already listening there.`,
         renderServiceStatus(status),
-        `Run \`pnpm lane:agent:status\` to inspect the collision.`,
+        `Run \`pnpm agent:status\` to inspect the collision.`,
       ].join("\n"),
     )
   }
@@ -390,7 +390,7 @@ const assertServiceAvailableForManaged = (status, commandLabel) => {
       [
         `${commandLabel} expected to start a fresh ${status.service.id} service, but a tracked agent lane process is already using port ${status.service.port}.`,
         renderServiceStatus(status),
-        `Stop it with \`pnpm lane:agent:stop\` or use attach mode instead.`,
+        `Stop it with \`pnpm agent:stop\` or use attach mode instead.`,
       ].join("\n"),
     )
   }
@@ -402,7 +402,7 @@ const assertServiceReadyForAttach = (status, commandLabel) => {
       [
         `${commandLabel} found a listener on port ${status.service.port}, but it is not a tracked agent lane process.`,
         renderServiceStatus(status),
-        `Use \`pnpm lane:agent:status\` for details and stop the unknown listener before attaching.`,
+        `Use \`pnpm agent:status\` for details and stop the unknown listener before attaching.`,
       ].join("\n"),
     )
   }
@@ -412,7 +412,7 @@ const assertServiceReadyForAttach = (status, commandLabel) => {
       [
         `${commandLabel} needs a live tracked ${status.service.id} service on ${status.service.url}, but it is not ready.`,
         renderServiceStatus(status),
-        `Start the attach lane with \`pnpm dev:relay:agent\` and \`pnpm dev:agent:test\`, or run \`pnpm lane:agent\` for the managed default.`,
+        `Start the attach lane with \`pnpm agent:serve:relay\` and \`pnpm agent:serve:test\`, or run \`pnpm agent:test\` for the managed default.`,
       ].join("\n"),
     )
   }
@@ -535,7 +535,7 @@ const runPlaywright = async (rawArgs) => {
           ...pairStatuses
             .filter((status) => status.hasUnknownListener)
             .map(renderServiceStatus),
-          "Run `pnpm lane:agent:status` to inspect the collision or `pnpm lane:agent:stop` if the tracked lane metadata is stale.",
+          "Run `pnpm agent:status` to inspect the collision or `pnpm agent:stop` if the tracked lane metadata is stale.",
         ].join("\n"),
       )
     } else if (hasPartial) {
@@ -543,7 +543,7 @@ const runPlaywright = async (rawArgs) => {
         [
           "The agent lane is only partially up, so the launcher will not guess whether to attach or restart it.",
           ...pairStatuses.map(renderServiceStatus),
-          "Stop the tracked lane with `pnpm lane:agent:stop`, or finish starting both attach services before retrying.",
+          "Stop the tracked lane with `pnpm agent:stop`, or finish starting both attach services before retrying.",
         ].join("\n"),
       )
     }
@@ -667,7 +667,7 @@ const serveService = async (service) => {
       [
         `Cannot start ${service.id}; port ${service.port} is already in use by an unknown process.`,
         renderServiceStatus(currentStatus),
-        `Run \`pnpm lane:agent:status\` to inspect the collision.`,
+        `Run \`pnpm agent:status\` to inspect the collision.`,
       ].join("\n"),
     )
   }
@@ -677,7 +677,7 @@ const serveService = async (service) => {
       [
         `${service.id} is already running.`,
         renderServiceStatus(currentStatus),
-        `Use \`pnpm lane:agent:stop\` before starting a fresh lane.`,
+        `Use \`pnpm agent:stop\` before starting a fresh lane.`,
       ].join("\n"),
     )
   }
@@ -691,7 +691,7 @@ const serveService = async (service) => {
       [
         `${service.id} shares port ${service.port} with ${conflictingKnownStatus.service.id}, so both roles cannot run at once.`,
         renderServiceStatus(conflictingKnownStatus),
-        `Stop the existing service with \`pnpm lane:agent:stop\` before switching roles.`,
+        `Stop the existing service with \`pnpm agent:stop\` before switching roles.`,
       ].join("\n"),
     )
   }
