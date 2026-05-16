@@ -18,11 +18,9 @@ export default function useParams() {
   const [currentParams, setCurrentParams] = useState(() =>
     normalizeQueryParams({
       bg: searchParams.get("bg"),
-      control: searchParams.get("control"),
       fg: searchParams.get("fg"),
       m: searchParams.get("m"),
       pc: searchParams.get("pc"),
-      rid: searchParams.get("rid"),
       s: searchParams.get("s"),
       title: searchParams.get("title"),
     }),
@@ -72,10 +70,14 @@ export default function useParams() {
   const targetUrl = useMemo(
     () =>
       getPathWithParams({
-        omit: getRemoteSessionOnlyOmitKeys(currentParams, searchParams.keys()),
+        omit: getRemoteSessionOnlyOmitKeys(
+          currentParams,
+          searchParams.keys(),
+          pathname,
+        ),
         params: currentParams,
       }),
-    [currentParams, getPathWithParams, searchParams],
+    [currentParams, getPathWithParams, pathname, searchParams],
   )
 
   const currentUrl = useMemo(

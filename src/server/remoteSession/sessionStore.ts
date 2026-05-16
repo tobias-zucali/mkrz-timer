@@ -1,12 +1,14 @@
 import type {
+  RemoteAccessRole,
+  RemoteAccessTokenSet,
   SessionParticipant,
   SessionSnapshot,
   SyncParams,
-} from "@/shared/remoteSession/types.ts"
+} from "../../shared/remoteSession/types.ts"
 import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
-  normalizeSessionId,
+  normalizeRemoteAccessToken,
   normalizeSessionSnapshot,
   normalizeSyncParamPatch,
   normalizeTimerState,
@@ -15,9 +17,20 @@ import {
 const DEFAULT_SESSION_TTL_MS = 5 * 60_000
 
 export type RelaySessionRecord = {
+  accessTokens: RemoteAccessTokenSet
   id: string
   lastSeenAt: number
   participants: SessionParticipant[]
+  snapshot: SessionSnapshot
+}
+
+type SessionTokenRecord = {
+  role: RemoteAccessRole
+  sessionId: string
+}
+
+type SessionMetadataRecord = {
+  accessTokens: RemoteAccessTokenSet
   snapshot: SessionSnapshot
 }
 
@@ -26,8 +39,12 @@ const defaultSnapshot = (): SessionSnapshot => ({
   state: DEFAULT_TIMER_STATE,
 })
 
+const createAccessToken = () => crypto.randomUUID()
+
 export class InMemorySessionStore {
   private readonly sessions = new Map<string, RelaySessionRecord>()
+  private readonly sessionMetadata = new Map<string, SessionMetadataRecord>()
+  private readonly sessionTokenRegistry = new Map<string, SessionTokenRecord>()
   private readonly sessionTtlMs: number
 
   constructor(sessionTtlMs = DEFAULT_SESSION_TTL_MS) {
@@ -59,75 +76,188 @@ export class InMemorySessionStore {
     )
   }
 
-  createOrJoin({
-    canControl,
-    clientId,
-    sessionId,
+  private createSessionRecord({
+    accessTokens = {
+      control: createAccessToken(),
+      readonly: createAccessToken(),
+    },
+    sessionId = crypto.randomUUID(),
     snapshot,
   }: {
-    canControl: boolean
-    clientId: string
+    accessTokens?: RemoteAccessTokenSet
     sessionId?: string
     snapshot?: SessionSnapshot
   }) {
-    const id = sessionId ? normalizeSessionId(sessionId) : crypto.randomUUID()
-    if (!id) {
-      return null
-    }
-
-    const existing = this.sessions.get(id)
-    const now = Date.now()
-
-    if (!existing) {
-      const created: RelaySessionRecord = {
-        id,
-        lastSeenAt: now,
-        participants: [{ canControl, clientId }],
-        snapshot: normalizeSessionSnapshot(snapshot ?? defaultSnapshot()),
-      }
-      this.sessions.set(id, created)
-      return created
-    }
-
-    existing.lastSeenAt = now
-    this.upsertParticipant({ canControl, clientId, session: existing })
-    return existing
-  }
-
-  restoreSession({
-    canControl,
-    clientId,
-    sessionId,
-    snapshot,
-  }: {
-    canControl: boolean
-    clientId: string
-    sessionId: string
-    snapshot?: SessionSnapshot
-  }) {
-    if (!normalizeSessionId(sessionId)) {
-      return null
-    }
-
-    const existing = this.sessions.get(sessionId)
-    if (existing) {
-      existing.lastSeenAt = Date.now()
-      this.upsertParticipant({ canControl, clientId, session: existing })
-      return existing
-    }
-
-    if (!canControl || !snapshot) {
-      return null
-    }
-
-    const restored: RelaySessionRecord = {
+    const normalizedSnapshot = normalizeSessionSnapshot(
+      snapshot ?? defaultSnapshot(),
+    )
+    const record: RelaySessionRecord = {
+      accessTokens,
       id: sessionId,
       lastSeenAt: Date.now(),
-      participants: [{ canControl, clientId }],
-      snapshot: normalizeSessionSnapshot(snapshot),
+      participants: [],
+      snapshot: normalizedSnapshot,
     }
-    this.sessions.set(sessionId, restored)
-    return restored
+
+    this.sessionTokenRegistry.set(accessTokens.control, {
+      role: "control",
+      sessionId,
+    })
+    this.sessionTokenRegistry.set(accessTokens.readonly, {
+      role: "readonly",
+      sessionId,
+    })
+    this.sessionMetadata.set(sessionId, {
+      accessTokens,
+      snapshot: normalizedSnapshot,
+    })
+
+    this.sessions.set(sessionId, record)
+    return record
+  }
+
+  create({
+    clientId,
+    snapshot,
+  }: {
+    clientId: string
+    snapshot?: SessionSnapshot
+  }): { role: "control"; session: RelaySessionRecord } {
+    const created = this.createSessionRecord({ snapshot })
+    this.upsertParticipant({
+      canControl: true,
+      clientId,
+      session: created,
+    })
+    return {
+      role: "control" as const,
+      session: created,
+    }
+  }
+
+  join({
+    clientId,
+    token,
+  }: {
+    clientId: string
+    token: string
+  }): { role: RemoteAccessRole; session: RelaySessionRecord } | null {
+    const normalizedToken = normalizeRemoteAccessToken(token)
+    if (normalizedToken === null) {
+      return null
+    }
+
+    const tokenRecord = this.sessionTokenRegistry.get(normalizedToken)
+    if (!tokenRecord) {
+      return null
+    }
+
+    const existing = this.sessions.get(tokenRecord.sessionId)
+    if (!existing) {
+      if (tokenRecord.role !== "control") {
+        return null
+      }
+
+      const metadata = this.sessionMetadata.get(tokenRecord.sessionId)
+      if (!metadata) {
+        return null
+      }
+
+      const restored = this.createSessionRecord({
+        accessTokens: metadata.accessTokens,
+        sessionId: tokenRecord.sessionId,
+        snapshot: metadata.snapshot,
+      })
+      this.upsertParticipant({
+        canControl: true,
+        clientId,
+        session: restored,
+      })
+      return {
+        role: "control",
+        session: restored,
+      }
+    }
+
+    existing.lastSeenAt = Date.now()
+    this.upsertParticipant({
+      canControl: tokenRecord.role === "control",
+      clientId,
+      session: existing,
+    })
+
+    return {
+      role: tokenRecord.role,
+      session: existing,
+    }
+  }
+
+  restore({
+    clientId,
+    snapshot,
+    token,
+  }: {
+    clientId: string
+    snapshot?: SessionSnapshot
+    token: string
+  }): { role: "control"; session: RelaySessionRecord } | null {
+    const normalizedToken = normalizeRemoteAccessToken(token)
+    if (normalizedToken === null) {
+      return null
+    }
+
+    const tokenRecord = this.sessionTokenRegistry.get(normalizedToken)
+    if (!tokenRecord || tokenRecord.role !== "control") {
+      return null
+    }
+
+    const existing = this.sessions.get(tokenRecord.sessionId)
+    if (existing) {
+      existing.lastSeenAt = Date.now()
+      this.upsertParticipant({
+        canControl: true,
+        clientId,
+        session: existing,
+      })
+      return {
+        role: "control" as const,
+        session: existing,
+      }
+    }
+
+    const metadata = this.sessionMetadata.get(tokenRecord.sessionId)
+    const nextSnapshot = normalizeSessionSnapshot(
+      snapshot ?? metadata?.snapshot ?? defaultSnapshot(),
+    )
+
+    if (!snapshot && !metadata) {
+      return null
+    }
+
+    const restored = this.createSessionRecord({
+      accessTokens: {
+        control: normalizedToken,
+        readonly:
+          metadata?.accessTokens.readonly ??
+          [...this.sessionTokenRegistry.entries()].find(
+            ([, value]) =>
+              value.role === "readonly" &&
+              value.sessionId === tokenRecord.sessionId,
+          )?.[0] ??
+          createAccessToken(),
+      },
+      sessionId: tokenRecord.sessionId,
+      snapshot: nextSnapshot,
+    })
+    this.upsertParticipant({
+      canControl: true,
+      clientId,
+      session: restored,
+    })
+    return {
+      role: "control" as const,
+      session: restored,
+    }
   }
 
   updateSnapshot({
@@ -141,10 +271,6 @@ export class InMemorySessionStore {
     sessionId: string
     state?: SessionSnapshot["state"]
   }) {
-    if (!normalizeSessionId(sessionId)) {
-      return null
-    }
-
     const session = this.sessions.get(sessionId)
     if (!session) {
       return null
@@ -168,6 +294,10 @@ export class InMemorySessionStore {
         ? normalizeTimerState(state, session.snapshot.state)
         : session.snapshot.state,
     }
+    this.sessionMetadata.set(sessionId, {
+      accessTokens: session.accessTokens,
+      snapshot: session.snapshot,
+    })
 
     return session
   }

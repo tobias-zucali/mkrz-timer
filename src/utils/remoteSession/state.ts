@@ -1,17 +1,22 @@
-import type { TimerState } from "@/utils/useTimer"
+import type { TimerState } from "../useTimer"
 import type {
+  RemoteAccessTokenSet,
   RelayServerMessage,
   SessionParticipant,
   SyncParams,
-} from "@/shared/remoteSession/types"
+} from "../../shared/remoteSession/types.ts"
 
 import { buildSyncMessage } from "./protocol.ts"
 
 type SessionSyncActions = {
   applySnapshot: (snapshot: { params: SyncParams; state: TimerState }) => void
-  completeConnect: (sessionId: string) => void
+  completeConnect: (
+    sessionId: string,
+    accessTokens?: RemoteAccessTokenSet,
+  ) => void
   log: (event: string) => void
   markConnected: (wasReconnect: boolean) => void
+  setAccessTokens: (accessTokens?: RemoteAccessTokenSet) => void
   setParticipants: (nextParticipants: SessionParticipant[]) => void
   setSessionId: (nextSessionId?: string) => void
 }
@@ -51,7 +56,13 @@ const applySessionSyncMessage = ({
   wasReconnect: boolean
 }) => {
   actions.setSessionId(message.sessionId)
-  actions.completeConnect(message.sessionId)
+  if (message.type === "session" && message.accessTokens) {
+    actions.setAccessTokens(message.accessTokens)
+  }
+  actions.completeConnect(
+    message.sessionId,
+    message.type === "session" ? message.accessTokens : undefined,
+  )
   actions.setParticipants(message.participants)
   actions.applySnapshot(message.snapshot)
   actions.markConnected(wasReconnect)

@@ -51,33 +51,32 @@ function getRemoteState({
 
 export default function getRemoteStatus({
   canRetryManually,
-  control,
   hasConnectedOnce,
   hasReceivedInitialSync,
   lifecycleState,
   participantCount,
+  role,
   showPendingHostStatus = false,
-  remoteIdParam,
+  isRemoteEnabled,
 }: {
   canRetryManually: boolean
-  control?: string | null
   hasConnectedOnce: boolean
   hasReceivedInitialSync: boolean
+  isRemoteEnabled: boolean
   lifecycleState: RemoteStatusState
   participantCount: number
+  role: RemoteStatusRole
   showPendingHostStatus?: boolean
-  remoteIdParam?: string | null
 }): RemoteStatusModel | null {
-  if (!remoteIdParam && !showPendingHostStatus) {
+  if (!isRemoteEnabled && !showPendingHostStatus) {
     return null
   }
 
-  const role: RemoteStatusRole = control === "42" ? "control" : "readonly"
   const roleLabel = ROLE_LABELS[role]
   const state = getRemoteState({
     hasConnectedOnce,
     hasReceivedInitialSync,
-    isRemoteEnabled: Boolean(remoteIdParam || showPendingHostStatus),
+    isRemoteEnabled: Boolean(isRemoteEnabled || showPendingHostStatus),
     lifecycleState,
   })
 

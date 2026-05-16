@@ -1,4 +1,6 @@
 import type {
+  RemoteAccessRole,
+  RemoteAccessTokenSet,
   RelayClientMessage,
   RelayServerMessage,
   SessionParticipant,
@@ -27,6 +29,7 @@ export const MAX_CLIENT_MESSAGE_BYTES = 16 * 1024
 export const MAX_SERVER_MESSAGE_BYTES = 32 * 1024
 export const MAX_CLIENT_ID_LENGTH = 64
 export const MAX_SESSION_ID_LENGTH = 64
+export const MAX_REMOTE_ACCESS_TOKEN_LENGTH = 64
 export const MAX_TITLE_LENGTH = 120
 export const MAX_TIMER_MINUTES = 999
 export const MAX_TIMER_SECONDS = 59
@@ -36,6 +39,7 @@ export const MAX_REVISION = 1_000_000_000
 export const MAX_ELAPSED_TIME_SECONDS = 7 * 24 * 60 * 60
 
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
+const REMOTE_ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 const HEX_COLOR_PATTERN = /^#?[0-9a-fA-F]{6}$/
 const DIGITS_ONLY_PATTERN = /^\d+$/
 
@@ -191,6 +195,19 @@ export const normalizeClientId = (value: unknown) => {
   return value
 }
 
+export const normalizeRemoteAccessToken = (value: unknown) => {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > MAX_REMOTE_ACCESS_TOKEN_LENGTH ||
+    !REMOTE_ACCESS_TOKEN_PATTERN.test(value)
+  ) {
+    return null
+  }
+
+  return value
+}
+
 export const normalizeSyncParams = (
   value: unknown,
   fallback: SyncParams = DEFAULT_SYNC_PARAMS,
@@ -334,23 +351,44 @@ export const normalizeSessionParticipants = (value: unknown) => {
   return participants
 }
 
-export const normalizeControlParam = (value: unknown) =>
-  value === "42" ? "42" : null
-
 export const normalizeQueryParams = (value: unknown) => {
   const params = isObject(value) ? value : {}
 
   return {
     bg: normalizeColor(params.bg, DEFAULT_SYNC_PARAMS.bg),
-    control: normalizeControlParam(params.control),
     fg: normalizeColor(params.fg, DEFAULT_SYNC_PARAMS.fg),
     m: normalizeMinutes(params.m),
     pc: normalizeColor(params.pc, DEFAULT_SYNC_PARAMS.pc),
     pid: "",
-    rid: normalizeSessionId(params.rid) ?? "",
     s: normalizeSeconds(params.s),
     title: normalizeTitle(params.title),
   }
+}
+
+export const normalizeRemoteAccessRole = (value: unknown) => {
+  if (value === "control" || value === "readonly") {
+    return value satisfies RemoteAccessRole
+  }
+
+  return null
+}
+
+export const normalizeRemoteAccessTokenSet = (value: unknown) => {
+  if (!isObject(value) || !hasOnlyKeys(value, ["control", "readonly"])) {
+    return null
+  }
+
+  const control = normalizeRemoteAccessToken(value.control)
+  const readonly = normalizeRemoteAccessToken(value.readonly)
+
+  if (control === null || readonly === null) {
+    return null
+  }
+
+  return {
+    control,
+    readonly,
+  } satisfies RemoteAccessTokenSet
 }
 
 const parseJsonRecord = ({
@@ -385,50 +423,30 @@ export const normalizeRelayClientMessage = (
   }
 
   switch (parsedValue.type) {
-    case "create-or-join": {
-      if (
-        !hasOnlyKeys(parsedValue, [
-          "canControl",
-          "clientId",
-          "sessionId",
-          "snapshot",
-          "type",
-        ])
-      ) {
+    case "create-session": {
+      if (!hasOnlyKeys(parsedValue, ["clientId", "snapshot", "type"])) {
         return null
       }
 
       const clientId = normalizeClientId(parsedValue.clientId)
-      if (clientId === null || typeof parsedValue.canControl !== "boolean") {
-        return null
-      }
-
-      const sessionId =
-        parsedValue.sessionId === undefined
-          ? undefined
-          : (normalizeSessionId(parsedValue.sessionId) ?? null)
-      if (sessionId === null) {
+      if (clientId === null) {
         return null
       }
 
       return {
-        canControl: parsedValue.canControl,
         clientId,
-        sessionId,
-        snapshot:
-          parsedValue.snapshot === undefined
-            ? undefined
-            : normalizeSessionSnapshot(parsedValue.snapshot),
-        type: "create-or-join",
+        snapshot: normalizeSessionSnapshot(parsedValue.snapshot),
+        type: "create-session",
       }
     }
-    case "retry-join": {
+    case "join-session":
+    case "retry-join-session": {
       if (
         !hasOnlyKeys(parsedValue, [
-          "canControl",
           "clientId",
-          "sessionId",
+          "role",
           "snapshot",
+          "token",
           "type",
         ])
       ) {
@@ -436,24 +454,25 @@ export const normalizeRelayClientMessage = (
       }
 
       const clientId = normalizeClientId(parsedValue.clientId)
-      const sessionId = normalizeSessionId(parsedValue.sessionId)
-      if (
-        clientId === null ||
-        sessionId === null ||
-        typeof parsedValue.canControl !== "boolean"
-      ) {
+      const role = normalizeRemoteAccessRole(parsedValue.role)
+      const token = normalizeRemoteAccessToken(parsedValue.token)
+      if (clientId === null || role === null || token === null) {
         return null
       }
 
       return {
-        canControl: parsedValue.canControl,
         clientId,
-        sessionId,
-        snapshot:
-          parsedValue.snapshot === undefined
-            ? undefined
-            : normalizeSessionSnapshot(parsedValue.snapshot),
-        type: "retry-join",
+        role,
+        token,
+        ...(parsedValue.type === "retry-join-session"
+          ? {
+              snapshot:
+                parsedValue.snapshot === undefined
+                  ? undefined
+                  : normalizeSessionSnapshot(parsedValue.snapshot),
+            }
+          : {}),
+        type: parsedValue.type,
       }
     }
     case "sync": {
@@ -569,6 +588,7 @@ export const normalizeRelayServerMessage = (
     case "state-updated": {
       if (
         !hasOnlyKeys(parsedValue, [
+          "accessTokens",
           "participants",
           "sessionId",
           "snapshot",
@@ -581,10 +601,19 @@ export const normalizeRelayServerMessage = (
         parsedValue.participants,
       )
       const sessionId = normalizeSessionId(parsedValue.sessionId)
-      if (participants === null || sessionId === null) {
+      const accessTokens =
+        parsedValue.accessTokens === undefined
+          ? undefined
+          : normalizeRemoteAccessTokenSet(parsedValue.accessTokens)
+      if (
+        participants === null ||
+        sessionId === null ||
+        (parsedValue.accessTokens !== undefined && accessTokens === null)
+      ) {
         return null
       }
       return {
+        ...(accessTokens ? { accessTokens } : {}),
         participants,
         sessionId,
         snapshot: normalizeSessionSnapshot(parsedValue.snapshot),

@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import debug from "@/utils/debug"
-import type { TimerState } from "@/utils/useTimer"
 import type {
+  RemoteAccessRole,
+  RemoteAccessTokenSet,
   RelayClientMessage,
   RelayConnectionDetails,
   RelaySessionState,
   SessionParticipant,
   SyncParams,
 } from "@/shared/remoteSession/types"
+import debug from "@/utils/debug"
+import type { TimerState } from "@/utils/useTimer"
 
 import { getRemoteRelayWebSocketUrl } from "./config"
 import {
@@ -33,14 +35,14 @@ import {
 import { applyServerMessage } from "./state"
 
 export default function useRemoteSession({
-  canControlSession = false,
-  remoteIdParam,
+  remoteRole,
+  remoteToken,
   syncParamsRef,
   syncStateRef,
   onHandleAction,
 }: {
-  canControlSession?: boolean
-  remoteIdParam: string | null
+  remoteRole: RemoteAccessRole | null
+  remoteToken: string | null
   syncParamsRef: React.RefObject<SyncParams>
   syncStateRef: React.RefObject<TimerState>
   onHandleAction: (action: {
@@ -58,7 +60,11 @@ export default function useRemoteSession({
   const [peerEventTimeline, setPeerEventTimeline] = useState<string[]>([])
   const [sessionId, setSessionId] = useState<string | undefined>(undefined)
   const [participants, setParticipants] = useState<SessionParticipant[]>([])
-  const canPublishSessionState = canControlSession || !remoteIdParam
+  const [accessTokens, setAccessTokens] = useState<
+    RemoteAccessTokenSet | undefined
+  >(undefined)
+  const canPublishSessionState =
+    remoteRole === "control" || (remoteRole === null && !remoteToken)
 
   const localClientIdRef = useRef(createLocalClientId())
   const reconnectTimeoutRef = useRef<number | undefined>(undefined)
@@ -66,21 +72,27 @@ export default function useRemoteSession({
   const retryEnabledTimeoutRef = useRef<number | undefined>(undefined)
   const socketRef = useRef<WebSocket | null>(null)
   const sessionIdRef = useRef<string | undefined>(undefined)
+  const accessTokensRef = useRef<RemoteAccessTokenSet | undefined>(undefined)
   const isManualDisconnectRef = useRef(false)
   const hasConnectedOnceRef = useRef(false)
   const openSocketRef = useRef<
     | (({
-        nextRemoteId,
+        nextRemoteRole,
+        nextRemoteToken,
         retryType,
       }: {
-        nextRemoteId?: string | null
-        retryType?: "create-or-join" | "retry-join"
+        nextRemoteRole?: RemoteAccessRole | null
+        nextRemoteToken?: string | null
+        retryType?: "create-session" | "join-session" | "retry-join-session"
       }) => void)
     | null
   >(null)
   const connectPromiseRef = useRef<{
     reject: (error: Error) => void
-    resolve: (sessionId: string) => void
+    resolve: (result: {
+      accessTokens?: RemoteAccessTokenSet
+      sessionId: string
+    }) => void
   } | null>(null)
 
   const pushEvent = useCallback((event: string) => {
@@ -117,6 +129,14 @@ export default function useRemoteSession({
     sessionIdRef.current = nextSessionId
   }, [])
 
+  const setCurrentAccessTokens = useCallback(
+    (nextAccessTokens?: RemoteAccessTokenSet) => {
+      setAccessTokens(nextAccessTokens)
+      accessTokensRef.current = nextAccessTokens
+    },
+    [],
+  )
+
   const setConnectedOnce = useCallback((nextValue: boolean) => {
     setHasConnectedOnce(nextValue)
     hasConnectedOnceRef.current = nextValue
@@ -135,20 +155,23 @@ export default function useRemoteSession({
       socketRef.current = null
       if (clearSession) {
         setCurrentSessionId(undefined)
+        setCurrentAccessTokens(undefined)
         updateParticipants([])
       }
       connectPromiseRef.current = null
     },
-    [setCurrentSessionId, updateParticipants],
+    [setCurrentAccessTokens, setCurrentSessionId, updateParticipants],
   )
 
   const openSocket = useCallback(
     ({
-      nextRemoteId,
-      retryType = "create-or-join",
+      nextRemoteRole = remoteRole,
+      nextRemoteToken = remoteToken,
+      retryType = nextRemoteToken ? "join-session" : "create-session",
     }: {
-      nextRemoteId?: string | null
-      retryType?: "create-or-join" | "retry-join"
+      nextRemoteRole?: RemoteAccessRole | null
+      nextRemoteToken?: string | null
+      retryType?: "create-session" | "join-session" | "retry-join-session"
     }) => {
       const relayUrl = getRemoteRelayWebSocketUrl()
       if (!relayUrl) {
@@ -170,9 +193,9 @@ export default function useRemoteSession({
       socket.addEventListener("open", () => {
         pushEvent("socket_open")
         const joinMessage = buildJoinMessage({
-          canControlSession,
           clientId: localClientIdRef.current,
-          nextRemoteId,
+          remoteRole: nextRemoteRole,
+          remoteToken: nextRemoteToken,
           retryType,
           syncParams: syncParamsRef.current,
           syncState: syncStateRef.current,
@@ -190,13 +213,13 @@ export default function useRemoteSession({
           message,
           context: {
             onError: {
-              failConnect: (error) => {
-                connectPromiseRef.current?.reject(error)
+              failConnect: (nextError) => {
+                connectPromiseRef.current?.reject(nextError)
                 connectPromiseRef.current = null
               },
               log: pushEvent,
-              setRetryableFailure: (error) => {
-                setError(error)
+              setRetryableFailure: (nextError) => {
+                setError(nextError)
                 setLifecycleState("failed")
                 setIsConnecting(false)
                 setCanRetryManually(true)
@@ -219,8 +242,13 @@ export default function useRemoteSession({
                 syncStateRef.current = snapshot.state
                 onHandleAction(snapshot)
               },
-              completeConnect: (resolvedSessionId) => {
-                connectPromiseRef.current?.resolve(resolvedSessionId)
+              completeConnect: (resolvedSessionId, nextAccessTokens) => {
+                connectPromiseRef.current?.resolve({
+                  ...(nextAccessTokens
+                    ? { accessTokens: nextAccessTokens }
+                    : {}),
+                  sessionId: resolvedSessionId,
+                })
                 connectPromiseRef.current = null
               },
               log: pushEvent,
@@ -236,6 +264,7 @@ export default function useRemoteSession({
                   setLifecycleState("connected")
                 }
               },
+              setAccessTokens: setCurrentAccessTokens,
               setParticipants: updateParticipants,
               setSessionId: setCurrentSessionId,
             },
@@ -250,10 +279,17 @@ export default function useRemoteSession({
         updateParticipants([])
         setIsConnecting(false)
 
+        const retryToken =
+          nextRemoteToken ??
+          (nextRemoteRole === "control" || nextRemoteRole === null
+            ? accessTokensRef.current?.control
+            : accessTokensRef.current?.readonly)
+        const retryRole = nextRemoteRole ?? (retryToken ? "control" : null)
+
         const closeResult = handleSocketClose({
           hasConnectedOnce: hasConnectedOnceRef.current,
           isManualDisconnect: isManualDisconnectRef.current,
-          nextRemoteId,
+          nextRemoteId: retryToken,
           sessionId: sessionIdRef.current,
         })
 
@@ -286,8 +322,9 @@ export default function useRemoteSession({
         reconnectTimeoutRef.current = window.setTimeout(() => {
           try {
             openSocketRef.current?.({
-              nextRemoteId: closeResult.retrySessionId,
-              retryType: "retry-join",
+              nextRemoteRole: retryRole,
+              nextRemoteToken: closeResult.retrySessionId,
+              retryType: "retry-join-session",
             })
           } catch (nextError) {
             setError(toError(nextError))
@@ -303,16 +340,18 @@ export default function useRemoteSession({
       })
     },
     [
-      canControlSession,
       canPublishSessionState,
       closeSocket,
       hasReceivedInitialSync,
       markRecovered,
       onHandleAction,
       pushEvent,
-      setConnectedOnce,
-      setCurrentSessionId,
+      remoteRole,
+      remoteToken,
       sendMessage,
+      setConnectedOnce,
+      setCurrentAccessTokens,
+      setCurrentSessionId,
       syncParamsRef,
       syncStateRef,
       updateParticipants,
@@ -320,18 +359,20 @@ export default function useRemoteSession({
   )
   openSocketRef.current = openSocket
 
-  const connectRemote = useCallback(
-    async (nextRemoteId?: string | null) => {
-      clearTimers()
-      setHasReceivedInitialSync(false)
-      const connectPromise = new Promise<string>((resolve, reject) => {
-        connectPromiseRef.current = { reject, resolve }
-      })
-      openSocket({ nextRemoteId })
-      return connectPromise
-    },
-    [clearTimers, openSocket],
-  )
+  const connectRemote = useCallback(async () => {
+    clearTimers()
+    setHasReceivedInitialSync(false)
+    const connectPromise = new Promise<{
+      accessTokens?: RemoteAccessTokenSet
+      sessionId: string
+    }>((resolve, reject) => {
+      connectPromiseRef.current = { reject, resolve }
+    })
+    openSocket({ retryType: "create-session" })
+    return connectPromise
+  }, [clearTimers, openSocket])
+
+  const activeSessionId = sessionId
 
   const syncAll = useCallback(
     ({
@@ -343,7 +384,6 @@ export default function useRemoteSession({
       keys?: string[]
       state?: Partial<TimerState>
     }) => {
-      const activeSessionId = remoteIdParam || sessionId
       if (!activeSessionId || !canPublishSessionState) {
         return
       }
@@ -382,18 +422,16 @@ export default function useRemoteSession({
       }
     },
     [
-      pushEvent,
+      activeSessionId,
       canPublishSessionState,
-      remoteIdParam,
+      pushEvent,
       sendMessage,
-      sessionId,
       syncParamsRef,
       syncStateRef,
     ],
   )
 
   const disconnect = useCallback(async () => {
-    const activeSessionId = remoteIdParam || sessionId
     clearTimers()
     isManualDisconnectRef.current = true
     if (activeSessionId) {
@@ -414,38 +452,42 @@ export default function useRemoteSession({
     setHasReceivedInitialSync(false)
     setIsConnecting(false)
     setLifecycleState("connected")
-  }, [
-    clearTimers,
-    closeSocket,
-    remoteIdParam,
-    sendMessage,
-    sessionId,
-    setConnectedOnce,
-  ])
+  }, [activeSessionId, clearTimers, closeSocket, sendMessage, setConnectedOnce])
 
   const retryConnection = useCallback(async () => {
+    const retryToken =
+      remoteToken ??
+      (remoteRole === "control" || remoteRole === null
+        ? accessTokensRef.current?.control
+        : accessTokensRef.current?.readonly)
+    const retryRole = remoteRole ?? (retryToken ? "control" : null)
+
     setCanRetryManually(false)
     setError(null)
     openSocket({
-      nextRemoteId: remoteIdParam || sessionId,
-      retryType: "retry-join",
+      nextRemoteRole: retryRole,
+      nextRemoteToken: retryToken,
+      retryType: retryToken ? "retry-join-session" : "create-session",
     })
-  }, [openSocket, remoteIdParam, sessionId])
+  }, [openSocket, remoteRole, remoteToken])
 
   useEffect(() => {
-    if (!remoteIdParam) {
+    if (!remoteToken || !remoteRole) {
       return
     }
 
-    openSocketRef.current?.({ nextRemoteId: remoteIdParam })
+    openSocketRef.current?.({
+      nextRemoteRole: remoteRole,
+      nextRemoteToken: remoteToken,
+      retryType: "join-session",
+    })
     return () => {
       clearTimers()
       closeSocket(false)
     }
-  }, [clearTimers, closeSocket, remoteIdParam])
+  }, [clearTimers, closeSocket, remoteRole, remoteToken])
 
   useEffect(() => {
-    const activeSessionId = remoteIdParam || sessionId
     if (!activeSessionId) {
       return
     }
@@ -464,7 +506,7 @@ export default function useRemoteSession({
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [remoteIdParam, sendMessage, sessionId])
+  }, [activeSessionId, sendMessage])
 
   useEffect(() => {
     return () => {
@@ -484,6 +526,7 @@ export default function useRemoteSession({
 
   return useMemo(
     () => ({
+      accessTokens,
       canRetryManually,
       connectRemote,
       connectionCount,
@@ -501,6 +544,7 @@ export default function useRemoteSession({
       syncAll,
     }),
     [
+      accessTokens,
       canRetryManually,
       connectRemote,
       connectionCount,

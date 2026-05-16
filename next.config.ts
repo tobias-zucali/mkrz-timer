@@ -2,6 +2,7 @@ import os from "node:os"
 import type { NextConfig } from "next"
 
 const distDir = process.env.NEXT_DIST_DIR
+const isStaticExport = process.env.NODE_ENV === "production"
 
 function getLocalIPv4Addresses() {
   return Object.values(os.networkInterfaces()).flatMap((networks) =>
@@ -13,7 +14,23 @@ function getLocalIPv4Addresses() {
 
 const nextConfig: NextConfig = {
   ...(distDir ? { distDir } : {}),
-  output: "export",
+  ...(isStaticExport ? { output: "export" as const } : {}),
+  ...(!isStaticExport
+    ? {
+        async rewrites() {
+          return [
+            {
+              destination: "/view",
+              source: "/view/:token+",
+            },
+            {
+              destination: "/control",
+              source: "/control/:token+",
+            },
+          ]
+        },
+      }
+    : {}),
   turbopack: {
     root: process.cwd(),
     rules: {

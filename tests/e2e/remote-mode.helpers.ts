@@ -73,9 +73,7 @@ export async function enableRemoteMode(page: Page) {
   await page.getByRole("switch", { name: "Remote mode" }).click()
 
   await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
-  await expect(
-    page.getByRole("switch", { name: "Remote mode" }),
-  ).not.toBeDisabled({ timeout: 15_000 })
+  await expect(page).toHaveURL(/\/control\//, { timeout: 15_000 })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Viewer Link",
@@ -85,21 +83,20 @@ export async function enableRemoteMode(page: Page) {
   })
   await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect(controlClientUrlInput).toBeVisible()
-  await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
   await expect
     .poll(() => readonlyClientUrlInput.inputValue(), {
-      message: "readonly client URL should include a remote peer id",
+      message: "viewer URL should include a readonly token path",
     })
-    .toContain("?rid=")
+    .toContain("/view/")
 
   const readonlyClientUrl = await readonlyClientUrlInput.inputValue()
 
-  expect(readonlyClientUrl).not.toContain("control=42")
+  expect(readonlyClientUrl).not.toContain("/control/")
   await expect
     .poll(() => controlClientUrlInput.inputValue(), {
-      message: "control client URL should include the control marker",
+      message: "control client URL should include the control token path",
     })
-    .toContain("&control=42")
+    .toContain("/control/")
 
   return controlClientUrlInput.inputValue()
 }
@@ -132,15 +129,7 @@ export async function openClientFromSettings(
     .click()
   const clientPage = await clientPagePromise
 
-  await expect
-    .poll(() => new URL(clientPage.url()).searchParams.get("rid"), {
-      message: "opened client page should keep the expected remote session id",
-    })
-    .toBe(expectedUrl.searchParams.get("rid"))
-
-  if (expectedUrl.searchParams.get("control") === "42") {
-    await expect(clientPage).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
-  }
+  await expect(clientPage).toHaveURL(expectedUrl.toString())
 
   return clientPage
 }
@@ -184,8 +173,12 @@ export async function expectUrlQrCode(page: Page, label: string) {
 }
 
 export async function openSettingsOverlay(page: Page) {
-  await page.getByRole("button", { name: "Settings" }).click()
   const settingsDrawer = page.getByTestId("settings-drawer")
+
+  if (!(await settingsDrawer.isVisible().catch(() => false))) {
+    await page.getByRole("button", { exact: true, name: "Settings" }).click()
+  }
+
   await expect(settingsDrawer).toBeVisible()
   await expect(settingsDrawer.getByLabel("Title")).toBeVisible()
 }
@@ -588,11 +581,7 @@ export async function expectRemoteSessionOnlyUrl(
   page: Page,
   { control = false }: { control?: boolean } = {},
 ) {
-  await expect(page).toHaveURL(/(?:\?|&)rid=/)
-
-  if (control) {
-    await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
-  }
+  await expect(page).toHaveURL(control ? /\/control\// : /\/view\//)
 
   await expect
     .poll(() => page.url(), {
@@ -607,8 +596,7 @@ export async function expectControlClientUrlParams(
 ) {
   void settings
 
-  await expect(page).toHaveURL(/(?:\?|&)rid=/)
-  await expect(page).toHaveURL(/(?:\?|&)control=42(?:&|$)/)
+  await expect(page).toHaveURL(/\/control\//)
   await expect(page).not.toHaveURL(/(?:\?|&)(?:bg|fg|m|pc|pid|s|title)=/)
 }
 

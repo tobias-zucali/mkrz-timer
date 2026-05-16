@@ -4,14 +4,14 @@ import {
   closeSettingsOverlay,
   enableRemoteMode,
   expectControlClientUrlParams,
-  expectTimerDisplayRunning,
   expectRemoteSessionOnlyUrl,
+  expectTimerDisplayRunning,
   expectTimerControlsToMatch,
   expectTimerPaused,
   expectTimerRunning,
   expectTimerSettings,
-  expectUrlQrCode,
   expectTimersToMatch,
+  expectUrlQrCode,
   getDisplayedSeconds,
   openClientFromSettings,
   openSettingsOverlay,
@@ -264,7 +264,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   await Promise.all(
     allPages.map((remotePage) => expectTimerSettings(remotePage, mainSettings)),
   )
-  await expectRemoteSessionOnlyUrl(page, { control: true })
+  await expectControlClientUrlParams(page, mainSettings)
   await Promise.all(
     clients.map((remotePage) =>
       expectControlClientUrlParams(remotePage, mainSettings),
@@ -289,7 +289,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
       expectTimerSettings(remotePage, clientSettings),
     ),
   )
-  await expectRemoteSessionOnlyUrl(page, { control: true })
+  await expectControlClientUrlParams(page, clientSettings)
   await Promise.all(
     clients.map((remotePage) =>
       expectControlClientUrlParams(remotePage, clientSettings),
@@ -347,17 +347,9 @@ test("new clients inherit host settings without resetting the session", async ({
       expectTimerSettings(remotePage, inheritedSettings),
     ),
   )
-  await expectRemoteSessionOnlyUrl(page, { control: true })
+  await expectControlClientUrlParams(page, mainSettings)
   await expectControlClientUrlParams(controlClient, mainSettings)
   await expectRemoteSessionOnlyUrl(readonlyClient)
-
-  await expect
-    .poll(() => page.url(), {
-      message:
-        "joining clients should not push default settings back to the host",
-      timeout: 5_000,
-    })
-    .toMatch(/(?:\?|&)rid=/)
 
   await Promise.all(
     allPages.map((remotePage) =>

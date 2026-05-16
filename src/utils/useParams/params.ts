@@ -1,8 +1,4 @@
-import {
-  normalizeControlParam,
-  normalizeSessionId,
-  normalizeSyncParamPatch,
-} from "../../shared/security/input.ts"
+import { normalizeSyncParamPatch } from "../../shared/security/input.ts"
 
 export type TimerParams = Record<string, string | null | undefined>
 
@@ -23,7 +19,6 @@ const remoteSessionOnlyOmitKeys = [
   "s",
   "title",
 ] as const
-
 export const withColorHash = (value: string) => {
   return value.startsWith("#") ? value : `#${value}`
 }
@@ -47,16 +42,12 @@ const normalizeSerializableParam = (key: string, value: string) => {
   }
 
   switch (key) {
-    case "control":
-      return normalizeControlParam(value) ?? undefined
     case "m":
     case "s":
     case "title":
       return normalizeSyncParamPatch({ [key]: value })?.[
         key as keyof ReturnType<typeof normalizeSyncParamPatch>
       ] as string | undefined
-    case "rid":
-      return normalizeSessionId(value) ?? undefined
     default:
       return value
   }
@@ -65,10 +56,12 @@ const normalizeSerializableParam = (key: string, value: string) => {
 export const getRemoteSessionOnlyOmitKeys = (
   currentParams: TimerParams,
   _unusedInitialParamKeys: Iterable<string>,
+  pathname?: string,
 ) => {
   void _unusedInitialParamKeys
+  void currentParams
 
-  if (!currentParams.rid) {
+  if (!pathname || !/^\/(?:control|view)(?:\/|$)/.test(pathname)) {
     return []
   }
 

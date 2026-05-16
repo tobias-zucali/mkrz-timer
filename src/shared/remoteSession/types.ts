@@ -7,6 +7,13 @@ export type SyncParams = {
   pc: string
 }
 
+export type RemoteAccessRole = "control" | "readonly"
+
+export type RemoteAccessTokenSet = {
+  control: string
+  readonly: string
+}
+
 export type SessionSnapshot = {
   params: SyncParams
   state: {
@@ -37,11 +44,22 @@ export type RelayConnectionDetails = {
 
 export type RelayClientMessage =
   | {
-      type: "create-or-join"
-      canControl: boolean
+      type: "create-session"
       clientId: string
-      sessionId?: string
+      snapshot: SessionSnapshot
+    }
+  | {
+      type: "join-session"
+      clientId: string
+      role: RemoteAccessRole
+      token: string
+    }
+  | {
+      type: "retry-join-session"
+      clientId: string
+      role: RemoteAccessRole
       snapshot?: SessionSnapshot
+      token: string
     }
   | {
       type: "sync"
@@ -60,19 +78,12 @@ export type RelayClientMessage =
       clientId: string
       sessionId: string
     }
-  | {
-      type: "retry-join"
-      canControl: boolean
-      clientId: string
-      sessionId: string
-      snapshot?: SessionSnapshot
-    }
-
 export type RelayServerMessage =
   | {
       type: "session"
-      sessionId: string
+      accessTokens?: RemoteAccessTokenSet
       participants: SessionParticipant[]
+      sessionId: string
       snapshot: SessionSnapshot
     }
   | {

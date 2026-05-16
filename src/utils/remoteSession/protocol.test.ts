@@ -26,25 +26,21 @@ const syncState = {
   totalDuration: 60,
 }
 
-test("buildJoinMessage creates a snapshot for create-or-join clients", () => {
+test("buildJoinMessage creates a snapshot for session creators", () => {
   assert.deepEqual(
     buildJoinMessage({
-      canControlSession: false,
       clientId: "client-1",
-      nextRemoteId: "session-1",
-      retryType: "create-or-join",
+      retryType: "create-session",
       syncParams,
       syncState,
     }),
     {
-      type: "create-or-join",
-      canControl: false,
       clientId: "client-1",
-      sessionId: "session-1",
       snapshot: {
         params: syncParams,
         state: syncState,
       },
+      type: "create-session",
     },
   )
 })
@@ -52,19 +48,40 @@ test("buildJoinMessage creates a snapshot for create-or-join clients", () => {
 test("buildJoinMessage only includes retry snapshots for control clients", () => {
   assert.deepEqual(
     buildJoinMessage({
-      canControlSession: false,
       clientId: "viewer",
-      nextRemoteId: "session-1",
-      retryType: "retry-join",
+      remoteRole: "readonly",
+      remoteToken: "viewer-token",
+      retryType: "retry-join-session",
       syncParams,
       syncState,
     }),
     {
-      type: "retry-join",
-      canControl: false,
       clientId: "viewer",
-      sessionId: "session-1",
+      role: "readonly",
       snapshot: undefined,
+      token: "viewer-token",
+      type: "retry-join-session",
+    },
+  )
+
+  assert.deepEqual(
+    buildJoinMessage({
+      clientId: "viewer",
+      remoteRole: "control",
+      remoteToken: "control-token",
+      retryType: "retry-join-session",
+      syncParams,
+      syncState,
+    }),
+    {
+      clientId: "viewer",
+      role: "control",
+      snapshot: {
+        params: syncParams,
+        state: syncState,
+      },
+      token: "control-token",
+      type: "retry-join-session",
     },
   )
 })

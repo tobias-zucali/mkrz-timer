@@ -14,7 +14,7 @@ test("buildErrorReportBody includes expected diagnostics", () => {
     ],
     errorText: "Remote mode could not start. Connection failed",
     floatingTimerErrorText: "Floating timer could not open.",
-    remoteIdParam: "remote-123",
+    remotePath: "/control/controller-123",
     sessionId: "session-123",
     participantRole: "readonly",
     participantStatus: "disconnected",
@@ -29,7 +29,7 @@ test("buildErrorReportBody includes expected diagnostics", () => {
     relayReachabilityLabel: "Unreachable",
     relayLabel: "Relay: localhost:9100",
     error: new Error("Connection failed"),
-    params: { rid: "remote-123", control: "42" },
+    params: { title: "Workshop" },
     isOnline: false,
     visibilityState: "hidden",
     hasFocus: false,
@@ -49,6 +49,7 @@ test("buildErrorReportBody includes expected diagnostics", () => {
   assert.ok(report.includes("- Remote mode: Recovery needs a retry"))
   assert.ok(report.includes("- Session: Control participant"))
   assert.ok(report.includes("- Relay reachability: Unreachable"))
+  assert.ok(report.includes("- Remote path: /control/controller-123"))
   assert.ok(report.includes("- Session id: session-123"))
   assert.ok(report.includes("- Participant role: readonly"))
   assert.ok(report.includes("- Active participants: 2"))

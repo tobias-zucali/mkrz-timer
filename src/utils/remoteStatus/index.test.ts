@@ -9,9 +9,10 @@ test("returns null outside remote mode", () => {
       canRetryManually: false,
       hasConnectedOnce: false,
       hasReceivedInitialSync: false,
+      isRemoteEnabled: false,
       lifecycleState: "connecting",
       participantCount: 0,
-      remoteIdParam: "",
+      role: "control",
     }),
     null,
   )
@@ -20,11 +21,12 @@ test("returns null outside remote mode", () => {
 test("describes pending control-session startup before the session id exists", () => {
   const status = getRemoteStatus({
     canRetryManually: false,
-    control: "42",
     hasConnectedOnce: false,
     hasReceivedInitialSync: false,
+    isRemoteEnabled: false,
     lifecycleState: "connecting",
     participantCount: 1,
+    role: "control",
     showPendingHostStatus: true,
   })
 
@@ -42,12 +44,12 @@ test("describes pending control-session startup before the session id exists", (
 test("describes the connected control-session state", () => {
   const status = getRemoteStatus({
     canRetryManually: false,
-    control: "42",
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
+    isRemoteEnabled: true,
     lifecycleState: "connected",
     participantCount: 3,
-    remoteIdParam: "session-1",
+    role: "control",
   })
 
   assert.deepEqual(status, {
@@ -66,9 +68,10 @@ test("describes a connected readonly session", () => {
     canRetryManually: false,
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
+    isRemoteEnabled: true,
     lifecycleState: "connected",
     participantCount: 2,
-    remoteIdParam: "session-1",
+    role: "readonly",
   })
 
   assert.deepEqual(status, {
@@ -87,9 +90,10 @@ test("describes a failed readonly recovery with retry available", () => {
     canRetryManually: true,
     hasConnectedOnce: true,
     hasReceivedInitialSync: false,
+    isRemoteEnabled: true,
     lifecycleState: "failed",
     participantCount: 0,
-    remoteIdParam: "session-1",
+    role: "readonly",
   })
 
   assert.deepEqual(status, {

@@ -83,7 +83,7 @@ pnpm build:docker
 
 ## Remote Mode
 
-See [docs/remote-mode.md](./docs/remote-mode.md) for the session model, client behavior, and code layout.
+See [docs/remote-mode.md](./docs/remote-mode.md) for the session model, client behavior, link permission model, and code layout.
 
 ## Local Development
 
