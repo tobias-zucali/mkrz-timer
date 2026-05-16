@@ -2,7 +2,7 @@ import type {
   SessionParticipant,
   SessionSnapshot,
   SyncParams,
-} from "../../shared/remoteSession/types.ts"
+} from "@/shared/remoteSession/types.ts"
 
 const DEFAULT_SESSION_TTL_MS = 5 * 60_000
 
@@ -39,6 +39,31 @@ export class InMemorySessionStore {
     this.sessionTtlMs = sessionTtlMs
   }
 
+  private upsertParticipant({
+    canControl,
+    clientId,
+    session,
+  }: {
+    canControl: boolean
+    clientId: string
+    session: RelaySessionRecord
+  }) {
+    if (
+      !session.participants.some(
+        (participant) => participant.clientId === clientId,
+      )
+    ) {
+      session.participants.push({ canControl, clientId })
+      return
+    }
+
+    session.participants = session.participants.map((participant) =>
+      participant.clientId === clientId
+        ? { ...participant, canControl }
+        : participant,
+    )
+  }
+
   createOrJoin({
     canControl,
     clientId,
@@ -66,19 +91,7 @@ export class InMemorySessionStore {
     }
 
     existing.lastSeenAt = now
-    if (
-      !existing.participants.some(
-        (participant) => participant.clientId === clientId,
-      )
-    ) {
-      existing.participants.push({ canControl, clientId })
-    } else {
-      existing.participants = existing.participants.map((participant) =>
-        participant.clientId === clientId
-          ? { ...participant, canControl }
-          : participant,
-      )
-    }
+    this.upsertParticipant({ canControl, clientId, session: existing })
     return existing
   }
 
@@ -96,19 +109,7 @@ export class InMemorySessionStore {
     const existing = this.sessions.get(sessionId)
     if (existing) {
       existing.lastSeenAt = Date.now()
-      if (
-        !existing.participants.some(
-          (participant) => participant.clientId === clientId,
-        )
-      ) {
-        existing.participants.push({ canControl, clientId })
-      } else {
-        existing.participants = existing.participants.map((participant) =>
-          participant.clientId === clientId
-            ? { ...participant, canControl }
-            : participant,
-        )
-      }
+      this.upsertParticipant({ canControl, clientId, session: existing })
       return existing
     }
 

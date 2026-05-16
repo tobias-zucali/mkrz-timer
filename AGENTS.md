@@ -7,7 +7,8 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `22.6.0` or newer.
 - After edits, run `pnpm check`, `pnpm test` and `pnpm format:fix` before considering the task done.
-- Add follow-up work introduced during implementation to [TODOS.md](./TODOS.md).
+- Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
+- Prefer `@/` imports over relative `../..` imports.
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
