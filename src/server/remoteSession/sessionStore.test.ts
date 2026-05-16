@@ -26,18 +26,21 @@ test("createOrJoin reuses a session and updates participant permissions", () => 
       },
     },
   })
+  assert.ok(created)
 
   const joined = store.createOrJoin({
     canControl: false,
     clientId: "viewer",
     sessionId: created.id,
   })
+  assert.ok(joined)
 
   const upgraded = store.createOrJoin({
     canControl: true,
     clientId: "viewer",
     sessionId: created.id,
   })
+  assert.ok(upgraded)
 
   assert.equal(joined.id, created.id)
   assert.equal(upgraded.participants.length, 2)
@@ -98,6 +101,7 @@ test("updateSnapshot only allows control participants to publish state", () => {
     canControl: true,
     clientId: "host",
   })
+  assert.ok(session)
 
   store.createOrJoin({
     canControl: false,
@@ -132,12 +136,63 @@ test("updateSnapshot only allows control participants to publish state", () => {
   assert.equal(updated.snapshot.state.elapsedTime, 12)
 })
 
+test("createOrJoin and updateSnapshot normalize hostile values safely", () => {
+  const store = new InMemorySessionStore()
+  const session = store.createOrJoin({
+    canControl: true,
+    clientId: "host",
+    snapshot: {
+      params: {
+        bg: "bad" as never,
+        fg: "#ffffff",
+        m: "05",
+        pc: "#00ff00",
+        s: "07",
+        title: "  <script>alert(1)</script>  ",
+      },
+      state: {
+        elapsedTime: Number.POSITIVE_INFINITY,
+        isPaused: true,
+        isStarted: false,
+        revision: -1,
+        totalDuration: -1,
+      },
+    },
+  })
+
+  assert.ok(session)
+  assert.equal(session.snapshot.params.bg, "#000000")
+  assert.equal(session.snapshot.params.title, "<script>alert(1)</script>")
+  assert.equal(session.snapshot.state.elapsedTime, 0)
+  assert.equal(session.snapshot.state.totalDuration, 60)
+
+  const updated = store.updateSnapshot({
+    clientId: "host",
+    params: {
+      title: "\u0000Hello  world ",
+    },
+    sessionId: session.id,
+    state: {
+      elapsedTime: 20,
+      isPaused: false,
+      isStarted: true,
+      revision: 2,
+      totalDuration: 67,
+    },
+  })
+
+  assert.ok(updated)
+  assert.equal(updated.snapshot.params.title, "Hello world")
+  assert.equal(updated.snapshot.state.totalDuration, 67)
+})
+
 test("leave removes participants and sweepExpired drops idle sessions", () => {
   const store = new InMemorySessionStore(100)
   const session = store.createOrJoin({
     canControl: true,
     clientId: "host",
   })
+  assert.ok(session)
 
   store.createOrJoin({
     canControl: false,

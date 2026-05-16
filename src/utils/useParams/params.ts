@@ -1,3 +1,9 @@
+import {
+  normalizeControlParam,
+  normalizeSessionId,
+  normalizeSyncParamPatch,
+} from "../../shared/security/input.ts"
+
 export type TimerParams = Record<string, string | null | undefined>
 
 export type ParamBuildOptions = {
@@ -33,6 +39,29 @@ export const serializeParamValue = (key: string, value: string) => {
   return value
 }
 
+const normalizeSerializableParam = (key: string, value: string) => {
+  if (colorParamKeys.includes(key as (typeof colorParamKeys)[number])) {
+    return normalizeSyncParamPatch({ [key]: value })?.[
+      key as keyof ReturnType<typeof normalizeSyncParamPatch>
+    ] as string | undefined
+  }
+
+  switch (key) {
+    case "control":
+      return normalizeControlParam(value) ?? undefined
+    case "m":
+    case "s":
+    case "title":
+      return normalizeSyncParamPatch({ [key]: value })?.[
+        key as keyof ReturnType<typeof normalizeSyncParamPatch>
+      ] as string | undefined
+    case "rid":
+      return normalizeSessionId(value) ?? undefined
+    default:
+      return value
+  }
+}
+
 export const getRemoteSessionOnlyOmitKeys = (
   currentParams: TimerParams,
   _unusedInitialParamKeys: Iterable<string>,
@@ -60,9 +89,16 @@ export const buildPathWithParams = (
   const mergedParams = inherit ? { ...currentParams, ...params } : params
 
   Object.entries(mergedParams).forEach(([key, value]) => {
-    if (value && !omittedParams.has(key)) {
-      newSearchParams.set(key, serializeParamValue(key, value))
+    if (!value || omittedParams.has(key)) {
+      return
     }
+
+    const normalizedValue = normalizeSerializableParam(key, value)
+    if (!normalizedValue) {
+      return
+    }
+
+    newSearchParams.set(key, serializeParamValue(key, normalizedValue))
   })
 
   return `${pathname}?${newSearchParams.toString()}`

@@ -1,20 +1,16 @@
 import type { WebSocket } from "ws"
 
 import type {
-  RelayClientMessage,
   RelayServerMessage,
   SessionSnapshot,
 } from "@/shared/remoteSession/types.ts"
+import { normalizeRelayClientMessage } from "../../shared/security/input.ts"
 import type { RelaySessionRecord } from "@/server/remoteSession/sessionStore.ts"
 
 import type { RelayConnectionRegistry } from "./connectionRegistry.ts"
 
 export const parseClientMessage = (value: WebSocket.RawData) => {
-  try {
-    return JSON.parse(String(value)) as RelayClientMessage
-  } catch {
-    return null
-  }
+  return normalizeRelayClientMessage(String(value))
 }
 
 export const createErrorMessage = (message: string): RelayServerMessage => ({

@@ -15,6 +15,7 @@ import {
   openClientFromSettings,
   openSettingsOverlay,
   openClientsFromSettings,
+  relayUrl,
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
@@ -171,6 +172,62 @@ test("syncs the current timer state to a client that rejoins during active contr
   await page.getByRole("button", { name: "PAUSE" }).click()
   await Promise.all([...activePages, rejoinedClient].map(expectTimerPaused))
   await expectTimersToMatch([...activePages, rejoinedClient])
+})
+
+test("ignores malformed relay payload attempts without breaking active clients", async ({
+  page,
+}) => {
+  await enableRemoteMode(page)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    await page.getByRole("textbox", { name: "Viewer Link" }).inputValue(),
+    "Viewer Link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "remote cluster should connect before malformed relay payloads",
+  })
+
+  await page.evaluate(
+    async (wsUrl) => {
+      await new Promise<void>((resolve) => {
+        const socket = new WebSocket(wsUrl)
+        const finish = () => resolve()
+
+        socket.addEventListener("error", finish, { once: true })
+        socket.addEventListener(
+          "open",
+          () => {
+            socket.send("not-json")
+            socket.send(
+              JSON.stringify({
+                clientId: "attacker",
+                params: { title: "<script>boom()</script>" },
+                sessionId: "<bad>",
+                type: "sync",
+              }),
+            )
+            socket.send("x".repeat(20_000))
+            socket.close()
+            window.setTimeout(finish, 100)
+          },
+          { once: true },
+        )
+
+        window.setTimeout(finish, 2_000)
+      })
+    },
+    `${relayUrl.replace(/^http/, "ws")}/ws`,
+  )
+
+  await page.getByRole("button", { name: "START" }).click()
+  await Promise.all([page, readonlyClient].map(expectTimerRunning))
+  await page.getByRole("button", { name: "PAUSE" }).click()
+  await Promise.all([page, readonlyClient].map(expectTimerPaused))
+  await expectTimersToMatch([page, readonlyClient])
 })
 
 test("syncs settings changes from main and clients", async ({ page }) => {

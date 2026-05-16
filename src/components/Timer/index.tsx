@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-import EditableHtml from "@/components/EditableHtml"
+import EditableText from "@/components/EditableText"
 import Pie from "@/components/Pie"
 import DigitalDisplay from "@/components/DigitalDisplay"
 import useTimer from "@/utils/useTimer"
@@ -78,11 +78,12 @@ export default function Timer({
 
   return (
     <div className="flex flex-col h-full">
-      <EditableHtml
+      <EditableText
+        data-testid="timer-title"
         disabled={isReadonly}
-        html={title}
+        value={title}
         onChange={(value) => handleChange("title", value)}
-        className={`text-center text-[3em] font-bold pt-1 md:text-[5em] rouded-lg ${
+        className={`w-full bg-transparent px-4 pt-1 text-center text-[3em] font-bold md:text-[5em] ${
           isReadonly ? "" : "hover:outline-4 hover:-outline-offset-4"
         }`}
         title={isReadonly ? undefined : "Click to edit title"}

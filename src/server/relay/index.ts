@@ -100,6 +100,13 @@ wss.on("connection", (socket: WebSocket) => {
           sessionId: message.sessionId,
           snapshot: message.snapshot,
         })
+        if (!session) {
+          registry.sendToSocket(
+            socket,
+            createErrorMessage("Remote session request was invalid."),
+          )
+          return
+        }
         registry.attachSession(message.clientId, session.id)
         respondWithSession({ registry, session, socket })
         return

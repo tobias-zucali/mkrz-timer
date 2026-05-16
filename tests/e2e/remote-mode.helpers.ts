@@ -161,8 +161,9 @@ export async function openClientsFromSettings(
 }
 
 export async function closeSettingsOverlay(page: Page) {
-  await page.getByRole("button", { name: "Done" }).click()
-  await expect(page.getByTestId("settings-drawer")).not.toBeVisible()
+  const settingsDrawer = page.getByTestId("settings-drawer")
+  await page.keyboard.press("Escape")
+  await expect(settingsDrawer).not.toBeVisible()
 }
 
 export async function expectUrlQrCode(page: Page, label: string) {
@@ -228,6 +229,10 @@ export async function expectTimerRunning(page: Page) {
   })
 
   await expectTimerDisplayRunning(page)
+}
+
+export async function expectTimerTitleValue(page: Page, value: string) {
+  await expect(page.getByTestId("timer-title")).toHaveValue(value)
 }
 
 export async function expectTimerDisplayRunning(page: Page) {
@@ -312,7 +317,10 @@ export async function expectRemoteStatus(
       .replace(/\s+/g, " ")
       .trim()
 
-  await expect(remoteStatus).toHaveAttribute("role", "status")
+  await expect(remoteStatus).toHaveCount(1, { timeout: 15_000 })
+  await expect(remoteStatus).toHaveAttribute("role", "status", {
+    timeout: 15_000,
+  })
   await expect
     .poll(
       async () => {
@@ -489,12 +497,12 @@ async function getBodyCssVariable(page: Page, name: string) {
 export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   if (settings.title !== undefined) {
     const expectedTitle = settings.title
-    const editableTitle = page.getByTitle("Click to edit title")
     await expect
       .poll(
         async () => {
-          if ((await editableTitle.count()) > 0) {
-            return ((await editableTitle.textContent()) ?? "").trim()
+          const timerTitle = page.getByTestId("timer-title")
+          if ((await timerTitle.count()) > 0) {
+            return (await timerTitle.inputValue()).trim()
           }
 
           const exactText = page.getByText(expectedTitle, { exact: true })

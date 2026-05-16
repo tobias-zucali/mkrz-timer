@@ -3,6 +3,14 @@ import type {
   SessionSnapshot,
   SyncParams,
 } from "@/shared/remoteSession/types.ts"
+import {
+  DEFAULT_SYNC_PARAMS,
+  DEFAULT_TIMER_STATE,
+  normalizeSessionId,
+  normalizeSessionSnapshot,
+  normalizeSyncParamPatch,
+  normalizeTimerState,
+} from "../../shared/security/input.ts"
 
 const DEFAULT_SESSION_TTL_MS = 5 * 60_000
 
@@ -14,21 +22,8 @@ export type RelaySessionRecord = {
 }
 
 const defaultSnapshot = (): SessionSnapshot => ({
-  params: {
-    bg: "#000000",
-    fg: "#ffffff",
-    m: "01",
-    pc: "#d61f69",
-    s: "00",
-    title: "",
-  },
-  state: {
-    elapsedTime: 0,
-    isPaused: true,
-    isStarted: false,
-    revision: 0,
-    totalDuration: 60,
-  },
+  params: DEFAULT_SYNC_PARAMS,
+  state: DEFAULT_TIMER_STATE,
 })
 
 export class InMemorySessionStore {
@@ -75,7 +70,11 @@ export class InMemorySessionStore {
     sessionId?: string
     snapshot?: SessionSnapshot
   }) {
-    const id = sessionId || crypto.randomUUID()
+    const id = sessionId ? normalizeSessionId(sessionId) : crypto.randomUUID()
+    if (!id) {
+      return null
+    }
+
     const existing = this.sessions.get(id)
     const now = Date.now()
 
@@ -84,7 +83,7 @@ export class InMemorySessionStore {
         id,
         lastSeenAt: now,
         participants: [{ canControl, clientId }],
-        snapshot: snapshot ?? defaultSnapshot(),
+        snapshot: normalizeSessionSnapshot(snapshot ?? defaultSnapshot()),
       }
       this.sessions.set(id, created)
       return created
@@ -106,6 +105,10 @@ export class InMemorySessionStore {
     sessionId: string
     snapshot?: SessionSnapshot
   }) {
+    if (!normalizeSessionId(sessionId)) {
+      return null
+    }
+
     const existing = this.sessions.get(sessionId)
     if (existing) {
       existing.lastSeenAt = Date.now()
@@ -121,7 +124,7 @@ export class InMemorySessionStore {
       id: sessionId,
       lastSeenAt: Date.now(),
       participants: [{ canControl, clientId }],
-      snapshot,
+      snapshot: normalizeSessionSnapshot(snapshot),
     }
     this.sessions.set(sessionId, restored)
     return restored
@@ -138,6 +141,10 @@ export class InMemorySessionStore {
     sessionId: string
     state?: SessionSnapshot["state"]
   }) {
+    if (!normalizeSessionId(sessionId)) {
+      return null
+    }
+
     const session = this.sessions.get(sessionId)
     if (!session) {
       return null
@@ -155,9 +162,11 @@ export class InMemorySessionStore {
     session.snapshot = {
       params: {
         ...session.snapshot.params,
-        ...params,
+        ...(params ? normalizeSyncParamPatch(params) : {}),
       },
-      state: state ?? session.snapshot.state,
+      state: state
+        ? normalizeTimerState(state, session.snapshot.state)
+        : session.snapshot.state,
     }
 
     return session

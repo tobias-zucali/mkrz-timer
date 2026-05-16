@@ -1,10 +1,13 @@
 import type { TimerState } from "@/utils/useTimer"
 import type {
   RelayClientMessage,
-  RelayServerMessage,
   SessionSnapshot,
   SyncParams,
 } from "@/shared/remoteSession/types"
+import {
+  normalizeRelayServerMessage,
+  normalizeSessionSnapshot,
+} from "../../shared/security/input.ts"
 
 export const createLocalClientId = () => {
   if (
@@ -18,11 +21,7 @@ export const createLocalClientId = () => {
 }
 
 export const parseServerMessage = (event: MessageEvent<string>) => {
-  try {
-    return JSON.parse(event.data) as RelayServerMessage
-  } catch {
-    return null
-  }
+  return normalizeRelayServerMessage(event.data)
 }
 
 const createSnapshot = ({
@@ -32,8 +31,10 @@ const createSnapshot = ({
   syncParams: SyncParams
   syncState: TimerState
 }): SessionSnapshot => ({
-  params: syncParams,
-  state: syncState,
+  ...normalizeSessionSnapshot({
+    params: syncParams,
+    state: syncState,
+  }),
 })
 
 export const buildJoinMessage = ({

@@ -120,4 +120,16 @@ test("parseServerMessage rejects invalid JSON and returns typed messages", () =>
       message: "boom",
     },
   )
+
+  assert.equal(
+    parseServerMessage({
+      data: JSON.stringify({
+        type: "session",
+        sessionId: "<bad>",
+        participants: [],
+        snapshot: {},
+      }),
+    } as MessageEvent<string>),
+    null,
+  )
 })
