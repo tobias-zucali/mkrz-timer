@@ -61,7 +61,7 @@ test(
   { tag: "@smoke" },
   async ({ page }) => {
     await page.goto(
-      "/?title=%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20&bg=javascript:alert(1)&fg=ABCDEF&pc=ff00gg&m=9999&s=-1",
+      "/?v=1&t=60!d61f69!%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20!0&bg=javascript:alert(1)&fg=ABCDEF",
     )
 
     await expectTimerTitleValue(
@@ -76,12 +76,9 @@ test(
         }),
       )
       .toEqual({
-        bg: "000000",
         fg: "abcdef",
-        m: "01",
-        pc: "d61f69",
-        s: "00",
-        title: ' <img src=x onerror="window.__timerInjected=1"> ',
+        t: `60!d61f69!${encodeURIComponent(' <img src=x onerror="window.__timerInjected=1"> ')}!0`,
+        v: "1",
       })
     await expect
       .poll(() =>
@@ -127,11 +124,8 @@ test("keeps the main remote page local and ends remote mode cleanly", async ({
       ),
     )
     .toEqual({
-      bg: "000000",
-      fg: "ffffff",
-      m: "01",
-      pc: "d61f69",
-      s: "00",
+      t: "60!d61f69!!0",
+      v: "1",
     })
   await openSettingsOverlay(page)
   await expect(

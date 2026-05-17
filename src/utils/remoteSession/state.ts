@@ -14,11 +14,19 @@ type SessionSyncActions = {
     sessionId: string,
     accessTokens?: RemoteAccessTokenSet,
   ) => void
+  deferSnapshot: (payload: {
+    message: Extract<RelayServerMessage, { type: "session" | "state-updated" }>
+    wasReconnect: boolean
+  }) => void
   log: (event: string) => void
   markConnected: (wasReconnect: boolean) => void
   setAccessTokens: (accessTokens?: RemoteAccessTokenSet) => void
   setParticipants: (nextParticipants: SessionParticipant[]) => void
   setSessionId: (nextSessionId?: string) => void
+  shouldDeferSnapshot: (payload: {
+    snapshot: { params: SyncParams; state: TimerState }
+    wasReconnect: boolean
+  }) => boolean
 }
 
 type ParticipantListActions = {
@@ -58,6 +66,21 @@ const applySessionSyncMessage = ({
   actions.setSessionId(message.sessionId)
   if (message.type === "session" && message.accessTokens) {
     actions.setAccessTokens(message.accessTokens)
+  }
+  if (
+    actions.shouldDeferSnapshot({
+      snapshot: message.snapshot,
+      wasReconnect,
+    })
+  ) {
+    // Defer the incoming relay snapshot so the UI can resolve URL-vs-server
+    // conflicts before the client marks the session connected or republishes state.
+    actions.deferSnapshot({
+      message,
+      wasReconnect,
+    })
+    actions.log(`session_sync_deferred: ${message.sessionId}`)
+    return
   }
   actions.completeConnect(
     message.sessionId,

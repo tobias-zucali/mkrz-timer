@@ -142,6 +142,7 @@ export default function Settings({
   paramData,
   closeSettings,
   handleChange,
+  handleTimeBlur,
   setShouldPromoteToControlUrl,
   remoteRole,
 }: {
@@ -151,6 +152,7 @@ export default function Settings({
   paramData: ReturnType<typeof useParams>
   closeSettings: () => void
   handleChange: (key: string, value: string) => void
+  handleTimeBlur: () => void
   setShouldPromoteToControlUrl: (nextValue: boolean) => void
   remoteRole: "control" | "readonly" | null
 }) {
@@ -272,6 +274,7 @@ export default function Settings({
                       id="minutes"
                       inputMode="numeric"
                       label="Minutes"
+                      onBlur={handleTimeBlur}
                       type="number"
                       value={params.m || 1}
                       onChange={(event) =>
@@ -282,6 +285,7 @@ export default function Settings({
                       id="seconds"
                       inputMode="numeric"
                       label="Seconds"
+                      onBlur={handleTimeBlur}
                       type="number"
                       value={params.s || 0}
                       onChange={(event) =>

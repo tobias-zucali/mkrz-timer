@@ -4,6 +4,7 @@ import { test } from "node:test"
 import {
   getMinutesSeconds,
   getSecondsDuration,
+  normalizeTimeParts,
   parseIntSafe,
   prefixZeros,
 } from "./index.ts"
@@ -64,4 +65,22 @@ test("getMinutesSeconds can freeze small negative durations at zero", () => {
   assert.deepEqual(getMinutesSeconds(-9, 10), ["00", "00"])
   assert.deepEqual(getMinutesSeconds(10, 10), ["00", "10"])
   assert.deepEqual(getMinutesSeconds(-10, 10), ["-00", "10"])
+})
+
+test("normalizeTimeParts carries overflow seconds into minutes deterministically", () => {
+  assert.deepEqual(normalizeTimeParts({ minutes: "1", seconds: "90" }), {
+    minutes: "02",
+    seconds: "30",
+    totalSeconds: 150,
+  })
+  assert.deepEqual(normalizeTimeParts({ minutes: "0", seconds: "75" }), {
+    minutes: "01",
+    seconds: "15",
+    totalSeconds: 75,
+  })
+  assert.deepEqual(normalizeTimeParts({ minutes: "90", seconds: "0" }), {
+    minutes: "90",
+    seconds: "00",
+    totalSeconds: 5400,
+  })
 })
