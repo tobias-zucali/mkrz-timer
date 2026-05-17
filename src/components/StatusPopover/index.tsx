@@ -6,6 +6,7 @@ import classNames from "classnames"
 
 import CloseButton from "@/components/CloseButton"
 import { getDocumentLocale } from "@/i18n/locale"
+import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { RemoteStatusModel } from "@/utils/remoteStatus"
@@ -260,6 +261,8 @@ export default function StatusPopover({
   const [isHovered, setIsHovered] = useState(false)
   const [locale] = useState(() => getDocumentLocale())
   const [relativeNow, setRelativeNow] = useState(() => Date.now())
+  const reportDialogRef = useRef<HTMLDivElement>(null)
+  const reportCommentRef = useRef<HTMLTextAreaElement>(null)
   const { canCopy, copyText, isCopied } = useClipboardCopy()
   const containerRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
@@ -335,6 +338,11 @@ export default function StatusPopover({
     state: remoteStatus?.state ?? "connected",
   })
   const trimmedReportComment = reportComment.trim()
+  useDialogFocusTrap({
+    active: isReportOverlayOpen,
+    defaultFocusRef: reportCommentRef,
+    dialogRef: reportDialogRef,
+  })
   const reportBody = getErrorReportBody()
   const mailBody = [
     "User comment:",
@@ -555,7 +563,9 @@ export default function StatusPopover({
         <div
           aria-modal="true"
           className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 px-4 py-6 backdrop-blur"
+          ref={reportDialogRef}
           role="dialog"
+          tabIndex={-1}
         >
           <div className="w-full max-w-xl rounded-3xl border border-foreground/12 bg-background p-6 shadow-2xl shadow-background/35">
             <div className="flex items-start justify-between gap-4">
@@ -574,6 +584,7 @@ export default function StatusPopover({
               <textarea
                 className="mt-2 min-h-28 w-full rounded-2xl border border-foreground/12 bg-foreground/[0.04] px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                 onChange={(event) => setReportComment(event.target.value)}
+                ref={reportCommentRef}
                 value={reportComment}
               />
             </label>

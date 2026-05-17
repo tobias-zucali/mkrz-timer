@@ -24,12 +24,14 @@ export default function Timer({
   readonlyPlaceholder,
   title,
   handleChange,
+  handleTimeBlur,
   timer,
 }: {
   isReadonly?: boolean
   readonlyPlaceholder?: ReadonlyPlaceholder
   title: string
   handleChange: (key: string, value: string) => void
+  handleTimeBlur: () => void
   timer: ReturnType<typeof useTimer>
 }) {
   const {
@@ -89,6 +91,7 @@ export default function Timer({
               isAlert={isTimedOut}
               isReadonly={isReadonly || isStarted}
               minutes={minutes}
+              onBlur={handleTimeBlur}
               seconds={seconds}
               onMinutesChange={(event) => handleChange("m", event.target.value)}
               onSecondsChange={(event) => handleChange("s", event.target.value)}

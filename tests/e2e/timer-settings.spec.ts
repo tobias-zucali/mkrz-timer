@@ -29,8 +29,8 @@ test(
     await expect(
       qrCodeDialog.getByRole("img", { name: "Share Link" }),
     ).toBeVisible()
-    await expect(qrCodeDialog).toContainText("m=00")
-    await expect(qrCodeDialog).toContainText("s=03")
+    await expect(qrCodeDialog).toContainText("v=1")
+    await expect(qrCodeDialog).toContainText("t=3%21")
 
     await qrCodeDialog.click()
 

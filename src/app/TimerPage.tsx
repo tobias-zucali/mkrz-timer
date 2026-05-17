@@ -1,6 +1,13 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
 import type { SyncParams } from "@/shared/remoteSession/types"
@@ -12,13 +19,16 @@ import useRemoteSession from "@/utils/remoteSession"
 import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
 import { buildRemotePath, parseRemoteRoute } from "@/utils/remoteSession/route"
 import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
+import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useNetworkStatus from "@/utils/useNetworkStatus"
 import useParams from "@/utils/useParams"
 import useTimer, { type TimerState } from "@/utils/useTimer"
+import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 
 import Settings from "@/components/Settings"
 import SettingsButton from "@/components/SettingsButton"
 import StatusPopover from "@/components/StatusPopover"
+import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 
 function getConnectionErrorDetail(error: Error) {
@@ -44,6 +54,87 @@ function getRelayReachabilityLabel(
       return "Unreachable"
     case "checking":
       return "Checking"
+  }
+}
+
+function getReadonlyPlaceholder({
+  remoteError,
+  remoteStatus,
+}: {
+  remoteError: Error | null
+  remoteStatus: ReturnType<typeof getRemoteStatus>
+}) {
+  const readonlyPlaceholderToneByRemoteState: Partial<
+    Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
+  > = {
+    connecting: "connecting",
+    failed: "failed",
+    reconnecting: "reconnecting",
+  }
+
+  if (!remoteStatus) {
+    return undefined
+  }
+
+  const tone = readonlyPlaceholderToneByRemoteState[remoteStatus.state]
+  if (!tone) {
+    return undefined
+  }
+
+  return {
+    body:
+      remoteError?.message.trim() ||
+      remoteStatus.description ||
+      "Waiting for the shared timer state.",
+    eyebrow: remoteStatus.connectionSummary,
+    heading: remoteStatus.stateLabel,
+    tone,
+  }
+}
+
+function getStatusDetails({
+  floatingTimerErrorText,
+  isOnline,
+  relayReachability,
+  remoteErrorText,
+  remoteStatus,
+  remoteStatusRole,
+}: {
+  floatingTimerErrorText: string | null
+  isOnline: boolean | null
+  relayReachability: "checking" | "reachable" | "unreachable"
+  remoteErrorText: string | null
+  remoteStatus: ReturnType<typeof getRemoteStatus>
+  remoteStatusRole: "control" | "readonly"
+}) {
+  const statusModeLabel = remoteStatus?.roleLabel ?? "Local timer"
+  const statusStateLabel = remoteErrorText
+    ? (remoteStatus?.stateLabel ?? "Attention needed")
+    : floatingTimerErrorText
+      ? "Attention needed"
+      : (remoteStatus?.stateLabel ?? "Ready")
+  const statusDescription = remoteStatus
+    ? remoteStatus.description
+    : floatingTimerErrorText
+      ? "A local feature reported an issue. Review the details below."
+      : "Remote mode is off. Open settings when you want to share the timer."
+
+  return {
+    statusDescription,
+    statusModeLabel,
+    statusNetworkLabel: getNetworkLabel(isOnline),
+    statusRelayReachabilityLabel: remoteStatus
+      ? getRelayReachabilityLabel(relayReachability)
+      : undefined,
+    statusRemoteModeLabel: remoteStatus
+      ? remoteStatus.connectionSummary
+      : "Inactive",
+    statusSessionLabel: remoteStatus
+      ? remoteStatusRole === "control"
+        ? "Control participant"
+        : "Readonly participant"
+      : undefined,
+    statusStateLabel,
   }
 }
 
@@ -112,9 +203,30 @@ function TimerApp() {
         )
       : null
 
+  const {
+    applyUrlSyncState,
+    clearSyncConflict,
+    getReconnectSnapshot,
+    hasSyncConflict,
+    notifyIncomingSyncConflict,
+    shouldDeferIncomingSnapshot,
+  } = useSyncConflictResolution({
+    applyLocalSnapshot: (snapshot) => {
+      paramData.setParams(snapshot.params)
+      setState(snapshot.state)
+    },
+    paramData,
+    remoteRole,
+    syncParamsRef,
+    syncStateRef,
+  })
+
   const remoteSession = useRemoteSession({
+    getReconnectSnapshot,
+    onIncomingSyncConflict: notifyIncomingSyncConflict,
     remoteRole: remoteLinkError ? null : remoteRole,
     remoteToken: remoteLinkError ? null : remoteToken,
+    shouldDeferIncomingSnapshot,
     syncParamsRef,
     syncStateRef,
     onHandleAction: (action) => {
@@ -130,30 +242,61 @@ function TimerApp() {
   })
 
   const {
+    accessTokens,
     canRetryManually,
     connectionCount,
     connectionDetails,
     disconnect,
     error,
     hasConnectedOnce,
+    hasPendingSyncConflict,
     hasReceivedInitialSync,
     isConnecting,
     lifecycleState,
     peerEventTimeline,
+    resolvePendingSyncConflict,
     retryConnection,
     sessionId,
     syncAll,
-    accessTokens,
   } = remoteSession
 
-  const handleChange = (key: string, value: string) => {
-    syncParamsRef.current = {
-      ...syncParamsRef.current,
-      [key]: value,
+  const applyParamPatch = useCallback(
+    (newParams: Partial<SyncParams>) => {
+      syncParamsRef.current = {
+        ...syncParamsRef.current,
+        ...newParams,
+      }
+      paramData.setParams(newParams)
+      syncAll({ keys: Object.keys(newParams) })
+    },
+    [paramData, syncAll],
+  )
+
+  const handleChange = useCallback(
+    (key: string, value: string) => {
+      applyParamPatch({ [key]: value })
+    },
+    [applyParamPatch],
+  )
+
+  const normalizeTimerInputs = useCallback(() => {
+    const normalizedTime = normalizeTimeParts({
+      minutes: syncParamsRef.current.m,
+      seconds: syncParamsRef.current.s,
+    })
+
+    if (
+      normalizedTime.minutes === syncParamsRef.current.m &&
+      normalizedTime.seconds === syncParamsRef.current.s
+    ) {
+      return
     }
-    paramData.setParams({ [key]: value })
-    syncAll({ keys: [key] })
-  }
+
+    applyParamPatch({
+      m: normalizedTime.minutes,
+      s: normalizedTime.seconds,
+    })
+  }, [applyParamPatch])
 
   const isHostRemoteSession =
     remoteRole === null && Boolean(sessionId || isConnecting || error)
@@ -184,6 +327,12 @@ function TimerApp() {
   }, [syncAll, syncState])
 
   useEffect(() => {
+    if (!hasPendingSyncConflict) {
+      clearSyncConflict()
+    }
+  }, [clearSyncConflict, hasPendingSyncConflict])
+
+  useEffect(() => {
     if (
       !shouldPromoteToControlUrl ||
       remoteRole !== null ||
@@ -206,6 +355,16 @@ function TimerApp() {
       }
     })()
   }, [accessTokens?.control, disconnect, remoteRole, shouldPromoteToControlUrl])
+
+  const handleUseServerSyncState = useCallback(() => {
+    clearSyncConflict()
+    resolvePendingSyncConflict("use-server")
+  }, [clearSyncConflict, resolvePendingSyncConflict])
+
+  const handleUseUrlSyncState = useCallback(() => {
+    applyUrlSyncState()
+    resolvePendingSyncConflict("use-local")
+  }, [applyUrlSyncState, resolvePendingSyncConflict])
 
   const remoteErrorText = remoteError
     ? remoteRoute.isRemote
@@ -249,56 +408,28 @@ function TimerApp() {
     role: remoteStatusRole,
     showPendingHostStatus: isHostRemoteSession && !sessionId,
   })
-
-  const readonlyPlaceholderToneByRemoteState: Partial<
-    Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
-  > = {
-    connecting: "connecting",
-    failed: "failed",
-    reconnecting: "reconnecting",
-  }
-  const readonlyPlaceholder =
-    isReadonlyClient && remoteStatus
-      ? (() => {
-          const tone = readonlyPlaceholderToneByRemoteState[remoteStatus.state]
-          if (!tone) {
-            return undefined
-          }
-
-          return {
-            body:
-              remoteError?.message.trim() ||
-              remoteStatus.description ||
-              "Waiting for the shared timer state.",
-            eyebrow: remoteStatus.connectionSummary,
-            heading: remoteStatus.stateLabel,
-            tone,
-          }
-        })()
-      : undefined
-  const statusModeLabel = remoteStatus?.roleLabel ?? "Local timer"
-  const statusStateLabel = remoteErrorText
-    ? (remoteStatus?.stateLabel ?? "Attention needed")
-    : floatingTimerErrorText
-      ? "Attention needed"
-      : (remoteStatus?.stateLabel ?? "Ready")
-  const statusDescription = remoteStatus
-    ? remoteStatus.description
-    : floatingTimerErrorText
-      ? "A local feature reported an issue. Review the details below."
-      : "Remote mode is off. Open settings when you want to share the timer."
-  const statusRemoteModeLabel = remoteStatus
-    ? remoteStatus.connectionSummary
-    : "Inactive"
-  const statusNetworkLabel = getNetworkLabel(isOnline)
-  const statusSessionLabel = remoteStatus
-    ? remoteStatusRole === "control"
-      ? "Control participant"
-      : "Readonly participant"
+  const readonlyPlaceholder = isReadonlyClient
+    ? getReadonlyPlaceholder({
+        remoteError,
+        remoteStatus,
+      })
     : undefined
-  const statusRelayReachabilityLabel = remoteStatus
-    ? getRelayReachabilityLabel(relayReachability)
-    : undefined
+  const {
+    statusDescription,
+    statusModeLabel,
+    statusNetworkLabel,
+    statusRelayReachabilityLabel,
+    statusRemoteModeLabel,
+    statusSessionLabel,
+    statusStateLabel,
+  } = getStatusDetails({
+    floatingTimerErrorText,
+    isOnline,
+    relayReachability,
+    remoteErrorText,
+    remoteStatus,
+    remoteStatusRole,
+  })
   const getErrorReportBody = () =>
     buildErrorReportBody({
       connectionCount,
@@ -345,6 +476,12 @@ function TimerApp() {
 
   return (
     <>
+      {hasSyncConflict && (
+        <SyncConflictDialog
+          onUseLocal={handleUseUrlSyncState}
+          onUseServer={handleUseServerSyncState}
+        />
+      )}
       {!isReadonlyClient && (
         <Settings
           floatingTimerData={floatingTimerData}
@@ -353,6 +490,7 @@ function TimerApp() {
           paramData={paramData}
           closeSettings={closeSettings}
           handleChange={handleChange}
+          handleTimeBlur={normalizeTimerInputs}
           setShouldPromoteToControlUrl={setShouldPromoteToControlUrl}
           remoteRole={remoteRole}
         />
@@ -362,6 +500,7 @@ function TimerApp() {
         readonlyPlaceholder={readonlyPlaceholder}
         title={title}
         handleChange={handleChange}
+        handleTimeBlur={normalizeTimerInputs}
         timer={timer}
       />
       {!isReadonlyClient && <SettingsButton onClick={openSettings} />}

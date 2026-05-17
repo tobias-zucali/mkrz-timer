@@ -1,4 +1,5 @@
 import classNames from "classnames"
+import { forwardRef } from "react"
 import type { ButtonHTMLAttributes } from "react"
 
 const closeButtonClassName =
@@ -24,22 +25,33 @@ function CloseGlyph() {
   )
 }
 
-export default function CloseButton({
-  title = "Close",
-  className,
-  children,
-  "aria-label": ariaLabel,
-  ...otherProps
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
+const CloseButton = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement>
+>(
+  (
+    {
+      title = "Close",
+      className,
+      children,
+      "aria-label": ariaLabel,
+      ...otherProps
+    },
+    ref,
+  ) => (
     <button
       aria-label={ariaLabel ?? title}
       className={classNames(closeButtonClassName, className)}
+      ref={ref}
       title={title}
       type="button"
       {...otherProps}
     >
       {children ?? <CloseGlyph />}
     </button>
-  )
-}
+  ),
+)
+
+CloseButton.displayName = "CloseButton"
+
+export default CloseButton

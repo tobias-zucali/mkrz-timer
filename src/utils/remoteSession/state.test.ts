@@ -55,6 +55,7 @@ const createContext = ({
       onSessionSync: {
         applySnapshot: () => undefined,
         completeConnect: () => undefined,
+        deferSnapshot: () => undefined,
         log: () => undefined,
         markConnected: (wasReconnect: boolean) => {
           markedReconnect = wasReconnect
@@ -62,6 +63,7 @@ const createContext = ({
         setAccessTokens: () => undefined,
         setParticipants: () => undefined,
         setSessionId: () => undefined,
+        shouldDeferSnapshot: () => false,
       },
       wasReconnect: hasConnectedOnce,
     },
@@ -137,6 +139,46 @@ test("session sync marks initial connections as non-reconnects", () => {
   })
 
   assert.equal(getMarkedReconnect(), false)
+})
+
+test("session sync can defer snapshot application until conflict resolution", () => {
+  let deferred = false
+  const { context, getMarkedReconnect } = createContext({
+    hasConnectedOnce: true,
+  })
+  context.onSessionSync.shouldDeferSnapshot = () => true
+  context.onSessionSync.deferSnapshot = () => {
+    deferred = true
+  }
+
+  applyServerMessage({
+    context,
+    message: {
+      type: "session",
+      participants: [{ canControl: true, clientId: "client-1" }],
+      sessionId: "session-1",
+      snapshot: {
+        params: {
+          bg: "#000000",
+          fg: "#ffffff",
+          m: "01",
+          pc: "#d61f69",
+          s: "00",
+          title: "Local",
+        },
+        state: {
+          elapsedTime: 0,
+          isPaused: true,
+          isStarted: false,
+          revision: 0,
+          totalDuration: 60,
+        },
+      },
+    },
+  })
+
+  assert.equal(deferred, true)
+  assert.equal(getMarkedReconnect(), null)
 })
 
 test("error messages become retryable failures", () => {

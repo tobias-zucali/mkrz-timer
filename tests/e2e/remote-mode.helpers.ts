@@ -1,7 +1,23 @@
 import { expect, Page } from "@playwright/test"
 import { hexToRgbChannels } from "../../src/utils/colors"
 
-const timerUrl = "/?m=01&s=00&bg=000000&fg=ffffff&pc=d61f69"
+function buildTimerPath({
+  backgroundColor = "000000",
+  foregroundColor = "ffffff",
+  primaryColor = "d61f69",
+  seconds,
+  title = "",
+}: {
+  backgroundColor?: string
+  foregroundColor?: string
+  primaryColor?: string
+  seconds: number
+  title?: string
+}) {
+  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&bg=${backgroundColor}&fg=${foregroundColor}`
+}
+
+const timerUrl = buildTimerPath({ seconds: 60 })
 export const relayUrl =
   process.env.PLAYWRIGHT_RELAY_URL || "http://127.0.0.1:9100"
 export const relayRoutePattern = `${relayUrl}/ws`
@@ -39,8 +55,11 @@ const DEBUG_INFO_SELECTORS = [
   '[data-nextjs-dev-overlay="true"]',
 ]
 
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
 export async function openTimer(page: Page, seconds = 3, baseUrl?: string) {
-  const path = `/?m=00&s=${seconds.toString().padStart(2, "0")}&bg=000000&fg=ffffff&pc=d61f69`
+  const path = buildTimerPath({ seconds })
   await page.goto(baseUrl ? new URL(path, baseUrl).toString() : path)
 }
 
@@ -588,7 +607,26 @@ export async function expectTimerUrlParams(
   }
   if (settings.primaryColor !== undefined) {
     await expect(page).toHaveURL(
-      new RegExp(`(?:\\?|&)pc=${settings.primaryColor.slice(1)}(?:&|$)`),
+      new RegExp(
+        `(?:\\?|&)t=[^&]*%21${escapeRegex(settings.primaryColor.slice(1))}%21[^&]*(?:&|$)`,
+      ),
+    )
+  }
+
+  if (
+    settings.minutes !== undefined ||
+    settings.seconds !== undefined ||
+    settings.title !== undefined
+  ) {
+    const totalSeconds =
+      Number(settings.minutes ?? "0") * 60 + Number(settings.seconds ?? "0")
+    const encodedTitle = encodeURIComponent(
+      encodeURIComponent(settings.title ?? ""),
+    )
+    await expect(page).toHaveURL(
+      new RegExp(
+        `(?:\\?|&)t=${totalSeconds}%21.*%21${escapeRegex(encodedTitle)}%210(?:&|$)`,
+      ),
     )
   }
 }
@@ -603,17 +641,15 @@ export async function expectRemoteSessionOnlyUrl(
     .poll(() => page.url(), {
       message: "remote client URLs should stay focused on session params",
     })
-    .not.toMatch(/(?:\?|&)(?:bg|fg|m|pc|pid|s|title)=/)
+    .not.toMatch(/(?:\?|&)(?:bg|fg|pid|t|v)=/)
 }
 
 export async function expectControlClientUrlParams(
   page: Page,
   settings: TimerSettings,
 ) {
-  void settings
-
   await expect(page).toHaveURL(/\/control\//)
-  await expect(page).not.toHaveURL(/(?:\?|&)(?:bg|fg|m|pc|pid|s|title)=/)
+  await expectTimerUrlParams(page, settings)
 }
 
 export async function expectTimersToMatch(

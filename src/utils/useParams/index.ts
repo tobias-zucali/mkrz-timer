@@ -2,10 +2,31 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
 import { normalizeQueryParams } from "@/shared/security/input"
+import {
+  parseTimerUrlState,
+  projectFirstUrlTimerRowToSyncParams,
+} from "@/shared/urlState"
 import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 import type { ParamBuildOptions } from "./params"
 import { buildPathWithParams, getRemoteSessionOnlyOmitKeys } from "./params"
+
+const mergeParamsForEditing = (
+  currentParams: ReturnType<typeof normalizeQueryParams>,
+  newParams: Partial<ReturnType<typeof normalizeQueryParams>>,
+) => {
+  const normalizedParams = normalizeQueryParams({
+    ...currentParams,
+    ...newParams,
+  })
+
+  return {
+    ...normalizedParams,
+    m: newParams.m ?? currentParams.m,
+    pid: currentParams.pid,
+    s: newParams.s ?? currentParams.s,
+  }
+}
 
 export default function useParams() {
   const searchParams = useSearchParams()
@@ -14,16 +35,26 @@ export default function useParams() {
   const { setColors } = useContext(ParamStyleContext)
 
   const isSearchParamsEmpty = searchParams.size === 0
+  const allowTimerState = !pathname.startsWith("/view")
+  const searchParamsString = searchParams.toString()
+  const parsedTimerUrlState = useMemo(
+    () =>
+      parseTimerUrlState({
+        allowTimerState,
+        searchParams: new URLSearchParams(searchParamsString),
+      }),
+    [allowTimerState, searchParamsString],
+  )
 
   const [currentParams, setCurrentParams] = useState(() =>
-    normalizeQueryParams({
-      bg: searchParams.get("bg"),
-      fg: searchParams.get("fg"),
-      m: searchParams.get("m"),
-      pc: searchParams.get("pc"),
-      s: searchParams.get("s"),
-      title: searchParams.get("title"),
-    }),
+    normalizeQueryParams(
+      projectFirstUrlTimerRowToSyncParams({
+        state: parseTimerUrlState({
+          allowTimerState,
+          searchParams: new URLSearchParams(searchParamsString),
+        }),
+      }),
+    ),
   )
 
   useEffect(() => {
@@ -58,13 +89,7 @@ export default function useParams() {
   )
 
   const setParams = useCallback((newParams: Partial<typeof currentParams>) => {
-    setCurrentParams((curr) => ({
-      ...normalizeQueryParams({
-        ...curr,
-        ...newParams,
-      }),
-      pid: curr.pid,
-    }))
+    setCurrentParams((curr) => mergeParamsForEditing(curr, newParams))
   }, [])
 
   const targetUrl = useMemo(
@@ -98,18 +123,33 @@ export default function useParams() {
 
   return useMemo(
     () => ({
+      isSearchParamsEmpty,
+      parsedTimerUrlState,
       params: currentParams,
-      setParams,
       getPathWithParams,
       getUrlWithParams,
-      isSearchParamsEmpty,
+      readTimerUrlState: () =>
+        parseTimerUrlState({
+          allowTimerState:
+            typeof window === "undefined"
+              ? allowTimerState
+              : !window.location.pathname.startsWith("/view"),
+          searchParams:
+            typeof window === "undefined"
+              ? new URLSearchParams(searchParamsString)
+              : new URLSearchParams(window.location.search),
+        }),
+      setParams,
     }),
     [
+      allowTimerState,
       currentParams,
-      setParams,
       getPathWithParams,
       getUrlWithParams,
       isSearchParamsEmpty,
+      parsedTimerUrlState,
+      searchParamsString,
+      setParams,
     ],
   )
 }

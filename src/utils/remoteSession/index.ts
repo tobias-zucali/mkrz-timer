@@ -7,6 +7,7 @@ import type {
   RemoteAccessTokenSet,
   RelayClientMessage,
   RelayConnectionDetails,
+  RelayServerMessage,
   RelaySessionState,
   SessionParticipant,
   SyncParams,
@@ -35,12 +36,27 @@ import {
 import { applyServerMessage } from "./state"
 
 export default function useRemoteSession({
+  getReconnectSnapshot,
+  onIncomingSyncConflict,
+  shouldDeferIncomingSnapshot,
   remoteRole,
   remoteToken,
   syncParamsRef,
   syncStateRef,
   onHandleAction,
 }: {
+  getReconnectSnapshot?: () => {
+    params: SyncParams
+    state: TimerState
+  }
+  onIncomingSyncConflict?: (payload: {
+    snapshot: { params: SyncParams; state: TimerState }
+    wasReconnect: boolean
+  }) => void
+  shouldDeferIncomingSnapshot?: (payload: {
+    snapshot: { params: SyncParams; state: TimerState }
+    wasReconnect: boolean
+  }) => boolean
   remoteRole: RemoteAccessRole | null
   remoteToken: string | null
   syncParamsRef: React.RefObject<SyncParams>
@@ -63,8 +79,13 @@ export default function useRemoteSession({
   const [accessTokens, setAccessTokens] = useState<
     RemoteAccessTokenSet | undefined
   >(undefined)
+  const [hasPendingSyncConflict, setHasPendingSyncConflict] = useState(false)
   const canPublishSessionState =
     remoteRole === "control" || (remoteRole === null && !remoteToken)
+  const pendingSessionSyncRef = useRef<{
+    message: Extract<RelayServerMessage, { type: "session" | "state-updated" }>
+    wasReconnect: boolean
+  } | null>(null)
 
   const localClientIdRef = useRef(createLocalClientId())
   const reconnectTimeoutRef = useRef<number | undefined>(undefined)
@@ -73,7 +94,9 @@ export default function useRemoteSession({
   const socketRef = useRef<WebSocket | null>(null)
   const sessionIdRef = useRef<string | undefined>(undefined)
   const accessTokensRef = useRef<RemoteAccessTokenSet | undefined>(undefined)
+  const hasReceivedInitialSyncRef = useRef(false)
   const isManualDisconnectRef = useRef(false)
+  const isConnectingRef = useRef(false)
   const hasConnectedOnceRef = useRef(false)
   const openSocketRef = useRef<
     | (({
@@ -142,9 +165,69 @@ export default function useRemoteSession({
     hasConnectedOnceRef.current = nextValue
   }, [])
 
+  const resolveConnectPromise = useCallback(
+    (result: { accessTokens?: RemoteAccessTokenSet; sessionId: string }) => {
+      connectPromiseRef.current?.resolve(result)
+      connectPromiseRef.current = null
+    },
+    [],
+  )
+
   const updateParticipants = useCallback(
     (nextParticipants: SessionParticipant[]) => {
       setParticipants(nextParticipants)
+    },
+    [],
+  )
+
+  const clearPendingSyncConflict = useCallback(() => {
+    pendingSessionSyncRef.current = null
+    setHasPendingSyncConflict(false)
+  }, [])
+
+  const markSessionConnected = useCallback(
+    (wasReconnect: boolean) => {
+      setConnectedOnce(true)
+      hasReceivedInitialSyncRef.current = true
+      isConnectingRef.current = false
+      setHasReceivedInitialSync(true)
+      setIsConnecting(false)
+      setError(null)
+
+      if (wasReconnect) {
+        markRecovered()
+        return
+      }
+
+      setLifecycleState("connected")
+    },
+    [markRecovered, setConnectedOnce],
+  )
+
+  const getRetryTarget = useCallback(
+    ({
+      nextRemoteRole,
+      nextRemoteToken,
+    }: {
+      nextRemoteRole?: RemoteAccessRole | null
+      nextRemoteToken?: string | null
+    }) => {
+      if (nextRemoteToken) {
+        return {
+          retryRole: nextRemoteRole ?? "control",
+          retryToken: nextRemoteToken,
+        }
+      }
+
+      const accessToken =
+        nextRemoteRole === "readonly"
+          ? accessTokensRef.current?.readonly
+          : accessTokensRef.current?.control
+
+      return {
+        retryRole: nextRemoteRole ?? (accessToken ? "control" : null),
+        retryToken: accessToken ?? null,
+      }
     },
     [],
   )
@@ -180,6 +263,9 @@ export default function useRemoteSession({
 
       closeSocket(false)
       isManualDisconnectRef.current = false
+      hasReceivedInitialSyncRef.current = false
+      isConnectingRef.current = true
+      setHasReceivedInitialSync(false)
       setIsConnecting(true)
       setError(null)
       setCanRetryManually(false)
@@ -192,13 +278,17 @@ export default function useRemoteSession({
 
       socket.addEventListener("open", () => {
         pushEvent("socket_open")
+        const retrySnapshot =
+          retryType === "retry-join-session" && getReconnectSnapshot
+            ? getReconnectSnapshot()
+            : null
         const joinMessage = buildJoinMessage({
           clientId: localClientIdRef.current,
           remoteRole: nextRemoteRole,
           remoteToken: nextRemoteToken,
           retryType,
-          syncParams: syncParamsRef.current,
-          syncState: syncStateRef.current,
+          syncParams: retrySnapshot?.params ?? syncParamsRef.current,
+          syncState: retrySnapshot?.state ?? syncStateRef.current,
         })
         socket.send(JSON.stringify(joinMessage satisfies RelayClientMessage))
       })
@@ -219,6 +309,7 @@ export default function useRemoteSession({
               },
               log: pushEvent,
               setRetryableFailure: (nextError) => {
+                isConnectingRef.current = false
                 setError(nextError)
                 setLifecycleState("failed")
                 setIsConnecting(false)
@@ -243,30 +334,46 @@ export default function useRemoteSession({
                 onHandleAction(snapshot)
               },
               completeConnect: (resolvedSessionId, nextAccessTokens) => {
-                connectPromiseRef.current?.resolve({
+                resolveConnectPromise({
                   ...(nextAccessTokens
                     ? { accessTokens: nextAccessTokens }
                     : {}),
                   sessionId: resolvedSessionId,
                 })
-                connectPromiseRef.current = null
+              },
+              deferSnapshot: ({ message: deferredMessage, wasReconnect }) => {
+                pendingSessionSyncRef.current = {
+                  message: deferredMessage,
+                  wasReconnect,
+                }
+                setHasPendingSyncConflict(true)
+                setCurrentSessionId(deferredMessage.sessionId)
+                if (
+                  deferredMessage.type === "session" &&
+                  deferredMessage.accessTokens
+                ) {
+                  setCurrentAccessTokens(deferredMessage.accessTokens)
+                }
+                updateParticipants(deferredMessage.participants)
+                onIncomingSyncConflict?.({
+                  snapshot: deferredMessage.snapshot,
+                  wasReconnect,
+                })
               },
               log: pushEvent,
-              markConnected: (wasReconnect) => {
-                setConnectedOnce(true)
-                setHasReceivedInitialSync(true)
-                setIsConnecting(false)
-                setError(null)
-
-                if (wasReconnect) {
-                  markRecovered()
-                } else {
-                  setLifecycleState("connected")
-                }
-              },
+              markConnected: markSessionConnected,
               setAccessTokens: setCurrentAccessTokens,
               setParticipants: updateParticipants,
               setSessionId: setCurrentSessionId,
+              shouldDeferSnapshot: ({ snapshot, wasReconnect }) =>
+                ((!hasReceivedInitialSyncRef.current ||
+                  isConnectingRef.current) &&
+                  (shouldDeferIncomingSnapshot?.({
+                    snapshot,
+                    wasReconnect,
+                  }) ??
+                    false)) ||
+                false,
             },
             wasReconnect: hasConnectedOnceRef.current,
           },
@@ -277,14 +384,13 @@ export default function useRemoteSession({
         pushEvent("socket_close")
         socketRef.current = null
         updateParticipants([])
+        isConnectingRef.current = false
         setIsConnecting(false)
 
-        const retryToken =
-          nextRemoteToken ??
-          (nextRemoteRole === "control" || nextRemoteRole === null
-            ? accessTokensRef.current?.control
-            : accessTokensRef.current?.readonly)
-        const retryRole = nextRemoteRole ?? (retryToken ? "control" : null)
+        const { retryRole, retryToken } = getRetryTarget({
+          nextRemoteRole,
+          nextRemoteToken,
+        })
 
         const closeResult = handleSocketClose({
           hasConnectedOnce: hasConnectedOnceRef.current,
@@ -301,6 +407,7 @@ export default function useRemoteSession({
         if (closeResult.type === "failed-before-session") {
           connectPromiseRef.current?.reject(closeResult.error)
           connectPromiseRef.current = null
+          isConnectingRef.current = false
           setLifecycleState("failed")
           setCanRetryManually(true)
           return
@@ -316,6 +423,7 @@ export default function useRemoteSession({
           setError(
             new Error("Automatic recovery timed out. Retry the connection."),
           )
+          isConnectingRef.current = false
           setLifecycleState("failed")
         }, AUTO_RECOVERY_TIMEOUT_MS)
 
@@ -328,6 +436,7 @@ export default function useRemoteSession({
             })
           } catch (nextError) {
             setError(toError(nextError))
+            isConnectingRef.current = false
             setLifecycleState("failed")
             setCanRetryManually(true)
           }
@@ -342,16 +451,20 @@ export default function useRemoteSession({
     [
       canPublishSessionState,
       closeSocket,
+      getReconnectSnapshot,
+      getRetryTarget,
       hasReceivedInitialSync,
-      markRecovered,
+      markSessionConnected,
       onHandleAction,
+      onIncomingSyncConflict,
       pushEvent,
       remoteRole,
       remoteToken,
+      resolveConnectPromise,
       sendMessage,
-      setConnectedOnce,
       setCurrentAccessTokens,
       setCurrentSessionId,
+      shouldDeferIncomingSnapshot,
       syncParamsRef,
       syncStateRef,
       updateParticipants,
@@ -373,6 +486,60 @@ export default function useRemoteSession({
   }, [clearTimers, openSocket])
 
   const activeSessionId = sessionId
+
+  const finalizePendingSync = useCallback(
+    (resolution: "use-local" | "use-server") => {
+      const pendingSync = pendingSessionSyncRef.current
+      if (!pendingSync) {
+        return
+      }
+
+      clearPendingSyncConflict()
+
+      if (resolution === "use-server") {
+        syncParamsRef.current = pendingSync.message.snapshot.params
+        syncStateRef.current = pendingSync.message.snapshot.state
+        onHandleAction(pendingSync.message.snapshot)
+      }
+
+      resolveConnectPromise({
+        ...(pendingSync.message.type === "session" &&
+        pendingSync.message.accessTokens
+          ? { accessTokens: pendingSync.message.accessTokens }
+          : {}),
+        sessionId: pendingSync.message.sessionId,
+      })
+      markSessionConnected(pendingSync.wasReconnect)
+
+      if (resolution === "use-local" && canPublishSessionState) {
+        const params = syncParamsRef.current
+        const state = syncStateRef.current
+        if (
+          sendMessage(
+            buildSyncMessage({
+              clientId: localClientIdRef.current,
+              params,
+              sessionId: pendingSync.message.sessionId,
+              state,
+            }),
+          )
+        ) {
+          pushEvent(`sync_sent: ${pendingSync.message.sessionId}`)
+        }
+      }
+    },
+    [
+      canPublishSessionState,
+      clearPendingSyncConflict,
+      markSessionConnected,
+      onHandleAction,
+      pushEvent,
+      resolveConnectPromise,
+      sendMessage,
+      syncParamsRef,
+      syncStateRef,
+    ],
+  )
 
   const syncAll = useCallback(
     ({
@@ -446,21 +613,29 @@ export default function useRemoteSession({
     }
 
     closeSocket(true)
+    clearPendingSyncConflict()
+    hasReceivedInitialSyncRef.current = false
+    isConnectingRef.current = false
     setCanRetryManually(false)
     setError(null)
     setConnectedOnce(false)
     setHasReceivedInitialSync(false)
     setIsConnecting(false)
     setLifecycleState("connected")
-  }, [activeSessionId, clearTimers, closeSocket, sendMessage, setConnectedOnce])
+  }, [
+    activeSessionId,
+    clearPendingSyncConflict,
+    clearTimers,
+    closeSocket,
+    sendMessage,
+    setConnectedOnce,
+  ])
 
   const retryConnection = useCallback(async () => {
-    const retryToken =
-      remoteToken ??
-      (remoteRole === "control" || remoteRole === null
-        ? accessTokensRef.current?.control
-        : accessTokensRef.current?.readonly)
-    const retryRole = remoteRole ?? (retryToken ? "control" : null)
+    const { retryRole, retryToken } = getRetryTarget({
+      nextRemoteRole: remoteRole,
+      nextRemoteToken: remoteToken,
+    })
 
     setCanRetryManually(false)
     setError(null)
@@ -469,7 +644,7 @@ export default function useRemoteSession({
       nextRemoteToken: retryToken,
       retryType: retryToken ? "retry-join-session" : "create-session",
     })
-  }, [openSocket, remoteRole, remoteToken])
+  }, [getRetryTarget, openSocket, remoteRole, remoteToken])
 
   useEffect(() => {
     if (!remoteToken || !remoteRole) {
@@ -534,11 +709,13 @@ export default function useRemoteSession({
       disconnect,
       error,
       hasConnectedOnce,
+      hasPendingSyncConflict,
       hasReceivedInitialSync,
       isConnecting,
       lifecycleState,
       peerEventTimeline,
       participants,
+      resolvePendingSyncConflict: finalizePendingSync,
       retryConnection,
       sessionId,
       syncAll,
@@ -552,11 +729,13 @@ export default function useRemoteSession({
       disconnect,
       error,
       hasConnectedOnce,
+      hasPendingSyncConflict,
       hasReceivedInitialSync,
       isConnecting,
       lifecycleState,
       participants,
       peerEventTimeline,
+      finalizePendingSync,
       retryConnection,
       sessionId,
       syncAll,

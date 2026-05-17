@@ -1,6 +1,7 @@
 "use client"
 
 import { MAX_TITLE_LENGTH } from "@/shared/security/input"
+import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 import useParams from "@/utils/useParams"
 import useRemoteSession from "@/utils/remoteSession"
@@ -10,7 +11,7 @@ import HelpText from "@/components/HelpText"
 import InputField from "@/components/InputField"
 import UrlCopyField from "@/components/UrlCopyField"
 import classNames from "classnames"
-import { useId } from "react"
+import { useId, useRef } from "react"
 
 const panelClassName =
   "rounded-2xl border border-foreground/12 bg-foreground/4 shadow-xl shadow-background/30"
@@ -142,6 +143,7 @@ export default function Settings({
   paramData,
   closeSettings,
   handleChange,
+  handleTimeBlur,
   setShouldPromoteToControlUrl,
   remoteRole,
 }: {
@@ -151,10 +153,13 @@ export default function Settings({
   paramData: ReturnType<typeof useParams>
   closeSettings: () => void
   handleChange: (key: string, value: string) => void
+  handleTimeBlur: () => void
   setShouldPromoteToControlUrl: (nextValue: boolean) => void
   remoteRole: "control" | "readonly" | null
 }) {
   const settingsId = useId()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const drawerRef = useRef<HTMLElement>(null)
   const { params, getUrlWithParams } = paramData
 
   const { accessTokens, connectRemote, disconnect, isConnecting, sessionId } =
@@ -177,6 +182,12 @@ export default function Settings({
   const isRemoteReady = Boolean(sessionId)
   const remoteErrorText = peerData.error ? peerData.error.message : null
 
+  useDialogFocusTrap({
+    active: isOpen,
+    defaultFocusRef: closeButtonRef,
+    dialogRef: drawerRef,
+  })
+
   return (
     <div
       aria-labelledby={settingsId}
@@ -193,6 +204,7 @@ export default function Settings({
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={closeSettings}
+        tabIndex={-1}
         type="button"
       />
       <aside
@@ -202,6 +214,8 @@ export default function Settings({
             : "-translate-x-full opacity-0 pointer-events-none"
         }`}
         data-testid="settings-drawer"
+        ref={drawerRef}
+        tabIndex={-1}
         onKeyDownCapture={(event) => {
           if (isOpen) {
             event.stopPropagation()
@@ -233,7 +247,7 @@ export default function Settings({
                 Changes apply live to connected control clients.
               </p>
             </div>
-            <CloseButton onClick={closeSettings} />
+            <CloseButton onClick={closeSettings} ref={closeButtonRef} />
           </div>
         </header>
 
@@ -272,6 +286,7 @@ export default function Settings({
                       id="minutes"
                       inputMode="numeric"
                       label="Minutes"
+                      onBlur={handleTimeBlur}
                       type="number"
                       value={params.m || 1}
                       onChange={(event) =>
@@ -282,6 +297,7 @@ export default function Settings({
                       id="seconds"
                       inputMode="numeric"
                       label="Seconds"
+                      onBlur={handleTimeBlur}
                       type="number"
                       value={params.s || 0}
                       onChange={(event) =>

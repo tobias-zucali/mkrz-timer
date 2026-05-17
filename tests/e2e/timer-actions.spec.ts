@@ -350,10 +350,10 @@ test(
       await devicePage.goto(
         baseURL
           ? new URL(
-              `/?m=00&s=03&bg=000000&fg=ffffff&pc=d61f69&title=${encodedTitle}`,
+              `/?v=1&t=3!d61f69!${encodedTitle}!0&bg=000000&fg=ffffff`,
               baseURL,
             ).toString()
-          : `/?m=00&s=03&bg=000000&fg=ffffff&pc=d61f69&title=${encodedTitle}`,
+          : `/?v=1&t=3!d61f69!${encodedTitle}!0&bg=000000&fg=ffffff`,
       )
       await expect(
         devicePage.getByRole("button", { name: "START" }),
