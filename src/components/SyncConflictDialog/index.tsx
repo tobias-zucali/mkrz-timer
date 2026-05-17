@@ -1,5 +1,9 @@
 "use client"
 
+import { useRef } from "react"
+
+import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
+
 export default function SyncConflictDialog({
   onUseLocal,
   onUseServer,
@@ -7,6 +11,15 @@ export default function SyncConflictDialog({
   onUseLocal: () => void
   onUseServer: () => void
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const defaultActionRef = useRef<HTMLButtonElement>(null)
+
+  useDialogFocusTrap({
+    active: true,
+    defaultFocusRef: defaultActionRef,
+    dialogRef,
+  })
+
   return (
     <div
       aria-labelledby="timer-sync-conflict-title"
@@ -14,7 +27,11 @@ export default function SyncConflictDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/72 p-6 backdrop-blur-sm"
       role="dialog"
     >
-      <div className="w-full max-w-lg rounded-3xl border border-foreground/12 bg-background p-6 shadow-2xl shadow-background/45">
+      <div
+        className="w-full max-w-lg rounded-3xl border border-foreground/12 bg-background p-6 shadow-2xl shadow-background/45"
+        ref={dialogRef}
+        tabIndex={-1}
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
           Sync conflict
         </p>
@@ -31,6 +48,7 @@ export default function SyncConflictDialog({
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-xl border border-foreground/12 px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-foreground/[0.06] focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
             onClick={onUseServer}
+            ref={defaultActionRef}
             type="button"
           >
             Use server state

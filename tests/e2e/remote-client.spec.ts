@@ -70,18 +70,6 @@ test(
     )
     await expect
       .poll(() =>
-        page.evaluate(() => {
-          const params = new URLSearchParams(window.location.search)
-          return Object.fromEntries(params.entries())
-        }),
-      )
-      .toEqual({
-        fg: "abcdef",
-        t: `60!d61f69!${encodeURIComponent(' <img src=x onerror="window.__timerInjected=1"> ')}!0`,
-        v: "1",
-      })
-    await expect
-      .poll(() =>
         page.evaluate(
           () =>
             (window as Window & { __timerInjected?: number }).__timerInjected ??

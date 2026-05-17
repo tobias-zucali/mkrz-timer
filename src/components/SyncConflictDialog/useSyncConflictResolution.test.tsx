@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react"
 import type { RefObject } from "react"
 
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
 import {
   parseTimerUrlState,
   projectFirstUrlTimerRowToSyncParams,
@@ -37,14 +37,15 @@ describe("useSyncConflictResolution", () => {
         totalDuration: 60,
       },
     } as RefObject<TimerState>
-    const setParams = vi.fn()
+    const applyLocalSnapshot = vi.fn()
     const paramData = {
       readTimerUrlState: () => urlState,
-      setParams,
+      setParams: vi.fn(),
     } as unknown as ReturnType<typeof useParams>
 
     const { result } = renderHook(() =>
       useSyncConflictResolution({
+        applyLocalSnapshot,
         paramData,
         remoteRole: "control",
         syncParamsRef,
@@ -75,8 +76,24 @@ describe("useSyncConflictResolution", () => {
       state: urlState,
     })
 
-    expect(setParams).toHaveBeenCalledWith(projectedParams)
+    expect(applyLocalSnapshot).toHaveBeenCalledWith({
+      params: projectedParams,
+      state: {
+        elapsedTime: 0,
+        isPaused: true,
+        isStarted: false,
+        revision: 0,
+        totalDuration: 45,
+      },
+    } satisfies SessionSnapshot)
     expect(syncParamsRef.current).toEqual(projectedParams)
+    expect(syncStateRef.current).toEqual({
+      elapsedTime: 0,
+      isPaused: true,
+      isStarted: false,
+      revision: 0,
+      totalDuration: 45,
+    })
     expect(result.current.hasSyncConflict).toBe(false)
   })
 
@@ -105,14 +122,15 @@ describe("useSyncConflictResolution", () => {
         totalDuration: 60,
       },
     } as RefObject<TimerState>
-    const setParams = vi.fn()
+    const applyLocalSnapshot = vi.fn()
     const paramData = {
       readTimerUrlState: () => urlState,
-      setParams,
+      setParams: vi.fn(),
     } as unknown as ReturnType<typeof useParams>
 
     const { result } = renderHook(() =>
       useSyncConflictResolution({
+        applyLocalSnapshot,
         paramData,
         remoteRole: "control",
         syncParamsRef,
@@ -122,14 +140,7 @@ describe("useSyncConflictResolution", () => {
 
     const reconnectSnapshot = result.current.getReconnectSnapshot()
 
-    expect(setParams).toHaveBeenCalledWith({
-      bg: "#111111",
-      fg: "#eeeeee",
-      m: "02",
-      pc: "#ff8800",
-      s: "30",
-      title: "Opening",
-    })
+    expect(applyLocalSnapshot).toHaveBeenCalledWith(reconnectSnapshot)
     expect(reconnectSnapshot).toEqual({
       params: {
         bg: "#111111",
@@ -147,5 +158,117 @@ describe("useSyncConflictResolution", () => {
         totalDuration: 150,
       },
     })
+  })
+
+  it("ignores elapsed-time differences within one second when params match", () => {
+    const matchingUrlState = parseTimerUrlState({
+      searchParams: new URLSearchParams(
+        "v=1&t=60!00aa88!Server%20state!0&bg=000000&fg=ffffff",
+      ),
+    })
+    const syncParamsRef = {
+      current: {
+        bg: "#000000",
+        fg: "#ffffff",
+        m: "01",
+        pc: "#00aa88",
+        s: "00",
+        title: "Server state",
+      },
+    } as RefObject<SyncParams>
+    const syncStateRef = {
+      current: {
+        elapsedTime: 12,
+        isPaused: false,
+        isStarted: true,
+        revision: 4,
+        totalDuration: 60,
+      },
+    } as RefObject<TimerState>
+    const paramData = {
+      readTimerUrlState: () => matchingUrlState,
+      setParams: vi.fn(),
+    } as unknown as ReturnType<typeof useParams>
+
+    const { result } = renderHook(() =>
+      useSyncConflictResolution({
+        applyLocalSnapshot: vi.fn(),
+        paramData,
+        remoteRole: "control",
+        syncParamsRef,
+        syncStateRef,
+      }),
+    )
+
+    expect(
+      result.current.shouldDeferIncomingSnapshot({
+        snapshot: {
+          params: syncParamsRef.current,
+          state: {
+            elapsedTime: 13,
+            isPaused: false,
+            isStarted: true,
+            revision: 7,
+            totalDuration: 60,
+          },
+        },
+      }),
+    ).toBe(false)
+  })
+
+  it("treats elapsed-time differences above one second as a reconnect conflict", () => {
+    const matchingUrlState = parseTimerUrlState({
+      searchParams: new URLSearchParams(
+        "v=1&t=60!00aa88!Server%20state!0&bg=000000&fg=ffffff",
+      ),
+    })
+    const syncParamsRef = {
+      current: {
+        bg: "#000000",
+        fg: "#ffffff",
+        m: "01",
+        pc: "#00aa88",
+        s: "00",
+        title: "Server state",
+      },
+    } as RefObject<SyncParams>
+    const syncStateRef = {
+      current: {
+        elapsedTime: 12,
+        isPaused: false,
+        isStarted: true,
+        revision: 4,
+        totalDuration: 60,
+      },
+    } as RefObject<TimerState>
+    const paramData = {
+      readTimerUrlState: () => matchingUrlState,
+      setParams: vi.fn(),
+    } as unknown as ReturnType<typeof useParams>
+
+    const { result } = renderHook(() =>
+      useSyncConflictResolution({
+        applyLocalSnapshot: vi.fn(),
+        paramData,
+        remoteRole: "control",
+        syncParamsRef,
+        syncStateRef,
+      }),
+    )
+
+    expect(
+      result.current.shouldDeferIncomingSnapshot({
+        snapshot: {
+          params: syncParamsRef.current,
+          state: {
+            elapsedTime: 14,
+            isPaused: false,
+            isStarted: true,
+            revision: 7,
+            totalDuration: 60,
+          },
+        },
+      }),
+    ).toBe(true)
   })
 })

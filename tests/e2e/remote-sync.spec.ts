@@ -326,7 +326,10 @@ test("controller routes block on URL-vs-server conflicts until the user picks se
     name: "URL state and server state differ.",
   })
   await expect(conflictDialog).toBeVisible()
-  await conflictDialog.getByRole("button", { name: "Use server state" }).click()
+  await expect(
+    conflictDialog.getByRole("button", { name: "Use server state" }),
+  ).toBeFocused()
+  await controlClient.keyboard.press("Enter")
 
   await expect(conflictDialog).not.toBeVisible()
   await expectTimerSettings(controlClient, hostSettings)
@@ -368,9 +371,13 @@ test("controller routes can overwrite server state from URL params after a confl
     name: "URL state and server state differ.",
   })
   await expect(conflictDialog).toBeVisible()
-  await conflictDialog
-    .getByRole("button", { name: "Overwrite server using URL params" })
-    .click()
+  await controlClient.keyboard.press("Tab")
+  await expect(
+    conflictDialog.getByRole("button", {
+      name: "Overwrite server using URL params",
+    }),
+  ).toBeFocused()
+  await controlClient.keyboard.press("Space")
 
   await expect(conflictDialog).not.toBeVisible()
   await expectTimerSettings(page, urlSettings)

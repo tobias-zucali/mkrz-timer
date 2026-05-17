@@ -2,21 +2,45 @@
 
 import { useCallback, useState } from "react"
 
-import type { SyncParams } from "@/shared/remoteSession/types"
-import {
-  projectFirstUrlTimerRowToSyncParams,
-  syncParamsMatchParsedTimerUrlState,
-} from "@/shared/urlState"
+import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
+import { projectFirstUrlTimerRowToSyncParams } from "@/shared/urlState"
+import { areObjectsDeepEqual } from "@/utils/areObjectsDeepEqual"
 import { getSecondsDuration } from "@/utils/timeInputHelpers"
 import type { TimerState } from "@/utils/useTimer"
 import type useParams from "@/utils/useParams"
 
+const projectSnapshotWithoutElapsedTime = (snapshot: SessionSnapshot) => ({
+  params: snapshot.params,
+  state: {
+    isPaused: snapshot.state.isPaused,
+    isStarted: snapshot.state.isStarted,
+    totalDuration: snapshot.state.totalDuration,
+  },
+})
+
+const snapshotsConflict = ({
+  currentSnapshot,
+  incomingSnapshot,
+}: {
+  currentSnapshot: SessionSnapshot
+  incomingSnapshot: SessionSnapshot
+}) =>
+  !areObjectsDeepEqual(
+    projectSnapshotWithoutElapsedTime(currentSnapshot),
+    projectSnapshotWithoutElapsedTime(incomingSnapshot),
+  ) ||
+  Math.abs(
+    currentSnapshot.state.elapsedTime - incomingSnapshot.state.elapsedTime,
+  ) > 1
+
 export default function useSyncConflictResolution({
+  applyLocalSnapshot,
   paramData,
   remoteRole,
   syncParamsRef,
   syncStateRef,
 }: {
+  applyLocalSnapshot: (snapshot: SessionSnapshot) => void
   paramData: ReturnType<typeof useParams>
   remoteRole: "control" | "readonly" | null
   syncParamsRef: React.RefObject<SyncParams>
@@ -31,13 +55,7 @@ export default function useSyncConflictResolution({
         fallback: syncParamsRef.current,
         state: currentTimerUrlState,
       })
-
-      if (applyToLocalState && currentTimerUrlState.hasTimerState) {
-        paramData.setParams(projectedParams)
-      }
-
-      return {
-        hasTimerState: currentTimerUrlState.hasTimerState,
+      const snapshot = {
         params: projectedParams,
         state: {
           ...syncStateRef.current,
@@ -46,10 +64,21 @@ export default function useSyncConflictResolution({
             projectedParams.s,
           ),
         },
+      } satisfies SessionSnapshot
+
+      if (applyToLocalState && currentTimerUrlState.hasTimerState) {
+        syncParamsRef.current = snapshot.params
+        syncStateRef.current = snapshot.state
+        applyLocalSnapshot(snapshot)
+      }
+
+      return {
+        hasTimerState: currentTimerUrlState.hasTimerState,
+        ...snapshot,
         urlState: currentTimerUrlState,
       }
     },
-    [paramData, syncParamsRef, syncStateRef],
+    [applyLocalSnapshot, paramData, syncParamsRef, syncStateRef],
   )
 
   const notifyIncomingSyncConflict = useCallback(() => {
@@ -67,9 +96,15 @@ export default function useSyncConflictResolution({
         return false
       }
 
-      return !syncParamsMatchParsedTimerUrlState({
-        params: snapshot.params,
-        state: currentUrlSnapshot.urlState,
+      return snapshotsConflict({
+        currentSnapshot: {
+          params: currentUrlSnapshot.params,
+          state: currentUrlSnapshot.state,
+        },
+        incomingSnapshot: {
+          params: snapshot.params,
+          state: snapshot.state,
+        },
       })
     },
     [buildCurrentUrlSnapshot, remoteRole],
@@ -90,8 +125,9 @@ export default function useSyncConflictResolution({
   const applyUrlSyncState = useCallback(() => {
     const currentUrlSnapshot = buildCurrentUrlSnapshot(true)
     syncParamsRef.current = currentUrlSnapshot.params
+    syncStateRef.current = currentUrlSnapshot.state
     clearSyncConflict()
-  }, [buildCurrentUrlSnapshot, clearSyncConflict, syncParamsRef])
+  }, [buildCurrentUrlSnapshot, clearSyncConflict, syncParamsRef, syncStateRef])
 
   return {
     applyUrlSyncState,

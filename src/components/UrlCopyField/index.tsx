@@ -1,9 +1,10 @@
-import { ComponentProps, useId, useState } from "react"
+import { ComponentProps, useId, useRef, useState } from "react"
 
 import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
 
 import CloseButton from "@/components/CloseButton"
+import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 
 import InputField from "../InputField"
@@ -103,8 +104,16 @@ export default function UrlCopyField({
   value: string
 }) {
   const fieldId = useId()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const [isQrCodeOpen, setIsQrCodeOpen] = useState(false)
   const { canCopy, copyText, isCopied, isClient } = useClipboardCopy()
+
+  useDialogFocusTrap({
+    active: isQrCodeOpen,
+    defaultFocusRef: closeButtonRef,
+    dialogRef,
+  })
 
   return (
     <>
@@ -156,7 +165,9 @@ export default function UrlCopyField({
           aria-modal="true"
           className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-8 bg-black p-8 text-center text-white sm:p-10"
           onClick={() => setIsQrCodeOpen(false)}
+          ref={dialogRef}
           role="dialog"
+          tabIndex={-1}
         >
           <CloseButton
             className="absolute right-5 top-5 z-[1] border-white/20 bg-white/10 text-white/85 hover:bg-white/16 hover:text-white focus:outline-white sm:right-8"
@@ -164,6 +175,7 @@ export default function UrlCopyField({
               event.stopPropagation()
               setIsQrCodeOpen(false)
             }}
+            ref={closeButtonRef}
           />
           <h1
             className="text-3xl font-bold sm:text-5xl"

@@ -211,6 +211,10 @@ function TimerApp() {
     notifyIncomingSyncConflict,
     shouldDeferIncomingSnapshot,
   } = useSyncConflictResolution({
+    applyLocalSnapshot: (snapshot) => {
+      paramData.setParams(snapshot.params)
+      setState(snapshot.state)
+    },
     paramData,
     remoteRole,
     syncParamsRef,
