@@ -4,19 +4,9 @@ import { useCallback, useState } from "react"
 
 import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
 import { projectFirstUrlTimerRowToSyncParams } from "@/shared/urlState"
-import { areObjectsDeepEqual } from "@/utils/areObjectsDeepEqual"
 import { getSecondsDuration } from "@/utils/timeInputHelpers"
 import type { TimerState } from "@/utils/useTimer"
 import type useParams from "@/utils/useParams"
-
-const projectSnapshotWithoutElapsedTime = (snapshot: SessionSnapshot) => ({
-  params: snapshot.params,
-  state: {
-    isPaused: snapshot.state.isPaused,
-    isStarted: snapshot.state.isStarted,
-    totalDuration: snapshot.state.totalDuration,
-  },
-})
 
 const snapshotsConflict = ({
   currentSnapshot,
@@ -25,10 +15,15 @@ const snapshotsConflict = ({
   currentSnapshot: SessionSnapshot
   incomingSnapshot: SessionSnapshot
 }) =>
-  !areObjectsDeepEqual(
-    projectSnapshotWithoutElapsedTime(currentSnapshot),
-    projectSnapshotWithoutElapsedTime(incomingSnapshot),
-  ) ||
+  currentSnapshot.params.m !== incomingSnapshot.params.m ||
+  currentSnapshot.params.s !== incomingSnapshot.params.s ||
+  currentSnapshot.params.title !== incomingSnapshot.params.title ||
+  currentSnapshot.params.bg !== incomingSnapshot.params.bg ||
+  currentSnapshot.params.fg !== incomingSnapshot.params.fg ||
+  currentSnapshot.params.pc !== incomingSnapshot.params.pc ||
+  currentSnapshot.state.isPaused !== incomingSnapshot.state.isPaused ||
+  currentSnapshot.state.isStarted !== incomingSnapshot.state.isStarted ||
+  currentSnapshot.state.totalDuration !== incomingSnapshot.state.totalDuration ||
   Math.abs(
     currentSnapshot.state.elapsedTime - incomingSnapshot.state.elapsedTime,
   ) > 1
