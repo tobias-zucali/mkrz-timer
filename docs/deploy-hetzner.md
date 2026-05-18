@@ -72,7 +72,8 @@ The deployment process is automated using the GitHub Actions workflow defined in
    - Run `pnpm test:ci` and `pnpm build`.
    - Create a deployment bundle excluding unnecessary files.
    - Upload the bundle to the Hetzner server.
-   - Extract the checked-out bundle, rebuild `timer-web` and `timer-relay`, and force-recreate those containers with orphan cleanup.
+   - Replace the server worktree from the checked-out bundle so removed files do not linger between deploys.
+   - Rebuild `timer-web` and `timer-relay`, and force-recreate those containers with orphan cleanup.
    - Print the deployed git commit, image IDs before and after the rebuild, and the recreated container timestamps.
 
 3. **Verify Deployment**:
@@ -110,6 +111,7 @@ Expected verification signals:
 - `docker ps` shows fresh `timer-web` and `timer-relay` containers with recent `CreatedAt` timestamps.
 - `https://ws.timer.mkrz.at/health` returns JSON with `ok`, `commit`, and `buildId`.
 - The app footer shows the same commit-derived build identifier as the health response.
+- Old deleted source files are not retained on the server between deploys because the uploaded bundle replaces the previous worktree.
 
 ## 7. Rollback
 

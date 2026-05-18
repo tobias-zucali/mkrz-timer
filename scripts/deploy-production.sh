@@ -3,6 +3,7 @@
 set -euo pipefail
 
 required_vars=(
+  DEPLOY_BUNDLE_PATH
   DEPLOY_COMMIT
   NEXT_PUBLIC_REMOTE_WS_URL
   RELAY_SESSION_TTL_MS
@@ -17,6 +18,31 @@ for required_var in "${required_vars[@]}"; do
     exit 1
   fi
 done
+
+if [[ ! -f "$DEPLOY_BUNDLE_PATH" ]]; then
+  printf 'Deployment bundle not found: %s\n' "$DEPLOY_BUNDLE_PATH" >&2
+  exit 1
+fi
+
+workdir="$(pwd)"
+staging_dir="$(mktemp -d)"
+
+cleanup() {
+  rm -rf "$staging_dir"
+}
+
+trap cleanup EXIT
+
+tar -xzf "$DEPLOY_BUNDLE_PATH" -C "$staging_dir"
+
+find "$workdir" \
+  -mindepth 1 \
+  -maxdepth 1 \
+  ! -name '.env' \
+  ! -name "$(basename "$DEPLOY_BUNDLE_PATH")" \
+  -exec rm -rf {} +
+
+tar -xzf "$DEPLOY_BUNDLE_PATH" -C "$workdir"
 
 export NEXT_PUBLIC_BUILD_ID="${NEXT_PUBLIC_BUILD_ID:-$DEPLOY_COMMIT}"
 export APP_BUILD_ID="${APP_BUILD_ID:-$DEPLOY_COMMIT}"
@@ -75,6 +101,7 @@ print_container_created_at() {
 }
 
 printf 'Deploying checked-out commit: %s\n' "$DEPLOY_COMMIT"
+printf 'Synchronized workdir from bundle: %s\n' "$DEPLOY_BUNDLE_PATH"
 
 timer_web_image_before="$(get_container_image_id timer-web)"
 timer_relay_image_before="$(get_container_image_id timer-relay)"
@@ -100,3 +127,5 @@ docker ps \
   --filter "name=timer-web" \
   --filter "name=timer-relay" \
   --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.CreatedAt}}'
+
+rm -f "$DEPLOY_BUNDLE_PATH"

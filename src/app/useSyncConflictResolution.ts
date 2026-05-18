@@ -23,7 +23,8 @@ const snapshotsConflict = ({
   currentSnapshot.params.pc !== incomingSnapshot.params.pc ||
   currentSnapshot.state.isPaused !== incomingSnapshot.state.isPaused ||
   currentSnapshot.state.isStarted !== incomingSnapshot.state.isStarted ||
-  currentSnapshot.state.totalDuration !== incomingSnapshot.state.totalDuration ||
+  currentSnapshot.state.totalDuration !==
+    incomingSnapshot.state.totalDuration ||
   Math.abs(
     currentSnapshot.state.elapsedTime - incomingSnapshot.state.elapsedTime,
   ) > 1
