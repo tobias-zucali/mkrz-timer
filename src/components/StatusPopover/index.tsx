@@ -6,6 +6,7 @@ import classNames from "classnames"
 
 import CloseButton from "@/components/CloseButton"
 import { getDocumentLocale } from "@/i18n/locale"
+import { getPublicBuildInfo } from "@/shared/buildInfo"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
@@ -351,6 +352,7 @@ export default function StatusPopover({
     reportBody,
   ].join("\n")
   const CompactStatusIcon = compactStatusAppearance.icon
+  const { buildId, buildLabel } = getPublicBuildInfo()
 
   const openMailApp = () => {
     window.location.href = `mailto:timer@mkrz.at?subject=Status%20Report&body=${encodeURIComponent(mailBody)}`
@@ -458,6 +460,14 @@ export default function StatusPopover({
             </dd>
             <dt className="font-medium text-foreground">Network</dt>
             <dd data-testid="remote-status-network">{networkLabel}</dd>
+            <dt className="font-medium text-foreground">Build</dt>
+            <dd
+              className="font-mono text-xs text-foreground/72"
+              data-testid="remote-status-build"
+              title={buildId}
+            >
+              {buildLabel}
+            </dd>
             {remoteStatus && (
               <>
                 <dt className="font-medium text-foreground">Session</dt>

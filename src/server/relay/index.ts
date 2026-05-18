@@ -11,10 +11,12 @@ import {
   parseClientMessage,
   respondWithSession,
 } from "./protocol.ts"
+import { getRelayBuildInfo } from "../../shared/buildInfo.ts"
 
 const host = process.env.RELAY_HOST || "127.0.0.1"
 const port = Number(process.env.RELAY_PORT || "9100")
 const sessionTtlMs = Number(process.env.RELAY_SESSION_TTL_MS || "300000")
+const buildInfo = getRelayBuildInfo()
 
 const store = new InMemorySessionStore(sessionTtlMs)
 const registry = new RelayConnectionRegistry()
@@ -27,7 +29,7 @@ const server = createServer((request, response) => {
 
   if (requestUrl.pathname === "/health") {
     response.writeHead(200, { "content-type": "application/json" })
-    response.end(JSON.stringify({ ok: true }))
+    response.end(JSON.stringify({ ...buildInfo, ok: true }))
     return
   }
 

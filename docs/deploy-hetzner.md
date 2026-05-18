@@ -72,11 +72,14 @@ The deployment process is automated using the GitHub Actions workflow defined in
    - Run `pnpm test:ci` and `pnpm build`.
    - Create a deployment bundle excluding unnecessary files.
    - Upload the bundle to the Hetzner server.
-   - Extract the bundle and restart the Docker stack.
+   - Extract the checked-out bundle, rebuild `timer-web` and `timer-relay`, and force-recreate those containers with orphan cleanup.
+   - Print the deployed git commit, image IDs before and after the rebuild, and the recreated container timestamps.
 
 3. **Verify Deployment**:
    - Check the application at `https://timer.mkrz.at`.
    - Verify the relay health at `https://ws.timer.mkrz.at/health`.
+   - Open the status popover and confirm the `Build` value matches the deployed commit.
+   - Confirm the health response `commit`/`buildId` matches the same deployed commit.
 
 ## 6. Logs And Health Checks
 
@@ -89,6 +92,24 @@ docker compose logs -f timer-web
 docker compose logs -f timer-relay
 curl https://ws.timer.mkrz.at/health
 ```
+
+Manual verification after a deployment:
+
+```bash
+docker compose build --pull timer-web timer-relay
+docker compose up -d --force-recreate --remove-orphans timer-web timer-relay
+docker compose ps
+docker ps --filter name=timer-web --filter name=timer-relay --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.CreatedAt}}'
+docker inspect --format 'timer-web image: {{.Image}} created: {{.Created}}' "$(docker compose ps -q timer-web)"
+docker inspect --format 'timer-relay image: {{.Image}} created: {{.Created}}' "$(docker compose ps -q timer-relay)"
+curl -fsSL https://ws.timer.mkrz.at/health
+```
+
+Expected verification signals:
+
+- `docker ps` shows fresh `timer-web` and `timer-relay` containers with recent `CreatedAt` timestamps.
+- `https://ws.timer.mkrz.at/health` returns JSON with `ok`, `commit`, and `buildId`.
+- The app footer shows the same commit-derived build identifier as the health response.
 
 ## 7. Rollback
 
