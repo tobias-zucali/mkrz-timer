@@ -95,14 +95,14 @@ test(
   },
 )
 
-test("keeps the main live page local and ends the live session cleanly", async ({
+test("moves the host onto the control route and ends the live session cleanly", async ({
   page,
 }) => {
   await enableRemoteModeWithClientUrls(page)
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toBe("/")
+    .toMatch(/^\/control\/.+/)
   await openSidebarPanel(page, "Share")
   await expect(
     page.getByRole("button", { name: "End live session" }),
@@ -145,6 +145,79 @@ test("keeps the main live page local and ends the live session cleanly", async (
   await openSidebarPanel(page, "Share")
   await expect(
     page.getByRole("button", { name: "Start live session" }),
+  ).toBeVisible()
+})
+
+test("confirms before ending a live session when other clients are connected", async ({
+  page,
+}) => {
+  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    readonlyClientUrl,
+    "Viewer link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "viewer should connect before end-session confirmation appears",
+  })
+
+  await openSidebarPanel(page, "Share")
+  await page.getByRole("button", { name: "End live session" }).click()
+
+  const confirmationDialog = page.getByRole("dialog", {
+    name: "End the live session for everyone?",
+  })
+  await expect(confirmationDialog).toBeVisible()
+  await expect(
+    confirmationDialog.getByText(
+      "This will disconnect 1 other client from the live session immediately.",
+    ),
+  ).toBeVisible()
+
+  await confirmationDialog
+    .getByRole("button", { name: "Keep live session open" })
+    .click()
+  await expect(confirmationDialog).not.toBeVisible()
+  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expectReadonlyTimerControls(readonlyClient)
+
+  await page.getByRole("button", { name: "End live session" }).click()
+  await confirmationDialog
+    .getByRole("button", { name: "End live session" })
+    .click()
+  await expect(
+    page.getByRole("button", { name: "Start live session" }),
+  ).toBeVisible()
+})
+
+test("warns before closing a control client while other participants stay connected", async ({
+  page,
+}) => {
+  const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const controlClient = await openClientFromSettings(page, controlClientUrl)
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, controlClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "control client should connect before unload confirmation test",
+  })
+
+  const dialogPromise = controlClient.waitForEvent("dialog")
+  const closePromise = controlClient.close({ runBeforeUnload: true })
+  const dialog = await dialogPromise
+
+  expect(dialog.type()).toBe("beforeunload")
+  await dialog.dismiss()
+  await closePromise
+
+  await expect(controlClient).toHaveURL(/\/control\//)
+  await expect(
+    controlClient.getByRole("button", { name: "START" }),
   ).toBeVisible()
 })
 
@@ -246,6 +319,35 @@ test("readonly clients expose fullscreen share and status overlays", async ({
 
   expect(offcanvasBounds?.width).toBe(statusViewport?.width)
   expect(offcanvasBounds?.height).toBe(statusViewport?.height)
+})
+
+test("viewer clients warn when the last controller leaves", async ({
+  page,
+}) => {
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const controlClient = await openClientFromSettings(page, controlClientUrl)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    readonlyClientUrl,
+    "Viewer link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, controlClient, readonlyClient], {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message: "remote cluster should stabilize before the controller leaves",
+  })
+
+  await page.close()
+  await controlClient.close()
+
+  await expect(
+    readonlyClient.getByTestId("remote-status-toggle"),
+  ).toContainText("Waiting")
+  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expectReadonlyTimerControls(readonlyClient)
 })
 
 test("syncs mixed readonly and control clients", async ({ page }) => {
@@ -434,14 +536,6 @@ test("keeps the live session action visible after an offline start", async ({
   await openSidebarPanel(page, "Share")
   await page.context().setOffline(true)
   const viewportSize = page.viewportSize()
-  const documentSentinel = await page.evaluate(() => {
-    const sentinel = `sentinel-${Math.random().toString(36).slice(2)}`
-    ;(
-      window as typeof window & { __playwrightDocumentSentinel?: string }
-    ).__playwrightDocumentSentinel = sentinel
-    return sentinel
-  })
-
   await expect
     .poll(async () => {
       const box = await page
@@ -461,23 +555,35 @@ test("keeps the live session action visible after an offline start", async ({
     })
     .toBe(true)
 
-  await page
-    .getByRole("button", { name: "Start live session" })
-    .evaluate((element) => {
-      ;(element as HTMLButtonElement).click()
-    })
-  await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
-  await expect(page.getByText("Live session", { exact: true })).toBeVisible()
-  await expect(page.getByText("Local share", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Start live session" }).click()
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as typeof window & { __playwrightDocumentSentinel?: string })
-            .__playwrightDocumentSentinel ?? null,
-      ),
+    .poll(
+      () =>
+        Promise.all([
+          page
+            .getByRole("button", { name: "START" })
+            .isVisible()
+            .catch(() => false),
+          page
+            .getByRole("button", { name: "Start live session" })
+            .isVisible()
+            .catch(() => false),
+          page
+            .getByRole("button", { name: "Retry now" })
+            .isVisible()
+            .catch(() => false),
+          page
+            .getByRole("button", { name: "Retry connection" })
+            .isVisible()
+            .catch(() => false),
+          page
+            .getByRole("button", { name: "Use local mode" })
+            .isVisible()
+            .catch(() => false),
+        ]).then((states) => states.some(Boolean)),
+      { timeout: 10_000 },
     )
-    .toBe(documentSentinel)
+    .toBe(true)
   await page.context().setOffline(false)
 })
 

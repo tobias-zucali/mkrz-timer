@@ -9,11 +9,17 @@ import type {
   RelayConnectionDetails,
   RelayServerMessage,
   RelaySessionState,
+  SessionSnapshot,
   SessionParticipant,
   SyncParams,
 } from "@/shared/remoteSession/types"
 import debug from "@/utils/debug"
 import type { TimerState } from "@/utils/useTimer"
+import {
+  resolveSessionSnapshotAt,
+  sessionSnapshotsMatch,
+  stampSessionSnapshotAt,
+} from "@/utils/timerState"
 
 import { getRemoteRelayWebSocketUrl } from "./config"
 import {
@@ -33,7 +39,12 @@ import {
   createLocalClientId,
   parseServerMessage,
 } from "./protocol"
-import { applyServerMessage } from "./state"
+
+type LocalFallbackReason =
+  | "conflict"
+  | "connect-failed"
+  | "invalid-session"
+  | "reconnect-failed"
 
 export default function useRemoteSession({
   getReconnectSnapshot,
@@ -80,12 +91,19 @@ export default function useRemoteSession({
     RemoteAccessTokenSet | undefined
   >(undefined)
   const [hasPendingSyncConflict, setHasPendingSyncConflict] = useState(false)
+  const [hasPendingLocalChanges, setHasPendingLocalChanges] = useState(false)
+  const [localFallbackReason, setLocalFallbackReason] =
+    useState<LocalFallbackReason | null>(null)
   const canPublishSessionState =
     remoteRole === "control" || (remoteRole === null && !remoteToken)
   const pendingSessionSyncRef = useRef<{
     message: Extract<RelayServerMessage, { type: "session" | "state-updated" }>
     wasReconnect: boolean
   } | null>(null)
+  const lastConfirmedServerSnapshotRef = useRef<SessionSnapshot | null>(null)
+  const baseServerSnapshotAtDisconnectRef = useRef<SessionSnapshot | null>(null)
+  const pendingLocalSnapshotRef = useRef<SessionSnapshot | null>(null)
+  const socketAttemptRef = useRef(0)
 
   const localClientIdRef = useRef(createLocalClientId())
   const reconnectTimeoutRef = useRef<number | undefined>(undefined)
@@ -122,6 +140,21 @@ export default function useRemoteSession({
     const entry = `${new Date().toISOString()} ${event}`
     setPeerEventTimeline((current) => [...current, entry].slice(-20))
   }, [])
+
+  const buildCurrentLocalSnapshot = useCallback((): SessionSnapshot => {
+    return stampSessionSnapshotAt({
+      params: syncParamsRef.current,
+      state: syncStateRef.current,
+    })
+  }, [syncParamsRef, syncStateRef])
+
+  const setPendingLocalSnapshot = useCallback(
+    (snapshot: SessionSnapshot | null) => {
+      pendingLocalSnapshotRef.current = snapshot
+      setHasPendingLocalChanges(snapshot !== null)
+    },
+    [],
+  )
 
   const clearTimers = useCallback(() => {
     window.clearTimeout(reconnectTimeoutRef.current)
@@ -185,6 +218,14 @@ export default function useRemoteSession({
     setHasPendingSyncConflict(false)
   }, [])
 
+  const clearLocalFallback = useCallback(() => {
+    setLocalFallbackReason(null)
+  }, [])
+
+  const openLocalFallback = useCallback((reason: LocalFallbackReason) => {
+    setLocalFallbackReason(reason)
+  }, [])
+
   const markSessionConnected = useCallback(
     (wasReconnect: boolean) => {
       setConnectedOnce(true)
@@ -203,6 +244,20 @@ export default function useRemoteSession({
     },
     [markRecovered, setConnectedOnce],
   )
+
+  const applySnapshotLocally = useCallback(
+    (snapshot: SessionSnapshot) => {
+      const resolvedSnapshot = resolveSessionSnapshotAt(snapshot)
+      syncParamsRef.current = resolvedSnapshot.params
+      syncStateRef.current = resolvedSnapshot.state
+      onHandleAction(resolvedSnapshot)
+    },
+    [onHandleAction, syncParamsRef, syncStateRef],
+  )
+
+  const confirmServerSnapshot = useCallback((snapshot: SessionSnapshot) => {
+    lastConfirmedServerSnapshotRef.current = resolveSessionSnapshotAt(snapshot)
+  }, [])
 
   const getRetryTarget = useCallback(
     ({
@@ -246,6 +301,28 @@ export default function useRemoteSession({
     [setCurrentAccessTokens, setCurrentSessionId, updateParticipants],
   )
 
+  const sendSnapshot = useCallback(
+    ({
+      params,
+      sessionId,
+      snapshot,
+    }: {
+      params?: Partial<SyncParams>
+      sessionId: string
+      snapshot: SessionSnapshot
+    }) => {
+      return sendMessage(
+        buildSyncMessage({
+          clientId: localClientIdRef.current,
+          params,
+          sessionId,
+          state: snapshot.state,
+        }),
+      )
+    },
+    [sendMessage],
+  )
+
   const openSocket = useCallback(
     ({
       nextRemoteRole = remoteRole,
@@ -273,14 +350,19 @@ export default function useRemoteSession({
         hasConnectedOnceRef.current ? "reconnecting" : "connecting",
       )
 
+      const socketAttempt = socketAttemptRef.current + 1
+      socketAttemptRef.current = socketAttempt
       const socket = new WebSocket(relayUrl)
       socketRef.current = socket
 
       socket.addEventListener("open", () => {
+        if (socketAttempt !== socketAttemptRef.current) {
+          return
+        }
         pushEvent("socket_open")
         const retrySnapshot =
-          retryType === "retry-join-session" && getReconnectSnapshot
-            ? getReconnectSnapshot()
+          retryType === "retry-join-session"
+            ? (getReconnectSnapshot?.() ?? buildCurrentLocalSnapshot())
             : null
         const joinMessage = buildJoinMessage({
           clientId: localClientIdRef.current,
@@ -294,98 +376,209 @@ export default function useRemoteSession({
       })
 
       socket.addEventListener("message", (event) => {
+        if (socketAttempt !== socketAttemptRef.current) {
+          return
+        }
+
         const message = parseServerMessage(event)
         if (!message) {
           return
         }
 
-        applyServerMessage({
-          message,
-          context: {
-            onError: {
-              failConnect: (nextError) => {
-                connectPromiseRef.current?.reject(nextError)
-                connectPromiseRef.current = null
-              },
-              log: pushEvent,
-              setRetryableFailure: (nextError) => {
-                isConnectingRef.current = false
-                setError(nextError)
-                setLifecycleState("failed")
-                setIsConnecting(false)
-                setCanRetryManually(true)
-              },
+        if (message.type === "error") {
+          const nextError = new Error(message.message)
+          connectPromiseRef.current?.reject(nextError)
+          connectPromiseRef.current = null
+          isConnectingRef.current = false
+          setError(nextError)
+          setLifecycleState("failed")
+          setIsConnecting(false)
+          setCanRetryManually(true)
+          if (nextRemoteRole !== null) {
+            openLocalFallback(
+              /invalid|expired/i.test(message.message)
+                ? "invalid-session"
+                : hasConnectedOnceRef.current
+                  ? "reconnect-failed"
+                  : "connect-failed",
+            )
+          }
+          pushEvent(`relay_error: ${message.message}`)
+          return
+        }
+
+        if (message.type === "participant-list") {
+          setCurrentSessionId(message.sessionId)
+          updateParticipants(message.participants)
+          pushEvent(`participants: ${message.participants.length}`)
+
+          if (
+            canPublishSessionState &&
+            hasReceivedInitialSyncRef.current &&
+            !hasPendingSyncConflict &&
+            !pendingLocalSnapshotRef.current
+          ) {
+            const localSnapshot = buildCurrentLocalSnapshot()
+            if (
+              sendSnapshot({
+                params: localSnapshot.params,
+                sessionId: message.sessionId,
+                snapshot: localSnapshot,
+              })
+            ) {
+              pushEvent(`sync_sent: ${message.sessionId}`)
+            }
+          }
+          return
+        }
+
+        const wasReconnect = hasConnectedOnceRef.current
+        const freshServerSnapshot = resolveSessionSnapshotAt(message.snapshot)
+        const pendingLocalSnapshot = pendingLocalSnapshotRef.current
+        const disconnectBaseline = baseServerSnapshotAtDisconnectRef.current
+        const shouldDeferInitialSnapshot =
+          (!hasReceivedInitialSyncRef.current || isConnectingRef.current) &&
+          (shouldDeferIncomingSnapshot?.({
+            snapshot: freshServerSnapshot,
+            wasReconnect,
+          }) ??
+            false)
+
+        setCurrentSessionId(message.sessionId)
+        if (message.type === "session" && message.accessTokens) {
+          setCurrentAccessTokens(message.accessTokens)
+        }
+        updateParticipants(message.participants)
+
+        if (
+          pendingSessionSyncRef.current &&
+          pendingSessionSyncRef.current.message.sessionId === message.sessionId
+        ) {
+          pendingSessionSyncRef.current = {
+            message: {
+              ...message,
+              snapshot: freshServerSnapshot,
             },
-            onParticipantList: {
-              canPublishSessionState,
-              clientId: localClientIdRef.current,
-              hasReceivedInitialSync,
-              log: pushEvent,
-              sendMessage,
-              setParticipants: updateParticipants,
-              setSessionId: setCurrentSessionId,
-              syncParams: syncParamsRef.current,
-              syncState: syncStateRef.current,
+            wasReconnect,
+          }
+          setHasPendingSyncConflict(true)
+          onIncomingSyncConflict?.({
+            snapshot: freshServerSnapshot,
+            wasReconnect,
+          })
+          confirmServerSnapshot(freshServerSnapshot)
+          return
+        }
+
+        if (pendingLocalSnapshot && disconnectBaseline) {
+          if (
+            sessionSnapshotsMatch({
+              currentSnapshot: disconnectBaseline,
+              incomingSnapshot: freshServerSnapshot,
+            })
+          ) {
+            resolveConnectPromise({
+              ...(message.type === "session" && message.accessTokens
+                ? { accessTokens: message.accessTokens }
+                : {}),
+              sessionId: message.sessionId,
+            })
+            markSessionConnected(wasReconnect)
+            confirmServerSnapshot(freshServerSnapshot)
+            if (
+              sendSnapshot({
+                params: pendingLocalSnapshot.params,
+                sessionId: message.sessionId,
+                snapshot: pendingLocalSnapshot,
+              })
+            ) {
+              pushEvent(`sync_sent: ${message.sessionId}`)
+            }
+            return
+          }
+
+          pendingSessionSyncRef.current = {
+            message: {
+              ...message,
+              snapshot: freshServerSnapshot,
             },
-            onSessionSync: {
-              applySnapshot: (snapshot) => {
-                syncParamsRef.current = snapshot.params
-                syncStateRef.current = snapshot.state
-                onHandleAction(snapshot)
-              },
-              completeConnect: (resolvedSessionId, nextAccessTokens) => {
-                resolveConnectPromise({
-                  ...(nextAccessTokens
-                    ? { accessTokens: nextAccessTokens }
-                    : {}),
-                  sessionId: resolvedSessionId,
-                })
-              },
-              deferSnapshot: ({ message: deferredMessage, wasReconnect }) => {
-                pendingSessionSyncRef.current = {
-                  message: deferredMessage,
-                  wasReconnect,
-                }
-                setHasPendingSyncConflict(true)
-                setCurrentSessionId(deferredMessage.sessionId)
-                if (
-                  deferredMessage.type === "session" &&
-                  deferredMessage.accessTokens
-                ) {
-                  setCurrentAccessTokens(deferredMessage.accessTokens)
-                }
-                updateParticipants(deferredMessage.participants)
-                onIncomingSyncConflict?.({
-                  snapshot: deferredMessage.snapshot,
-                  wasReconnect,
-                })
-              },
-              log: pushEvent,
-              markConnected: markSessionConnected,
-              setAccessTokens: setCurrentAccessTokens,
-              setParticipants: updateParticipants,
-              setSessionId: setCurrentSessionId,
-              shouldDeferSnapshot: ({ snapshot, wasReconnect }) =>
-                ((!hasReceivedInitialSyncRef.current ||
-                  isConnectingRef.current) &&
-                  (shouldDeferIncomingSnapshot?.({
-                    snapshot,
-                    wasReconnect,
-                  }) ??
-                    false)) ||
-                false,
+            wasReconnect,
+          }
+          setHasPendingSyncConflict(true)
+          onIncomingSyncConflict?.({
+            snapshot: freshServerSnapshot,
+            wasReconnect,
+          })
+          openLocalFallback("conflict")
+          confirmServerSnapshot(freshServerSnapshot)
+          return
+        }
+
+        if (shouldDeferInitialSnapshot) {
+          pendingSessionSyncRef.current = {
+            message: {
+              ...message,
+              snapshot: freshServerSnapshot,
             },
-            wasReconnect: hasConnectedOnceRef.current,
-          },
+            wasReconnect,
+          }
+          setHasPendingSyncConflict(true)
+          onIncomingSyncConflict?.({
+            snapshot: freshServerSnapshot,
+            wasReconnect,
+          })
+          confirmServerSnapshot(freshServerSnapshot)
+          return
+        }
+
+        applySnapshotLocally(freshServerSnapshot)
+        resolveConnectPromise({
+          ...(message.type === "session" && message.accessTokens
+            ? { accessTokens: message.accessTokens }
+            : {}),
+          sessionId: message.sessionId,
         })
+        markSessionConnected(wasReconnect)
+        confirmServerSnapshot(freshServerSnapshot)
+        if (
+          pendingLocalSnapshot &&
+          sessionSnapshotsMatch({
+            currentSnapshot: pendingLocalSnapshot,
+            incomingSnapshot: freshServerSnapshot,
+          })
+        ) {
+          setPendingLocalSnapshot(null)
+        }
+        pushEvent(`session_sync: ${message.sessionId}`)
       })
 
       socket.addEventListener("close", () => {
+        if (socketAttempt !== socketAttemptRef.current) {
+          return
+        }
         pushEvent("socket_close")
         socketRef.current = null
         updateParticipants([])
         isConnectingRef.current = false
         setIsConnecting(false)
+
+        const currentLocalSnapshot = buildCurrentLocalSnapshot()
+        const confirmedServerSnapshot = lastConfirmedServerSnapshotRef.current
+        if (confirmedServerSnapshot) {
+          baseServerSnapshotAtDisconnectRef.current = resolveSessionSnapshotAt(
+            confirmedServerSnapshot,
+          )
+        }
+        if (
+          canPublishSessionState &&
+          confirmedServerSnapshot &&
+          !sessionSnapshotsMatch({
+            currentSnapshot: confirmedServerSnapshot,
+            incomingSnapshot: currentLocalSnapshot,
+          })
+        ) {
+          setPendingLocalSnapshot(currentLocalSnapshot)
+        }
 
         const { retryRole, retryToken } = getRetryTarget({
           nextRemoteRole,
@@ -410,6 +603,9 @@ export default function useRemoteSession({
           isConnectingRef.current = false
           setLifecycleState("failed")
           setCanRetryManually(true)
+          if (nextRemoteRole !== null) {
+            openLocalFallback("connect-failed")
+          }
           return
         }
 
@@ -425,6 +621,9 @@ export default function useRemoteSession({
           )
           isConnectingRef.current = false
           setLifecycleState("failed")
+          if (nextRemoteRole !== null || sessionIdRef.current) {
+            openLocalFallback("reconnect-failed")
+          }
         }, AUTO_RECOVERY_TIMEOUT_MS)
 
         reconnectTimeoutRef.current = window.setTimeout(() => {
@@ -439,6 +638,9 @@ export default function useRemoteSession({
             isConnectingRef.current = false
             setLifecycleState("failed")
             setCanRetryManually(true)
+            if (nextRemoteRole !== null || sessionIdRef.current) {
+              openLocalFallback("reconnect-failed")
+            }
           }
         }, RETRY_DELAY_MS)
       })
@@ -449,21 +651,25 @@ export default function useRemoteSession({
       })
     },
     [
+      applySnapshotLocally,
+      buildCurrentLocalSnapshot,
       canPublishSessionState,
       closeSocket,
+      confirmServerSnapshot,
       getReconnectSnapshot,
       getRetryTarget,
-      hasReceivedInitialSync,
+      hasPendingSyncConflict,
       markSessionConnected,
-      onHandleAction,
       onIncomingSyncConflict,
+      openLocalFallback,
       pushEvent,
       remoteRole,
       remoteToken,
       resolveConnectPromise,
-      sendMessage,
+      sendSnapshot,
       setCurrentAccessTokens,
       setCurrentSessionId,
+      setPendingLocalSnapshot,
       shouldDeferIncomingSnapshot,
       syncParamsRef,
       syncStateRef,
@@ -474,6 +680,7 @@ export default function useRemoteSession({
 
   const connectRemote = useCallback(async () => {
     clearTimers()
+    clearLocalFallback()
     setHasReceivedInitialSync(false)
     const connectPromise = new Promise<{
       accessTokens?: RemoteAccessTokenSet
@@ -483,23 +690,29 @@ export default function useRemoteSession({
     })
     openSocket({ retryType: "create-session" })
     return connectPromise
-  }, [clearTimers, openSocket])
+  }, [clearLocalFallback, clearTimers, openSocket])
 
   const activeSessionId = sessionId
 
   const finalizePendingSync = useCallback(
-    (resolution: "use-local" | "use-server") => {
+    (resolution: "use-local" | "use-local-mode" | "use-server") => {
       const pendingSync = pendingSessionSyncRef.current
       if (!pendingSync) {
         return
       }
 
       clearPendingSyncConflict()
+      if (resolution === "use-local-mode") {
+        openLocalFallback("conflict")
+        return
+      }
 
       if (resolution === "use-server") {
-        syncParamsRef.current = pendingSync.message.snapshot.params
-        syncStateRef.current = pendingSync.message.snapshot.state
-        onHandleAction(pendingSync.message.snapshot)
+        applySnapshotLocally(pendingSync.message.snapshot)
+        setPendingLocalSnapshot(null)
+        clearLocalFallback()
+      } else {
+        clearLocalFallback()
       }
 
       resolveConnectPromise({
@@ -512,32 +725,31 @@ export default function useRemoteSession({
       markSessionConnected(pendingSync.wasReconnect)
 
       if (resolution === "use-local" && canPublishSessionState) {
-        const params = syncParamsRef.current
-        const state = syncStateRef.current
+        setPendingLocalSnapshot(buildCurrentLocalSnapshot())
         if (
-          sendMessage(
-            buildSyncMessage({
-              clientId: localClientIdRef.current,
-              params,
-              sessionId: pendingSync.message.sessionId,
-              state,
-            }),
-          )
+          sendSnapshot({
+            params: syncParamsRef.current,
+            sessionId: pendingSync.message.sessionId,
+            snapshot: buildCurrentLocalSnapshot(),
+          })
         ) {
           pushEvent(`sync_sent: ${pendingSync.message.sessionId}`)
         }
       }
     },
     [
+      applySnapshotLocally,
+      buildCurrentLocalSnapshot,
       canPublishSessionState,
+      clearLocalFallback,
       clearPendingSyncConflict,
       markSessionConnected,
-      onHandleAction,
+      openLocalFallback,
       pushEvent,
       resolveConnectPromise,
-      sendMessage,
+      sendSnapshot,
+      setPendingLocalSnapshot,
       syncParamsRef,
-      syncStateRef,
     ],
   )
 
@@ -551,7 +763,7 @@ export default function useRemoteSession({
       keys?: string[]
       state?: Partial<TimerState>
     }) => {
-      if (!activeSessionId || !canPublishSessionState) {
+      if (!canPublishSessionState) {
         return
       }
 
@@ -566,33 +778,46 @@ export default function useRemoteSession({
             }, {})
           : syncParamsRef.current
         : undefined
+      const snapshot = stampSessionSnapshotAt({
+        params: {
+          ...syncParamsRef.current,
+          ...(params ?? {}),
+        },
+        state: {
+          ...syncStateRef.current,
+          ...state,
+        },
+      })
+
+      if (
+        !activeSessionId ||
+        hasPendingSyncConflict ||
+        isConnectingRef.current
+      ) {
+        setPendingLocalSnapshot(snapshot)
+        return
+      }
 
       try {
-        if (
-          !sendMessage(
-            buildSyncMessage({
-              clientId: localClientIdRef.current,
-              params,
-              sessionId: activeSessionId,
-              state: {
-                ...syncStateRef.current,
-                ...state,
-              },
-            }),
-          )
-        ) {
+        if (!sendSnapshot({ params, sessionId: activeSessionId, snapshot })) {
+          setPendingLocalSnapshot(snapshot)
           return
         }
+        clearLocalFallback()
         pushEvent(`sync_sent: ${activeSessionId}`)
       } catch (nextError) {
         debug.error(nextError)
+        setPendingLocalSnapshot(snapshot)
       }
     },
     [
       activeSessionId,
       canPublishSessionState,
+      clearLocalFallback,
+      hasPendingSyncConflict,
       pushEvent,
-      sendMessage,
+      sendSnapshot,
+      setPendingLocalSnapshot,
       syncParamsRef,
       syncStateRef,
     ],
@@ -614,6 +839,10 @@ export default function useRemoteSession({
 
     closeSocket(true)
     clearPendingSyncConflict()
+    clearLocalFallback()
+    setPendingLocalSnapshot(null)
+    lastConfirmedServerSnapshotRef.current = null
+    baseServerSnapshotAtDisconnectRef.current = null
     hasReceivedInitialSyncRef.current = false
     isConnectingRef.current = false
     setCanRetryManually(false)
@@ -624,11 +853,31 @@ export default function useRemoteSession({
     setLifecycleState("connected")
   }, [
     activeSessionId,
+    clearLocalFallback,
     clearPendingSyncConflict,
     clearTimers,
     closeSocket,
     sendMessage,
+    setPendingLocalSnapshot,
     setConnectedOnce,
+  ])
+
+  const activateLocalFallback = useCallback(async () => {
+    clearPendingSyncConflict()
+    clearLocalFallback()
+    const snapshot =
+      pendingLocalSnapshotRef.current ??
+      pendingSessionSyncRef.current?.message.snapshot ??
+      lastConfirmedServerSnapshotRef.current ??
+      buildCurrentLocalSnapshot()
+
+    await disconnect()
+    return resolveSessionSnapshotAt(snapshot)
+  }, [
+    buildCurrentLocalSnapshot,
+    clearLocalFallback,
+    clearPendingSyncConflict,
+    disconnect,
   ])
 
   const retryConnection = useCallback(async () => {
@@ -639,12 +888,13 @@ export default function useRemoteSession({
 
     setCanRetryManually(false)
     setError(null)
+    clearLocalFallback()
     openSocket({
       nextRemoteRole: retryRole,
       nextRemoteToken: retryToken,
       retryType: retryToken ? "retry-join-session" : "create-session",
     })
-  }, [getRetryTarget, openSocket, remoteRole, remoteToken])
+  }, [clearLocalFallback, getRetryTarget, openSocket, remoteRole, remoteToken])
 
   useEffect(() => {
     if (!remoteToken || !remoteRole) {
@@ -709,16 +959,19 @@ export default function useRemoteSession({
       disconnect,
       error,
       hasConnectedOnce,
+      hasPendingLocalChanges,
       hasPendingSyncConflict,
       hasReceivedInitialSync,
       isConnecting,
       lifecycleState,
+      localFallbackReason,
       peerEventTimeline,
       participants,
       resolvePendingSyncConflict: finalizePendingSync,
       retryConnection,
       sessionId,
       syncAll,
+      activateLocalFallback,
     }),
     [
       accessTokens,
@@ -729,16 +982,19 @@ export default function useRemoteSession({
       disconnect,
       error,
       hasConnectedOnce,
+      hasPendingLocalChanges,
       hasPendingSyncConflict,
       hasReceivedInitialSync,
       isConnecting,
       lifecycleState,
+      localFallbackReason,
       participants,
       peerEventTimeline,
       finalizePendingSync,
       retryConnection,
       sessionId,
       syncAll,
+      activateLocalFallback,
     ],
   )
 }

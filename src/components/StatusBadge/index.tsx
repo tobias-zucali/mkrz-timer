@@ -34,6 +34,7 @@ export default function StatusBadge({
   const compactStatusAppearance = getCompactStatusAppearance({
     errorText: errorText ?? floatingTimerErrorText,
     isOnline,
+    isWaitingForController: sessionPresentation.isWaitingForController,
     relayReachability,
     state: sessionPresentation.state,
   })

@@ -6,14 +6,22 @@ describe("SyncConflictDialog", () => {
   it("renders the conflict copy and action buttons", () => {
     render(
       <SyncConflictDialog
-        onUseLocal={() => undefined}
-        onUseServer={() => undefined}
+        actions={[
+          { label: "Use server state", onClick: () => undefined },
+          {
+            label: "Push local changes",
+            onClick: () => undefined,
+            tone: "primary",
+          },
+        ]}
+        description="Choose which timer setup should continue before remote sync resumes."
+        title="Live session state changed during recovery."
       />,
     )
 
     expect(
       screen.getByRole("dialog", {
-        name: "URL state and server state differ.",
+        name: "Live session state changed during recovery.",
       }),
     ).toBeInTheDocument()
     expect(
@@ -21,7 +29,7 @@ describe("SyncConflictDialog", () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", {
-        name: "Overwrite server using URL params",
+        name: "Push local changes",
       }),
     ).toBeInTheDocument()
   })
@@ -31,13 +39,20 @@ describe("SyncConflictDialog", () => {
     const onUseServer = vi.fn()
 
     render(
-      <SyncConflictDialog onUseLocal={onUseLocal} onUseServer={onUseServer} />,
+      <SyncConflictDialog
+        actions={[
+          { label: "Use server state", onClick: onUseServer },
+          { label: "Push local changes", onClick: onUseLocal, tone: "primary" },
+        ]}
+        description="Choose which timer setup should continue before remote sync resumes."
+        title="Live session state changed during recovery."
+      />,
     )
 
     fireEvent.click(screen.getByRole("button", { name: "Use server state" }))
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Overwrite server using URL params",
+        name: "Push local changes",
       }),
     )
 
@@ -52,8 +67,16 @@ describe("SyncConflictDialog", () => {
 
     render(
       <SyncConflictDialog
-        onUseLocal={() => undefined}
-        onUseServer={() => undefined}
+        actions={[
+          { label: "Use server state", onClick: () => undefined },
+          {
+            label: "Push local changes",
+            onClick: () => undefined,
+            tone: "primary",
+          },
+        ]}
+        description="Choose which timer setup should continue before remote sync resumes."
+        title="Live session state changed during recovery."
       />,
     )
 
@@ -61,7 +84,7 @@ describe("SyncConflictDialog", () => {
       name: "Use server state",
     })
     const overwriteButton = screen.getByRole("button", {
-      name: "Overwrite server using URL params",
+      name: "Push local changes",
     })
 
     await waitFor(() => expect(useServerButton).toHaveFocus())
