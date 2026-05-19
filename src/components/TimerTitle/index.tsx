@@ -83,7 +83,7 @@ export default function TimerTitle({
   if (disabled) {
     return (
       <div
-        className="w-full px-4 pt-2 pb-1"
+        className="mt-4 w-full px-4 pt-2 pb-1"
         data-testid="timer-title"
         data-title-empty={layout.hasText ? "false" : "true"}
         data-title-mode="readonly"
@@ -104,7 +104,7 @@ export default function TimerTitle({
   return (
     <div
       className={classNames(
-        "relative flex w-full justify-center px-4 pt-2 pb-1",
+        "relative mt-4 flex w-full justify-center px-4 pt-2 pb-1",
         showEmptyAction && "min-h-12",
       )}
       data-testid="timer-title"

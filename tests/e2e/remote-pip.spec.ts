@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   expectScreenshotWithoutDebugInfo,
   expectTimerRunning,
+  openSidebarPanel,
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
@@ -11,25 +12,27 @@ import {
 
 // Helper functions for Floating Timer
 async function openFloatingTimer(page: Page) {
-  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  const toggle = page.getByTestId("floating-timer-toggle")
+  await expect(toggle).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await expect(toggle).toContainText("Open floating timer")
 
   const pipPromise = page.context().waitForEvent("page")
-  await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+  await toggle.click()
+  await expect(toggle).toContainText("Floating timer open")
   const pipPage = await pipPromise
   await pipPage.waitForLoadState("domcontentloaded")
   return pipPage
 }
 
 async function closeFloatingTimer(page: Page) {
-  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+  const toggle = page.getByTestId("floating-timer-toggle")
+  await expect(toggle).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await expect(toggle).toContainText("Floating timer open")
 
-  await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  await toggle.click()
+  await expect(toggle).toContainText("Open floating timer")
   await expectFloatingTimerClosed(page)
 }
 
@@ -99,7 +102,7 @@ async function expectFloatingTimerClosed(page: Page) {
 
 test("shows the floating timer action in local mode", async ({ page }) => {
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
 })
@@ -115,7 +118,7 @@ test("hides the floating timer action when document PiP is unsupported", async (
   })
 
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeDisabled()
   await expect(page.getByText(/document picture-in-picture/i)).toBeVisible()
@@ -126,7 +129,7 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   page,
 }) => {
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
   await openFloatingTimer(page)
 
   await expect
@@ -187,7 +190,9 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
     })
 
   await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  await expect(page.getByTestId("floating-timer-toggle")).toContainText(
+    "Open floating timer",
+  )
   await expectFloatingTimerClosed(page)
 })
 
@@ -203,7 +208,7 @@ test(
   { tag: "@visual" },
   async ({ page }) => {
     await openTimer(page, 3)
-    await openSettingsOverlay(page)
+    await openSidebarPanel(page, "Settings")
     await updateTimerSettings(page, {
       backgroundColor: "#123456",
       title: "Floating title",

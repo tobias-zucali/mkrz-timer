@@ -16,6 +16,7 @@ import {
   openSettingsOverlay,
   openClientFromSettings,
   openClientsFromSettings,
+  openSidebarPanel,
   openTimer,
   updateTimerSettings,
   waitForRemoteCluster,
@@ -81,7 +82,7 @@ test(
 )
 
 test(
-  "opens settings, enables remote mode, and opens a client timer",
+  "opens settings, starts a live session, and opens a client timer",
   { tag: "@smoke" },
   async ({ page }) => {
     const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
@@ -94,17 +95,43 @@ test(
   },
 )
 
-test("keeps the main remote page local and ends remote mode cleanly", async ({
+test("keeps the main live page local and ends the live session cleanly", async ({
   page,
 }) => {
   await enableRemoteModeWithClientUrls(page)
 
-  await expect(page).toHaveURL(/\/control\//)
-  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
-  await page.getByRole("switch", { name: "Remote mode" }).click()
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
     .toBe("/")
+  await openSidebarPanel(page, "Share")
+  await expect(
+    page.getByRole("button", { name: "End live session" }),
+  ).toBeVisible()
+  const documentSentinel = await page.evaluate(() => {
+    const sentinel = `sentinel-${Math.random().toString(36).slice(2)}`
+    ;(
+      window as typeof window & { __playwrightDocumentSentinel?: string }
+    ).__playwrightDocumentSentinel = sentinel
+    return sentinel
+  })
+  await page.getByRole("button", { name: "End live session" }).click()
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe("/")
+  await expect
+    .poll(() =>
+      page
+        .evaluate(
+          () =>
+            (
+              window as typeof window & {
+                __playwrightDocumentSentinel?: string
+              }
+            ).__playwrightDocumentSentinel ?? null,
+        )
+        .catch(() => null),
+    )
+    .toBe(documentSentinel)
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -115,10 +142,10 @@ test("keeps the main remote page local and ends remote mode cleanly", async ({
       t: "60!d61f69!!0",
       v: "1",
     })
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Share")
   await expect(
-    page.getByRole("switch", { name: "Remote mode" }),
-  ).not.toBeChecked()
+    page.getByRole("button", { name: "Start live session" }),
+  ).toBeVisible()
 })
 
 test(
@@ -129,7 +156,7 @@ test(
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
-      "Viewer Link",
+      "Viewer link",
     )
 
     await expectReadonlyPlaceholder(readonlyClient)
@@ -142,17 +169,18 @@ test(
     })
 
     await expectRemoteStatus(page, {
-      connectionSummary: "Controlling with 1 other participant",
+      connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
-      role: "Control session",
-      state: "Connected",
+      role: "Control access",
+      state: /Connected|Connection interrupted|Reconnecting\.\.\./,
     })
     await expectRemoteStatus(readonlyClient, {
-      connectionSummary: "Viewing with 1 other participant",
+      connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
-      role: "Readonly session",
-      state: "Connected",
+      role: "Viewer access",
+      state: /Connected|Connection interrupted|Reconnecting\.\.\./,
     })
+    await closeSettingsOverlay(page)
 
     await expect(readonlyClient).not.toHaveURL(/\/control\//)
     await expectReadonlyTimerControls(readonlyClient)
@@ -178,6 +206,48 @@ test(
   },
 )
 
+test("readonly clients expose fullscreen share and status overlays", async ({
+  page,
+}) => {
+  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    readonlyClientUrl,
+    "Viewer link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "readonly client should connect before overlay assertions",
+  })
+
+  await readonlyClient
+    .getByRole("button", { name: "Share viewer link" })
+    .click()
+  const qrCodeDialog = readonlyClient.getByRole("dialog", {
+    name: "Timer · Viewer link",
+  })
+  await expect(qrCodeDialog).toBeVisible()
+  const qrCodeBounds = await qrCodeDialog.boundingBox()
+  const qrViewport = readonlyClient.viewportSize()
+
+  expect(qrCodeBounds?.width).toBe(qrViewport?.width)
+  expect(qrCodeBounds?.height).toBe(qrViewport?.height)
+  await qrCodeDialog.click()
+  await expect(qrCodeDialog).not.toBeVisible()
+
+  await readonlyClient.getByTestId("remote-status-toggle").click()
+  const offcanvas = readonlyClient.getByTestId("sidebar-offcanvas")
+  await expect(readonlyClient.getByTestId("sidebar-panel-status")).toBeVisible()
+  const offcanvasBounds = await offcanvas.boundingBox()
+  const statusViewport = readonlyClient.viewportSize()
+
+  expect(offcanvasBounds?.width).toBe(statusViewport?.width)
+  expect(offcanvasBounds?.height).toBe(statusViewport?.height)
+})
+
 test("syncs mixed readonly and control clients", async ({ page }) => {
   const { controlClientUrl, readonlyClientUrl } =
     await enableRemoteModeWithClientUrls(page)
@@ -190,7 +260,7 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     page,
     readonlyClientUrl,
     2,
-    "Viewer Link",
+    "Viewer link",
   )
   const allPages = [page, ...controlClients, ...readonlyClients]
 
@@ -202,21 +272,21 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   })
 
   await expectRemoteStatus(page, {
-    connectionSummary: "Controlling with 4 other participants",
+    connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control session",
+    role: "Control access",
     state: "Connected",
   })
   await expectRemoteStatus(controlClients[0], {
-    connectionSummary: "Controlling with 4 other participants",
+    connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control session",
+    role: "Control access",
     state: "Connected",
   })
   await expectRemoteStatus(readonlyClients[0], {
-    connectionSummary: "Viewing with 4 other participants",
+    connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Readonly session",
+    role: "Viewer access",
     state: "Connected",
   })
 
@@ -232,11 +302,9 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     title: "Mixed clients",
   }
 
-  await controlClients[0].getByRole("button", { name: "Settings" }).click()
+  await openSidebarPanel(controlClients[0], "Timer")
   await updateTimerSettings(controlClients[0], settings)
-  await controlClients[0]
-    .getByRole("button", { exact: true, name: "Close" })
-    .click()
+  await closeSettingsOverlay(controlClients[0])
 
   await Promise.all(
     allPages.map((remotePage) => expectTimerSettings(remotePage, settings)),
@@ -251,7 +319,7 @@ test("keeps long multiline titles readable in readonly remote clients", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer Link",
+    "Viewer link",
   )
 
   await closeSettingsOverlay(page)
@@ -292,7 +360,7 @@ test(
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
-      "Viewer Link",
+      "Viewer link",
     )
 
     await closeSettingsOverlay(page)
@@ -350,28 +418,66 @@ test("shows offline network status when the browser loses connectivity", async (
 
   await expectRemoteStatus(controlClient, {
     connectionSummary:
-      /Controlling with 1 other participant|Restoring relay connection|Waiting for timer sync/,
+      /Reconnect in progress|Restoring synchronization|Synchronized/,
     networkStatus: "Offline",
-    role: "Control session",
-    state: /Connected|Reconnecting/,
+    role: "Control access",
+    state: /Connected|Connection interrupted|Reconnecting\.\.\./,
   })
 
   await controlClient.context().setOffline(false)
 })
 
-test("keeps the remote mode toggle visible after an offline remote-mode start", async ({
+test("keeps the live session action visible after an offline start", async ({
   page,
 }) => {
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Share")
   await page.context().setOffline(true)
-
-  const remoteModeToggle = page.getByRole("switch", { name: "Remote mode" })
-
-  await remoteModeToggle.click({
-    force: true,
+  const viewportSize = page.viewportSize()
+  const documentSentinel = await page.evaluate(() => {
+    const sentinel = `sentinel-${Math.random().toString(36).slice(2)}`
+    ;(
+      window as typeof window & { __playwrightDocumentSentinel?: string }
+    ).__playwrightDocumentSentinel = sentinel
+    return sentinel
   })
-  await expect(remoteModeToggle).toBeVisible()
+
+  await expect
+    .poll(async () => {
+      const box = await page
+        .getByRole("button", { name: "Start live session" })
+        .boundingBox()
+
+      if (!box || !viewportSize) {
+        return false
+      }
+
+      return (
+        box.x >= 0 &&
+        box.y >= 0 &&
+        box.x + box.width <= viewportSize.width &&
+        box.y + box.height <= viewportSize.height
+      )
+    })
+    .toBe(true)
+
+  await page
+    .getByRole("button", { name: "Start live session" })
+    .evaluate((element) => {
+      ;(element as HTMLButtonElement).click()
+    })
+  await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
+  await expect(page.getByText("Live session", { exact: true })).toBeVisible()
+  await expect(page.getByText("Local share", { exact: true })).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __playwrightDocumentSentinel?: string })
+            .__playwrightDocumentSentinel ?? null,
+      ),
+    )
+    .toBe(documentSentinel)
   await page.context().setOffline(false)
 })
 
@@ -381,20 +487,16 @@ test("shows a recoverable error for malformed viewer links", async ({
   await page.goto("/view")
 
   await expectRemoteStatus(page, {
-    connectionSummary: "Recovery needs a retry",
-    errorText:
-      /Remote session link is malformed\. Check the URL and try again\./,
-    role: "Readonly session",
-    state: "Reconnect failed",
+    connectionSummary: "Error",
+    errorText: /Live session link is malformed\. Check the URL and try again\./,
+    role: "Viewer access",
+    state: "Error",
   })
   await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
-    "Recovery needs a retry",
+    "Error",
   )
   await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
-    "Reconnect failed",
-  )
-  await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
-    "Remote session link is malformed. Check the URL and try again.",
+    "Live session link is malformed. Check the URL and try again.",
   )
   await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
 })
@@ -432,10 +534,11 @@ test("controller links can restore control and reused viewer links rejoin the se
   const { controlClientUrl, readonlyClientUrl } =
     await enableRemoteModeWithClientUrls(page)
 
-  await page.getByRole("switch", { name: "Remote mode" }).click()
+  await openSidebarPanel(page, "Share")
+  await page.getByRole("button", { name: "End live session" }).click()
   await expect(
-    page.getByRole("switch", { name: "Remote mode" }),
-  ).not.toBeChecked()
+    page.getByRole("button", { name: "Start live session" }),
+  ).toBeVisible()
 
   const controlClient = await page.context().newPage()
   await controlClient.goto(controlClientUrl)
@@ -456,15 +559,15 @@ test("controller links can restore control and reused viewer links rejoin the se
   })
   await expect(readonlyClient).toHaveURL(/\/view\//)
   await expectRemoteStatus(controlClient, {
-    connectionSummary: "Controlling with 1 other participant",
+    connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control session",
+    role: "Control access",
     state: "Connected",
   })
   await expectRemoteStatus(readonlyClient, {
-    connectionSummary: "Viewing with 1 other participant",
+    connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Readonly session",
+    role: "Viewer access",
     state: "Connected",
   })
   await expectReadonlyTimerControls(readonlyClient)
@@ -476,10 +579,11 @@ test(
   async ({ page }) => {
     const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
 
-    await page.getByRole("switch", { name: "Remote mode" }).click()
+    await openSidebarPanel(page, "Share")
+    await page.getByRole("button", { name: "End live session" }).click()
     await expect(
-      page.getByRole("switch", { name: "Remote mode" }),
-    ).not.toBeChecked()
+      page.getByRole("button", { name: "Start live session" }),
+    ).toBeVisible()
     await page.waitForTimeout(250)
 
     const expiredViewerPage = await page.context().newPage()

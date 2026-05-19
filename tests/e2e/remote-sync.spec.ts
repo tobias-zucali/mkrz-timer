@@ -182,8 +182,8 @@ test("ignores malformed relay payload attempts without breaking active clients",
   await enableRemoteMode(page)
   const readonlyClient = await openClientFromSettings(
     page,
-    await page.getByRole("textbox", { name: "Viewer Link" }).inputValue(),
-    "Viewer Link",
+    await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
+    "Viewer link",
   )
 
   await closeSettingsOverlay(page)
@@ -258,7 +258,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   }
 
   await openSettingsOverlay(page)
-  await expectUrlQrCode(page, "Control Link")
+  await expectUrlQrCode(page, "Control link")
   await updateTimerSettings(page, mainSettings)
   await closeSettingsOverlay(page)
 
@@ -442,7 +442,7 @@ test("new clients inherit host settings without resetting the session", async ({
 
   const clientUrl = await enableRemoteMode(page)
   const viewerUrl = await page
-    .getByRole("textbox", { name: "Viewer Link" })
+    .getByRole("textbox", { name: "Viewer link" })
     .inputValue()
 
   const mainSettings = {
@@ -461,7 +461,7 @@ test("new clients inherit host settings without resetting the session", async ({
     seconds: mainSettings.seconds,
   }
 
-  await expectUrlQrCode(page, "Control Link")
+  await expectUrlQrCode(page, "Control link")
   await updateTimerSettings(page, mainSettings)
   await expectTimerSettings(page, mainSettings)
 
@@ -469,7 +469,7 @@ test("new clients inherit host settings without resetting the session", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     viewerUrl,
-    "Viewer Link",
+    "Viewer link",
   )
   const allPages = [page, controlClient, readonlyClient]
 

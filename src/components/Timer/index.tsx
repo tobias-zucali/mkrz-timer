@@ -13,9 +13,11 @@ const timerButtonClassName =
   "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation"
 
 type ReadonlyPlaceholder = {
+  actionLabel?: string
   body: string
-  eyebrow: string
+  eyebrow?: string
   heading: string
+  onAction?: () => void
   tone: "connecting" | "failed" | "reconnecting"
 }
 
@@ -62,9 +64,11 @@ export default function Timer({
             data-testid="readonly-timer-placeholder"
           >
             <div className="w-full max-w-lg rounded-3xl border border-foreground/12 bg-background/72 px-6 py-8 text-center shadow-xl shadow-background/20 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
-                {readonlyPlaceholder.eyebrow}
-              </p>
+              {readonlyPlaceholder.eyebrow ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
+                  {readonlyPlaceholder.eyebrow}
+                </p>
+              ) : null}
               <div className="mt-5 flex items-center justify-center gap-3">
                 <div
                   className={`h-4 w-4 rounded-full motion-safe:animate-pulse ${
@@ -82,6 +86,16 @@ export default function Timer({
               <p className="mt-2 text-sm leading-6 text-foreground/68">
                 {readonlyPlaceholder.body}
               </p>
+              {readonlyPlaceholder.actionLabel &&
+              readonlyPlaceholder.onAction ? (
+                <button
+                  className="mt-4 cursor-pointer text-sm font-medium text-primary underline decoration-primary/60 underline-offset-4 transition hover:text-primary/82"
+                  onClick={readonlyPlaceholder.onAction}
+                  type="button"
+                >
+                  {readonlyPlaceholder.actionLabel}
+                </button>
+              ) : null}
             </div>
           </div>
         ) : (

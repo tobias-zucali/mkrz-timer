@@ -11,6 +11,8 @@ import useDebouncedEffect from "@/utils/useDebouncedEffect"
 import type { ParamBuildOptions } from "./params"
 import { buildPathWithParams, getRemoteSessionOnlyOmitKeys } from "./params"
 
+const URL_SYNC_DEBOUNCE_MS = 500
+
 const mergeParamsForEditing = (
   currentParams: ReturnType<typeof normalizeQueryParams>,
   newParams: Partial<ReturnType<typeof normalizeQueryParams>>,
@@ -29,14 +31,23 @@ const mergeParamsForEditing = (
 }
 
 export default function useParams() {
-  const searchParams = useSearchParams()
-  const pathname = usePathname()
+  const nextSearchParams = useSearchParams()
+  const nextPathname = usePathname()
+  const pathname =
+    typeof window === "undefined" ? nextPathname : window.location.pathname
   const router = useRouter()
   const { setColors } = useContext(ParamStyleContext)
 
+  const searchParamsString =
+    typeof window === "undefined"
+      ? nextSearchParams.toString()
+      : window.location.search.replace(/^\?/, "")
+  const searchParams = useMemo(
+    () => new URLSearchParams(searchParamsString),
+    [searchParamsString],
+  )
   const isSearchParamsEmpty = searchParams.size === 0
   const allowTimerState = !pathname.startsWith("/view")
-  const searchParamsString = searchParams.toString()
   const parsedTimerUrlState = useMemo(
     () =>
       parseTimerUrlState({
@@ -112,6 +123,16 @@ export default function useParams() {
   )
 
   const replaceUrlIfChanged = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const skipSyncUntil = (
+        window as typeof window & { __timerSkipUrlSyncUntil?: number }
+      ).__timerSkipUrlSyncUntil
+
+      if (skipSyncUntil && skipSyncUntil > Date.now()) {
+        return
+      }
+    }
+
     if (targetUrl === currentUrl) {
       return
     }
@@ -119,7 +140,7 @@ export default function useParams() {
     router.replace(targetUrl)
   }, [currentUrl, router, targetUrl])
 
-  useDebouncedEffect(replaceUrlIfChanged, 500)
+  useDebouncedEffect(replaceUrlIfChanged, URL_SYNC_DEBOUNCE_MS)
 
   return useMemo(
     () => ({

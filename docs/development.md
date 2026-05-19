@@ -18,7 +18,7 @@ pnpm dev:relay
 
 Environment variables:
 
-- `NEXT_PUBLIC_REMOTE_WS_URL`: browser websocket endpoint for remote mode
+- `NEXT_PUBLIC_REMOTE_WS_URL`: browser websocket endpoint for live sessions
 - `RELAY_HOST`: relay bind host
 - `RELAY_PORT`: relay bind port
 - `RELAY_SESSION_TTL_MS`: in-memory idle session expiry

@@ -2,143 +2,134 @@
 
 import {
   Suspense,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 import type { SyncParams } from "@/shared/remoteSession/types"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
 import debug from "@/utils/debug"
+import getSessionPresentation from "@/utils/sessionPresentation"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
-import getRemoteStatus, { type RemoteStatusState } from "@/utils/remoteStatus"
+import getRemoteStatus from "@/utils/remoteStatus"
 import useRemoteSession from "@/utils/remoteSession"
 import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
-import { buildRemotePath, parseRemoteRoute } from "@/utils/remoteSession/route"
+import { parseRemoteRoute } from "@/utils/remoteSession/route"
 import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
+import {
+  ArrowsPointingOutIcon,
+  ShareIcon,
+  WindowIcon,
+  XMarkIcon,
+} from "@/utils/icons"
 import useNetworkStatus from "@/utils/useNetworkStatus"
 import useParams from "@/utils/useParams"
 import useTimer, { type TimerState } from "@/utils/useTimer"
 import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 
-import Settings from "@/components/Settings"
-import SettingsButton from "@/components/SettingsButton"
-import StatusPopover from "@/components/StatusPopover"
+import StatusBadge from "@/components/StatusBadge"
+import QrCodeOverlay from "@/components/QrCodeOverlay"
 import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
+import Sidebar from "@/components/Sidebar"
+
+function TopRightActionButton({
+  ariaLabel,
+  isActive = false,
+  onClick,
+  title,
+  children,
+}: {
+  ariaLabel: string
+  isActive?: boolean
+  onClick: () => void
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      aria-label={ariaLabel}
+      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-background/84 transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary ${
+        isActive
+          ? "bg-background/96 text-primary"
+          : "text-foreground/78 hover:bg-background hover:text-primary"
+      }`}
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
+      {children}
+    </button>
+  )
+}
 
 function getConnectionErrorDetail(error: Error) {
   const detail = error.message.trim()
   return detail || "An unknown error was caught."
 }
 
-function getNetworkLabel(isOnline: boolean | null) {
-  if (isOnline === null) {
-    return "Checking"
+function pauseUrlSyncDuringRemoteRouteTransition() {
+  if (typeof window === "undefined") {
+    return
   }
 
-  return isOnline ? "Online" : "Offline"
-}
-
-function getRelayReachabilityLabel(
-  relayReachability: "checking" | "reachable" | "unreachable",
-) {
-  switch (relayReachability) {
-    case "reachable":
-      return "Reachable"
-    case "unreachable":
-      return "Unreachable"
-    case "checking":
-      return "Checking"
-  }
+  ;(
+    window as typeof window & { __timerSkipUrlSyncUntil?: number }
+  ).__timerSkipUrlSyncUntil = Date.now() + 2_000
 }
 
 function getReadonlyPlaceholder({
+  onOpenStatusPanel,
   remoteError,
-  remoteStatus,
+  sessionPresentation,
 }: {
+  onOpenStatusPanel: () => void
   remoteError: Error | null
-  remoteStatus: ReturnType<typeof getRemoteStatus>
+  sessionPresentation: ReturnType<typeof getSessionPresentation>
 }) {
-  const readonlyPlaceholderToneByRemoteState: Partial<
-    Record<RemoteStatusState, "connecting" | "failed" | "reconnecting">
+  const readonlyPlaceholderToneBySessionState: Partial<
+    Record<
+      ReturnType<typeof getSessionPresentation>["state"],
+      "connecting" | "failed" | "reconnecting"
+    >
   > = {
-    connecting: "connecting",
-    failed: "failed",
-    reconnecting: "reconnecting",
+    liveConflict: "failed",
+    liveConnecting: "connecting",
+    liveOffline: "reconnecting",
+    liveReconnecting: "reconnecting",
   }
 
-  if (!remoteStatus) {
-    return undefined
-  }
-
-  const tone = readonlyPlaceholderToneByRemoteState[remoteStatus.state]
+  const tone = readonlyPlaceholderToneBySessionState[sessionPresentation.state]
   if (!tone) {
     return undefined
   }
 
+  const remoteErrorMessage = remoteError?.message.trim() ?? ""
+  const showRetryLink =
+    sessionPresentation.state === "liveConflict" &&
+    /retry the connection/i.test(remoteErrorMessage)
+
   return {
-    body:
-      remoteError?.message.trim() ||
-      remoteStatus.description ||
-      "Waiting for the shared timer state.",
-    eyebrow: remoteStatus.connectionSummary,
-    heading: remoteStatus.stateLabel,
+    actionLabel: showRetryLink ? "Retry the connection" : undefined,
+    body: showRetryLink
+      ? "Automatic recovery timed out."
+      : remoteErrorMessage ||
+        sessionPresentation.statusPanel.description ||
+        "Waiting for the shared timer state.",
+    eyebrow: showRetryLink
+      ? undefined
+      : sessionPresentation.statusPanel.summaryLabel,
+    heading: sessionPresentation.statusPanel.stateLabel,
+    onAction: showRetryLink ? onOpenStatusPanel : undefined,
     tone,
   }
 }
-
-function getStatusDetails({
-  floatingTimerErrorText,
-  isOnline,
-  relayReachability,
-  remoteErrorText,
-  remoteStatus,
-  remoteStatusRole,
-}: {
-  floatingTimerErrorText: string | null
-  isOnline: boolean | null
-  relayReachability: "checking" | "reachable" | "unreachable"
-  remoteErrorText: string | null
-  remoteStatus: ReturnType<typeof getRemoteStatus>
-  remoteStatusRole: "control" | "readonly"
-}) {
-  const statusModeLabel = remoteStatus?.roleLabel ?? "Local timer"
-  const statusStateLabel = remoteErrorText
-    ? (remoteStatus?.stateLabel ?? "Attention needed")
-    : floatingTimerErrorText
-      ? "Attention needed"
-      : (remoteStatus?.stateLabel ?? "Ready")
-  const statusDescription = remoteStatus
-    ? remoteStatus.description
-    : floatingTimerErrorText
-      ? "A local feature reported an issue. Review the details below."
-      : "Remote mode is off. Open settings when you want to share the timer."
-
-  return {
-    statusDescription,
-    statusModeLabel,
-    statusNetworkLabel: getNetworkLabel(isOnline),
-    statusRelayReachabilityLabel: remoteStatus
-      ? getRelayReachabilityLabel(relayReachability)
-      : undefined,
-    statusRemoteModeLabel: remoteStatus
-      ? remoteStatus.connectionSummary
-      : "Inactive",
-    statusSessionLabel: remoteStatus
-      ? remoteStatusRole === "control"
-        ? "Control participant"
-        : "Readonly participant"
-      : undefined,
-    statusStateLabel,
-  }
-}
-
-const REOPEN_SETTINGS_QUERY_PARAM = "settings"
 
 export default function TimerPage() {
   return (
@@ -151,8 +142,9 @@ export default function TimerPage() {
 function TimerApp() {
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const nextPathname = usePathname()
+  const pathname =
+    typeof window === "undefined" ? nextPathname : window.location.pathname
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
   const { params } = paramData
@@ -170,14 +162,16 @@ function TimerApp() {
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
 
-  const shouldReopenSettings =
-    remoteRoute.role !== "readonly" &&
-    searchParams.get(REOPEN_SETTINGS_QUERY_PARAM) === "1"
-  const [isSettingsOpen, setIsSettingsOpen] = useState(shouldReopenSettings)
-  const [shouldPromoteToControlUrl, setShouldPromoteToControlUrl] =
+  const [isSidebarPinnedOpen, setIsSidebarPinnedOpen] = useState(false)
+  const [selectedSidebarEntryId, setSelectedSidebarEntryId] = useState<
+    "settings" | "share" | "status" | "timer" | null
+  >(null)
+  const [, setLocationVersion] = useState(0)
+  const [hasRecentlyEndedLiveSession, setHasRecentlyEndedLiveSession] =
     useState(false)
-  const closeSettings = () => setIsSettingsOpen(false)
-  const openSettings = () => setIsSettingsOpen(true)
+  const [isViewerShareQrCodeOpen, setIsViewerShareQrCodeOpen] = useState(false)
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
@@ -188,7 +182,7 @@ function TimerApp() {
     canMutate: !isReadonlyClient,
     params: syncParams,
     syncStateRef,
-    shortcutsEnabled: !isSettingsOpen && !isReadonlyClient,
+    shortcutsEnabled: !isReadonlyClient,
     onAction: (_action, state) => {
       setSyncState(state)
     },
@@ -199,7 +193,7 @@ function TimerApp() {
   const remoteLinkError =
     remoteRoute.isRemote && remoteRoute.token === null
       ? new Error(
-          "Remote session link is malformed. Check the URL and try again.",
+          "Live session link is malformed. Check the URL and try again.",
         )
       : null
 
@@ -242,8 +236,8 @@ function TimerApp() {
   })
 
   const {
-    accessTokens,
     canRetryManually,
+    connectRemote,
     connectionCount,
     connectionDetails,
     disconnect,
@@ -305,24 +299,6 @@ function TimerApp() {
   const remoteStatusEnabled = remoteRoute.isRemote || isHostRemoteSession
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      searchParams.get(REOPEN_SETTINGS_QUERY_PARAM) !== "1"
-    ) {
-      return
-    }
-
-    const nextSearchParams = new URLSearchParams(searchParams.toString())
-    nextSearchParams.delete(REOPEN_SETTINGS_QUERY_PARAM)
-    const nextSearch = nextSearchParams.toString()
-    window.history.replaceState(
-      null,
-      "",
-      `${pathname}${nextSearch ? `?${nextSearch}` : ""}`,
-    )
-  }, [pathname, searchParams])
-
-  useEffect(() => {
     syncAll({ includeParams: false, state: syncState })
   }, [syncAll, syncState])
 
@@ -333,28 +309,50 @@ function TimerApp() {
   }, [clearSyncConflict, hasPendingSyncConflict])
 
   useEffect(() => {
-    if (
-      !shouldPromoteToControlUrl ||
-      remoteRole !== null ||
-      !accessTokens?.control
-    ) {
+    if (typeof document === "undefined") {
       return
     }
 
-    const controlToken = accessTokens.control
-    setShouldPromoteToControlUrl(false)
-    void (async () => {
-      await disconnect()
-      if (typeof window !== "undefined") {
-        window.location.replace(
-          `${buildRemotePath({
-            role: "control",
-            token: controlToken,
-          })}?${REOPEN_SETTINGS_QUERY_PARAM}=1`,
-        )
+    setIsFullscreenSupported(Boolean(document.fullscreenEnabled))
+    setIsFullscreen(Boolean(document.fullscreenElement))
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
+  }, [])
+
+  const handleStartRemoteSession = useCallback(async () => {
+    setHasRecentlyEndedLiveSession(false)
+    await connectRemote()
+  }, [connectRemote])
+
+  const handleEndRemoteSession = useCallback(async () => {
+    if (remoteRole === "control") {
+      if (typeof window === "undefined") {
+        return
       }
-    })()
-  }, [accessTokens?.control, disconnect, remoteRole, shouldPromoteToControlUrl])
+
+      pauseUrlSyncDuringRemoteRouteTransition()
+      window.history.replaceState(
+        null,
+        "",
+        paramData.getPathWithParams({ pathname: "/" }),
+      )
+      setHasRecentlyEndedLiveSession(true)
+      setLocationVersion((current) => current + 1)
+      return
+    }
+
+    if (remoteRole || sessionId) {
+      setHasRecentlyEndedLiveSession(true)
+      await disconnect()
+    }
+  }, [disconnect, paramData, remoteRole, sessionId])
 
   const handleUseServerSyncState = useCallback(() => {
     clearSyncConflict()
@@ -368,29 +366,12 @@ function TimerApp() {
 
   const remoteErrorText = remoteError
     ? remoteRoute.isRemote
-      ? `Remote link has a connection problem. ${getConnectionErrorDetail(remoteError)}`
-      : `Remote mode could not start. ${getConnectionErrorDetail(remoteError)}`
+      ? `Live session link has a connection problem. ${getConnectionErrorDetail(remoteError)}`
+      : `Live session could not start. ${getConnectionErrorDetail(remoteError)}`
     : null
   const [floatingTimerErrorText, setFloatingTimerErrorText] = useState<
     string | null
   >(null)
-
-  useEffect(() => {
-    if (!isSettingsOpen) {
-      return
-    }
-
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeSettings()
-      }
-    }
-
-    window.addEventListener("keyup", onKeyUp, false)
-    return () => {
-      window.removeEventListener("keyup", onKeyUp, false)
-    }
-  }, [isSettingsOpen])
 
   const isOnline = useNetworkStatus()
   const relayLabel = getRemoteRelayLabel()
@@ -408,28 +389,23 @@ function TimerApp() {
     role: remoteStatusRole,
     showPendingHostStatus: isHostRemoteSession && !sessionId,
   })
-  const readonlyPlaceholder = isReadonlyClient
-    ? getReadonlyPlaceholder({
-        remoteError,
-        remoteStatus,
-      })
-    : undefined
-  const {
-    statusDescription,
-    statusModeLabel,
-    statusNetworkLabel,
-    statusRelayReachabilityLabel,
-    statusRemoteModeLabel,
-    statusSessionLabel,
-    statusStateLabel,
-  } = getStatusDetails({
-    floatingTimerErrorText,
+  const sessionPresentation = getSessionPresentation({
+    hasPendingSyncConflict,
+    hasRecentlyEndedSession: hasRecentlyEndedLiveSession,
     isOnline,
     relayReachability,
-    remoteErrorText,
     remoteStatus,
-    remoteStatusRole,
   })
+  const readonlyPlaceholder = isReadonlyClient
+    ? getReadonlyPlaceholder({
+        onOpenStatusPanel: () => {
+          setSelectedSidebarEntryId("status")
+          setIsSidebarPinnedOpen(true)
+        },
+        remoteError,
+        sessionPresentation,
+      })
+    : undefined
   const getErrorReportBody = () =>
     buildErrorReportBody({
       connectionCount,
@@ -446,15 +422,34 @@ function TimerApp() {
       participantStatus: sessionId ? "connected" : "disconnected",
       peerEventTimeline,
       relayLabel,
-      relayReachabilityLabel: statusRelayReachabilityLabel,
+      relayReachabilityLabel:
+        sessionPresentation.state === "local" ||
+        sessionPresentation.state === "liveEnded"
+          ? undefined
+          : relayReachability === "reachable"
+            ? "Reachable"
+            : relayReachability === "unreachable"
+              ? "Unreachable"
+              : "Checking",
       remotePath: pathname,
       sessionId,
-      statusDescription,
-      statusModeLabel,
-      statusNetworkLabel,
-      statusRemoteModeLabel,
-      statusSessionLabel,
-      statusStateLabel,
+      statusDescription: floatingTimerErrorText
+        ? "A local feature reported an issue. Review the details below."
+        : sessionPresentation.statusPanel.description,
+      statusModeLabel: sessionPresentation.statusPanel.sessionLabel,
+      statusNetworkLabel:
+        isOnline === null ? "Checking" : isOnline ? "Online" : "Offline",
+      statusRemoteModeLabel: sessionPresentation.statusPanel.summaryLabel,
+      statusSessionLabel:
+        sessionPresentation.state === "local" ||
+        sessionPresentation.state === "liveEnded"
+          ? undefined
+          : sessionPresentation.statusPanel.accessLabel,
+      statusStateLabel: remoteErrorText
+        ? "Error"
+        : floatingTimerErrorText
+          ? "Attention needed"
+          : sessionPresentation.statusPanel.stateLabel,
       visibilityState:
         typeof document !== "undefined"
           ? document.visibilityState
@@ -473,52 +468,133 @@ function TimerApp() {
       title,
     },
   })
+  const viewerShareUrl =
+    typeof window === "undefined" ? "" : window.location.href
 
   return (
-    <>
+    <div className="relative flex h-screen flex-col">
       {hasSyncConflict && (
         <SyncConflictDialog
           onUseLocal={handleUseUrlSyncState}
           onUseServer={handleUseServerSyncState}
         />
       )}
-      {!isReadonlyClient && (
-        <Settings
-          floatingTimerData={floatingTimerData}
-          isOpen={isSettingsOpen}
-          peerData={remoteSession}
-          paramData={paramData}
-          closeSettings={closeSettings}
-          handleChange={handleChange}
-          handleTimeBlur={normalizeTimerInputs}
-          setShouldPromoteToControlUrl={setShouldPromoteToControlUrl}
-          remoteRole={remoteRole}
-        />
-      )}
-      <Timer
-        isReadonly={isReadonlyClient}
-        readonlyPlaceholder={readonlyPlaceholder}
-        title={title}
+      <Sidebar
+        floatingTimerData={floatingTimerData}
         handleChange={handleChange}
         handleTimeBlur={normalizeTimerInputs}
-        timer={timer}
+        isPinnedOpen={isSidebarPinnedOpen}
+        paramData={paramData}
+        peerData={remoteSession}
+        remoteRole={remoteRole}
+        selectedEntryId={selectedSidebarEntryId}
+        onEndRemoteSession={handleEndRemoteSession}
+        onStartRemoteSession={handleStartRemoteSession}
+        setIsPinnedOpen={setIsSidebarPinnedOpen}
+        setSelectedEntryId={setSelectedSidebarEntryId}
+        statusPanelData={{
+          activityLog: peerEventTimeline,
+          connectionDetails,
+          errorText: remoteErrorText,
+          floatingTimerErrorText,
+          getErrorReportBody,
+          isOnline,
+          isRetrying: isConnecting,
+          onRetry: retryConnection,
+          relayLabel,
+          relayReachability,
+          sessionPresentation,
+          sessionId,
+        }}
       />
-      {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
-      <StatusPopover
-        activityLog={peerEventTimeline}
+      <div className="absolute right-0 top-0 z-20 flex items-center px-2 py-2">
+        <TopRightActionButton
+          ariaLabel={isReadonlyClient ? "Share viewer link" : "Open sharing"}
+          isActive={
+            isReadonlyClient
+              ? isViewerShareQrCodeOpen
+              : selectedSidebarEntryId === "share" && isSidebarPinnedOpen
+          }
+          onClick={() => {
+            if (isReadonlyClient) {
+              setIsViewerShareQrCodeOpen(true)
+              return
+            }
+
+            setSelectedSidebarEntryId("share")
+            setIsSidebarPinnedOpen(true)
+          }}
+          title="Share"
+        >
+          <ShareIcon className="h-4 w-4" />
+        </TopRightActionButton>
+        {!isReadonlyClient && floatingTimerData.isSupported && (
+          <TopRightActionButton
+            ariaLabel="Toggle floating window"
+            isActive={floatingTimerData.isOpen}
+            onClick={() => {
+              void floatingTimerData.toggle()
+            }}
+            title="Floating window"
+          >
+            <WindowIcon className="h-4 w-4" />
+          </TopRightActionButton>
+        )}
+        {!isReadonlyClient && isFullscreenSupported && (
+          <TopRightActionButton
+            ariaLabel={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            onClick={() => {
+              if (typeof document === "undefined") {
+                return
+              }
+
+              if (document.fullscreenElement) {
+                void document.exitFullscreen()
+                return
+              }
+
+              void document.documentElement.requestFullscreen()
+            }}
+            title={isFullscreen ? "Close fullscreen" : "Fullscreen mode"}
+          >
+            {isFullscreen ? (
+              <XMarkIcon className="h-4 w-4" />
+            ) : (
+              <ArrowsPointingOutIcon className="h-4 w-4" />
+            )}
+          </TopRightActionButton>
+        )}
+      </div>
+      <div className="min-h-0 flex-1">
+        <Timer
+          isReadonly={isReadonlyClient}
+          readonlyPlaceholder={readonlyPlaceholder}
+          title={title}
+          handleChange={handleChange}
+          handleTimeBlur={normalizeTimerInputs}
+          timer={timer}
+        />
+      </div>
+      <StatusBadge
         connectionCount={connectionCount}
-        connectionDetails={connectionDetails}
         errorText={remoteErrorText}
         floatingTimerErrorText={floatingTimerErrorText}
-        getErrorReportBody={getErrorReportBody}
         isOnline={isOnline}
-        isRetrying={isConnecting}
-        onRetry={retryConnection}
-        relayLabel={relayLabel}
+        onOpenSharePanel={() => {
+          setSelectedSidebarEntryId(isReadonlyClient ? "status" : "share")
+          setIsSidebarPinnedOpen(true)
+        }}
         relayReachability={relayReachability}
-        remoteStatus={remoteStatus}
+        sessionPresentation={sessionPresentation}
         sessionId={sessionId}
       />
-    </>
+      {isReadonlyClient && isViewerShareQrCodeOpen && viewerShareUrl && (
+        <QrCodeOverlay
+          label="Viewer link"
+          onClose={() => setIsViewerShareQrCodeOpen(false)}
+          value={viewerShareUrl}
+        />
+      )}
+    </div>
   )
 }

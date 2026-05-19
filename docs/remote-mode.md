@@ -1,14 +1,21 @@
-# Remote Mode
+# Live Sessions
 
 For the quick project overview, start with the [README](../README.md).
 
+## Terminology
+
+- Use `Live session` in user-facing copy for synchronized sharing.
+- Use `local share` for independent snapshot sharing.
+- Avoid `Remote mode`, `remote session`, and similar wording in user-facing UI and docs.
+
 ## Model
 
-Remote mode is relay-backed. There is no dedicated browser host.
+Live sessions are relay-backed. There is no dedicated browser host.
 
 - `/view/<readonlyToken>` joins as a readonly viewer
 - `/control/<controlToken>` joins as a control-capable client
 - remote URLs carry opaque capability tokens only
+- the host page stays on its local timer URL when it starts or ends a live session
 - live timer state is stored in the relay session snapshot
 
 The relay owns:
@@ -22,12 +29,14 @@ The relay owns:
 - new clients receive the current timer snapshot immediately after joining
 - viewers stay readonly
 - control clients can publish timer and settings updates
-- local and controller routes can carry timer setup in `v=1&t=...` URL state, while viewer routes ignore timer-state query params entirely
+- local routes can carry timer setup in `v=1&t=...` URL state, while viewer and shared controller routes stay focused on opaque session tokens only
 - controller links can restore the latest relay snapshot without extra setup
 - clients auto-retry after relay disconnects
 - the UI exposes both the connection state and the last connection error
 - malformed, invalid, or expired viewer links fail closed with a recoverable error state
 - controller routes pause synchronization and require an explicit conflict decision when valid URL timer state disagrees with an existing relay snapshot
+- the sidebar menu and status surfaces use fullscreen overlays on small screens and readonly clients, while wider screens keep a constrained off-canvas width
+- readonly clients expose a top-right share action that opens a fullscreen QR code for the current viewer link
 
 ## Trust Boundaries
 
@@ -67,7 +76,7 @@ The relay owns:
 
 - Current persistence scope is limited to URL-derived state and the relay's in-memory session snapshot.
 - React escaping is relied on as the final rendering defense, but only after application-level validation and normalization.
-- Transport-level controls such as CSP or additional proxy-enforced request filtering are not the main protection for remote-mode payloads today; input validation is.
+- Transport-level controls such as CSP or additional proxy-enforced request filtering are not the main protection for live-session payloads today; input validation is.
 
 ## Code Layout
 

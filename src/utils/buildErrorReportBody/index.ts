@@ -76,7 +76,7 @@ export default function buildErrorReportBody({
     "Status snapshot:",
     `- Mode: ${statusModeLabel}`,
     `- State: ${statusStateLabel}`,
-    `- Remote mode: ${statusRemoteModeLabel}`,
+    `- Live session: ${statusRemoteModeLabel}`,
     `- Description: ${statusDescription}`,
     `- Network: ${statusNetworkLabel}`,
     `- Session: ${statusSessionLabel ?? "inactive"}`,

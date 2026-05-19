@@ -28,7 +28,12 @@ const server = createServer((request, response) => {
   )
 
   if (requestUrl.pathname === "/health") {
-    response.writeHead(200, { "content-type": "application/json" })
+    response.writeHead(200, {
+      "access-control-allow-methods": "GET, OPTIONS",
+      "access-control-allow-origin": "*",
+      "content-type": "application/json",
+      vary: "Origin",
+    })
     response.end(JSON.stringify({ ...buildInfo, ok: true }))
     return
   }
@@ -118,7 +123,7 @@ wss.on("connection", (socket: WebSocket) => {
           registry.sendToSocket(
             socket,
             createErrorMessage(
-              "Remote session link is invalid or expired. Ask for a fresh link and try again.",
+              "Live session link is invalid or expired. Ask for a fresh link and try again.",
             ),
           )
           return
@@ -143,7 +148,7 @@ wss.on("connection", (socket: WebSocket) => {
             socket,
             createErrorMessage(
               message.role === "control"
-                ? "Remote session link expired. Reopen the controller link to start a fresh session."
+                ? "Live session link expired. Reopen the controller link to start a fresh session."
                 : "Viewer links cannot recover expired sessions. Ask for a fresh link and try again.",
             ),
           )
@@ -169,7 +174,7 @@ wss.on("connection", (socket: WebSocket) => {
         if (!session) {
           registry.sendToSocket(
             socket,
-            createErrorMessage("Remote session is unavailable."),
+            createErrorMessage("Live session is unavailable."),
           )
           return
         }

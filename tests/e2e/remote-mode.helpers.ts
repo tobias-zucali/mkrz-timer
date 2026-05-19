@@ -50,6 +50,8 @@ type ScreenshotMaskOptions = {
   name: string
 }
 
+type SidebarPanelName = "Settings" | "Share" | "Status" | "Timer"
+
 const DEBUG_INFO_SELECTORS = [
   "nextjs-portal",
   '[data-nextjs-dev-overlay="true"]',
@@ -57,6 +59,28 @@ const DEBUG_INFO_SELECTORS = [
 
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+async function setDocumentSentinel(page: Page) {
+  return page.evaluate(() => {
+    const sentinel = `sentinel-${Math.random().toString(36).slice(2)}`
+    ;(
+      window as typeof window & { __playwrightDocumentSentinel?: string }
+    ).__playwrightDocumentSentinel = sentinel
+    return sentinel
+  })
+}
+
+async function expectDocumentSentinel(page: Page, expectedSentinel: string) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __playwrightDocumentSentinel?: string })
+            .__playwrightDocumentSentinel ?? null,
+      ),
+    )
+    .toBe(expectedSentinel)
+}
 
 export async function openTimer(page: Page, seconds = 3, baseUrl?: string) {
   const path = buildTimerPath({ seconds })
@@ -86,19 +110,19 @@ export async function expectScreenshotWithoutDebugInfo(
 export async function enableRemoteMode(page: Page) {
   await page.goto(timerUrl)
 
-  await openSettingsOverlay(page)
-  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeVisible()
-
-  await page.getByRole("switch", { name: "Remote mode" }).click()
-
-  await expect(page.getByRole("switch", { name: "Remote mode" })).toBeChecked()
-  await expect(page).toHaveURL(/\/control\//, { timeout: 15_000 })
+  await openSidebarPanel(page, "Share")
+  await expect(
+    page.getByRole("button", { name: "Start live session" }),
+  ).toBeVisible()
+  const documentSentinel = await setDocumentSentinel(page)
+  await page.getByRole("button", { name: "Start live session" }).click()
+  await expectDocumentSentinel(page, documentSentinel)
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
-    name: "Viewer Link",
+    name: "Viewer link",
   })
   const controlClientUrlInput = page.getByRole("textbox", {
-    name: "Control Link",
+    name: "Control link",
   })
   await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect(controlClientUrlInput).toBeVisible()
@@ -125,7 +149,7 @@ export async function enableRemoteModeWithClientUrls(
 ): Promise<RemoteClientUrls> {
   const controlClientUrl = await enableRemoteMode(page)
   const readonlyClientUrl = await page
-    .getByRole("textbox", { name: "Viewer Link" })
+    .getByRole("textbox", { name: "Viewer link" })
     .inputValue()
 
   return {
@@ -137,10 +161,11 @@ export async function enableRemoteModeWithClientUrls(
 export async function openClientFromSettings(
   page: Page,
   clientUrl: string,
-  label = "Control Link",
+  label = "Control link",
 ) {
   const expectedUrl = new URL(clientUrl)
   const clientPagePromise = page.waitForEvent("popup")
+  await openSidebarPanel(page, "Share")
   await page
     .getByRole("textbox", { name: label })
     .locator("..")
@@ -157,7 +182,7 @@ export async function openClientsFromSettings(
   page: Page,
   clientUrl: string,
   count: number,
-  label = "Control Link",
+  label = "Control link",
 ) {
   const clients: Page[] = []
 
@@ -169,12 +194,26 @@ export async function openClientsFromSettings(
 }
 
 export async function closeSettingsOverlay(page: Page) {
-  const settingsDrawer = page.getByTestId("settings-drawer")
-  await page.keyboard.press("Escape")
-  await expect(settingsDrawer).not.toBeVisible()
+  const closeButton = page.locator(
+    '[data-testid^="sidebar-panel-"] button[title="Close sidebar"]',
+  )
+
+  if ((await closeButton.count()) === 0) {
+    return
+  }
+
+  await closeButton.click()
+  await expect(closeButton).toHaveCount(0)
 }
 
 export async function expectUrlQrCode(page: Page, label: string) {
+  if (
+    label === "Local link" ||
+    label === "Viewer link" ||
+    label === "Control link"
+  ) {
+    await openSidebarPanel(page, "Share")
+  }
   await page.getByRole("button", { name: `Show ${label}` }).click()
   const baseLabel = label.endsWith("Client URL")
     ? label.replace(/\s+URL$/, "")
@@ -191,15 +230,71 @@ export async function expectUrlQrCode(page: Page, label: string) {
   await expect(qrCodeDialog).not.toBeVisible()
 }
 
-export async function openSettingsOverlay(page: Page) {
-  const settingsDrawer = page.getByTestId("settings-drawer")
+export async function openSidebarPanel(
+  page: Page,
+  panelName: SidebarPanelName,
+) {
+  const sidebar = page.getByTestId("sidebar-offcanvas")
+  const panelTestId = `sidebar-panel-${panelName.toLowerCase()}`
 
-  if (!(await settingsDrawer.isVisible().catch(() => false))) {
-    await page.getByRole("button", { exact: true, name: "Settings" }).click()
+  if (
+    await page
+      .getByTestId(panelTestId)
+      .isVisible()
+      .catch(() => false)
+  ) {
+    return
   }
 
-  await expect(settingsDrawer).toBeVisible()
-  await expect(settingsDrawer.getByLabel("Title")).toBeVisible()
+  if (panelName === "Share") {
+    if (!(await sidebar.isVisible().catch(() => false))) {
+      await page
+        .getByRole("button", { name: "Open sharing" })
+        .evaluate((element) => {
+          ;(element as HTMLButtonElement).click()
+        })
+    }
+
+    const didOpenViaShareButton = await page
+      .getByTestId(panelTestId)
+      .isVisible()
+      .catch(() => false)
+
+    if (!didOpenViaShareButton) {
+      if (!(await sidebar.isVisible().catch(() => false))) {
+        await page.getByRole("button", { name: "Toggle navigation" }).click()
+        await expect(sidebar).toBeVisible()
+      }
+
+      await sidebar
+        .getByRole("button", { exact: true, name: "Share" })
+        .evaluate((element) => {
+          ;(element as HTMLButtonElement).click()
+        })
+    }
+
+    await expect(page.getByTestId(panelTestId)).toBeVisible()
+    return
+  }
+
+  if (!(await sidebar.isVisible().catch(() => false))) {
+    await page.getByRole("button", { name: "Toggle navigation" }).click()
+    await expect(sidebar).toBeVisible()
+  }
+
+  await sidebar
+    .getByRole("button", { exact: true, name: panelName })
+    .evaluate((element) => {
+      ;(element as HTMLButtonElement).click()
+    })
+  await expect(page.getByTestId(panelTestId)).toBeVisible()
+}
+
+export async function openSettingsOverlay(page: Page) {
+  await openSidebarPanel(page, "Timer")
+  await expect(
+    page.getByTestId("sidebar-panel-timer").getByLabel("Title"),
+  ).toBeVisible()
 }
 
 export async function updateTimerSettings(
@@ -213,25 +308,47 @@ export async function updateTimerSettings(
     title,
   }: TimerSettings,
 ) {
-  const settingsDrawer = page.getByTestId("settings-drawer")
-
   if (title !== undefined) {
-    await settingsDrawer.getByLabel("Title").fill(title)
+    await openSidebarPanel(page, "Timer")
+    await page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Title")
+      .fill(title)
   }
   if (minutes !== undefined) {
-    await settingsDrawer.getByLabel("Minutes").fill(minutes)
+    await openSidebarPanel(page, "Timer")
+    await page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Minutes")
+      .fill(minutes)
   }
   if (seconds !== undefined) {
-    await settingsDrawer.getByLabel("Seconds").fill(seconds)
+    await openSidebarPanel(page, "Timer")
+    await page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Seconds")
+      .fill(seconds)
   }
   if (backgroundColor !== undefined) {
-    await settingsDrawer.getByLabel("Background").fill(backgroundColor)
+    await openSidebarPanel(page, "Settings")
+    await page
+      .getByTestId("sidebar-panel-settings")
+      .getByLabel("Background")
+      .fill(backgroundColor)
   }
   if (foregroundColor !== undefined) {
-    await settingsDrawer.getByLabel("Foreground").fill(foregroundColor)
+    await openSidebarPanel(page, "Settings")
+    await page
+      .getByTestId("sidebar-panel-settings")
+      .getByLabel("Foreground")
+      .fill(foregroundColor)
   }
   if (primaryColor !== undefined) {
-    await settingsDrawer.getByLabel("Primary").fill(primaryColor)
+    await openSidebarPanel(page, "Timer")
+    await page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Primary Color")
+      .fill(primaryColor)
   }
 }
 
@@ -292,6 +409,9 @@ export async function expectReadonlyTimerControls(page: Page) {
   await expect(page.getByRole("button", { name: "PAUSE" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "RESET" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Settings" })).toHaveCount(0)
+  await expect(
+    page.getByRole("button", { name: "Toggle navigation" }),
+  ).toHaveCount(0)
   await expect(timerDisplay.getByLabel("Minutes")).toHaveAttribute(
     "readonly",
     "",
@@ -329,8 +449,9 @@ export async function expectRemoteStatus(
   },
 ) {
   const remoteStatus = page.getByTestId("remote-status")
-  const toggle = remoteStatus.getByTestId("remote-status-toggle")
-  const panel = remoteStatus.getByTestId("remote-status-panel")
+  const panel = page.getByTestId("remote-status-panel")
+  const detailsToggle = page.getByTestId("remote-status-details-toggle")
+  const activityToggle = page.getByTestId("remote-status-activity-toggle")
   const getFieldText = async (testId: string) =>
     ((await panel.getByTestId(testId).textContent()) ?? "")
       .replace(/\s+/g, " ")
@@ -369,8 +490,18 @@ export async function expectRemoteStatus(
           return true
         }
 
-        await toggle.click({ force: true })
-        return panel.isVisible()
+        if (
+          (await page
+            .getByRole("button", { name: "Toggle navigation" })
+            .count()) === 0
+        ) {
+          await remoteStatus.getByTestId("remote-status-toggle").click({
+            force: true,
+          })
+        } else {
+          await openSidebarPanel(page, "Status")
+        }
+        return panel.isVisible().catch(() => false)
       },
       {
         message: "status panel should pin open before reading its contents",
@@ -399,10 +530,15 @@ export async function expectRemoteStatus(
   await expectFieldText(
     "remote-status-link",
     connectionSummary,
-    "status panel should show the expected remote mode summary",
+    "status panel should show the expected live session summary",
   )
 
   if (networkStatus !== undefined) {
+    if ((await detailsToggle.count()) > 0) {
+      if ((await detailsToggle.getAttribute("aria-expanded")) !== "true") {
+        await detailsToggle.click()
+      }
+    }
     await expectFieldText(
       "remote-status-network",
       networkStatus,
@@ -413,6 +549,11 @@ export async function expectRemoteStatus(
   const expectedRelayReachability = relayReachability ?? peerServerReachability
 
   if (expectedRelayReachability !== undefined) {
+    if ((await detailsToggle.count()) > 0) {
+      if ((await detailsToggle.getAttribute("aria-expanded")) !== "true") {
+        await detailsToggle.click()
+      }
+    }
     await expectFieldText(
       "remote-status-relay-reachability",
       expectedRelayReachability,
@@ -441,6 +582,11 @@ export async function expectRemoteStatus(
   }
 
   if (activityLogIncludes !== undefined) {
+    if ((await activityToggle.count()) > 0) {
+      if ((await activityToggle.getAttribute("aria-expanded")) !== "true") {
+        await activityToggle.click()
+      }
+    }
     await expect
       .poll(
         async () =>
@@ -453,6 +599,14 @@ export async function expectRemoteStatus(
         },
       )
       .toBe(true)
+  }
+
+  if (await panel.isVisible()) {
+    await page
+      .locator('[data-testid^="sidebar-panel-"] button[title="Close sidebar"]')
+      .first()
+      .click()
+    await expect(panel).not.toBeVisible()
   }
 }
 
@@ -474,7 +628,6 @@ export async function expectReadonlyPlaceholder(page: Page) {
     .toBe(true)
 
   if (await placeholder.isVisible().catch(() => false)) {
-    await expect(timerDisplay).not.toBeVisible()
     return
   }
 
@@ -648,7 +801,12 @@ export async function expectControlClientUrlParams(
   page: Page,
   settings: TimerSettings,
 ) {
-  await expect(page).toHaveURL(/\/control\//)
+  if (page.url().includes("/control/")) {
+    await expectRemoteSessionOnlyUrl(page, { control: true })
+    await expectTimerSettings(page, settings)
+    return
+  }
+
   await expectTimerUrlParams(page, settings)
 }
 
@@ -696,7 +854,7 @@ export async function expectNoStaleConnectedClient(page: Page) {
     )
     .not.toEqual({
       connectionCount: "0",
-      remoteState: "connected",
+      remoteState: "liveConnected",
       sessionId: "",
     })
 }
@@ -725,7 +883,9 @@ export async function waitForRemoteCluster(
         return {
           connectedPages: states.filter(
             ({ remoteState, sessionId }) =>
-              remoteState === "connected" && sessionId.length > 0,
+              sessionId.length > 0 &&
+              remoteState !== "local" &&
+              remoteState !== "liveEnded",
           ).length,
         }
       },

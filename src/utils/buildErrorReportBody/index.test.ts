@@ -12,20 +12,20 @@ test("buildErrorReportBody includes expected diagnostics", () => {
         isAlive: true,
       },
     ],
-    errorText: "Remote mode could not start. Connection failed",
+    errorText: "Live session could not start. Connection failed",
     floatingTimerErrorText: "Floating timer could not open.",
     remotePath: "/control/controller-123",
     sessionId: "session-123",
     participantRole: "readonly",
     participantStatus: "disconnected",
     isReadonlyClient: true,
-    statusModeLabel: "Control session",
-    statusStateLabel: "Reconnect failed",
+    statusModeLabel: "Live session",
+    statusStateLabel: "Error",
     statusDescription:
-      "Automatic recovery could not restore control access yet.",
-    statusRemoteModeLabel: "Recovery needs a retry",
+      "Review is needed before live synchronization can continue.",
+    statusRemoteModeLabel: "Error",
     statusNetworkLabel: "Offline",
-    statusSessionLabel: "Control participant",
+    statusSessionLabel: "Control access",
     relayReachabilityLabel: "Unreachable",
     relayLabel: "Relay: localhost:9100",
     error: new Error("Connection failed"),
@@ -41,13 +41,13 @@ test("buildErrorReportBody includes expected diagnostics", () => {
 
   assert.ok(
     report.includes(
-      "Status report: Remote mode could not start. Connection failed | Floating timer could not open.",
+      "Status report: Live session could not start. Connection failed | Floating timer could not open.",
     ),
   )
-  assert.ok(report.includes("- Mode: Control session"))
-  assert.ok(report.includes("- State: Reconnect failed"))
-  assert.ok(report.includes("- Remote mode: Recovery needs a retry"))
-  assert.ok(report.includes("- Session: Control participant"))
+  assert.ok(report.includes("- Mode: Live session"))
+  assert.ok(report.includes("- State: Error"))
+  assert.ok(report.includes("- Live session: Error"))
+  assert.ok(report.includes("- Session: Control access"))
   assert.ok(report.includes("- Relay reachability: Unreachable"))
   assert.ok(report.includes("- Remote path: /control/controller-123"))
   assert.ok(report.includes("- Session id: session-123"))
@@ -66,10 +66,10 @@ test("buildErrorReportBody returns a status snapshot without visible errors", ()
     participantRole: "control",
     participantStatus: "disconnected",
     isReadonlyClient: false,
-    statusModeLabel: "Local timer",
-    statusStateLabel: "Ready",
+    statusModeLabel: "Private session",
+    statusStateLabel: "Private",
     statusDescription:
-      "Remote mode is off. Open settings when you want to share the timer.",
+      "Live session is off. Open Share when you want to sync this timer across devices.",
     statusRemoteModeLabel: "Inactive",
     statusNetworkLabel: "Online",
     relayLabel: "Relay: localhost:9100",
@@ -81,9 +81,9 @@ test("buildErrorReportBody returns a status snapshot without visible errors", ()
   })
 
   assert.ok(report.includes("Status report: No active issues visible."))
-  assert.ok(report.includes("- Mode: Local timer"))
-  assert.ok(report.includes("- State: Ready"))
-  assert.ok(report.includes("- Remote mode: Inactive"))
+  assert.ok(report.includes("- Mode: Private session"))
+  assert.ok(report.includes("- State: Private"))
+  assert.ok(report.includes("- Live session: Inactive"))
   assert.ok(report.includes("- Session: inactive"))
   assert.ok(report.includes("- Relay reachability: inactive"))
 })
