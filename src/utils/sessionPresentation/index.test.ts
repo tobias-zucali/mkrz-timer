@@ -50,6 +50,10 @@ test("maps a pending host connection to liveConnecting", () => {
 
   assert.equal(presentation.state, "liveConnecting")
   assert.equal(presentation.statusPanel.stateLabel, "Connecting...")
+  assert.deepEqual(presentation.sharePanel.bullets, [
+    "Preparing separate viewer and control links",
+    "Switching this timer to its control link",
+  ])
 })
 
 test("maps a connected control session to connected live labels", () => {

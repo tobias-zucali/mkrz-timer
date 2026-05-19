@@ -117,6 +117,7 @@ export async function enableRemoteMode(page: Page) {
   const documentSentinel = await setDocumentSentinel(page)
   await page.getByRole("button", { name: "Start live session" }).click()
   await expectDocumentSentinel(page, documentSentinel)
+  await expectRemoteSessionOnlyUrl(page, { control: true })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Viewer link",

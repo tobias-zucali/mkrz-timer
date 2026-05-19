@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
 import debug from "@/utils/debug"
+import { buildRemotePath } from "@/utils/remoteSession/route"
 import getSessionPresentation from "@/utils/sessionPresentation"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import getRemoteStatus from "@/utils/remoteStatus"
@@ -143,6 +144,32 @@ function pauseUrlSyncDuringRemoteRouteTransition() {
   ;(
     window as typeof window & { __timerSkipUrlSyncUntil?: number }
   ).__timerSkipUrlSyncUntil = Date.now() + 2_000
+}
+
+function setPromotedHostControlClient(isPromotedHostControlClient: boolean) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  ;(
+    window as typeof window & {
+      __timerPromotedHostControlClient?: boolean
+    }
+  ).__timerPromotedHostControlClient = isPromotedHostControlClient
+}
+
+function isPromotedHostControlClient() {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  return Boolean(
+    (
+      window as typeof window & {
+        __timerPromotedHostControlClient?: boolean
+      }
+    ).__timerPromotedHostControlClient,
+  )
 }
 
 function getReadonlyPlaceholder({
@@ -297,6 +324,7 @@ function TimerApp() {
   })
 
   const {
+    accessTokens,
     canRetryManually,
     connectRemote,
     connectionCount,
@@ -358,6 +386,8 @@ function TimerApp() {
 
   const isHostRemoteSession =
     remoteRole === null && Boolean(sessionId || isConnecting || error)
+  const isPromotedHostControlRoute =
+    remoteRole === "control" && isPromotedHostControlClient()
   const remoteStatusRole = remoteRole === "readonly" ? "readonly" : "control"
   const remoteError = remoteLinkError ?? error
   const remoteStatusEnabled = remoteRoute.isRemote || isHostRemoteSession
@@ -371,13 +401,15 @@ function TimerApp() {
         return
       }
 
+      setHasRecentlyEndedLiveSession(true)
+      await disconnect()
       pauseUrlSyncDuringRemoteRouteTransition()
+      setPromotedHostControlClient(false)
       window.history.replaceState(
         null,
         "",
         paramData.getPathWithParams({ pathname: "/" }),
       )
-      setHasRecentlyEndedLiveSession(true)
       setLocationVersion((current) => current + 1)
       return
     }
@@ -423,10 +455,43 @@ function TimerApp() {
     await connectRemote()
   }, [connectRemote])
 
+  useEffect(() => {
+    if (
+      remoteRole !== null ||
+      !accessTokens?.control ||
+      hasRecentlyEndedLiveSession ||
+      typeof window === "undefined"
+    ) {
+      return
+    }
+
+    const controlPath = buildRemotePath({
+      role: "control",
+      token: accessTokens.control,
+    })
+
+    if (window.location.pathname === controlPath) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      pauseUrlSyncDuringRemoteRouteTransition()
+      setPromotedHostControlClient(true)
+      window.history.replaceState(null, "", controlPath)
+      setLocationVersion((current) => current + 1)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [accessTokens?.control, hasRecentlyEndedLiveSession, remoteRole])
+
   const handleEndRemoteSession = useCallback(async () => {
     if (hasOtherConnectedClients && isControlCapableClient) {
       setPendingExitConfirmation(
-        remoteRole === "control" ? "leave-control-client" : "end-live-session",
+        remoteRole === "control" && !isPromotedHostControlRoute
+          ? "leave-control-client"
+          : "end-live-session",
       )
       return
     }
@@ -436,6 +501,7 @@ function TimerApp() {
     completeEndRemoteSession,
     hasOtherConnectedClients,
     isControlCapableClient,
+    isPromotedHostControlRoute,
     remoteRole,
   ])
 
@@ -472,7 +538,9 @@ function TimerApp() {
       return
     }
 
+    setHasRecentlyEndedLiveSession(true)
     pauseUrlSyncDuringRemoteRouteTransition()
+    setPromotedHostControlClient(false)
     window.history.replaceState(
       null,
       "",
@@ -482,7 +550,6 @@ function TimerApp() {
         pathname: "/",
       }),
     )
-    setHasRecentlyEndedLiveSession(true)
     setLocationVersion((current) => current + 1)
   }, [activateLocalFallback, paramData, setState])
 

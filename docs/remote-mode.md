@@ -15,7 +15,8 @@ Live sessions are relay-backed. There is no dedicated browser host.
 - `/view/<readonlyToken>` joins as a readonly viewer
 - `/control/<controlToken>` joins as a control-capable client
 - remote URLs carry opaque capability tokens only
-- the host page stays on its local timer URL when it starts or ends a live session
+- when the host starts a live session, it moves onto its `/control/<controlToken>` route without a full document reload
+- leaving a control route returns that client to the local timer URL
 - live timer state is stored in the relay session snapshot
 
 The relay owns:

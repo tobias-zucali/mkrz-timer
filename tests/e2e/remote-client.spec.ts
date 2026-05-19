@@ -95,14 +95,14 @@ test(
   },
 )
 
-test("keeps the main live page local and ends the live session cleanly", async ({
+test("moves the host onto the control route and ends the live session cleanly", async ({
   page,
 }) => {
   await enableRemoteModeWithClientUrls(page)
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toBe("/")
+    .toMatch(/^\/control\/.+/)
   await openSidebarPanel(page, "Share")
   await expect(
     page.getByRole("button", { name: "End live session" }),

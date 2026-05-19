@@ -192,7 +192,7 @@ function getSharePanelCopy({
       return {
         bullets: [
           "Preparing separate viewer and control links",
-          "Keeping this timer on its local URL",
+          "Switching this timer to its control link",
         ],
         description: "Starting live synchronization and preparing share links.",
         endActionLabel,
