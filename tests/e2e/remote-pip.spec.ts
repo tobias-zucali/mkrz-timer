@@ -4,6 +4,7 @@ import {
   closeSettingsOverlay,
   expectScreenshotWithoutDebugInfo,
   expectTimerRunning,
+  openSidebarPanel,
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
@@ -99,7 +100,7 @@ async function expectFloatingTimerClosed(page: Page) {
 
 test("shows the floating timer action in local mode", async ({ page }) => {
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
 })
@@ -115,7 +116,7 @@ test("hides the floating timer action when document PiP is unsupported", async (
   })
 
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
 
   await expect(page.getByTestId("floating-timer-toggle")).toBeDisabled()
   await expect(page.getByText(/document picture-in-picture/i)).toBeVisible()
@@ -126,7 +127,7 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   page,
 }) => {
   await openTimer(page, 3)
-  await openSettingsOverlay(page)
+  await openSidebarPanel(page, "Settings")
   await openFloatingTimer(page)
 
   await expect
@@ -203,7 +204,7 @@ test(
   { tag: "@visual" },
   async ({ page }) => {
     await openTimer(page, 3)
-    await openSettingsOverlay(page)
+    await openSidebarPanel(page, "Settings")
     await updateTimerSettings(page, {
       backgroundColor: "#123456",
       title: "Floating title",

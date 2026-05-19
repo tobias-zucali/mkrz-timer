@@ -57,7 +57,7 @@ export const getRemoteSessionOnlyOmitKeys = (
   void _unusedInitialParamKeys
   void currentParams
 
-  if (!pathname || !/^\/view(?:\/|$)/.test(pathname)) {
+  if (!pathname || !/^\/(?:view|control)(?:\/|$)/.test(pathname)) {
     return []
   }
 
@@ -131,5 +131,7 @@ export const buildPathWithParams = (
           ],
   })
 
-  return `${pathname}?${newSearchParams.toString()}`
+  const search = newSearchParams.toString()
+
+  return search ? `${pathname}?${search}` : pathname
 }

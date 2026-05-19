@@ -9,6 +9,7 @@ Remote mode is relay-backed. There is no dedicated browser host.
 - `/view/<readonlyToken>` joins as a readonly viewer
 - `/control/<controlToken>` joins as a control-capable client
 - remote URLs carry opaque capability tokens only
+- the host page stays on its local timer URL when it starts or ends remote mode
 - live timer state is stored in the relay session snapshot
 
 The relay owns:
@@ -22,12 +23,14 @@ The relay owns:
 - new clients receive the current timer snapshot immediately after joining
 - viewers stay readonly
 - control clients can publish timer and settings updates
-- local and controller routes can carry timer setup in `v=1&t=...` URL state, while viewer routes ignore timer-state query params entirely
+- local routes can carry timer setup in `v=1&t=...` URL state, while viewer and shared controller routes stay focused on opaque session tokens only
 - controller links can restore the latest relay snapshot without extra setup
 - clients auto-retry after relay disconnects
 - the UI exposes both the connection state and the last connection error
 - malformed, invalid, or expired viewer links fail closed with a recoverable error state
 - controller routes pause synchronization and require an explicit conflict decision when valid URL timer state disagrees with an existing relay snapshot
+- the sidebar menu and status surfaces use fullscreen overlays on small screens and readonly clients, while wider screens keep a constrained off-canvas width
+- readonly clients expose a top-right share action that opens a fullscreen QR code for the current viewer link
 
 ## Trust Boundaries
 

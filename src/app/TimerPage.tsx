@@ -2,13 +2,14 @@
 
 import {
   Suspense,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 import type { SyncParams } from "@/shared/remoteSession/types"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
@@ -17,19 +18,55 @@ import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import getRemoteStatus, { type RemoteStatusState } from "@/utils/remoteStatus"
 import useRemoteSession from "@/utils/remoteSession"
 import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
-import { buildRemotePath, parseRemoteRoute } from "@/utils/remoteSession/route"
+import { parseRemoteRoute } from "@/utils/remoteSession/route"
 import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
+import {
+  ArrowsPointingOutIcon,
+  ShareIcon,
+  WindowIcon,
+  XMarkIcon,
+} from "@/utils/icons"
 import useNetworkStatus from "@/utils/useNetworkStatus"
 import useParams from "@/utils/useParams"
 import useTimer, { type TimerState } from "@/utils/useTimer"
 import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 
-import Settings from "@/components/Settings"
-import SettingsButton from "@/components/SettingsButton"
-import StatusPopover from "@/components/StatusPopover"
+import StatusBadge from "@/components/StatusBadge"
+import QrCodeOverlay from "@/components/QrCodeOverlay"
 import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
+import Sidebar from "@/components/Sidebar"
+
+function TopRightActionButton({
+  ariaLabel,
+  isActive = false,
+  onClick,
+  title,
+  children,
+}: {
+  ariaLabel: string
+  isActive?: boolean
+  onClick: () => void
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      aria-label={ariaLabel}
+      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-background/84 transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary ${
+        isActive
+          ? "bg-background/96 text-primary"
+          : "text-foreground/78 hover:bg-background hover:text-primary"
+      }`}
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
+      {children}
+    </button>
+  )
+}
 
 function getConnectionErrorDetail(error: Error) {
   const detail = error.message.trim()
@@ -55,6 +92,16 @@ function getRelayReachabilityLabel(
     case "checking":
       return "Checking"
   }
+}
+
+function pauseUrlSyncDuringRemoteRouteTransition() {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  ;(
+    window as typeof window & { __timerSkipUrlSyncUntil?: number }
+  ).__timerSkipUrlSyncUntil = Date.now() + 2_000
 }
 
 function getReadonlyPlaceholder({
@@ -117,7 +164,7 @@ function getStatusDetails({
     ? remoteStatus.description
     : floatingTimerErrorText
       ? "A local feature reported an issue. Review the details below."
-      : "Remote mode is off. Open settings when you want to share the timer."
+      : "Remote mode is off. Open Share when you want to start a remote session."
 
   return {
     statusDescription,
@@ -138,8 +185,6 @@ function getStatusDetails({
   }
 }
 
-const REOPEN_SETTINGS_QUERY_PARAM = "settings"
-
 export default function TimerPage() {
   return (
     <Suspense fallback={null}>
@@ -151,8 +196,9 @@ export default function TimerPage() {
 function TimerApp() {
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const nextPathname = usePathname()
+  const pathname =
+    typeof window === "undefined" ? nextPathname : window.location.pathname
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
   const { params } = paramData
@@ -170,14 +216,14 @@ function TimerApp() {
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
 
-  const shouldReopenSettings =
-    remoteRoute.role !== "readonly" &&
-    searchParams.get(REOPEN_SETTINGS_QUERY_PARAM) === "1"
-  const [isSettingsOpen, setIsSettingsOpen] = useState(shouldReopenSettings)
-  const [shouldPromoteToControlUrl, setShouldPromoteToControlUrl] =
-    useState(false)
-  const closeSettings = () => setIsSettingsOpen(false)
-  const openSettings = () => setIsSettingsOpen(true)
+  const [isSidebarPinnedOpen, setIsSidebarPinnedOpen] = useState(false)
+  const [selectedSidebarEntryId, setSelectedSidebarEntryId] = useState<
+    "settings" | "share" | "status" | "timer" | null
+  >(null)
+  const [, setLocationVersion] = useState(0)
+  const [isViewerShareQrCodeOpen, setIsViewerShareQrCodeOpen] = useState(false)
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
@@ -188,7 +234,7 @@ function TimerApp() {
     canMutate: !isReadonlyClient,
     params: syncParams,
     syncStateRef,
-    shortcutsEnabled: !isSettingsOpen && !isReadonlyClient,
+    shortcutsEnabled: !isReadonlyClient,
     onAction: (_action, state) => {
       setSyncState(state)
     },
@@ -242,8 +288,8 @@ function TimerApp() {
   })
 
   const {
-    accessTokens,
     canRetryManually,
+    connectRemote,
     connectionCount,
     connectionDetails,
     disconnect,
@@ -305,24 +351,6 @@ function TimerApp() {
   const remoteStatusEnabled = remoteRoute.isRemote || isHostRemoteSession
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      searchParams.get(REOPEN_SETTINGS_QUERY_PARAM) !== "1"
-    ) {
-      return
-    }
-
-    const nextSearchParams = new URLSearchParams(searchParams.toString())
-    nextSearchParams.delete(REOPEN_SETTINGS_QUERY_PARAM)
-    const nextSearch = nextSearchParams.toString()
-    window.history.replaceState(
-      null,
-      "",
-      `${pathname}${nextSearch ? `?${nextSearch}` : ""}`,
-    )
-  }, [pathname, searchParams])
-
-  useEffect(() => {
     syncAll({ includeParams: false, state: syncState })
   }, [syncAll, syncState])
 
@@ -333,28 +361,47 @@ function TimerApp() {
   }, [clearSyncConflict, hasPendingSyncConflict])
 
   useEffect(() => {
-    if (
-      !shouldPromoteToControlUrl ||
-      remoteRole !== null ||
-      !accessTokens?.control
-    ) {
+    if (typeof document === "undefined") {
       return
     }
 
-    const controlToken = accessTokens.control
-    setShouldPromoteToControlUrl(false)
-    void (async () => {
-      await disconnect()
-      if (typeof window !== "undefined") {
-        window.location.replace(
-          `${buildRemotePath({
-            role: "control",
-            token: controlToken,
-          })}?${REOPEN_SETTINGS_QUERY_PARAM}=1`,
-        )
+    setIsFullscreenSupported(Boolean(document.fullscreenEnabled))
+    setIsFullscreen(Boolean(document.fullscreenElement))
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
+  }, [])
+
+  const handleStartRemoteSession = useCallback(async () => {
+    await connectRemote()
+  }, [connectRemote])
+
+  const handleEndRemoteSession = useCallback(async () => {
+    if (remoteRole === "control") {
+      if (typeof window === "undefined") {
+        return
       }
-    })()
-  }, [accessTokens?.control, disconnect, remoteRole, shouldPromoteToControlUrl])
+
+      pauseUrlSyncDuringRemoteRouteTransition()
+      window.history.replaceState(
+        null,
+        "",
+        paramData.getPathWithParams({ pathname: "/" }),
+      )
+      setLocationVersion((current) => current + 1)
+      return
+    }
+
+    if (remoteRole || sessionId) {
+      await disconnect()
+    }
+  }, [disconnect, paramData, remoteRole, sessionId])
 
   const handleUseServerSyncState = useCallback(() => {
     clearSyncConflict()
@@ -374,23 +421,6 @@ function TimerApp() {
   const [floatingTimerErrorText, setFloatingTimerErrorText] = useState<
     string | null
   >(null)
-
-  useEffect(() => {
-    if (!isSettingsOpen) {
-      return
-    }
-
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeSettings()
-      }
-    }
-
-    window.addEventListener("keyup", onKeyUp, false)
-    return () => {
-      window.removeEventListener("keyup", onKeyUp, false)
-    }
-  }, [isSettingsOpen])
 
   const isOnline = useNetworkStatus()
   const relayLabel = getRemoteRelayLabel()
@@ -473,52 +503,134 @@ function TimerApp() {
       title,
     },
   })
+  const viewerShareUrl =
+    typeof window === "undefined" ? "" : window.location.href
 
   return (
-    <>
+    <div className="relative flex h-screen flex-col">
       {hasSyncConflict && (
         <SyncConflictDialog
           onUseLocal={handleUseUrlSyncState}
           onUseServer={handleUseServerSyncState}
         />
       )}
-      {!isReadonlyClient && (
-        <Settings
-          floatingTimerData={floatingTimerData}
-          isOpen={isSettingsOpen}
-          peerData={remoteSession}
-          paramData={paramData}
-          closeSettings={closeSettings}
-          handleChange={handleChange}
-          handleTimeBlur={normalizeTimerInputs}
-          setShouldPromoteToControlUrl={setShouldPromoteToControlUrl}
-          remoteRole={remoteRole}
-        />
-      )}
-      <Timer
-        isReadonly={isReadonlyClient}
-        readonlyPlaceholder={readonlyPlaceholder}
-        title={title}
+      <Sidebar
+        floatingTimerData={floatingTimerData}
         handleChange={handleChange}
         handleTimeBlur={normalizeTimerInputs}
-        timer={timer}
+        isPinnedOpen={isSidebarPinnedOpen}
+        paramData={paramData}
+        peerData={remoteSession}
+        remoteRole={remoteRole}
+        selectedEntryId={selectedSidebarEntryId}
+        onEndRemoteSession={handleEndRemoteSession}
+        onStartRemoteSession={handleStartRemoteSession}
+        setIsPinnedOpen={setIsSidebarPinnedOpen}
+        setSelectedEntryId={setSelectedSidebarEntryId}
+        statusPanelData={{
+          activityLog: peerEventTimeline,
+          connectionDetails,
+          errorText: remoteErrorText,
+          floatingTimerErrorText,
+          getErrorReportBody,
+          isOnline,
+          isRetrying: isConnecting,
+          onRetry: retryConnection,
+          relayLabel,
+          relayReachability,
+          remoteStatus,
+          sessionId,
+        }}
       />
-      {!isReadonlyClient && <SettingsButton onClick={openSettings} />}
-      <StatusPopover
-        activityLog={peerEventTimeline}
+      <div className="absolute right-0 top-0 z-20 flex items-center px-2 py-2">
+        <TopRightActionButton
+          ariaLabel={isReadonlyClient ? "Share viewer link" : "Open sharing"}
+          isActive={
+            isReadonlyClient
+              ? isViewerShareQrCodeOpen
+              : selectedSidebarEntryId === "share" && isSidebarPinnedOpen
+          }
+          onClick={() => {
+            if (isReadonlyClient) {
+              setIsViewerShareQrCodeOpen(true)
+              return
+            }
+
+            setSelectedSidebarEntryId("share")
+            setIsSidebarPinnedOpen(true)
+          }}
+          title="Share"
+        >
+          <ShareIcon className="h-4 w-4" />
+        </TopRightActionButton>
+        {!isReadonlyClient && floatingTimerData.isSupported && (
+          <TopRightActionButton
+            ariaLabel="Toggle floating window"
+            isActive={floatingTimerData.isOpen}
+            onClick={() => {
+              void floatingTimerData.toggle()
+            }}
+            title="Floating window"
+          >
+            <WindowIcon className="h-4 w-4" />
+          </TopRightActionButton>
+        )}
+        {!isReadonlyClient && isFullscreenSupported && (
+          <TopRightActionButton
+            ariaLabel={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            onClick={() => {
+              if (typeof document === "undefined") {
+                return
+              }
+
+              if (document.fullscreenElement) {
+                void document.exitFullscreen()
+                return
+              }
+
+              void document.documentElement.requestFullscreen()
+            }}
+            title={isFullscreen ? "Close fullscreen" : "Fullscreen mode"}
+          >
+            {isFullscreen ? (
+              <XMarkIcon className="h-4 w-4" />
+            ) : (
+              <ArrowsPointingOutIcon className="h-4 w-4" />
+            )}
+          </TopRightActionButton>
+        )}
+      </div>
+      <div className="min-h-0 flex-1">
+        <Timer
+          isReadonly={isReadonlyClient}
+          readonlyPlaceholder={readonlyPlaceholder}
+          title={title}
+          handleChange={handleChange}
+          handleTimeBlur={normalizeTimerInputs}
+          timer={timer}
+        />
+      </div>
+      <StatusBadge
         connectionCount={connectionCount}
-        connectionDetails={connectionDetails}
         errorText={remoteErrorText}
         floatingTimerErrorText={floatingTimerErrorText}
-        getErrorReportBody={getErrorReportBody}
         isOnline={isOnline}
-        isRetrying={isConnecting}
-        onRetry={retryConnection}
-        relayLabel={relayLabel}
+        onOpenStatusPanel={() => {
+          setSelectedSidebarEntryId("status")
+          setIsSidebarPinnedOpen(true)
+        }}
         relayReachability={relayReachability}
+        remoteRole={remoteStatusRole}
         remoteStatus={remoteStatus}
         sessionId={sessionId}
       />
-    </>
+      {isReadonlyClient && isViewerShareQrCodeOpen && viewerShareUrl && (
+        <QrCodeOverlay
+          label="Viewer Link"
+          onClose={() => setIsViewerShareQrCodeOpen(false)}
+          value={viewerShareUrl}
+        />
+      )}
+    </div>
   )
 }

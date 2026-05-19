@@ -172,8 +172,28 @@ export default function useTimer({
     [canMutate, commitNextState, createNextState, getTotalDuration, onAction],
   )
 
+  const handlePrimaryShortcut = useCallback(() => {
+    if (!shortcutsEnabled) {
+      return
+    }
+
+    handleAction(isTimedOut ? "reset" : isPaused ? "start" : "pause")
+  }, [handleAction, isPaused, isTimedOut, shortcutsEnabled])
+
   useGlobalKeyUp((event: KeyboardEvent) => {
     if (!shortcutsEnabled) {
+      return
+    }
+
+    const timerWindow =
+      typeof window === "undefined"
+        ? null
+        : (window as typeof window & {
+            __timerSpaceShortcutConsumed?: boolean
+          })
+
+    if (event.key === " " && timerWindow?.__timerSpaceShortcutConsumed) {
+      timerWindow.__timerSpaceShortcutConsumed = false
       return
     }
 
@@ -192,7 +212,7 @@ export default function useTimer({
         break
       case "Enter":
       case " ":
-        handleAction(isTimedOut ? "reset" : isPaused ? "start" : "pause")
+        handlePrimaryShortcut()
         break
       case "p":
         if (!isTimedOut) {
@@ -201,6 +221,24 @@ export default function useTimer({
         break
     }
   })
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const handleTimerSpaceShortcut = () => {
+      handlePrimaryShortcut()
+    }
+
+    window.addEventListener("timer-space-shortcut", handleTimerSpaceShortcut)
+    return () => {
+      window.removeEventListener(
+        "timer-space-shortcut",
+        handleTimerSpaceShortcut,
+      )
+    }
+  }, [handlePrimaryShortcut])
 
   const setState = useCallback(
     ({

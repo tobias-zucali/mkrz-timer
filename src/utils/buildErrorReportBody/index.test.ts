@@ -69,7 +69,7 @@ test("buildErrorReportBody returns a status snapshot without visible errors", ()
     statusModeLabel: "Local timer",
     statusStateLabel: "Ready",
     statusDescription:
-      "Remote mode is off. Open settings when you want to share the timer.",
+      "Remote mode is off. Open Share when you want to start a remote session.",
     statusRemoteModeLabel: "Inactive",
     statusNetworkLabel: "Online",
     relayLabel: "Relay: localhost:9100",

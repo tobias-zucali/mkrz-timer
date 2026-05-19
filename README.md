@@ -82,6 +82,13 @@ pnpm build:full
 pnpm build:docker
 ```
 
+## Prototype Mode
+
+- If you explicitly ask for prototype mode, the working agreement changes temporarily:
+- during prototype mode, only `pnpm lint` is required after changes so fast UI or behavior iteration stays cheap
+- documentation updates, test updates, and the full validation lane can wait until you explicitly ask to end prototype mode or finish the work
+- once prototype mode ends, the expectation returns to updating the relevant docs and tests and then running the full required validation lane
+
 ## Remote Mode
 
 See [docs/remote-mode.md](./docs/remote-mode.md) for the session model, client behavior, link permission model, and code layout.

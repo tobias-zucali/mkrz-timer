@@ -89,11 +89,11 @@ test("buildPathWithParams can omit timer-state params on readonly remote routes"
         omit: ["bg", "fg", "t", "v"],
       },
     ),
-    "/?",
+    "/",
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys does not strip timer params on local or control routes", () => {
+test("getRemoteSessionOnlyOmitKeys does not strip timer params on local routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
       {
@@ -109,7 +109,9 @@ test("getRemoteSessionOnlyOmitKeys does not strip timer params on local or contr
     ),
     [],
   )
+})
 
+test("getRemoteSessionOnlyOmitKeys strips timer params on control routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
       {
@@ -123,7 +125,7 @@ test("getRemoteSessionOnlyOmitKeys does not strip timer params on local or contr
       [],
       "/control/control-token",
     ),
-    [],
+    ["bg", "pid", "fg", "t", "v"],
   )
 })
 
