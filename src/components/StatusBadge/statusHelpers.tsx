@@ -6,15 +6,7 @@ import {
   XCircleIcon,
 } from "@/utils/icons"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
-import type { RemoteStatusModel } from "@/utils/remoteStatus"
-
-export function getCompactBadgeLabel(remoteStatus: RemoteStatusModel | null) {
-  if (!remoteStatus) {
-    return null
-  }
-
-  return remoteStatus.role === "control" ? "Control" : "Viewer"
-}
+import type { SessionPresentationState } from "@/utils/sessionPresentation"
 
 export function getNetworkLabel(isOnline: boolean | null) {
   if (isOnline === null) {
@@ -38,18 +30,16 @@ export function getRelayReachabilityLabel(
 
 export function getCompactStatusAppearance({
   errorText,
-  hasRemoteStatus,
   isOnline,
   relayReachability,
   state,
 }: {
   errorText: string | null
-  hasRemoteStatus: boolean
   isOnline: boolean | null
   relayReachability: RemoteRelayReachabilityState
-  state: RemoteStatusModel["state"]
+  state: SessionPresentationState
 }) {
-  if (!hasRemoteStatus && !errorText) {
+  if (state === "local" && !errorText) {
     return {
       icon: CheckCircleIcon,
       iconClassName: "text-emerald-400/90",
@@ -63,7 +53,7 @@ export function getCompactStatusAppearance({
     }
   }
 
-  if (state === "connected" || state === "recovered") {
+  if (state === "local" || state === "liveConnected" || state === "liveEnded") {
     return {
       icon: CheckCircleIcon,
       iconClassName: "text-emerald-400/90",
@@ -71,9 +61,10 @@ export function getCompactStatusAppearance({
   }
 
   if (
-    state === "failed" ||
-    state === "connecting" ||
-    state === "reconnecting" ||
+    state === "liveConflict" ||
+    state === "liveConnecting" ||
+    state === "liveOffline" ||
+    state === "liveReconnecting" ||
     relayReachability === "unreachable" ||
     relayReachability === "checking"
   ) {

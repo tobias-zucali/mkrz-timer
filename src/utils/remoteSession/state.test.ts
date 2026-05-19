@@ -188,9 +188,9 @@ test("error messages become retryable failures", () => {
     context,
     message: {
       type: "error",
-      message: "Remote session expired",
+      message: "Live session expired",
     },
   })
 
-  assert.equal(getRetryableFailure()?.message, "Remote session expired")
+  assert.equal(getRetryableFailure()?.message, "Live session expired")
 })

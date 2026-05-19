@@ -32,7 +32,7 @@ import useIsNarrowViewport from "@/utils/useIsNarrowViewport"
 import useParams from "@/utils/useParams"
 import useRemoteSession from "@/utils/remoteSession"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
-import type { RemoteStatusModel } from "@/utils/remoteStatus"
+import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
 type SidebarEntryId = "settings" | "share" | "status" | "timer"
@@ -120,7 +120,7 @@ export default function Sidebar({
     onRetry: () => void
     relayLabel: string
     relayReachability: RemoteRelayReachabilityState
-    remoteStatus: RemoteStatusModel | null
+    sessionPresentation: SessionPresentationModel
     sessionId?: string
   }
 }) {
@@ -129,11 +129,10 @@ export default function Sidebar({
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
   const panelCloseButtonRef = useRef<HTMLButtonElement>(null)
   const { params, getUrlWithParams } = paramData
-  const { accessTokens, error, isConnecting, sessionId } = peerData
+  const { accessTokens } = peerData
 
   const isOpen = isPinnedOpen
   const isOverlayActive = isPinnedOpen || selectedEntryId !== null
-  const remoteErrorText = error ? error.message : null
   const timerUrl = getUrlWithParams()
   const readonlyClientUrl =
     accessTokens && typeof window !== "undefined"
@@ -149,7 +148,6 @@ export default function Sidebar({
           window.location.origin,
         ).toString()
       : ""
-  const isRemoteReady = Boolean(sessionId)
   const isReadonlySidebar = remoteRole === "readonly"
 
   const selectedEntry = useMemo(
@@ -189,8 +187,8 @@ export default function Sidebar({
     setSelectedEntryId(entryId)
   }
 
-  const openStatusPanel = () => {
-    openEntry("status")
+  const openSharePanel = () => {
+    openEntry("share")
   }
   const isFullscreenSidebar = isReadonlySidebar || isNarrowViewport
 
@@ -208,10 +206,9 @@ export default function Sidebar({
   const statusSidebarAppearance = getCompactStatusAppearance({
     errorText:
       statusPanelData.errorText ?? statusPanelData.floatingTimerErrorText,
-    hasRemoteStatus: Boolean(statusPanelData.remoteStatus),
     isOnline: statusPanelData.isOnline,
     relayReachability: statusPanelData.relayReachability,
-    state: statusPanelData.remoteStatus?.state ?? "connected",
+    state: statusPanelData.sessionPresentation.state,
   })
   const StatusSidebarIcon = statusSidebarAppearance.icon
   const footerEntries: SidebarEntry[] = [
@@ -259,15 +256,11 @@ export default function Sidebar({
           <SharePanel
             accessTokens={accessTokens}
             controlClientUrl={controlClientUrl}
-            isConnecting={isConnecting}
-            isRemoteReady={isRemoteReady}
             onEndRemoteSession={onEndRemoteSession}
+            onRetry={statusPanelData.onRetry}
             onStartRemoteSession={onStartRemoteSession}
             readonlyClientUrl={readonlyClientUrl}
-            remoteErrorText={remoteErrorText}
-            remoteRole={remoteRole}
-            sessionId={sessionId}
-            onOpenStatusPanel={openStatusPanel}
+            sessionPresentation={statusPanelData.sessionPresentation}
             timerUrl={timerUrl}
           />
         )
@@ -394,7 +387,9 @@ export default function Sidebar({
         className={classNames(
           "absolute inset-y-0 left-0 pointer-events-auto flex max-w-full -translate-x-full transform overflow-hidden shadow-2xl transition-transform duration-300",
           isOpen && "translate-x-0",
-          selectedEntry ? "right-0 w-full sm:w-[52rem]" : "right-0 w-full sm:w-64",
+          selectedEntry
+            ? "right-0 w-full sm:w-[52rem]"
+            : "right-0 w-full sm:w-64",
         )}
         data-testid="sidebar-offcanvas"
         id="sidebar-offcanvas"
@@ -446,6 +441,22 @@ export default function Sidebar({
               })}
             </ul>
             <ul className="mt-auto space-y-1 border-t border-foreground/10 pt-3">
+              <li>
+                <button
+                  className="flex w-full cursor-pointer flex-col items-start gap-1 rounded-lg border border-transparent px-2.5 py-3 text-left transition hover:border-primary/50 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                  data-testid="sidebar-session-status-button"
+                  onClick={openSharePanel}
+                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
+                  type="button"
+                >
+                  <span className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-foreground/58">
+                    {statusPanelData.sessionPresentation.sidebarStatus.eyebrow}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground/84">
+                    {statusPanelData.sessionPresentation.sidebarStatus.label}
+                  </span>
+                </button>
+              </li>
               {footerEntries.map((entry) => {
                 const isSelected = selectedEntryId === entry.id
 
@@ -499,7 +510,9 @@ export default function Sidebar({
                   onClick={isNarrowViewport ? returnToMenu : closeSidebar}
                   {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   ref={panelCloseButtonRef}
-                  title={isNarrowViewport ? "Back to sidebar menu" : "Close sidebar"}
+                  title={
+                    isNarrowViewport ? "Back to sidebar menu" : "Close sidebar"
+                  }
                 >
                   {isNarrowViewport ? (
                     <ChevronLeftIcon className="h-5 w-5" />

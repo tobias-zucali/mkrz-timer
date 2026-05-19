@@ -1,12 +1,12 @@
 # mkrz timer
 
-`mkrz timer` is a workshop timer with a relay-backed remote mode for shared control and viewing across browsers.
+`mkrz timer` is a workshop timer with relay-backed live sessions for shared control and viewing across browsers.
 
 ## About
 
 - Production target: `timer.mkrz.at`
 - Frontend: static Next.js export
-- Remote mode: server-relayed WebSocket sessions
+- Live sessions: server-relayed WebSocket sessions
 - Hosting target: Hetzner CAX11 with Docker Compose and Caddy
 
 Agent-facing repo guidance lives in [AGENTS.md](./AGENTS.md).
@@ -89,9 +89,9 @@ pnpm build:docker
 - documentation updates, test updates, and the full validation lane can wait until you explicitly ask to end prototype mode or finish the work
 - once prototype mode ends, the expectation returns to updating the relevant docs and tests and then running the full required validation lane
 
-## Remote Mode
+## Live Sessions
 
-See [docs/remote-mode.md](./docs/remote-mode.md) for the session model, client behavior, link permission model, and code layout.
+See [docs/remote-mode.md](./docs/remote-mode.md) for the live-session model, client behavior, link permission model, code layout, and terminology guidance.
 
 ## Local Development
 

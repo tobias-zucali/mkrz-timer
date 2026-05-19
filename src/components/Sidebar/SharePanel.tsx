@@ -1,156 +1,141 @@
 "use client"
 
+import classNames from "classnames"
+
 import UrlCopyField from "@/components/UrlCopyField"
+import type { SessionPresentationModel } from "@/utils/sessionPresentation"
+import { getLocalShareDescription } from "@/utils/sessionPresentation"
 import ActionButton from "@/utils/ActionButton"
+
+const liveSessionToneClassNames = {
+  neutral: "border-foreground/10 bg-white/[0.04]",
+  success: "border-emerald-400/25 bg-emerald-500/10",
+  warning: "border-amber-400/25 bg-amber-500/10",
+}
 
 export default function SharePanel({
   accessTokens,
   controlClientUrl,
-  isConnecting,
-  isRemoteReady,
   onEndRemoteSession,
+  onRetry,
   onStartRemoteSession,
-  remoteErrorText,
-  onOpenStatusPanel,
   readonlyClientUrl,
-  remoteRole,
-  sessionId,
+  sessionPresentation,
   timerUrl,
 }: {
   accessTokens: { control: string; readonly: string } | null | undefined
   controlClientUrl: string
-  isConnecting: boolean
-  isRemoteReady: boolean
   onEndRemoteSession: () => Promise<void>
-  onOpenStatusPanel: () => void
+  onRetry: () => void
   onStartRemoteSession: () => Promise<void>
   readonlyClientUrl: string
-  remoteErrorText: string | null
-  remoteRole: "control" | "readonly" | null
-  sessionId?: string
+  sessionPresentation: SessionPresentationModel
   timerUrl: string
 }) {
-  const shouldLinkToStatusPanel =
-    remoteErrorText === "Automatic recovery timed out. Retry the connection."
-  const hasRemoteSession = Boolean(remoteRole || sessionId || accessTokens)
-  const endRemoteSessionLabel =
-    remoteRole === "readonly" ? "Leave remote session" : "End remote session"
+  const { sharePanel } = sessionPresentation
 
   return (
     <div className="space-y-6">
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Sharing</h3>
-          <p className="mt-1 text-sm leading-6 text-foreground/68">
-            Share this timer locally, or start a remote session for another
-            screen to view or control it.
-          </p>
         </div>
 
-        {!hasRemoteSession && !isConnecting && (
-          <div className="space-y-3 rounded-2xl border border-foreground/10 bg-white/[0.04] p-4">
+        <div
+          className={classNames(
+            "space-y-4 rounded-2xl border p-4",
+            liveSessionToneClassNames[sharePanel.tone],
+          )}
+        >
+          <div className="space-y-3">
             <div>
-              <p className="font-medium text-foreground">Remote session</p>
+              <p className="font-medium text-foreground">Live session</p>
+              {sharePanel.statusLabel && (
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {sharePanel.statusLabel}
+                </p>
+              )}
               <p className="mt-1 text-sm leading-6 text-foreground/68">
-                Start a remote session to generate separate viewer and control
-                links.
+                {sharePanel.description}
               </p>
             </div>
+            {sharePanel.bullets.length > 0 && (
+              <ul className="space-y-1 text-sm leading-6 text-foreground/68">
+                {sharePanel.bullets.map((bullet) => (
+                  <li key={bullet}>• {bullet}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {sharePanel.primaryActionLabel && (
             <ActionButton
+              disabled={sessionPresentation.state === "liveConnecting"}
               fullWidth={true}
               onClick={() => {
                 void onStartRemoteSession()
               }}
             >
-              Start remote session
+              {sharePanel.primaryActionLabel}
             </ActionButton>
-          </div>
-        )}
+          )}
 
-        {isConnecting && (
-          <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/10 p-4">
-            <div>
-              <p className="font-medium text-foreground">Remote session</p>
-              <p className="mt-1 text-sm leading-6 text-foreground/68">
-                Creating the remote session and preparing share links.
-              </p>
+          {sharePanel.showLinks && (
+            <div className="space-y-4 border-t border-foreground/10 pt-4">
+              {accessTokens ? (
+                <>
+                  <UrlCopyField
+                    description="Read-only display for audience screens."
+                    label="Viewer link"
+                    showOpenButton={true}
+                    value={readonlyClientUrl}
+                  />
+                  <UrlCopyField
+                    description="Full timer and settings control with elevated permissions."
+                    label="Control link"
+                    showOpenButton={true}
+                    value={controlClientUrl}
+                  />
+                </>
+              ) : (
+                <p className="text-sm leading-6 text-foreground/68">
+                  Waiting for viewer and control links to become available.
+                </p>
+              )}
+
+              <div className="space-y-3 border-t border-foreground/10 pt-4">
+                {sharePanel.showRetry && (
+                  <ActionButton fullWidth={true} onClick={onRetry}>
+                    Retry now
+                  </ActionButton>
+                )}
+                <ActionButton
+                  className="border border-foreground/12 bg-foreground/[0.04] text-foreground hover:border-foreground/18 hover:bg-foreground/[0.08] hover:text-foreground"
+                  fullWidth={true}
+                  onClick={() => {
+                    void onEndRemoteSession()
+                  }}
+                >
+                  {sharePanel.endActionLabel}
+                </ActionButton>
+              </div>
             </div>
-            <ActionButton
-              disabled={true}
-              fullWidth={true}
-              onClick={undefined}
-            >
-              Starting remote session...
-            </ActionButton>
-          </div>
-        )}
+          )}
+        </div>
 
-        {remoteErrorText ? (
-          <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-foreground/80">
-            <p>{remoteErrorText}</p>
-            {shouldLinkToStatusPanel && (
-              <button
-                className="mt-2 cursor-pointer text-sm font-semibold text-primary underline underline-offset-2"
-                onClick={onOpenStatusPanel}
-                type="button"
-              >
-                Open Status
-              </button>
-            )}
+        <div className="space-y-4 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-4">
+          <div>
+            <p className="font-medium text-foreground">Local share</p>
+            <p className="mt-1 text-sm leading-6 text-foreground/68">
+              {getLocalShareDescription()}
+            </p>
           </div>
-        ) : null}
-
-        {!hasRemoteSession && !isConnecting && (
           <UrlCopyField
-            description="Use this link to reopen the current timer setup."
-            label="Share Link"
+            description="Snapshot of the current timer configuration with no live synchronization."
+            label="Local link"
             value={timerUrl}
           />
-        )}
-
-        {hasRemoteSession && (
-          <div className="space-y-4 rounded-2xl border border-foreground/10 bg-white/[0.04] p-4">
-            <div className="space-y-3">
-              <div>
-                <p className="font-medium text-foreground">
-                  Remote session active
-                </p>
-                <p className="mt-1 text-sm leading-6 text-foreground/68">
-                  Share a viewer link for read-only access or a control link for
-                  full timer control.
-                </p>
-              </div>
-              <ActionButton
-                fullWidth={true}
-                onClick={() => {
-                  void onEndRemoteSession()
-                }}
-              >
-                {endRemoteSessionLabel}
-              </ActionButton>
-            </div>
-            {isRemoteReady && accessTokens ? (
-              <div className="space-y-4 border-t border-foreground/10 pt-4">
-                <UrlCopyField
-                  description="Share this to watch the timer without any controls."
-                  label="Viewer Link"
-                  showOpenButton={true}
-                  value={readonlyClientUrl}
-                />
-                <UrlCopyField
-                  description="Share this to give full timer and settings control."
-                  label="Control Link"
-                  showOpenButton={true}
-                  value={controlClientUrl}
-                />
-              </div>
-            ) : (
-              <p className="text-sm leading-6 text-foreground/68">
-                Waiting for session links to become available.
-              </p>
-            )}
-          </div>
-        )}
+        </div>
       </section>
     </div>
   )

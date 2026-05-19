@@ -112,17 +112,17 @@ export async function enableRemoteMode(page: Page) {
 
   await openSidebarPanel(page, "Share")
   await expect(
-    page.getByRole("button", { name: "Start remote session" }),
+    page.getByRole("button", { name: "Start live session" }),
   ).toBeVisible()
   const documentSentinel = await setDocumentSentinel(page)
-  await page.getByRole("button", { name: "Start remote session" }).click()
+  await page.getByRole("button", { name: "Start live session" }).click()
   await expectDocumentSentinel(page, documentSentinel)
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
-    name: "Viewer Link",
+    name: "Viewer link",
   })
   const controlClientUrlInput = page.getByRole("textbox", {
-    name: "Control Link",
+    name: "Control link",
   })
   await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect(controlClientUrlInput).toBeVisible()
@@ -149,7 +149,7 @@ export async function enableRemoteModeWithClientUrls(
 ): Promise<RemoteClientUrls> {
   const controlClientUrl = await enableRemoteMode(page)
   const readonlyClientUrl = await page
-    .getByRole("textbox", { name: "Viewer Link" })
+    .getByRole("textbox", { name: "Viewer link" })
     .inputValue()
 
   return {
@@ -161,7 +161,7 @@ export async function enableRemoteModeWithClientUrls(
 export async function openClientFromSettings(
   page: Page,
   clientUrl: string,
-  label = "Control Link",
+  label = "Control link",
 ) {
   const expectedUrl = new URL(clientUrl)
   const clientPagePromise = page.waitForEvent("popup")
@@ -182,7 +182,7 @@ export async function openClientsFromSettings(
   page: Page,
   clientUrl: string,
   count: number,
-  label = "Control Link",
+  label = "Control link",
 ) {
   const clients: Page[] = []
 
@@ -208,9 +208,9 @@ export async function closeSettingsOverlay(page: Page) {
 
 export async function expectUrlQrCode(page: Page, label: string) {
   if (
-    label === "Share Link" ||
-    label === "Viewer Link" ||
-    label === "Control Link"
+    label === "Local link" ||
+    label === "Viewer link" ||
+    label === "Control link"
   ) {
     await openSidebarPanel(page, "Share")
   }
@@ -449,7 +449,6 @@ export async function expectRemoteStatus(
   },
 ) {
   const remoteStatus = page.getByTestId("remote-status")
-  const toggle = remoteStatus.getByTestId("remote-status-toggle")
   const panel = page.getByTestId("remote-status-panel")
   const detailsToggle = page.getByTestId("remote-status-details-toggle")
   const activityToggle = page.getByTestId("remote-status-activity-toggle")
@@ -491,8 +490,18 @@ export async function expectRemoteStatus(
           return true
         }
 
-        await toggle.click({ force: true })
-        return panel.isVisible()
+        if (
+          (await page
+            .getByRole("button", { name: "Toggle navigation" })
+            .count()) === 0
+        ) {
+          await remoteStatus.getByTestId("remote-status-toggle").click({
+            force: true,
+          })
+        } else {
+          await openSidebarPanel(page, "Status")
+        }
+        return panel.isVisible().catch(() => false)
       },
       {
         message: "status panel should pin open before reading its contents",
@@ -521,7 +530,7 @@ export async function expectRemoteStatus(
   await expectFieldText(
     "remote-status-link",
     connectionSummary,
-    "status panel should show the expected remote mode summary",
+    "status panel should show the expected live session summary",
   )
 
   if (networkStatus !== undefined) {
@@ -845,7 +854,7 @@ export async function expectNoStaleConnectedClient(page: Page) {
     )
     .not.toEqual({
       connectionCount: "0",
-      remoteState: "connected",
+      remoteState: "liveConnected",
       sessionId: "",
     })
 }
@@ -874,7 +883,9 @@ export async function waitForRemoteCluster(
         return {
           connectedPages: states.filter(
             ({ remoteState, sessionId }) =>
-              remoteState === "connected" && sessionId.length > 0,
+              sessionId.length > 0 &&
+              remoteState !== "local" &&
+              remoteState !== "liveEnded",
           ).length,
         }
       },

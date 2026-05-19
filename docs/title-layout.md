@@ -17,17 +17,17 @@ This note captures the current constraints for the timer title UI so future layo
 - Empty editable titles show an explicit `Add title` action.
 - The inline timer editor opens only after the user activates the title affordance.
 - The inline editor uses a multiline textarea with the same scaling rules as the display state and enforces the 64-character limit.
-- The settings drawer title field is multiline and enforces the same limit so local, URL, and remote edits stay aligned.
+- The settings drawer title field is multiline and enforces the same limit so local, URL, and live-session edits stay aligned.
 
 ## Layout Constraints
 
 - Title text uses `whitespace-pre-wrap` and `break-words`.
 - Overflow protection relies on line-height plus max-height clipping, not browser-specific line-clamp behavior.
 - Empty-title space should stay visually small enough that the timer display remains the dominant element.
-- Any future title-layout change should be checked in local mode, readonly remote mode, mobile portrait, mobile landscape, and the floating timer window.
+- Any future title-layout change should be checked in local use, readonly live-session viewing, mobile portrait, mobile landscape, and the floating timer window.
 
 ## Test Expectations
 
 - Component tests cover empty-state affordances and adaptive sizing.
 - Unit tests cover title normalization and scaling decisions.
-- Playwright covers long-title rendering in local mode, readonly remote mode, fullscreen, and visual regression snapshots across form factors.
+- Playwright covers long-title rendering in local use, readonly live-session viewing, fullscreen, and visual regression snapshots across form factors.

@@ -20,17 +20,17 @@ test(
     await openTimer(page, 3)
     await openSidebarPanel(page, "Share")
 
-    await page.getByRole("button", { name: "Show Share Link" }).click()
+    await page.getByRole("button", { name: "Show Local link" }).click()
     const qrCodeDialog = page.getByRole("dialog", {
-      name: "Timer · Share Link",
+      name: "Timer · Local link",
     })
 
     await expect(qrCodeDialog).toBeVisible()
     await expect(
-      qrCodeDialog.getByRole("heading", { name: "Timer · Share Link" }),
+      qrCodeDialog.getByRole("heading", { name: "Timer · Local link" }),
     ).toBeVisible()
     await expect(
-      qrCodeDialog.getByRole("img", { name: "Share Link" }),
+      qrCodeDialog.getByRole("img", { name: "Local link" }),
     ).toBeVisible()
     await expect(qrCodeDialog).toContainText("v=1")
     await expect(qrCodeDialog).toContainText("t=3%21")
@@ -44,7 +44,7 @@ test(
 
     await expect(qrCodeDialog).not.toBeVisible()
     await expect(
-      page.getByRole("textbox", { name: "Share Link" }),
+      page.getByRole("textbox", { name: "Local link" }),
     ).toBeVisible()
   },
 )
@@ -65,7 +65,7 @@ test(
     }
 
     await openSettingsOverlay(page)
-    await expectUrlQrCode(page, "Share Link")
+    await expectUrlQrCode(page, "Local link")
     await updateTimerSettings(page, settings)
     await closeSettingsOverlay(page)
 

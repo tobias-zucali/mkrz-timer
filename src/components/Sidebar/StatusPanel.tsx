@@ -10,12 +10,11 @@ import ActionButton from "@/utils/ActionButton"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
-import type { RemoteStatusModel } from "@/utils/remoteStatus"
+import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 
 import {
   formatRelativeTimestamp,
-  getCompactBadgeLabel,
   getNetworkLabel,
   getRelayReachabilityLabel,
   splitTimelineEntry,
@@ -78,7 +77,7 @@ export default function StatusPanel({
   onRetry,
   relayLabel,
   relayReachability,
-  remoteStatus,
+  sessionPresentation,
   sessionId,
 }: {
   activityLog: string[]
@@ -91,7 +90,7 @@ export default function StatusPanel({
   onRetry: () => void
   relayLabel: string
   relayReachability: RemoteRelayReachabilityState
-  remoteStatus: RemoteStatusModel | null
+  sessionPresentation: SessionPresentationModel
   sessionId?: string
 }) {
   const [isReportOverlayOpen, setIsReportOverlayOpen] = useState(false)
@@ -122,20 +121,19 @@ export default function StatusPanel({
 
   const networkLabel = getNetworkLabel(isOnline)
   const relayReachabilityLabel = getRelayReachabilityLabel(relayReachability)
-  const displayRoleLabel = remoteStatus?.roleLabel ?? "Local timer"
   const displayStateLabel = errorText
-    ? (remoteStatus?.stateLabel ?? "Attention needed")
+    ? "Error"
     : floatingTimerErrorText
       ? "Attention needed"
-      : (remoteStatus?.stateLabel ?? "Ready")
-  const displayDescription = remoteStatus
-    ? remoteStatus.description
-    : floatingTimerErrorText
-      ? "A local feature reported an issue. Review the details below."
-      : "Remote mode is off. Open Share when you want to start a remote session."
-  const compactRoleLabel = getCompactBadgeLabel(remoteStatus)
+      : sessionPresentation.statusPanel.stateLabel
+  const displayDescription = floatingTimerErrorText
+    ? "A local feature reported an issue. Review the details below."
+    : sessionPresentation.statusPanel.description
   const trimmedReportComment = reportComment.trim()
   const reportBody = getErrorReportBody()
+  const hasLiveSessionDetails =
+    sessionPresentation.state !== "local" &&
+    sessionPresentation.state !== "liveEnded"
   const liveParticipantCount = connectionDetails.filter(
     (detail) => detail.isAlive,
   ).length
@@ -197,9 +195,7 @@ export default function StatusPanel({
                     {isCopied ? "Copied" : "Copy report"}
                   </ActionButton>
                 )}
-                <ActionButton onClick={openMailApp}>
-                  Send Email
-                </ActionButton>
+                <ActionButton onClick={openMailApp}>Send Email</ActionButton>
               </div>
             </div>
           </div>,
@@ -211,15 +207,7 @@ export default function StatusPanel({
     <>
       <div className="space-y-6" data-testid="remote-status-panel">
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-base font-semibold text-foreground">Status</h3>
-            <ActionButton
-              className="min-h-9 border border-foreground/12 bg-foreground/[0.06] px-3 py-1.5 text-xs text-foreground/78 hover:border-foreground/18 hover:bg-foreground/[0.1] hover:text-foreground"
-              onClick={() => setIsReportOverlayOpen(true)}
-            >
-              Send to developer
-            </ActionButton>
-          </div>
+          <h3 className="text-base font-semibold text-foreground">Status</h3>
           {errorText && (
             <div
               className="rounded-2xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm text-red-100"
@@ -227,7 +215,9 @@ export default function StatusPanel({
               role="alert"
             >
               <p className="font-semibold text-red-50">Latest issue</p>
-              <p className="mt-1 leading-6">{errorText}</p>
+              <p className="mt-1 break-words leading-6 [overflow-wrap:anywhere]">
+                {errorText}
+              </p>
             </div>
           )}
           {floatingTimerErrorText && (
@@ -242,7 +232,7 @@ export default function StatusPanel({
               <p className="mt-1 leading-6">{floatingTimerErrorText}</p>
             </div>
           )}
-          {remoteStatus?.canRetryManually && (
+          {sessionPresentation.state === "liveConflict" && (
             <ActionButton
               data-testid="remote-status-retry"
               disabled={isRetrying}
@@ -253,15 +243,21 @@ export default function StatusPanel({
           )}
           <div className="rounded-2xl border border-foreground/10 bg-white/[0.04] p-4">
             <dl className="grid gap-2 text-sm text-foreground/80 sm:grid-cols-[auto_1fr] sm:gap-x-3">
+              <dt className="font-medium text-foreground">Session</dt>
+              <dd data-testid="remote-status-session">
+                {sessionPresentation.statusPanel.sessionLabel}
+              </dd>
               <dt className="font-medium text-foreground">State</dt>
               <dd data-testid="remote-status-state">{displayStateLabel}</dd>
-              <dt className="font-medium text-foreground">Role</dt>
-              <dd data-testid="remote-status-role">{displayRoleLabel}</dd>
-              <dt className="font-medium text-foreground">Remote mode</dt>
-              <dd data-testid="remote-status-link">
-                {remoteStatus ? remoteStatus.connectionSummary : "Inactive"}
+              <dt className="font-medium text-foreground">Access</dt>
+              <dd data-testid="remote-status-role">
+                {sessionPresentation.statusPanel.accessLabel}
               </dd>
-              {remoteStatus && (
+              <dt className="font-medium text-foreground">Live session</dt>
+              <dd data-testid="remote-status-link">
+                {sessionPresentation.statusPanel.summaryLabel}
+              </dd>
+              {hasLiveSessionDetails && (
                 <>
                   <dt className="font-medium text-foreground">Participants</dt>
                   <dd data-testid="remote-status-participant-count">
@@ -277,6 +273,12 @@ export default function StatusPanel({
               {displayDescription}
             </p>
           </div>
+          <ActionButton
+            className="min-h-9 border border-foreground/12 bg-foreground/[0.06] px-3 py-1.5 text-xs text-foreground/78 hover:border-foreground/18 hover:bg-foreground/[0.1] hover:text-foreground"
+            onClick={() => setIsReportOverlayOpen(true)}
+          >
+            Send to developer
+          </ActionButton>
         </section>
 
         <DisclosureSection
@@ -294,11 +296,11 @@ export default function StatusPanel({
             >
               {buildLabel}
             </dd>
-            {remoteStatus && (
+            {hasLiveSessionDetails && (
               <>
-                <dt className="font-medium text-foreground">Session</dt>
+                <dt className="font-medium text-foreground">Access</dt>
                 <dd data-testid="remote-status-session-role">
-                  {compactRoleLabel}
+                  {sessionPresentation.roleChipLabel}
                 </dd>
                 <dt className="font-medium text-foreground">Session id</dt>
                 <dd
@@ -318,7 +320,7 @@ export default function StatusPanel({
               </>
             )}
           </dl>
-          {remoteStatus && (
+          {hasLiveSessionDetails && (
             <div className="mt-4 space-y-3">
               <h4 className="text-xs font-medium uppercase tracking-[0.12em] text-foreground/58">
                 Participants

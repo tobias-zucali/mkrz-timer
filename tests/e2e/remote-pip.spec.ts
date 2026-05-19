@@ -12,25 +12,27 @@ import {
 
 // Helper functions for Floating Timer
 async function openFloatingTimer(page: Page) {
-  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  const toggle = page.getByTestId("floating-timer-toggle")
+  await expect(toggle).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await expect(toggle).toContainText("Open floating timer")
 
   const pipPromise = page.context().waitForEvent("page")
-  await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+  await toggle.click()
+  await expect(toggle).toContainText("Floating timer open")
   const pipPage = await pipPromise
   await pipPage.waitForLoadState("domcontentloaded")
   return pipPage
 }
 
 async function closeFloatingTimer(page: Page) {
-  await expect(page.getByTestId("floating-timer-toggle")).toBeVisible()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeEnabled()
-  await expect(page.getByTestId("floating-timer-toggle")).toBeChecked()
+  const toggle = page.getByTestId("floating-timer-toggle")
+  await expect(toggle).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await expect(toggle).toContainText("Floating timer open")
 
-  await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  await toggle.click()
+  await expect(toggle).toContainText("Open floating timer")
   await expectFloatingTimerClosed(page)
 }
 
@@ -188,7 +190,9 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
     })
 
   await page.getByTestId("floating-timer-toggle").click()
-  await expect(page.getByTestId("floating-timer-toggle")).not.toBeChecked()
+  await expect(page.getByTestId("floating-timer-toggle")).toContainText(
+    "Open floating timer",
+  )
   await expectFloatingTimerClosed(page)
 })
 
