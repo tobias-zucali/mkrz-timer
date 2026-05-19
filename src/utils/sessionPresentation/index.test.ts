@@ -5,6 +5,7 @@ import getSessionPresentation from "./index.ts"
 
 function buildRemoteStatus(
   overrides: Partial<Parameters<typeof getSessionPresentation>[0]> & {
+    hasControllingParticipant?: boolean
     role?: "control" | "readonly"
     state?: "connected" | "connecting" | "failed" | "recovered" | "reconnecting"
   } = {},
@@ -13,6 +14,7 @@ function buildRemoteStatus(
     canRetryManually: false,
     connectionSummary: "unused",
     description: "unused",
+    hasControllingParticipant: overrides.hasControllingParticipant ?? true,
     role: overrides.role ?? "control",
     roleLabel: "unused",
     state: overrides.state ?? "connected",
@@ -62,6 +64,29 @@ test("maps a connected control session to connected live labels", () => {
   assert.equal(presentation.state, "liveConnected")
   assert.equal(presentation.roleChipLabel, "CONTROL")
   assert.equal(presentation.sidebarStatus.label, "Synchronized")
+})
+
+test("maps a connected readonly session without a controller to warning labels", () => {
+  const presentation = getSessionPresentation({
+    hasPendingSyncConflict: false,
+    hasRecentlyEndedSession: false,
+    isOnline: true,
+    relayReachability: "reachable",
+    remoteStatus: buildRemoteStatus({
+      hasControllingParticipant: false,
+      role: "readonly",
+      state: "connected",
+    }),
+  })
+
+  assert.equal(presentation.state, "liveConnected")
+  assert.equal(presentation.isWaitingForController, true)
+  assert.equal(presentation.runtimeBadgeLabel, "Waiting")
+  assert.equal(presentation.sidebarStatus.label, "Waiting for controller")
+  assert.equal(
+    presentation.statusPanel.description,
+    "The last control client left this live session. You can keep waiting for a controller to return or switch this viewer to a private local timer.",
+  )
 })
 
 test("maps reconnecting live state", () => {

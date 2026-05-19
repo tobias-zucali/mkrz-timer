@@ -22,27 +22,28 @@ const syncState = {
   elapsedTime: 0,
   isPaused: true,
   isStarted: false,
+  lastUpdatedAt: 0,
   revision: 0,
   totalDuration: 60,
 }
 
 test("buildJoinMessage creates a snapshot for session creators", () => {
-  assert.deepEqual(
-    buildJoinMessage({
-      clientId: "client-1",
-      retryType: "create-session",
-      syncParams,
-      syncState,
-    }),
-    {
-      clientId: "client-1",
-      snapshot: {
-        params: syncParams,
-        state: syncState,
-      },
-      type: "create-session",
-    },
-  )
+  const message = buildJoinMessage({
+    clientId: "client-1",
+    retryType: "create-session",
+    syncParams,
+    syncState,
+  })
+
+  assert.equal(message.type, "create-session")
+  assert.equal(message.clientId, "client-1")
+  assert.deepEqual(message.snapshot.params, syncParams)
+  assert.equal(message.snapshot.state.elapsedTime, syncState.elapsedTime)
+  assert.equal(message.snapshot.state.isPaused, syncState.isPaused)
+  assert.equal(message.snapshot.state.isStarted, syncState.isStarted)
+  assert.equal(message.snapshot.state.revision, syncState.revision)
+  assert.equal(message.snapshot.state.totalDuration, syncState.totalDuration)
+  assert.ok(message.snapshot.state.lastUpdatedAt > 0)
 })
 
 test("buildJoinMessage only includes retry snapshots for control clients", () => {
@@ -64,26 +65,25 @@ test("buildJoinMessage only includes retry snapshots for control clients", () =>
     },
   )
 
-  assert.deepEqual(
-    buildJoinMessage({
-      clientId: "viewer",
-      remoteRole: "control",
-      remoteToken: "control-token",
-      retryType: "retry-join-session",
-      syncParams,
-      syncState,
-    }),
-    {
-      clientId: "viewer",
-      role: "control",
-      snapshot: {
-        params: syncParams,
-        state: syncState,
-      },
-      token: "control-token",
-      type: "retry-join-session",
-    },
+  const controlRetryMessage = buildJoinMessage({
+    clientId: "viewer",
+    remoteRole: "control",
+    remoteToken: "control-token",
+    retryType: "retry-join-session",
+    syncParams,
+    syncState,
+  })
+
+  assert.equal(controlRetryMessage.type, "retry-join-session")
+  assert.equal(controlRetryMessage.clientId, "viewer")
+  assert.equal(controlRetryMessage.role, "control")
+  assert.equal(controlRetryMessage.token, "control-token")
+  assert.deepEqual(controlRetryMessage.snapshot?.params, syncParams)
+  assert.equal(
+    controlRetryMessage.snapshot?.state.elapsedTime,
+    syncState.elapsedTime,
   )
+  assert.ok((controlRetryMessage.snapshot?.state.lastUpdatedAt ?? 0) > 0)
 })
 
 test("buildSyncMessage, buildHeartbeatMessage, and buildLeaveMessage preserve the protocol shape", () => {

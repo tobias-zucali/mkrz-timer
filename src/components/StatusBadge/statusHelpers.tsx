@@ -31,11 +31,13 @@ export function getRelayReachabilityLabel(
 export function getCompactStatusAppearance({
   errorText,
   isOnline,
+  isWaitingForController,
   relayReachability,
   state,
 }: {
   errorText: string | null
   isOnline: boolean | null
+  isWaitingForController: boolean
   relayReachability: RemoteRelayReachabilityState
   state: SessionPresentationState
 }) {
@@ -50,6 +52,13 @@ export function getCompactStatusAppearance({
     return {
       icon: XCircleIcon,
       iconClassName: "text-red-300/90",
+    }
+  }
+
+  if (isWaitingForController) {
+    return {
+      icon: ExclamationTriangleIcon,
+      iconClassName: "text-amber-300/90",
     }
   }
 

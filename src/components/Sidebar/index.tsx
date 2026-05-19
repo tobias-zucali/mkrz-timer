@@ -207,6 +207,8 @@ export default function Sidebar({
     errorText:
       statusPanelData.errorText ?? statusPanelData.floatingTimerErrorText,
     isOnline: statusPanelData.isOnline,
+    isWaitingForController:
+      statusPanelData.sessionPresentation.isWaitingForController,
     relayReachability: statusPanelData.relayReachability,
     state: statusPanelData.sessionPresentation.state,
   })

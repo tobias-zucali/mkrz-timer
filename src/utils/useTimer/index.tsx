@@ -11,16 +11,10 @@ import type { SyncParams } from "@/shared/remoteSession/types"
 import useAnimationFrame from "@/utils/useAnimationFrame"
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp"
 import debug from "@/utils/debug"
-
-export type TimerState = {
-  elapsedTime: number
-  isPaused: boolean
-  revision: number
-  isStarted: boolean
-  totalDuration: number
-}
+import { resolveTimerStateAt, type TimerState } from "@/utils/timerState"
 
 export type TimerActions = "pause" | "reset" | "start"
+export type { TimerState }
 
 export default function useTimer({
   canMutate = true,
@@ -46,17 +40,29 @@ export default function useTimer({
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [isPaused, setIsPaused] = useState(true)
   const [isStarted, setIsStarted] = useState(false)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(0)
   const [revision, setRevision] = useState(0)
   const [totalDuration, setTotalDuration] = useState<number>(getTotalDuration)
+  const [, setAnimationNow] = useState(() => Date.now())
   const latestStateRef = useRef<TimerState>({
     elapsedTime,
     isPaused,
     revision,
     isStarted,
+    lastUpdatedAt,
     totalDuration,
   })
 
-  const elapsedPercentage = elapsedTime / totalDuration
+  const resolvedState = resolveTimerStateAt({
+    elapsedTime,
+    isPaused,
+    isStarted,
+    lastUpdatedAt,
+    revision,
+    totalDuration,
+  })
+
+  const elapsedPercentage = resolvedState.elapsedTime / totalDuration
   const isTimedOut = elapsedPercentage >= 1
 
   useEffect(() => {
@@ -76,8 +82,10 @@ export default function useTimer({
       : []
 
   useAnimationFrame(
-    (deltaTime) => setElapsedTime((prevState) => prevState + deltaTime / 1000),
-    { isPaused },
+    () => {
+      setAnimationNow(Date.now())
+    },
+    { isPaused: !isStarted || isPaused },
   )
 
   const createNextState = useCallback(
@@ -90,6 +98,11 @@ export default function useTimer({
 
   const commitNextState = useCallback(
     (nextState: TimerState) => {
+      setElapsedTime(nextState.elapsedTime)
+      setIsPaused(nextState.isPaused)
+      setIsStarted(nextState.isStarted)
+      setLastUpdatedAt(nextState.lastUpdatedAt)
+      setTotalDuration(nextState.totalDuration)
       setRevision(nextState.revision)
       latestStateRef.current = nextState
       syncStateRef.current = nextState
@@ -110,17 +123,16 @@ export default function useTimer({
           return
         }
 
+        const currentResolvedState = resolveTimerStateAt(currentState)
         const newTotalDuration = getTotalDuration()
-        if (!currentState.isStarted) {
-          setTotalDuration(newTotalDuration)
-          setIsStarted(true)
-          setElapsedTime(0)
-        }
-        setIsPaused(false)
+        const nextLastUpdatedAt = Date.now()
         const nextState = createNextState({
-          elapsedTime: currentState.isStarted ? currentState.elapsedTime : 0,
+          elapsedTime: currentResolvedState.isStarted
+            ? currentResolvedState.elapsedTime
+            : 0,
           isPaused: false,
           isStarted: true,
+          lastUpdatedAt: nextLastUpdatedAt,
           totalDuration: newTotalDuration,
         })
         commitNextState(nextState)
@@ -134,15 +146,17 @@ export default function useTimer({
           return
         }
 
+        const currentResolvedState = resolveTimerStateAt(currentState)
+        const nextLastUpdatedAt = Date.now()
         const nextState = createNextState({
-          elapsedTime: currentState.elapsedTime,
+          elapsedTime: currentResolvedState.elapsedTime,
           isPaused: true,
           isStarted: true,
+          lastUpdatedAt: nextLastUpdatedAt,
           totalDuration: currentState.totalDuration,
         })
         commitNextState(nextState)
         onAction("pause", nextState)
-        setIsPaused(true)
       }
 
       switch (action) {
@@ -155,12 +169,10 @@ export default function useTimer({
               elapsedTime: 0,
               isPaused: true,
               isStarted: false,
+              lastUpdatedAt: Date.now(),
               totalDuration: getTotalDuration(),
             })
             commitNextState(nextState)
-            setIsPaused(true)
-            setIsStarted(false)
-            setElapsedTime(0)
             onAction(action, nextState)
           }
           break
@@ -246,27 +258,22 @@ export default function useTimer({
       isPaused,
       revision,
       isStarted,
+      lastUpdatedAt,
       totalDuration,
     }: TimerState) => {
-      if (revision < latestStateRef.current.revision) {
-        return
-      }
-
       setRevision(() => revision)
       setElapsedTime(() => elapsedTime)
       setIsPaused(() => isPaused)
       setIsStarted(() => isStarted)
+      setLastUpdatedAt(() => lastUpdatedAt)
       setTotalDuration(() => totalDuration)
     },
     [],
   )
 
   latestStateRef.current = {
-    elapsedTime,
-    isPaused,
+    ...resolvedState,
     revision,
-    isStarted,
-    totalDuration,
   }
   syncStateRef.current = latestStateRef.current
 

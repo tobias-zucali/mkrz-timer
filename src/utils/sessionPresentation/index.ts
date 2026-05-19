@@ -14,6 +14,7 @@ type SessionPresentationTone = "neutral" | "success" | "warning"
 
 export type SessionPresentationModel = {
   accessibilityLabel: string
+  isWaitingForController: boolean
   roleChipLabel: "CONTROL" | "VIEWER" | null
   runtimeBadgeLabel: string
   sharePanel: {
@@ -46,6 +47,14 @@ function getRoleChipLabel(remoteStatus: RemoteStatusModel | null) {
   }
 
   return remoteStatus.role === "control" ? "CONTROL" : "VIEWER"
+}
+
+function isWaitingForController(remoteStatus: RemoteStatusModel | null) {
+  return (
+    remoteStatus?.role === "readonly" &&
+    remoteStatus.state === "connected" &&
+    remoteStatus.hasControllingParticipant === false
+  )
 }
 
 function getSessionState({
@@ -108,6 +117,10 @@ function getStatusPanelDescription(state: SessionPresentationState) {
   }
 }
 
+function getWaitingForControllerDescription() {
+  return "The last control client left this live session. You can keep waiting for a controller to return or switch this viewer to a private local timer."
+}
+
 function getStatusPanelStateLabel(state: SessionPresentationState) {
   switch (state) {
     case "local":
@@ -147,9 +160,11 @@ function getStatusPanelSummaryLabel(state: SessionPresentationState) {
 }
 
 function getSharePanelCopy({
+  isWaitingForController,
   state,
   isReadonlyParticipant,
 }: {
+  isWaitingForController: boolean
   state: SessionPresentationState
   isReadonlyParticipant: boolean
 }) {
@@ -190,14 +205,19 @@ function getSharePanelCopy({
     case "liveConnected":
       return {
         bullets: [],
-        description:
-          "Share a viewer link for audience screens or a control link for full timer and settings access.",
+        description: isWaitingForController
+          ? getWaitingForControllerDescription()
+          : "Share a viewer link for audience screens or a control link for full timer and settings access.",
         endActionLabel,
         primaryActionLabel: null,
         showLinks: true,
         showRetry: false,
-        statusLabel: "Connected and synchronized",
-        tone: "success" as const,
+        statusLabel: isWaitingForController
+          ? "Waiting for controller"
+          : "Connected and synchronized",
+        tone: isWaitingForController
+          ? ("warning" as const)
+          : ("success" as const),
       }
     case "liveReconnecting":
       return {
@@ -283,6 +303,7 @@ export default function getSessionPresentation({
     relayReachability,
     remoteStatus,
   })
+  const waitingForController = isWaitingForController(remoteStatus)
   const roleChipLabel = getRoleChipLabel(remoteStatus)
   const stateLabel = getStatusPanelStateLabel(state)
   let sessionLabel = "Live session"
@@ -299,7 +320,7 @@ export default function getSessionPresentation({
 
   let runtimeBadgeLabel = stateLabel.replace("...", "")
   if (state === "liveConnected") {
-    runtimeBadgeLabel = "Connected"
+    runtimeBadgeLabel = waitingForController ? "Waiting" : "Connected"
   } else if (state === "liveEnded") {
     runtimeBadgeLabel = "Private"
   }
@@ -319,7 +340,7 @@ export default function getSessionPresentation({
     case "liveConnected":
       sidebarStatus = {
         eyebrow: "LIVE SESSION",
-        label: "Synchronized",
+        label: waitingForController ? "Waiting for controller" : "Synchronized",
       }
       break
     case "liveConnecting":
@@ -348,6 +369,7 @@ export default function getSessionPresentation({
       break
   }
   const sharePanel = getSharePanelCopy({
+    isWaitingForController: waitingForController,
     state,
     isReadonlyParticipant: remoteStatus?.role === "readonly",
   })
@@ -355,11 +377,12 @@ export default function getSessionPresentation({
   return {
     accessibilityLabel: [
       sessionLabel,
-      stateLabel,
+      waitingForController ? "Waiting for controller" : stateLabel,
       roleChipLabel ? `${roleChipLabel} access` : null,
     ]
       .filter(Boolean)
       .join(", "),
+    isWaitingForController: waitingForController,
     roleChipLabel,
     runtimeBadgeLabel,
     sharePanel,
@@ -367,10 +390,14 @@ export default function getSessionPresentation({
     state,
     statusPanel: {
       accessLabel,
-      description: getStatusPanelDescription(state),
+      description: waitingForController
+        ? getWaitingForControllerDescription()
+        : getStatusPanelDescription(state),
       sessionLabel,
-      stateLabel,
-      summaryLabel: getStatusPanelSummaryLabel(state),
+      stateLabel: waitingForController ? "Waiting for controller" : stateLabel,
+      summaryLabel: waitingForController
+        ? "Waiting for controller"
+        : getStatusPanelSummaryLabel(state),
     },
   }
 }

@@ -17,6 +17,7 @@ export type RemoteStatusModel = {
   canRetryManually: boolean
   connectionSummary: string
   description: string
+  hasControllingParticipant?: boolean
   role: RemoteStatusRole
   roleLabel: string
   state: RemoteStatusState
@@ -53,6 +54,7 @@ export default function getRemoteStatus({
   canRetryManually,
   hasConnectedOnce,
   hasReceivedInitialSync,
+  hasControllingParticipant,
   lifecycleState,
   participantCount,
   role,
@@ -62,6 +64,7 @@ export default function getRemoteStatus({
   canRetryManually: boolean
   hasConnectedOnce: boolean
   hasReceivedInitialSync: boolean
+  hasControllingParticipant?: boolean
   isRemoteEnabled: boolean
   lifecycleState: RemoteStatusState
   participantCount: number
@@ -73,6 +76,7 @@ export default function getRemoteStatus({
   }
 
   const roleLabel = ROLE_LABELS[role]
+  const controllingParticipantPresent = hasControllingParticipant ?? false
   const state = getRemoteState({
     hasConnectedOnce,
     hasReceivedInitialSync,
@@ -83,12 +87,14 @@ export default function getRemoteStatus({
   return {
     canRetryManually,
     connectionSummary: getConnectionSummary({
+      hasControllingParticipant: controllingParticipantPresent,
       hasReceivedInitialSync,
       participantCount,
       role,
       state,
     }),
-    description: getDescription(role, state),
+    description: getDescription(role, state, controllingParticipantPresent),
+    hasControllingParticipant: controllingParticipantPresent,
     role,
     roleLabel,
     state,

@@ -34,6 +34,7 @@ import useTimer, { type TimerState } from "@/utils/useTimer"
 import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 
 import StatusBadge from "@/components/StatusBadge"
+import ActionDialog from "@/components/ActionDialog"
 import QrCodeOverlay from "@/components/QrCodeOverlay"
 import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
@@ -72,6 +73,66 @@ function TopRightActionButton({
 function getConnectionErrorDetail(error: Error) {
   const detail = error.message.trim()
   return detail || "An unknown error was caught."
+}
+
+function getOtherParticipantLabel(otherParticipantCount: number) {
+  return otherParticipantCount === 1 ? "other client" : "other clients"
+}
+
+function getExitConfirmationDialog({
+  completeEndRemoteSession,
+  onCancel,
+  otherParticipantCount,
+  pendingExitConfirmation,
+}: {
+  completeEndRemoteSession: () => Promise<void>
+  onCancel: () => void
+  otherParticipantCount: number
+  pendingExitConfirmation: "end-live-session" | "leave-control-client"
+}) {
+  const otherParticipantLabel = getOtherParticipantLabel(otherParticipantCount)
+
+  if (pendingExitConfirmation === "end-live-session") {
+    return {
+      actions: [
+        {
+          label: "Keep live session open",
+          onClick: onCancel,
+        },
+        {
+          label: "End live session",
+          onClick: () => {
+            onCancel()
+            void completeEndRemoteSession()
+          },
+          tone: "primary" as const,
+        },
+      ],
+      description: `This will disconnect ${otherParticipantCount} ${otherParticipantLabel} from the live session immediately.`,
+      eyebrow: "Live session confirmation",
+      title: "End the live session for everyone?",
+    }
+  }
+
+  return {
+    actions: [
+      {
+        label: "Keep control client open",
+        onClick: onCancel,
+      },
+      {
+        label: "Leave control client",
+        onClick: () => {
+          onCancel()
+          void completeEndRemoteSession()
+        },
+        tone: "primary" as const,
+      },
+    ],
+    description: `This control client still has ${otherParticipantCount} ${otherParticipantLabel} connected. Leaving now can interrupt the active workshop.`,
+    eyebrow: "Live session confirmation",
+    title: "Close this control client?",
+  }
 }
 
 function pauseUrlSyncDuringRemoteRouteTransition() {
@@ -172,6 +233,9 @@ function TimerApp() {
   const [isViewerShareQrCodeOpen, setIsViewerShareQrCodeOpen] = useState(false)
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [pendingExitConfirmation, setPendingExitConfirmation] = useState<
+    "end-live-session" | "leave-control-client" | null
+  >(null)
 
   const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
@@ -198,10 +262,7 @@ function TimerApp() {
       : null
 
   const {
-    applyUrlSyncState,
-    clearSyncConflict,
     getReconnectSnapshot,
-    hasSyncConflict,
     notifyIncomingSyncConflict,
     shouldDeferIncomingSnapshot,
   } = useSyncConflictResolution({
@@ -247,11 +308,14 @@ function TimerApp() {
     hasReceivedInitialSync,
     isConnecting,
     lifecycleState,
+    localFallbackReason,
     peerEventTimeline,
+    participants,
     resolvePendingSyncConflict,
     retryConnection,
     sessionId,
     syncAll,
+    activateLocalFallback,
   } = remoteSession
 
   const applyParamPatch = useCallback(
@@ -297,41 +361,11 @@ function TimerApp() {
   const remoteStatusRole = remoteRole === "readonly" ? "readonly" : "control"
   const remoteError = remoteLinkError ?? error
   const remoteStatusEnabled = remoteRoute.isRemote || isHostRemoteSession
+  const isControlCapableClient = !isReadonlyClient
+  const otherParticipantCount = Math.max(connectionCount - 1, 0)
+  const hasOtherConnectedClients = otherParticipantCount > 0
 
-  useEffect(() => {
-    syncAll({ includeParams: false, state: syncState })
-  }, [syncAll, syncState])
-
-  useEffect(() => {
-    if (!hasPendingSyncConflict) {
-      clearSyncConflict()
-    }
-  }, [clearSyncConflict, hasPendingSyncConflict])
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return
-    }
-
-    setIsFullscreenSupported(Boolean(document.fullscreenEnabled))
-    setIsFullscreen(Boolean(document.fullscreenElement))
-
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange)
-    }
-  }, [])
-
-  const handleStartRemoteSession = useCallback(async () => {
-    setHasRecentlyEndedLiveSession(false)
-    await connectRemote()
-  }, [connectRemote])
-
-  const handleEndRemoteSession = useCallback(async () => {
+  const completeEndRemoteSession = useCallback(async () => {
     if (remoteRole === "control") {
       if (typeof window === "undefined") {
         return
@@ -354,15 +388,103 @@ function TimerApp() {
     }
   }, [disconnect, paramData, remoteRole, sessionId])
 
-  const handleUseServerSyncState = useCallback(() => {
-    clearSyncConflict()
-    resolvePendingSyncConflict("use-server")
-  }, [clearSyncConflict, resolvePendingSyncConflict])
+  useEffect(() => {
+    syncAll({ includeParams: false, state: syncState })
+  }, [syncAll, syncState])
 
-  const handleUseUrlSyncState = useCallback(() => {
-    applyUrlSyncState()
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return
+    }
+
+    setIsFullscreenSupported(Boolean(document.fullscreenEnabled))
+    setIsFullscreen(Boolean(document.fullscreenElement))
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (hasOtherConnectedClients) {
+      return
+    }
+
+    setPendingExitConfirmation(null)
+  }, [hasOtherConnectedClients])
+
+  const handleStartRemoteSession = useCallback(async () => {
+    setHasRecentlyEndedLiveSession(false)
+    await connectRemote()
+  }, [connectRemote])
+
+  const handleEndRemoteSession = useCallback(async () => {
+    if (hasOtherConnectedClients && isControlCapableClient) {
+      setPendingExitConfirmation(
+        remoteRole === "control" ? "leave-control-client" : "end-live-session",
+      )
+      return
+    }
+
+    await completeEndRemoteSession()
+  }, [
+    completeEndRemoteSession,
+    hasOtherConnectedClients,
+    isControlCapableClient,
+    remoteRole,
+  ])
+
+  useEffect(() => {
+    if (!isControlCapableClient || !hasOtherConnectedClients) {
+      return
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue =
+        "Other live-session clients are still connected to this controller."
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [hasOtherConnectedClients, isControlCapableClient])
+
+  const handleUseServerSyncState = useCallback(() => {
+    resolvePendingSyncConflict("use-server")
+  }, [resolvePendingSyncConflict])
+
+  const handleUseLocalSyncState = useCallback(() => {
     resolvePendingSyncConflict("use-local")
-  }, [applyUrlSyncState, resolvePendingSyncConflict])
+  }, [resolvePendingSyncConflict])
+
+  const handleUseLocalMode = useCallback(async () => {
+    const snapshot = await activateLocalFallback()
+    paramData.setParams(snapshot.params)
+    setState(snapshot.state)
+    if (typeof window === "undefined") {
+      return
+    }
+
+    pauseUrlSyncDuringRemoteRouteTransition()
+    window.history.replaceState(
+      null,
+      "",
+      paramData.getPathWithParams({
+        inherit: false,
+        params: snapshot.params,
+        pathname: "/",
+      }),
+    )
+    setHasRecentlyEndedLiveSession(true)
+    setLocationVersion((current) => current + 1)
+  }, [activateLocalFallback, paramData, setState])
 
   const remoteErrorText = remoteError
     ? remoteRoute.isRemote
@@ -379,6 +501,9 @@ function TimerApp() {
   const remoteStatus = getRemoteStatus({
     canRetryManually,
     hasConnectedOnce,
+    hasControllingParticipant: participants.some(
+      (participant) => participant.canControl,
+    ),
     hasReceivedInitialSync,
     isRemoteEnabled: remoteStatusEnabled,
     lifecycleState:
@@ -471,14 +596,72 @@ function TimerApp() {
   const viewerShareUrl =
     typeof window === "undefined" ? "" : window.location.href
 
+  const recoveryDialog =
+    hasPendingSyncConflict || localFallbackReason
+      ? {
+          actions: hasPendingSyncConflict
+            ? [
+                {
+                  label: "Use server state",
+                  onClick: handleUseServerSyncState,
+                },
+                {
+                  label: "Push local changes",
+                  onClick: handleUseLocalSyncState,
+                  tone: "primary" as const,
+                },
+              ]
+            : [
+                {
+                  label: "Retry connection",
+                  onClick: retryConnection,
+                },
+                {
+                  label: "Use local mode",
+                  onClick: () => {
+                    void handleUseLocalMode()
+                  },
+                  tone: "primary" as const,
+                },
+              ],
+          description: hasPendingSyncConflict
+            ? "The live session changed while this client was recovering. Choose whether to keep the fresh server state, push this client's local timer state, or leave the live session and continue locally."
+            : localFallbackReason === "invalid-session"
+              ? "This live session link is no longer valid. You can retry the connection or continue with the best available local timer state."
+              : "The live session could not recover cleanly. Retry the connection or continue with the best available local timer state.",
+          title: hasPendingSyncConflict
+            ? "Live session state changed during recovery."
+            : "Live session recovery needs your decision.",
+        }
+      : null
+  const exitConfirmationDialog = pendingExitConfirmation
+    ? getExitConfirmationDialog({
+        completeEndRemoteSession,
+        onCancel: () => {
+          setPendingExitConfirmation(null)
+        },
+        otherParticipantCount,
+        pendingExitConfirmation,
+      })
+    : null
+
   return (
     <div className="relative flex h-screen flex-col">
-      {hasSyncConflict && (
+      {recoveryDialog ? (
         <SyncConflictDialog
-          onUseLocal={handleUseUrlSyncState}
-          onUseServer={handleUseServerSyncState}
+          actions={recoveryDialog.actions}
+          description={recoveryDialog.description}
+          title={recoveryDialog.title}
         />
-      )}
+      ) : exitConfirmationDialog ? (
+        <ActionDialog
+          actions={exitConfirmationDialog.actions}
+          defaultFocusActionIndex={0}
+          description={exitConfirmationDialog.description}
+          eyebrow={exitConfirmationDialog.eyebrow}
+          title={exitConfirmationDialog.title}
+        />
+      ) : null}
       <Sidebar
         floatingTimerData={floatingTimerData}
         handleChange={handleChange}
