@@ -945,6 +945,12 @@ export default function useRemoteSession({
       participants.map((participant) => ({
         id: participant.clientId,
         isAlive: true,
+        participantLabel:
+          participant.clientId === localClientIdRef.current
+            ? "You"
+            : participant.canControl
+              ? "Control"
+              : "View",
       })),
     [participants],
   )
@@ -965,6 +971,7 @@ export default function useRemoteSession({
       isConnecting,
       lifecycleState,
       localFallbackReason,
+      localClientId: localClientIdRef.current,
       peerEventTimeline,
       participants,
       resolvePendingSyncConflict: finalizePendingSync,

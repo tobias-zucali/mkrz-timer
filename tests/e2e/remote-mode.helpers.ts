@@ -424,6 +424,7 @@ export async function expectRemoteStatus(
     description,
     errorText,
     networkStatus,
+    participantSummary,
     peerServerReachability,
     relayReachability,
     role,
@@ -435,6 +436,7 @@ export async function expectRemoteStatus(
     description?: RegExp | string
     errorText?: RegExp | string
     networkStatus?: RegExp | string
+    participantSummary?: RegExp | string
     peerServerReachability?: RegExp | string
     relayReachability?: RegExp | string
     role: RegExp | string
@@ -537,6 +539,14 @@ export async function expectRemoteStatus(
       "remote-status-network",
       networkStatus,
       "status panel should show the expected network status",
+    )
+  }
+
+  if (participantSummary !== undefined) {
+    await expectFieldText(
+      "remote-status-participant-count",
+      participantSummary,
+      "status panel should show the expected participant summary",
     )
   }
 
