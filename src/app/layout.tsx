@@ -47,12 +47,19 @@ export default function RootLayout({
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
       </head>
       <ParamStyledBody
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          h-full antialiased
+        `}
       >
         <ServiceWorkerRegistration />
         {children}
         <a
-          className="absolute bottom-4 right-4 underline hover:text-primary"
+          className="
+            absolute right-4 bottom-4 underline
+            hover:text-primary
+          "
           href="https://www.mkrz.at/"
         >
           by mkrz

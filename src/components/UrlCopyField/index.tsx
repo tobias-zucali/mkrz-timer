@@ -51,9 +51,9 @@ export default function UrlCopyField({
             aria-label={isCopied ? "Copied" : "Copy URL"}
           >
             {isCopied ? (
-              <CheckIcon className="h-5 w-5" />
+              <CheckIcon className="size-5" />
             ) : (
-              <ClipboardDocumentIcon className="h-5 w-5" />
+              <ClipboardDocumentIcon className="size-5" />
             )}
           </button>
         )}
@@ -65,7 +65,7 @@ export default function UrlCopyField({
             title="Open URL"
             aria-label="Open URL"
           >
-            <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+            <ArrowTopRightOnSquareIcon className="size-5" />
           </Link>
         )}
         {isClient && value && (
@@ -77,7 +77,7 @@ export default function UrlCopyField({
             aria-label={`Show ${label}`}
             type="button"
           >
-            <QrCodeIcon className="h-5 w-5" />
+            <QrCodeIcon className="size-5" />
           </button>
         )}
       </InputField>

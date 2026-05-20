@@ -5,7 +5,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 ## Baseline
 
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
-- Use Node.js `22.6.0` or newer.
+- Use Node.js `22.12.0` or newer.
 - After edits, run `pnpm lint`, `pnpm test` and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
 - When the user explicitly asks for prototype mode, run `pnpm lint` only after changes while the behavior is still moving quickly.

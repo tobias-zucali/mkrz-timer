@@ -9,7 +9,7 @@ const timerButtonClassName =
   "inline-flex min-h-11 min-w-24 appearance-none items-center justify-center " +
   "rounded-md bg-foreground px-3.5 py-2.5 text-base font-bold text-background " +
   "shadow-sm transition-colors hover:bg-foreground/90 " +
-  "focus-visible:outline-secondary focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
   "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation"
 
 type ReadonlyPlaceholder = {
@@ -47,13 +47,17 @@ export default function Timer({
   } = timer
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <TimerTitle
         disabled={isReadonly}
         value={title}
         onChange={(value) => handleChange("title", value)}
       />
-      <div className="flex items-center justify-center grow h-[10em] p-[1em] relative">
+      <div
+        className="
+        relative flex h-[10em] grow items-center justify-center p-[1em]
+      "
+      >
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
         />
@@ -63,33 +67,63 @@ export default function Timer({
             className="absolute inset-0 flex items-center justify-center px-6"
             data-testid="readonly-timer-placeholder"
           >
-            <div className="w-full max-w-lg rounded-3xl border border-foreground/12 bg-background/72 px-6 py-8 text-center shadow-xl shadow-background/20 backdrop-blur">
+            <div
+              className="
+              w-full max-w-lg rounded-3xl border border-foreground/12
+              bg-background/72 px-6 py-8 text-center shadow-xl
+              shadow-background/20 backdrop-blur-sm
+            "
+            >
               {readonlyPlaceholder.eyebrow ? (
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
+                <p
+                  className="
+                  text-xs font-semibold tracking-[0.2em] text-primary/80
+                  uppercase
+                "
+                >
                   {readonlyPlaceholder.eyebrow}
                 </p>
               ) : null}
               <div className="mt-5 flex items-center justify-center gap-3">
                 <div
-                  className={`h-4 w-4 rounded-full motion-safe:animate-pulse ${
-                    readonlyPlaceholder.tone === "failed"
-                      ? "bg-primary"
-                      : "bg-primary/80"
-                  }`}
+                  className={`
+                    size-4 rounded-full
+                    motion-safe:animate-pulse
+                    ${
+                      readonlyPlaceholder.tone === "failed"
+                        ? "bg-primary"
+                        : "bg-primary/80"
+                    }
+                  `}
                 />
-                <div className="h-4 w-4 rounded-full bg-foreground/30 motion-safe:animate-pulse [animation-delay:150ms]" />
-                <div className="h-4 w-4 rounded-full bg-foreground/18 motion-safe:animate-pulse [animation-delay:300ms]" />
+                <div
+                  className="
+                  size-4 rounded-full bg-foreground/30 [animation-delay:150ms]
+                  motion-safe:animate-pulse
+                "
+                />
+                <div
+                  className="
+                  size-4 rounded-full bg-foreground/18 [animation-delay:300ms]
+                  motion-safe:animate-pulse
+                "
+                />
               </div>
               <p className="mt-5 text-lg font-semibold text-foreground">
                 {readonlyPlaceholder.heading}
               </p>
-              <p className="mt-2 text-sm leading-6 text-foreground/68">
+              <p className="mt-2 text-sm/6 text-foreground/68">
                 {readonlyPlaceholder.body}
               </p>
               {readonlyPlaceholder.actionLabel &&
               readonlyPlaceholder.onAction ? (
                 <button
-                  className="mt-4 cursor-pointer text-sm font-medium text-primary underline decoration-primary/60 underline-offset-4 transition hover:text-primary/82"
+                  className="
+                    mt-4 cursor-pointer text-sm font-medium text-primary
+                    underline decoration-primary/60 underline-offset-4
+                    transition
+                    hover:text-primary/82
+                  "
                   onClick={readonlyPlaceholder.onAction}
                   type="button"
                 >
@@ -99,7 +133,11 @@ export default function Timer({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center grow absolute inset-0">
+          <div
+            className="
+            absolute inset-0 flex grow flex-col items-center justify-center
+          "
+          >
             <DigitalDisplay
               data-testid="timer-display"
               isAlert={isTimedOut}
@@ -112,7 +150,9 @@ export default function Timer({
             />
             {!isReadonly && (
               <div
-                className="flex flex-wrap items-center justify-center gap-2 py-[0.625em]"
+                className="
+                  flex flex-wrap items-center justify-center gap-2 py-[0.625em]
+                "
                 data-testid="timer-controls"
               >
                 <button

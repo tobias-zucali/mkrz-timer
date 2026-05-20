@@ -29,7 +29,7 @@ const CloseButton = forwardRef<
       type="button"
       {...otherProps}
     >
-      {children ?? <XMarkIcon className="h-5 w-5" />}
+      {children ?? <XMarkIcon className="size-5" />}
     </button>
   ),
 )

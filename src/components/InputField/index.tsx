@@ -66,7 +66,7 @@ export default function InputField({
       </div>
       {description && (
         <p
-          className="text-sm leading-6 text-foreground/68 mt--2"
+          className="text-sm/6 text-foreground/68"
           id={`${inputId}-desc`}
         >
           {description}

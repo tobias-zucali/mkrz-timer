@@ -9,7 +9,7 @@ function Pie({ percentage, ...otherProps }: Props) {
   const fullCircle = Math.PI * diameter
   return (
     <svg
-      className="w-full h-full"
+      className="size-full"
       height={sideLength}
       style={{
         height: "100%",

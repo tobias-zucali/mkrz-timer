@@ -25,7 +25,9 @@ export default function FloatingTimerContent({
 
   return (
     <div
-      className="flex h-screen flex-col overflow-hidden bg-background text-foreground"
+      className="
+        flex h-screen flex-col overflow-hidden bg-background text-foreground
+      "
       data-testid="floating-timer-root"
       style={{
         ["--background"]: hexToRgbChannels(backgroundColor),
@@ -43,7 +45,10 @@ export default function FloatingTimerContent({
           }}
         >
           <p
-            className="mx-auto m-0 block max-w-[20ch] overflow-hidden whitespace-pre-wrap break-words"
+            className="
+              m-0 mx-auto block max-w-[20ch] overflow-hidden wrap-break-word
+              whitespace-pre-wrap
+            "
             data-testid="floating-timer-title"
           >
             {title}
@@ -61,9 +66,11 @@ export default function FloatingTimerContent({
         />
         <div className="absolute inset-0 flex items-center justify-center px-6">
           <div
-            className={`flex max-w-full flex-nowrap items-baseline justify-center font-mono text-[clamp(3rem,19vw,7rem)] font-bold ${
-              isTimedOut ? "animate-pulse text-primary" : ""
-            }`}
+            className={`
+              flex max-w-full flex-nowrap items-baseline justify-center
+              font-mono text-[clamp(3rem,19vw,7rem)] font-bold
+              ${isTimedOut ? "animate-pulse text-primary" : ""}
+            `}
             data-testid="floating-timer-display"
           >
             <span className="min-w-0 text-right">{minutes}</span>
