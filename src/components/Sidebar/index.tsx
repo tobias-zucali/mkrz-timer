@@ -31,6 +31,7 @@ import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useIsNarrowViewport from "@/utils/useIsNarrowViewport"
 import useParams from "@/utils/useParams"
 import useRemoteSession from "@/utils/remoteSession"
+import type { SessionParticipant } from "@/shared/remoteSession/types"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
@@ -111,13 +112,19 @@ export default function Sidebar({
   setSelectedEntryId: Dispatch<SetStateAction<SidebarEntryId | null>>
   statusPanelData: {
     activityLog: string[]
-    connectionDetails: { id: string; isAlive: boolean }[]
+    connectionDetails: {
+      id: string
+      isAlive: boolean
+      participantLabel: "Control" | "View" | "You"
+    }[]
     errorText: string | null
     floatingTimerErrorText: string | null
     getErrorReportBody: () => string
     isOnline: boolean | null
     isRetrying: boolean
+    localClientId: string
     onRetry: () => void
+    participants: SessionParticipant[]
     relayLabel: string
     relayReachability: RemoteRelayReachabilityState
     sessionPresentation: SessionPresentationModel

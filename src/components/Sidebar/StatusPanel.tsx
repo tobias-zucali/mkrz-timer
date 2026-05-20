@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 
 import CloseButton from "@/components/CloseButton"
 import { getDocumentLocale } from "@/i18n/locale"
+import type { SessionParticipant } from "@/shared/remoteSession/types"
 import { getPublicBuildInfo } from "@/shared/buildInfo"
 import ActionButton from "@/utils/ActionButton"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
@@ -20,9 +21,12 @@ import {
   splitTimelineEntry,
 } from "@/components/StatusBadge/statusHelpers"
 
+import { getParticipantSummary } from "./participantSummary"
+
 type RemoteStatusConnection = {
   id: string
   isAlive: boolean
+  participantLabel: "Control" | "View" | "You"
 }
 
 function DisclosureSection({
@@ -74,7 +78,9 @@ export default function StatusPanel({
   getErrorReportBody,
   isOnline,
   isRetrying,
+  localClientId,
   onRetry,
+  participants,
   relayLabel,
   relayReachability,
   sessionPresentation,
@@ -87,7 +93,9 @@ export default function StatusPanel({
   getErrorReportBody: () => string
   isOnline: boolean | null
   isRetrying: boolean
+  localClientId: string
   onRetry: () => void
+  participants: SessionParticipant[]
   relayLabel: string
   relayReachability: RemoteRelayReachabilityState
   sessionPresentation: SessionPresentationModel
@@ -134,15 +142,10 @@ export default function StatusPanel({
   const hasLiveSessionDetails =
     sessionPresentation.state !== "local" &&
     sessionPresentation.state !== "liveEnded"
-  const liveParticipantCount = connectionDetails.filter(
-    (detail) => detail.isAlive,
-  ).length
-  const participantCountLabel =
-    liveParticipantCount === 0
-      ? "No participants connected"
-      : liveParticipantCount === 1
-        ? "1 participant connected"
-        : `${liveParticipantCount} participants connected`
+  const participantCountLabel = getParticipantSummary({
+    localClientId,
+    participants,
+  })
   const mailBody = [
     "User comment:",
     trimmedReportComment || "No additional comment provided.",
@@ -265,6 +268,14 @@ export default function StatusPanel({
                   </dd>
                 </>
               )}
+              <dt className="font-medium text-foreground">Build</dt>
+              <dd
+                className="font-mono text-xs text-foreground/72"
+                data-testid="remote-status-build"
+                title={buildId}
+              >
+                {buildLabel}
+              </dd>
             </dl>
             <p
               className="mt-4 text-sm leading-6 text-foreground/66"
@@ -288,14 +299,6 @@ export default function StatusPanel({
           <dl className="grid gap-2 text-sm text-foreground/80 sm:grid-cols-[auto_1fr] sm:gap-x-3">
             <dt className="font-medium text-foreground">Network</dt>
             <dd data-testid="remote-status-network">{networkLabel}</dd>
-            <dt className="font-medium text-foreground">Build</dt>
-            <dd
-              className="font-mono text-xs text-foreground/72"
-              data-testid="remote-status-build"
-              title={buildId}
-            >
-              {buildLabel}
-            </dd>
             {hasLiveSessionDetails && (
               <>
                 <dt className="font-medium text-foreground">Access</dt>
@@ -336,8 +339,13 @@ export default function StatusPanel({
                       data-testid="remote-status-connection"
                       key={detail.id}
                     >
-                      <span className="font-mono text-xs text-foreground/68">
-                        {detail.id}
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0 rounded-full border border-foreground/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/72">
+                          {detail.participantLabel}
+                        </span>
+                        <span className="truncate font-mono text-xs text-foreground/68">
+                          {detail.id}
+                        </span>
                       </span>
                       <span className="text-foreground/72">
                         {detail.isAlive ? "live" : "stale"}

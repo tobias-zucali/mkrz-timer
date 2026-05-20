@@ -41,6 +41,7 @@ export type RelaySessionState =
 export type RelayConnectionDetails = {
   id: string
   isAlive: boolean
+  participantLabel: "Control" | "View" | "You"
 }
 
 export type RelayClientMessage =

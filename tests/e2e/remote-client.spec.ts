@@ -57,6 +57,39 @@ async function getRemoteTitleMetrics(page: Page) {
   }, "timer-title")
 }
 
+async function expectParticipantLabels(
+  page: Page,
+  expectedLabels: Array<"Control" | "View" | "You">,
+) {
+  const panel = page.getByTestId("remote-status-panel")
+  if (!(await panel.isVisible().catch(() => false))) {
+    if (
+      (await page
+        .getByRole("button", { name: "Toggle navigation" })
+        .count()) === 0
+    ) {
+      await page.getByTestId("remote-status-toggle").click({ force: true })
+    } else {
+      await openSidebarPanel(page, "Status")
+    }
+  }
+
+  const detailsToggle = page.getByTestId("remote-status-details-toggle")
+  if ((await detailsToggle.getAttribute("aria-expanded")) !== "true") {
+    await detailsToggle.click()
+  }
+
+  const connectionList = page.getByTestId("remote-status-connections")
+  await expect(connectionList).toBeVisible()
+  const rows = connectionList.getByTestId("remote-status-connection")
+
+  await expect(rows).toHaveCount(expectedLabels.length)
+
+  for (const [index, label] of expectedLabels.entries()) {
+    await expect(rows.nth(index)).toContainText(label)
+  }
+}
+
 test(
   "normalizes hostile query params without executing script-like content",
   { tag: "@smoke" },
@@ -414,6 +447,85 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   await Promise.all(readonlyClients.map(expectReadonlyTimerControls))
 })
 
+test("summarizes participants relative to the current client and labels the raw participant list", async ({
+  page,
+}) => {
+  const { controlClientUrl, readonlyClientUrl } =
+    await enableRemoteModeWithClientUrls(page)
+  const controlClient = await openClientFromSettings(page, controlClientUrl)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    readonlyClientUrl,
+    "Viewer link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, controlClient, readonlyClient], {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message: "participant summaries should wait for the cluster to connect",
+  })
+
+  await expectRemoteStatus(page, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 1 control + 1 view",
+    role: "Control access",
+    state: "Connected",
+  })
+  await expectRemoteStatus(controlClient, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 1 control + 1 view",
+    role: "Control access",
+    state: "Connected",
+  })
+  await expectRemoteStatus(readonlyClient, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 2 control",
+    role: "Viewer access",
+    state: "Connected",
+  })
+
+  await expectParticipantLabels(page, ["You", "Control", "View"])
+  await expectParticipantLabels(controlClient, ["Control", "You", "View"])
+  await expectParticipantLabels(readonlyClient, ["Control", "Control", "You"])
+
+  await readonlyClient.close()
+
+  await expectRemoteStatus(page, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 1 control",
+    role: "Control access",
+    state: "Connected",
+  })
+  await expectRemoteStatus(controlClient, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 1 control",
+    role: "Control access",
+    state: "Connected",
+  })
+
+  const rejoinedViewer = await page.context().newPage()
+  await rejoinedViewer.goto(readonlyClientUrl)
+  await expectReadonlyPlaceholder(rejoinedViewer)
+  await waitForRemoteCluster([page, controlClient, rejoinedViewer], {
+    clientCount: 2,
+    mainConnectionCount: 2,
+    message: "participant summaries should update after viewer reconnect",
+  })
+  await expectRemoteStatus(rejoinedViewer, {
+    connectionSummary: "Synchronized",
+    networkStatus: "Online",
+    participantSummary: "You + 2 control",
+    role: "Viewer access",
+    state: "Connected",
+  })
+})
+
 test("keeps long multiline titles readable in readonly remote clients", async ({
   page,
 }) => {
@@ -555,7 +667,9 @@ test("keeps the live session action visible after an offline start", async ({
     })
     .toBe(true)
 
-  await page.getByRole("button", { name: "Start live session" }).click()
+  await page
+    .getByRole("button", { name: "Start live session" })
+    .click({ force: true })
   await expect
     .poll(
       () =>
