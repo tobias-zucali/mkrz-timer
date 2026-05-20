@@ -22,6 +22,7 @@ import {
 } from "@/utils/timerState"
 
 import { getRemoteRelayWebSocketUrl } from "./config"
+import { selectLocalFallbackSnapshot } from "./fallback"
 import {
   AUTO_RECOVERY_TIMEOUT_MS,
   HEARTBEAT_INTERVAL_MS,
@@ -863,14 +864,16 @@ export default function useRemoteSession({
   ])
 
   const activateLocalFallback = useCallback(async () => {
+    const snapshot = selectLocalFallbackSnapshot({
+      currentLocalSnapshot: buildCurrentLocalSnapshot(),
+      lastConfirmedServerSnapshot: lastConfirmedServerSnapshotRef.current,
+      pendingLocalSnapshot: pendingLocalSnapshotRef.current,
+      pendingServerSnapshot:
+        pendingSessionSyncRef.current?.message.snapshot ?? null,
+    })
+
     clearPendingSyncConflict()
     clearLocalFallback()
-    const snapshot =
-      pendingLocalSnapshotRef.current ??
-      pendingSessionSyncRef.current?.message.snapshot ??
-      lastConfirmedServerSnapshotRef.current ??
-      buildCurrentLocalSnapshot()
-
     await disconnect()
     return resolveSessionSnapshotAt(snapshot)
   }, [

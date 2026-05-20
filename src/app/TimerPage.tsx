@@ -314,8 +314,10 @@ function TimerApp() {
   const remoteSession = useRemoteSession({
     getReconnectSnapshot,
     onIncomingSyncConflict: notifyIncomingSyncConflict,
-    remoteRole: remoteLinkError ? null : remoteRole,
-    remoteToken: remoteLinkError ? null : remoteToken,
+    remoteRole:
+      remoteLinkError || hasRecentlyEndedLiveSession ? null : remoteRole,
+    remoteToken:
+      remoteLinkError || hasRecentlyEndedLiveSession ? null : remoteToken,
     shouldDeferIncomingSnapshot,
     syncParamsRef,
     syncStateRef,
@@ -540,6 +542,7 @@ function TimerApp() {
   }, [resolvePendingSyncConflict])
 
   const handleUseLocalMode = useCallback(async () => {
+    setHasRecentlyEndedLiveSession(true)
     const snapshot = await activateLocalFallback()
     paramData.setParams(snapshot.params)
     setState(snapshot.state)
@@ -547,7 +550,6 @@ function TimerApp() {
       return
     }
 
-    setHasRecentlyEndedLiveSession(true)
     pauseUrlSyncDuringRemoteRouteTransition()
     setPromotedHostControlClient(false)
     window.history.replaceState(

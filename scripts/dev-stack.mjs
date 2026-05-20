@@ -11,7 +11,7 @@ const nodeExec = process.execPath
 const nextBinPath = path.join(repoRoot, "node_modules/next/dist/bin/next")
 const relayEntryPath = path.join(repoRoot, "src/server/relay/index.ts")
 
-const relayHost = process.env.RELAY_HOST || "127.0.0.1"
+const relayHost = process.env.RELAY_HOST || "0.0.0.0"
 const relayPort = process.env.RELAY_PORT || "9100"
 const relayWebSocketUrl =
   process.env.NEXT_PUBLIC_REMOTE_WS_URL || `ws://${relayHost}:${relayPort}/ws`
