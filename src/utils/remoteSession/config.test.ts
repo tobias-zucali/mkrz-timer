@@ -45,6 +45,16 @@ test("getRemoteRelayHealthcheckUrl returns the configured health endpoint", () =
   assert.equal(getRemoteRelayHealthcheckUrl(), "http://127.0.0.1:9100/health")
 })
 
+test("getRemoteRelayHealthcheckUrl rewrites loopback relay hosts to the page hostname", () => {
+  process.env.NEXT_PUBLIC_REMOTE_WS_URL = "ws://0.0.0.0:9100/ws"
+  setMockWindow("192.168.1.33")
+
+  assert.equal(
+    getRemoteRelayHealthcheckUrl(),
+    "http://192.168.1.33:9100/health",
+  )
+})
+
 test("getRemoteRelayWebSocketUrl rewrites loopback relay hosts to the page hostname", () => {
   process.env.NEXT_PUBLIC_REMOTE_WS_URL = "ws://127.0.0.1:9100/ws"
   setMockWindow("192.168.1.33")

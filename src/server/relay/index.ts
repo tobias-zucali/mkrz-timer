@@ -13,7 +13,7 @@ import {
 } from "./protocol.ts"
 import { getRelayBuildInfo } from "../../shared/buildInfo.ts"
 
-const host = process.env.RELAY_HOST || "127.0.0.1"
+const host = process.env.RELAY_HOST || "0.0.0.0"
 const port = Number(process.env.RELAY_PORT || "9100")
 const sessionTtlMs = Number(process.env.RELAY_SESSION_TTL_MS || "300000")
 const buildInfo = getRelayBuildInfo()

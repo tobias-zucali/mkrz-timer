@@ -542,7 +542,6 @@ function TimerApp() {
   }, [resolvePendingSyncConflict])
 
   const handleUseLocalMode = useCallback(async () => {
-    setHasRecentlyEndedLiveSession(true)
     const snapshot = await activateLocalFallback()
     paramData.setParams(snapshot.params)
     setState(snapshot.state)
@@ -550,6 +549,7 @@ function TimerApp() {
       return
     }
 
+    setHasRecentlyEndedLiveSession(true)
     pauseUrlSyncDuringRemoteRouteTransition()
     setPromotedHostControlClient(false)
     window.history.replaceState(

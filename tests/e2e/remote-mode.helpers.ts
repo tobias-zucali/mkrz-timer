@@ -430,6 +430,7 @@ export async function expectRemoteStatus(
     role,
     showSendToDeveloperButton,
     state,
+    timeoutMs = 5_000,
   }: {
     activityLogIncludes?: RegExp | string
     connectionSummary: RegExp | string
@@ -442,6 +443,7 @@ export async function expectRemoteStatus(
     role: RegExp | string
     showSendToDeveloperButton?: boolean
     state: RegExp | string
+    timeoutMs?: number
   },
 ) {
   const remoteStatus = page.getByTestId("remote-status")
@@ -460,9 +462,13 @@ export async function expectRemoteStatus(
     message: string,
   ) => {
     await expect
-      .poll(async () => matches(await getFieldText(testId), expected), {
-        message,
-      })
+      .poll(
+        async () => matches(await getFieldText(testId), expected),
+        {
+          message,
+          timeout: timeoutMs,
+        },
+      )
       .toBe(true)
   }
   const getOptionalText = async (testId: string) =>
