@@ -323,7 +323,7 @@ test("controller routes block on URL-vs-server conflicts until the user picks se
   await controlClient.goto(conflictingUrl.toString())
 
   const conflictDialog = controlClient.getByRole("dialog", {
-    name: "URL state and server state differ.",
+    name: "Live session state changed during recovery.",
   })
   await expect(conflictDialog).toBeVisible()
   await expect(
@@ -368,13 +368,18 @@ test("controller routes can overwrite server state from URL params after a confl
   await controlClient.goto(conflictingUrl.toString())
 
   const conflictDialog = controlClient.getByRole("dialog", {
-    name: "URL state and server state differ.",
+    name: "Live session state changed during recovery.",
   })
   await expect(conflictDialog).toBeVisible()
+  await expect(
+    conflictDialog.getByRole("button", {
+      name: "Use server state",
+    }),
+  ).toBeFocused()
   await controlClient.keyboard.press("Tab")
   await expect(
     conflictDialog.getByRole("button", {
-      name: "Overwrite server using URL params",
+      name: "Push local changes",
     }),
   ).toBeFocused()
   await controlClient.keyboard.press("Space")
@@ -411,7 +416,7 @@ test(
     await controlClient.goto(conflictingUrl.toString())
 
     const conflictDialog = controlClient.getByRole("dialog", {
-      name: "URL state and server state differ.",
+      name: "Live session state changed during recovery.",
     })
     await expect(conflictDialog).toBeVisible()
 

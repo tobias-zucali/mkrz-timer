@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
 import { projectFirstUrlTimerRowToSyncParams } from "@/shared/urlState"
@@ -43,13 +43,17 @@ export default function useSyncConflictResolution({
   syncStateRef: React.RefObject<TimerState>
 }) {
   const [hasSyncConflict, setHasSyncConflict] = useState(false)
+  const initialUrlTimerStateRef = useRef(paramData.readTimerUrlState())
 
   const buildCurrentUrlSnapshot = useCallback(
     (applyToLocalState = false) => {
       const currentTimerUrlState = paramData.readTimerUrlState()
+      const effectiveTimerUrlState = currentTimerUrlState.hasTimerState
+        ? currentTimerUrlState
+        : initialUrlTimerStateRef.current
       const projectedParams = projectFirstUrlTimerRowToSyncParams({
         fallback: syncParamsRef.current,
-        state: currentTimerUrlState,
+        state: effectiveTimerUrlState,
       })
       const snapshot = {
         params: projectedParams,
@@ -62,16 +66,16 @@ export default function useSyncConflictResolution({
         },
       } satisfies SessionSnapshot
 
-      if (applyToLocalState && currentTimerUrlState.hasTimerState) {
+      if (applyToLocalState && effectiveTimerUrlState.hasTimerState) {
         syncParamsRef.current = snapshot.params
         syncStateRef.current = snapshot.state
         applyLocalSnapshot(snapshot)
       }
 
       return {
-        hasTimerState: currentTimerUrlState.hasTimerState,
+        hasTimerState: effectiveTimerUrlState.hasTimerState,
         ...snapshot,
-        urlState: currentTimerUrlState,
+        urlState: effectiveTimerUrlState,
       }
     },
     [applyLocalSnapshot, paramData, syncParamsRef, syncStateRef],

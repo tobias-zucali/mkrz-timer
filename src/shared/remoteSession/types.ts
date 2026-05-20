@@ -21,6 +21,7 @@ export type SessionSnapshot = {
     isPaused: boolean
     revision: number
     isStarted: boolean
+    lastUpdatedAt: number
     totalDuration: number
   }
 }

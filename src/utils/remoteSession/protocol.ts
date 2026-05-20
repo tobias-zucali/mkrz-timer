@@ -9,6 +9,7 @@ import {
   normalizeRelayServerMessage,
   normalizeSessionSnapshot,
 } from "../../shared/security/input.ts"
+import { stampTimerStateAt } from "../timerState/index.ts"
 
 export const createLocalClientId = () => {
   if (
@@ -34,7 +35,7 @@ const createSnapshot = ({
 }): SessionSnapshot => ({
   ...normalizeSessionSnapshot({
     params: syncParams,
-    state: syncState,
+    state: stampTimerStateAt(syncState),
   }),
 })
 

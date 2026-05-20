@@ -117,6 +117,7 @@ export async function enableRemoteMode(page: Page) {
   const documentSentinel = await setDocumentSentinel(page)
   await page.getByRole("button", { name: "Start live session" }).click()
   await expectDocumentSentinel(page, documentSentinel)
+  await expectRemoteSessionOnlyUrl(page, { control: true })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Viewer link",
@@ -236,6 +237,11 @@ export async function openSidebarPanel(
 ) {
   const sidebar = page.getByTestId("sidebar-offcanvas")
   const panelTestId = `sidebar-panel-${panelName.toLowerCase()}`
+  const navigationToggle = page.getByRole("button", {
+    name: "Toggle navigation",
+  })
+  const isSidebarOpen = async () =>
+    (await navigationToggle.getAttribute("aria-expanded")) === "true"
 
   if (
     await page
@@ -247,12 +253,8 @@ export async function openSidebarPanel(
   }
 
   if (panelName === "Share") {
-    if (!(await sidebar.isVisible().catch(() => false))) {
-      await page
-        .getByRole("button", { name: "Open sharing" })
-        .evaluate((element) => {
-          ;(element as HTMLButtonElement).click()
-        })
+    if (!(await isSidebarOpen())) {
+      await page.getByRole("button", { name: "Open sharing" }).click()
     }
 
     const didOpenViaShareButton = await page
@@ -261,32 +263,24 @@ export async function openSidebarPanel(
       .catch(() => false)
 
     if (!didOpenViaShareButton) {
-      if (!(await sidebar.isVisible().catch(() => false))) {
-        await page.getByRole("button", { name: "Toggle navigation" }).click()
+      if (!(await isSidebarOpen())) {
+        await navigationToggle.click()
         await expect(sidebar).toBeVisible()
       }
 
-      await sidebar
-        .getByRole("button", { exact: true, name: "Share" })
-        .evaluate((element) => {
-          ;(element as HTMLButtonElement).click()
-        })
+      await sidebar.getByRole("button", { exact: true, name: "Share" }).click()
     }
 
     await expect(page.getByTestId(panelTestId)).toBeVisible()
     return
   }
 
-  if (!(await sidebar.isVisible().catch(() => false))) {
-    await page.getByRole("button", { name: "Toggle navigation" }).click()
+  if (!(await isSidebarOpen())) {
+    await navigationToggle.click()
     await expect(sidebar).toBeVisible()
   }
 
-  await sidebar
-    .getByRole("button", { exact: true, name: panelName })
-    .evaluate((element) => {
-      ;(element as HTMLButtonElement).click()
-    })
+  await sidebar.getByRole("button", { exact: true, name: panelName }).click()
   await expect(page.getByTestId(panelTestId)).toBeVisible()
 }
 

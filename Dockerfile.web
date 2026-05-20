@@ -6,7 +6,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
-COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs ./
+COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs tailwind.config.ts ./
 RUN corepack enable && pnpm install --frozen-lockfile
 RUN NEXT_PUBLIC_BUILD_ID=$NEXT_PUBLIC_BUILD_ID NEXT_PUBLIC_REMOTE_WS_URL=$NEXT_PUBLIC_REMOTE_WS_URL pnpm build
 

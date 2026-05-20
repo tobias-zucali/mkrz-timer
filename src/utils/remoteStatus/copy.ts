@@ -38,11 +38,13 @@ const DESCRIPTIONS: Record<
 }
 
 export function getConnectionSummary({
+  hasControllingParticipant,
   hasReceivedInitialSync,
   participantCount,
   role,
   state,
 }: {
+  hasControllingParticipant: boolean
   hasReceivedInitialSync: boolean
   participantCount: number
   role: RemoteStatusRole
@@ -65,6 +67,10 @@ export function getConnectionSummary({
     otherParticipantCount === 1 ? "other participant" : "other participants"
 
   if (role === "readonly") {
+    if (!hasControllingParticipant) {
+      return "Waiting for controller"
+    }
+
     return otherParticipantCount > 0
       ? `Viewing with ${otherParticipantCount} ${participantLabel}`
       : "Viewing shared timer"
@@ -78,6 +84,15 @@ export function getConnectionSummary({
 export function getDescription(
   role: RemoteStatusRole,
   state: RemoteStatusState,
+  hasControllingParticipant: boolean,
 ) {
+  if (
+    role === "readonly" &&
+    state === "connected" &&
+    !hasControllingParticipant
+  ) {
+    return "Viewing the last shared timer state while waiting for a controller."
+  }
+
   return DESCRIPTIONS[role][state]
 }

@@ -21,6 +21,7 @@ export const DEFAULT_TIMER_STATE = {
   elapsedTime: 0,
   isPaused: true,
   isStarted: false,
+  lastUpdatedAt: 0,
   revision: 0,
   totalDuration: 60,
 } satisfies SessionSnapshot["state"]
@@ -37,6 +38,7 @@ export const MAX_TIMER_DURATION_SECONDS =
   MAX_TIMER_MINUTES * 60 + MAX_TIMER_SECONDS
 export const MAX_REVISION = 1_000_000_000
 export const MAX_ELAPSED_TIME_SECONDS = 7 * 24 * 60 * 60
+export const MAX_TIMER_TIMESTAMP_MS = 9_999_999_999_999
 
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 const REMOTE_ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
@@ -293,6 +295,13 @@ export const normalizeTimerState = (
       typeof state.isStarted === "boolean"
         ? state.isStarted
         : fallback.isStarted,
+    lastUpdatedAt: normalizeFiniteNumber({
+      fallback: fallback.lastUpdatedAt,
+      floor: true,
+      max: MAX_TIMER_TIMESTAMP_MS,
+      min: 0,
+      value: state.lastUpdatedAt,
+    }),
     revision: normalizeFiniteNumber({
       fallback: fallback.revision,
       floor: true,
