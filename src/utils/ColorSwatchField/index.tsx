@@ -15,11 +15,17 @@ export default function ColorSwatchField({
 }) {
   return (
     <label
-      className="flex items-center gap-4 rounded-xl border border-foreground/12 bg-white/3 px-4 py-3"
+      className="
+        flex items-center gap-4 rounded-xl border border-foreground/12
+        bg-white/3 px-4 py-3
+      "
       htmlFor={id}
     >
       <input
-        className="h-11 w-14 cursor-pointer rounded-lg border border-foreground/15 bg-transparent"
+        className="
+          h-11 w-14 cursor-pointer rounded-lg border border-foreground/15
+          bg-transparent
+        "
         id={id}
         name={id}
         onChange={onChange}
@@ -32,7 +38,12 @@ export default function ColorSwatchField({
         <span className="block text-sm font-medium text-foreground">
           {label}
         </span>
-        <span className="mt-0.5 block font-mono text-xs uppercase tracking-[0.08em] text-foreground/55">
+        <span
+          className="
+          mt-0.5 block font-mono text-xs tracking-[0.08em] text-foreground/55
+          uppercase
+        "
+        >
           {value}
         </span>
       </span>

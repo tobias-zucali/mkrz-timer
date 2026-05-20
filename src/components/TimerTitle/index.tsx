@@ -117,7 +117,7 @@ export default function TimerTitle({
         aria-label="Title"
         autoComplete="off"
         className={classNames(
-          "w-full max-w-[22ch] resize-none overflow-hidden rounded-3xl border border-transparent bg-transparent px-3 py-1 text-center font-bold tracking-tight outline-none transition focus:border-foreground/28 focus:bg-foreground/3 focus-visible:outline-secondary focus-visible:outline-2 focus-visible:outline-offset-4",
+          "w-full max-w-[22ch] resize-none overflow-hidden rounded-3xl border border-transparent bg-transparent px-3 py-1 text-center font-bold tracking-tight outline-none transition focus:border-foreground/28 focus:bg-foreground/3 focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-4",
           showEmptyAction &&
             "pointer-events-none absolute inset-0 opacity-0 hover:opacity-0 focus:opacity-100 focus:pointer-events-auto",
         )}
@@ -142,7 +142,15 @@ export default function TimerTitle({
       {showEmptyAction && (
         <button
           aria-label="Add title"
-          className="inline-flex min-h-10 items-center justify-center rounded-full border border-dashed border-foreground/18 bg-foreground/[0.03] px-4 py-1.5 text-sm font-semibold text-foreground/72 transition hover:border-foreground/28 hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-secondary focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="
+            inline-flex min-h-10 items-center justify-center rounded-full border
+            border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5
+            text-sm font-semibold text-foreground/72 transition
+            hover:border-foreground/28 hover:bg-foreground/6
+            hover:text-foreground
+            focus-visible:outline-2 focus-visible:outline-offset-2
+            focus-visible:outline-primary
+          "
           data-testid="timer-title-empty-action"
           onClick={focusEditor}
           type="button"

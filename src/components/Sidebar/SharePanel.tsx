@@ -55,12 +55,12 @@ export default function SharePanel({
                   {sharePanel.statusLabel}
                 </p>
               )}
-              <p className="mt-1 text-sm leading-6 text-foreground/68">
+              <p className="mt-1 text-sm/6 text-foreground/68">
                 {sharePanel.description}
               </p>
             </div>
             {sharePanel.bullets.length > 0 && (
-              <ul className="space-y-1 text-sm leading-6 text-foreground/68">
+              <ul className="space-y-1 text-sm/6 text-foreground/68">
                 {sharePanel.bullets.map((bullet) => (
                   <li key={bullet}>• {bullet}</li>
                 ))}
@@ -98,7 +98,7 @@ export default function SharePanel({
                   />
                 </>
               ) : (
-                <p className="text-sm leading-6 text-foreground/68">
+                <p className="text-sm/6 text-foreground/68">
                   Waiting for viewer and control links to become available.
                 </p>
               )}
@@ -110,7 +110,11 @@ export default function SharePanel({
                   </ActionButton>
                 )}
                 <ActionButton
-                  className="border border-foreground/12 bg-foreground/[0.04] text-foreground hover:border-foreground/18 hover:bg-foreground/[0.08] hover:text-foreground"
+                  className="
+                    border border-foreground/12 bg-foreground/4 text-foreground
+                    hover:border-foreground/18 hover:bg-foreground/8
+                    hover:text-foreground
+                  "
                   fullWidth={true}
                   onClick={() => {
                     void onEndRemoteSession()
@@ -123,10 +127,14 @@ export default function SharePanel({
           )}
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-4">
+        <div
+          className="
+          space-y-4 rounded-2xl border border-foreground/10 bg-foreground/2 p-4
+        "
+        >
           <div>
             <p className="font-medium text-foreground">Local share</p>
-            <p className="mt-1 text-sm leading-6 text-foreground/68">
+            <p className="mt-1 text-sm/6 text-foreground/68">
               {getLocalShareDescription()}
             </p>
           </div>

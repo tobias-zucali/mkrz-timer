@@ -43,24 +43,31 @@ function DisclosureSection({
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <section className="rounded-2xl border border-foreground/10 bg-foreground/[0.04]">
+    <section className="rounded-2xl border border-foreground/10 bg-foreground/4">
       <button
         aria-controls={`${testId}-content`}
         aria-expanded={isOpen}
-        className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left"
+        className="
+          flex w-full cursor-pointer items-center justify-between gap-3 px-4
+          py-3 text-left
+        "
         data-testid={`${testId}-toggle`}
         onClick={() => setIsOpen((current) => !current)}
         {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
         type="button"
       >
         <span className="text-sm font-semibold text-foreground">{title}</span>
-        <span className="text-xs font-medium uppercase tracking-[0.12em] text-foreground/52">
+        <span
+          className="
+          text-xs font-medium tracking-[0.12em] text-foreground/52 uppercase
+        "
+        >
           {isOpen ? "Hide" : "Show"}
         </span>
       </button>
       {isOpen && (
         <div
-          className="border-t border-foreground/10 px-4 py-4"
+          className="border-t border-foreground/10 p-4"
           id={`${testId}-content`}
         >
           {children}
@@ -163,15 +170,28 @@ export default function StatusPanel({
       ? createPortal(
           <div
             aria-modal="true"
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 px-4 py-6 backdrop-blur"
+            className="
+              fixed inset-0 z-60 flex items-center justify-center
+              bg-background/70 px-4 py-6 backdrop-blur-sm
+            "
             ref={reportDialogRef}
             role="dialog"
             tabIndex={-1}
           >
-            <div className="w-full max-w-xl rounded-3xl border border-foreground/12 bg-background p-6 shadow-2xl shadow-background/35">
+            <div
+              className="
+              w-full max-w-xl rounded-3xl border border-foreground/12
+              bg-background p-6 shadow-2xl shadow-background/35
+            "
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">
+                  <p
+                    className="
+                    text-xs font-semibold tracking-[0.16em] text-primary/80
+                    uppercase
+                  "
+                  >
                     Support
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold text-foreground">
@@ -183,7 +203,12 @@ export default function StatusPanel({
               <label className="mt-5 block text-sm font-medium text-foreground">
                 What happened?
                 <textarea
-                  className="mt-2 min-h-28 w-full rounded-2xl border border-foreground/12 bg-foreground/[0.04] px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
+                  className="
+                    mt-2 min-h-28 w-full rounded-2xl border border-foreground/12
+                    bg-foreground/4 px-4 py-3 text-sm text-foreground transition
+                    outline-none
+                    focus:border-primary
+                  "
                   onChange={(event) => setReportComment(event.target.value)}
                   ref={reportCommentRef}
                   value={reportComment}
@@ -192,7 +217,12 @@ export default function StatusPanel({
               <div className="mt-5 flex flex-wrap justify-end gap-3">
                 {canCopy && (
                   <ActionButton
-                    className="border border-foreground/12 bg-foreground/[0.04] text-foreground hover:border-foreground/18 hover:bg-foreground/[0.08] hover:text-foreground"
+                    className="
+                      border border-foreground/12 bg-foreground/4
+                      text-foreground
+                      hover:border-foreground/18 hover:bg-foreground/8
+                      hover:text-foreground
+                    "
                     onClick={() => copyText(mailBody)}
                   >
                     {isCopied ? "Copied" : "Copy report"}
@@ -213,19 +243,23 @@ export default function StatusPanel({
           <h3 className="text-base font-semibold text-foreground">Status</h3>
           {errorText && (
             <div
-              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm text-red-100"
+              className="
+                rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm
+                text-red-100
+              "
               data-testid="remote-status-error"
               role="alert"
             >
               <p className="font-semibold text-red-50">Latest issue</p>
-              <p className="mt-1 break-words leading-6 [overflow-wrap:anywhere]">
-                {errorText}
-              </p>
+              <p className="mt-1 leading-6 wrap-anywhere">{errorText}</p>
             </div>
           )}
           {floatingTimerErrorText && (
             <div
-              className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-3 text-sm text-amber-100"
+              className="
+                rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3
+                text-sm text-amber-100
+              "
               data-testid="status-floating-timer-error"
               role="alert"
             >
@@ -244,8 +278,17 @@ export default function StatusPanel({
               {isRetrying ? "Retrying..." : "Retry connection"}
             </ActionButton>
           )}
-          <div className="rounded-2xl border border-foreground/10 bg-white/[0.04] p-4">
-            <dl className="grid gap-2 text-sm text-foreground/80 sm:grid-cols-[auto_1fr] sm:gap-x-3">
+          <div
+            className="
+            rounded-2xl border border-foreground/10 bg-white/4 p-4
+          "
+          >
+            <dl
+              className="
+              grid gap-2 text-sm text-foreground/80
+              sm:grid-cols-[auto_1fr] sm:gap-x-3
+            "
+            >
               <dt className="font-medium text-foreground">Session</dt>
               <dd data-testid="remote-status-session">
                 {sessionPresentation.statusPanel.sessionLabel}
@@ -278,14 +321,19 @@ export default function StatusPanel({
               </dd>
             </dl>
             <p
-              className="mt-4 text-sm leading-6 text-foreground/66"
+              className="mt-4 text-sm/6 text-foreground/66"
               data-testid="remote-status-description"
             >
               {displayDescription}
             </p>
           </div>
           <ActionButton
-            className="min-h-9 border border-foreground/12 bg-foreground/[0.06] px-3 py-1.5 text-xs text-foreground/78 hover:border-foreground/18 hover:bg-foreground/[0.1] hover:text-foreground"
+            className="
+              min-h-9 border border-foreground/12 bg-foreground/6 px-3 py-1.5
+              text-xs text-foreground/78
+              hover:border-foreground/18 hover:bg-foreground/10
+              hover:text-foreground
+            "
             onClick={() => setIsReportOverlayOpen(true)}
           >
             Send to developer
@@ -296,7 +344,12 @@ export default function StatusPanel({
           testId="remote-status-details"
           title="Connection details"
         >
-          <dl className="grid gap-2 text-sm text-foreground/80 sm:grid-cols-[auto_1fr] sm:gap-x-3">
+          <dl
+            className="
+            grid gap-2 text-sm text-foreground/80
+            sm:grid-cols-[auto_1fr] sm:gap-x-3
+          "
+          >
             <dt className="font-medium text-foreground">Network</dt>
             <dd data-testid="remote-status-network">{networkLabel}</dd>
             {hasLiveSessionDetails && (
@@ -325,25 +378,45 @@ export default function StatusPanel({
           </dl>
           {hasLiveSessionDetails && (
             <div className="mt-4 space-y-3">
-              <h4 className="text-xs font-medium uppercase tracking-[0.12em] text-foreground/58">
+              <h4
+                className="
+                text-xs font-medium tracking-[0.12em] text-foreground/58
+                uppercase
+              "
+              >
                 Participants
               </h4>
               <ul
-                className="space-y-2 rounded-2xl border border-foreground/10 bg-foreground/[0.04] px-3 py-3"
+                className="
+                  space-y-2 rounded-2xl border border-foreground/10
+                  bg-foreground/4 p-3
+                "
                 data-testid="remote-status-connections"
               >
                 {connectionDetails.length > 0 ? (
                   connectionDetails.map((detail) => (
                     <li
-                      className="flex items-center justify-between gap-3 text-sm"
+                      className="
+                        flex items-center justify-between gap-3 text-sm
+                      "
                       data-testid="remote-status-connection"
                       key={detail.id}
                     >
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className="shrink-0 rounded-full border border-foreground/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/72">
+                        <span
+                          className="
+                          shrink-0 rounded-full border border-foreground/12 px-2
+                          py-0.5 text-[10px] font-semibold tracking-[0.12em]
+                          text-foreground/72 uppercase
+                        "
+                        >
                           {detail.participantLabel}
                         </span>
-                        <span className="truncate font-mono text-xs text-foreground/68">
+                        <span
+                          className="
+                          truncate font-mono text-xs text-foreground/68
+                        "
+                        >
                           {detail.id}
                         </span>
                       </span>

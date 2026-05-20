@@ -25,7 +25,7 @@ export default function SettingsPanel({
           <h3 className="text-base font-semibold text-foreground">
             Appearance
           </h3>
-          <p className="mt-1 text-sm leading-6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-foreground/68">
             Adjust the timer colors that frame the clock.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function SettingsPanel({
           <h3 className="text-base font-semibold text-foreground">
             Floating Timer
           </h3>
-          <p className="mt-1 text-sm leading-6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-foreground/68">
             Keep a compact timer visible above other windows.
           </p>
         </div>
@@ -67,10 +67,10 @@ export default function SettingsPanel({
                 ? "Floating timer open"
                 : "Open floating timer"}
             </span>
-            <WindowIcon className="h-4 w-4" />
+            <WindowIcon className="size-4" />
           </ActionButton>
           {!floatingTimerData.isSupported && (
-            <p className="text-sm leading-6 text-foreground/68">
+            <p className="text-sm/6 text-foreground/68">
               {floatingTimerData.unsupportedReason ??
                 "Floating Timer is not available in this browser."}
             </p>
@@ -82,7 +82,7 @@ export default function SettingsPanel({
           <h3 className="text-base font-semibold text-foreground">
             Keyboard Shortcuts
           </h3>
-          <p className="mt-1 text-sm leading-6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-foreground/68">
             Global timer shortcuts stay available when overlays are closed.
           </p>
         </div>

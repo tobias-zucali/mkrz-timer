@@ -25,7 +25,7 @@ Technical details live in:
 
 ## Getting Started
 
-Use Node.js `22.6.0` or newer and `pnpm`.
+Use Node.js `22.12.0` or newer and `pnpm`.
 
 ```bash
 corepack enable
@@ -35,6 +35,10 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+ESLint includes `eslint-plugin-better-tailwindcss` in the shared flat config. For editor feedback, enable your editor's ESLint integration so Tailwind class issues surface inline; no separate Tailwind-specific editor plugin is required for linting.
+
+The config uses the plugin's recommended preset, with `better-tailwindcss/enforce-consistent-line-wrapping` disabled because Prettier rewrites multiline JSX class strings in a way that does not stay stable with that rule.
 
 ## Useful Commands
 

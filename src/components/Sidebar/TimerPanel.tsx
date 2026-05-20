@@ -37,7 +37,7 @@ export default function TimerPanel({
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Timer</h3>
-          <p className="mt-1 text-sm leading-6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-foreground/68">
             Adjust the timer directly from the sidebar.
           </p>
         </div>
@@ -50,7 +50,14 @@ export default function TimerPanel({
               Title
             </label>
             <textarea
-              className="block h-10 min-h-10 w-full resize-none overflow-hidden rounded-md border border-foreground/10 bg-background px-3 py-2 text-sm leading-6 text-foreground outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              className="
+                block h-10 min-h-10 w-full resize-none overflow-hidden
+                rounded-md border border-foreground/10 bg-background px-3 py-2
+                text-sm/6 text-foreground outline-1 -outline-offset-1
+                outline-foreground/10
+                placeholder:text-foreground/50
+                focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+              "
               id="sidebar-title"
               maxLength={MAX_TITLE_LENGTH}
               name="sidebar-title"
@@ -67,7 +74,12 @@ export default function TimerPanel({
               value={params.title}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div
+            className="
+            grid gap-4
+            sm:grid-cols-2
+          "
+          >
             <InputField
               id="sidebar-minutes"
               inputMode="numeric"

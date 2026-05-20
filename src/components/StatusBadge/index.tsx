@@ -56,7 +56,15 @@ export default function StatusBadge({
     >
       <button
         aria-label={`Status: ${sessionPresentation.accessibilityLabel}`}
-        className="flex cursor-pointer items-center gap-1.5 rounded-full border border-foreground/8 bg-background/58 px-2 py-1 text-left text-foreground/72 shadow-md shadow-background/18 backdrop-blur transition hover:border-foreground/14 hover:bg-background/74 hover:text-foreground/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+        className="
+          flex cursor-pointer items-center gap-1.5 rounded-full border
+          border-foreground/8 bg-background/58 px-2 py-1 text-left
+          text-foreground/72 shadow-md shadow-background/18 backdrop-blur-sm
+          transition
+          hover:border-foreground/14 hover:bg-background/74
+          hover:text-foreground/88
+          focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+        "
         data-testid="remote-status-toggle"
         onClick={onOpenSharePanel}
         type="button"
@@ -67,10 +75,19 @@ export default function StatusBadge({
             compactStatusAppearance.iconClassName,
           )}
         />
-        <span className="flex min-w-0 items-center gap-1.5 text-[0.84rem] font-semibold">
+        <span
+          className="
+          flex min-w-0 items-center gap-1.5 text-[0.84rem] font-semibold
+        "
+        >
           <span className="truncate">{displayStateLabel}</span>
           {sessionPresentation.roleChipLabel && (
-            <span className="rounded-full bg-foreground/8 px-1.5 py-0.5 text-[0.66rem] font-medium uppercase tracking-[0.08em] text-foreground/60">
+            <span
+              className="
+              rounded-full bg-foreground/8 px-1.5 py-0.5 text-[0.66rem]
+              font-medium tracking-[0.08em] text-foreground/60 uppercase
+            "
+            >
               {sessionPresentation.roleChipLabel}
             </span>
           )}

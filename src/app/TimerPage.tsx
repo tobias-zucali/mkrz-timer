@@ -57,11 +57,19 @@ function TopRightActionButton({
   return (
     <button
       aria-label={ariaLabel}
-      className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-background/84 transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary ${
-        isActive
-          ? "bg-background/96 text-primary"
-          : "text-foreground/78 hover:bg-background hover:text-primary"
-      }`}
+      className={`
+        inline-flex size-9 cursor-pointer items-center justify-center rounded-lg
+        bg-background/84 transition
+        focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+        ${
+          isActive
+            ? "bg-background/96 text-primary"
+            : `
+            text-foreground/78
+            hover:bg-background hover:text-primary
+          `
+        }
+      `}
       onClick={onClick}
       title={title}
       type="button"
@@ -760,7 +768,7 @@ function TimerApp() {
           sessionId,
         }}
       />
-      <div className="absolute right-0 top-0 z-20 flex items-center px-2 py-2">
+      <div className="absolute top-0 right-0 z-20 flex items-center p-2">
         <TopRightActionButton
           ariaLabel={isReadonlyClient ? "Share viewer link" : "Open sharing"}
           isActive={
@@ -779,7 +787,7 @@ function TimerApp() {
           }}
           title="Share"
         >
-          <ShareIcon className="h-4 w-4" />
+          <ShareIcon className="size-4" />
         </TopRightActionButton>
         {!isReadonlyClient && floatingTimerData.isSupported && (
           <TopRightActionButton
@@ -790,7 +798,7 @@ function TimerApp() {
             }}
             title="Floating window"
           >
-            <WindowIcon className="h-4 w-4" />
+            <WindowIcon className="size-4" />
           </TopRightActionButton>
         )}
         {!isReadonlyClient && isFullscreenSupported && (
@@ -811,9 +819,9 @@ function TimerApp() {
             title={isFullscreen ? "Close fullscreen" : "Fullscreen mode"}
           >
             {isFullscreen ? (
-              <XMarkIcon className="h-4 w-4" />
+              <XMarkIcon className="size-4" />
             ) : (
-              <ArrowsPointingOutIcon className="h-4 w-4" />
+              <ArrowsPointingOutIcon className="size-4" />
             )}
           </TopRightActionButton>
         )}

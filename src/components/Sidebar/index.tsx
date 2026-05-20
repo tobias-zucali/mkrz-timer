@@ -45,9 +45,9 @@ type SidebarEntry = {
 }
 
 const mainEntries: SidebarEntry[] = [
-  { icon: <ClockIcon className="h-4 w-4" />, id: "timer", label: "Timer" },
-  { icon: <ShareIcon className="h-4 w-4" />, id: "share", label: "Share" },
-  { icon: <CogIcon className="h-4 w-4" />, id: "settings", label: "Settings" },
+  { icon: <ClockIcon className="size-4" />, id: "timer", label: "Timer" },
+  { icon: <ShareIcon className="size-4" />, id: "share", label: "Share" },
+  { icon: <CogIcon className="size-4" />, id: "settings", label: "Settings" },
 ]
 
 function getDefaultFocusRef({
@@ -76,9 +76,7 @@ function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
   return (
     <div className="space-y-3">
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="text-sm leading-6 text-foreground/68">
-        View mode not supported.
-      </p>
+      <p className="text-sm/6 text-foreground/68">View mode not supported.</p>
     </div>
   )
 }
@@ -309,7 +307,11 @@ export default function Sidebar({
         {isOverlayActive && (
           <button
             aria-label="Close sidebar"
-            className="pointer-events-auto absolute inset-0 bg-foreground/10 backdrop-blur-[2px] transition-opacity duration-300 motion-reduce:transition-none opacity-100"
+            className="
+              pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
+              backdrop-blur-[2px] transition-opacity duration-300
+              motion-reduce:transition-none
+            "
             onClick={closeSidebar}
             tabIndex={-1}
             type="button"
@@ -331,11 +333,17 @@ export default function Sidebar({
             aria-labelledby={
               selectedEntry ? `sidebar-panel-${selectedEntry}` : undefined
             }
-            className="h-full w-full overflow-hidden bg-background/96 backdrop-blur-xl"
+            className="
+              size-full overflow-hidden bg-background/96 backdrop-blur-xl
+            "
           >
             {selectedEntry && (
               <div
-                className="relative flex h-full min-h-0 min-w-0 flex-col overflow-y-auto px-5 pt-5 sm:px-7 sm:pt-6"
+                className="
+                  relative flex h-full min-h-0 min-w-0 flex-col overflow-y-auto
+                  px-5 pt-5
+                  sm:px-7 sm:pt-6
+                "
                 data-testid={`sidebar-panel-${selectedEntry}`}
               >
                 <div className="sticky top-0 z-10 ml-auto">
@@ -343,14 +351,18 @@ export default function Sidebar({
                     {selectedEntry}
                   </h2>
                   <CloseButton
-                    className="h-6 w-6 rounded-full border-foreground/14 bg-white/3 text-foreground/60 hover:bg-white/7 hover:text-foreground"
+                    className="
+                      size-6 rounded-full border-foreground/14 bg-white/3
+                      text-foreground/60
+                      hover:bg-white/7 hover:text-foreground
+                    "
                     onClick={closeSidebar}
                     {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     ref={panelCloseButtonRef}
                     title="Close sidebar"
                   />
                 </div>
-                <div className="min-h-0 flex-1 pb-16 pr-1">
+                <div className="min-h-0 flex-1 pr-1 pb-16">
                   {readonlyPanelContent}
                 </div>
               </div>
@@ -366,13 +378,22 @@ export default function Sidebar({
       {isOverlayActive && (
         <button
           aria-label="Close sidebar"
-          className="pointer-events-auto absolute inset-0 bg-foreground/10 backdrop-blur-[2px] transition-opacity duration-300 motion-reduce:transition-none opacity-100"
+          className="
+            pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
+            backdrop-blur-[2px] transition-opacity duration-300
+            motion-reduce:transition-none
+          "
           onClick={closeSidebar}
           tabIndex={-1}
           type="button"
         />
       )}
-      <div className="absolute left-3 top-3 sm:left-4 sm:top-4">
+      <div
+        className="
+        absolute top-3 left-3
+        sm:top-4 sm:left-4
+      "
+      >
         <button
           aria-controls="sidebar-offcanvas"
           aria-expanded={isOpen}
@@ -389,7 +410,7 @@ export default function Sidebar({
           {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
           type="button"
         >
-          <Bars3Icon className="h-5 w-5" />
+          <Bars3Icon className="size-5" />
         </button>
       </div>
       <div
@@ -413,7 +434,12 @@ export default function Sidebar({
             selectedEntry && "hidden sm:flex",
           )}
         >
-          <header className="flex items-center justify-between gap-3 border-b border-foreground/10 px-4 py-4">
+          <header
+            className="
+            flex items-center justify-between gap-3 border-b
+            border-foreground/10 p-4
+          "
+          >
             <div className="text-xl font-semibold text-foreground">
               mkrz timer
             </div>
@@ -424,7 +450,11 @@ export default function Sidebar({
               title="Close sidebar menu"
             />
           </header>
-          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3">
+          <nav
+            className="
+            flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3
+          "
+          >
             <ul className="space-y-1">
               {mainEntries.map((entry) => {
                 const isSelected = selectedEntryId === entry.id
@@ -452,13 +482,25 @@ export default function Sidebar({
             <ul className="mt-auto space-y-1 border-t border-foreground/10 pt-3">
               <li>
                 <button
-                  className="flex w-full cursor-pointer flex-col items-start gap-1 rounded-lg border border-transparent px-2.5 py-3 text-left transition hover:border-primary/50 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                  className="
+                    flex w-full cursor-pointer flex-col items-start gap-1
+                    rounded-lg border border-transparent px-2.5 py-3 text-left
+                    transition
+                    hover:border-primary/50
+                    focus:outline-2 focus:-outline-offset-2
+                    focus:outline-primary
+                  "
                   data-testid="sidebar-session-status-button"
                   onClick={openSharePanel}
                   {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   type="button"
                 >
-                  <span className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-foreground/58">
+                  <span
+                    className="
+                    text-[0.68rem] font-semibold tracking-[0.14em]
+                    text-foreground/58 uppercase
+                  "
+                  >
                     {statusPanelData.sessionPresentation.sidebarStatus.eyebrow}
                   </span>
                   <span className="text-sm font-semibold text-foreground/84">
@@ -515,7 +557,11 @@ export default function Sidebar({
                   {selectedEntry}
                 </h2>
                 <CloseButton
-                  className="h-6 w-6 rounded-full border-foreground/14 bg-white/3 text-foreground/60 hover:bg-white/7 hover:text-foreground"
+                  className="
+                    size-6 rounded-full border-foreground/14 bg-white/3
+                    text-foreground/60
+                    hover:bg-white/7 hover:text-foreground
+                  "
                   onClick={isNarrowViewport ? returnToMenu : closeSidebar}
                   {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   ref={panelCloseButtonRef}
@@ -524,7 +570,7 @@ export default function Sidebar({
                   }
                 >
                   {isNarrowViewport ? (
-                    <ChevronLeftIcon className="h-5 w-5" />
+                    <ChevronLeftIcon className="size-5" />
                   ) : undefined}
                 </CloseButton>
               </div>
