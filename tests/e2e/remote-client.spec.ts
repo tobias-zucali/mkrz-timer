@@ -704,6 +704,9 @@ test("keeps the live session action visible after an offline start", async ({
     name: "Use local mode",
   })
   if (await useLocalModeButton.isVisible().catch(() => false)) {
+    await expect(
+      page.getByRole("button", { name: "Send Debug Info" }),
+    ).toBeVisible()
     await useLocalModeButton.click()
     await expect(page).toHaveURL(/\/(\?|$)/)
     await expect(useLocalModeButton).toHaveCount(0)

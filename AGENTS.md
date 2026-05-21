@@ -14,6 +14,11 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 - Prefer `@/` imports over relative `../..` imports.
 - Exception: keep relative imports in files executed directly by the plain Node test/runtime path until alias resolution is configured there too.
+- Keep files short and focused. Do not wait for a large cleanup later:
+  - if a file is likely to grow past roughly 200 lines, look for natural extraction points before adding more logic
+  - if a component mostly passes state, callbacks, or derived values through to children, move that state/logic down or extract a helper closer to the consumer
+  - if a file starts mixing route orchestration, UI rendering, dialog state, and feature-specific side effects, split those concerns immediately into components, hooks, or utilities
+  - prefer small, purpose-built props and hook arguments over broad “bag of state” interfaces when the narrower shape is clear
 - Do not use nested inline conditionals; prefer an `if` chain or a small helper.
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.

@@ -1,15 +1,12 @@
 "use client"
 
-import { type ReactNode, useEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
+import { type ReactNode, useEffect, useState } from "react"
 
-import CloseButton from "@/components/CloseButton"
+import DeveloperReportDialog from "@/components/DeveloperReportDialog"
 import { getDocumentLocale } from "@/i18n/locale"
 import type { SessionParticipant } from "@/shared/remoteSession/types"
 import { getPublicBuildInfo } from "@/shared/buildInfo"
 import ActionButton from "@/utils/ActionButton"
-import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
-import useClipboardCopy from "@/utils/useClipboardCopy"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
@@ -109,12 +106,8 @@ export default function StatusPanel({
   sessionId?: string
 }) {
   const [isReportOverlayOpen, setIsReportOverlayOpen] = useState(false)
-  const [reportComment, setReportComment] = useState("")
   const [locale] = useState(() => getDocumentLocale())
   const [relativeNow, setRelativeNow] = useState(() => Date.now())
-  const reportDialogRef = useRef<HTMLDivElement>(null)
-  const reportCommentRef = useRef<HTMLTextAreaElement>(null)
-  const { canCopy, copyText, isCopied } = useClipboardCopy()
 
   useEffect(() => {
     setRelativeNow(Date.now())
@@ -128,12 +121,6 @@ export default function StatusPanel({
     }
   }, [])
 
-  useDialogFocusTrap({
-    active: isReportOverlayOpen,
-    defaultFocusRef: reportCommentRef,
-    dialogRef: reportDialogRef,
-  })
-
   const networkLabel = getNetworkLabel(isOnline)
   const relayReachabilityLabel = getRelayReachabilityLabel(relayReachability)
   const displayStateLabel = errorText
@@ -144,8 +131,6 @@ export default function StatusPanel({
   const displayDescription = floatingTimerErrorText
     ? "A local feature reported an issue. Review the details below."
     : sessionPresentation.statusPanel.description
-  const trimmedReportComment = reportComment.trim()
-  const reportBody = getErrorReportBody()
   const hasLiveSessionDetails =
     sessionPresentation.state !== "local" &&
     sessionPresentation.state !== "liveEnded"
@@ -153,88 +138,7 @@ export default function StatusPanel({
     localClientId,
     participants,
   })
-  const mailBody = [
-    "User comment:",
-    trimmedReportComment || "No additional comment provided.",
-    "",
-    reportBody,
-  ].join("\n")
   const { buildId, buildLabel } = getPublicBuildInfo()
-
-  const openMailApp = () => {
-    window.location.href = `mailto:timer@mkrz.at?subject=Status%20Report&body=${encodeURIComponent(mailBody)}`
-  }
-
-  const reportOverlay =
-    isReportOverlayOpen && typeof document !== "undefined"
-      ? createPortal(
-          <div
-            aria-modal="true"
-            className="
-              fixed inset-0 z-60 flex items-center justify-center
-              bg-background/70 px-4 py-6 backdrop-blur-sm
-            "
-            ref={reportDialogRef}
-            role="dialog"
-            tabIndex={-1}
-          >
-            <div
-              className="
-              w-full max-w-xl rounded-3xl border border-foreground/12
-              bg-background p-6 shadow-2xl shadow-background/35
-            "
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p
-                    className="
-                    text-xs font-semibold tracking-[0.16em] text-primary/80
-                    uppercase
-                  "
-                  >
-                    Support
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-foreground">
-                    Send diagnostics
-                  </h2>
-                </div>
-                <CloseButton onClick={() => setIsReportOverlayOpen(false)} />
-              </div>
-              <label className="mt-5 block text-sm font-medium text-foreground">
-                What happened?
-                <textarea
-                  className="
-                    mt-2 min-h-28 w-full rounded-2xl border border-foreground/12
-                    bg-foreground/4 px-4 py-3 text-sm text-foreground transition
-                    outline-none
-                    focus:border-primary
-                  "
-                  onChange={(event) => setReportComment(event.target.value)}
-                  ref={reportCommentRef}
-                  value={reportComment}
-                />
-              </label>
-              <div className="mt-5 flex flex-wrap justify-end gap-3">
-                {canCopy && (
-                  <ActionButton
-                    className="
-                      border border-foreground/12 bg-foreground/4
-                      text-foreground
-                      hover:border-foreground/18 hover:bg-foreground/8
-                      hover:text-foreground
-                    "
-                    onClick={() => copyText(mailBody)}
-                  >
-                    {isCopied ? "Copied" : "Copy report"}
-                  </ActionButton>
-                )}
-                <ActionButton onClick={openMailApp}>Send Email</ActionButton>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )
-      : null
 
   return (
     <>
@@ -460,7 +364,11 @@ export default function StatusPanel({
           </DisclosureSection>
         )}
       </div>
-      {reportOverlay}
+      <DeveloperReportDialog
+        getReportBody={getErrorReportBody}
+        isOpen={isReportOverlayOpen}
+        onClose={() => setIsReportOverlayOpen(false)}
+      />
     </>
   )
 }

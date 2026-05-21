@@ -61,4 +61,20 @@ describe("ActionDialog", () => {
 
     outsideButton.remove()
   })
+
+  it("renders optional dialog body content above the actions", () => {
+    render(
+      <ActionDialog
+        actions={[{ label: "Continue", onClick: () => undefined }]}
+        description="Choose whether the timer should stay connected."
+        title="End the live session?"
+      >
+        <button type="button">Send Debug Info</button>
+      </ActionDialog>,
+    )
+
+    expect(
+      screen.getByRole("button", { name: "Send Debug Info" }),
+    ).toBeInTheDocument()
+  })
 })
