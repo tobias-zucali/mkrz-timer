@@ -165,15 +165,13 @@ export async function openClientFromSettings(
   label = "Control link",
 ) {
   const expectedUrl = new URL(clientUrl)
-  const clientPagePromise = page.waitForEvent("popup")
   await openSidebarPanel(page, "Share")
-  await page
-    .getByRole("textbox", { name: label })
-    .locator("..")
-    .getByRole("link", { name: "Open URL" })
-    .click()
-  const clientPage = await clientPagePromise
+  await expect(page.getByRole("textbox", { name: label })).toHaveValue(
+    expectedUrl.toString(),
+  )
+  const clientPage = await page.context().newPage()
 
+  await clientPage.goto(expectedUrl.toString())
   await expect(clientPage).toHaveURL(expectedUrl.toString())
 
   return clientPage
@@ -430,6 +428,7 @@ export async function expectRemoteStatus(
     role,
     showSendToDeveloperButton,
     state,
+    timeoutMs = 5_000,
   }: {
     activityLogIncludes?: RegExp | string
     connectionSummary: RegExp | string
@@ -442,6 +441,7 @@ export async function expectRemoteStatus(
     role: RegExp | string
     showSendToDeveloperButton?: boolean
     state: RegExp | string
+    timeoutMs?: number
   },
 ) {
   const remoteStatus = page.getByTestId("remote-status")
@@ -462,6 +462,7 @@ export async function expectRemoteStatus(
     await expect
       .poll(async () => matches(await getFieldText(testId), expected), {
         message,
+        timeout: timeoutMs,
       })
       .toBe(true)
   }

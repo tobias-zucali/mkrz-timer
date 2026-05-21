@@ -65,10 +65,7 @@ export default function InputField({
         {children}
       </div>
       {description && (
-        <p
-          className="text-sm/6 text-foreground/68"
-          id={`${inputId}-desc`}
-        >
+        <p className="text-sm/6 text-foreground/68" id={`${inputId}-desc`}>
           {description}
         </p>
       )}

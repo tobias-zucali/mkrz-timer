@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useRef } from "react"
+import { type ReactNode, useId, useRef } from "react"
 
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 
@@ -12,12 +12,14 @@ export type ActionDialogAction = {
 
 export default function ActionDialog({
   actions,
+  children,
   defaultFocusActionIndex = 0,
   description,
   eyebrow,
   title,
 }: {
   actions: ActionDialogAction[]
+  children?: ReactNode
   defaultFocusActionIndex?: number
   description: string
   eyebrow?: string
@@ -75,6 +77,7 @@ export default function ActionDialog({
         <p className="mt-3 text-sm/6 text-foreground/68" id={descriptionId}>
           {description}
         </p>
+        {children}
         <div
           className="
           mt-6 flex flex-col gap-3

@@ -33,12 +33,14 @@ The relay owns:
 - running timer snapshots carry wall-clock metadata so reconnecting clients can resolve current elapsed time safely
 - local routes can carry timer setup in `v=1&t=...` URL state, while viewer and shared controller routes stay focused on opaque session tokens only
 - controller links can restore the latest relay snapshot without extra setup
+- in local development, when the configured relay URL points at loopback, clients opened from a LAN host rewrite that relay hostname to the current page hostname before connecting or probing relay health
 - clients auto-retry after relay disconnects
 - disconnected control clients keep their local timer editable and track pending local changes until reconciliation succeeds
 - reconnecting clients fetch a fresh relay snapshot before applying any pending local controller changes
 - pending local controller changes auto-apply only when the relay snapshot did not change while the client was offline
 - reconnect conflicts are resolved against the fresh current relay snapshot, not a stale cached copy
 - clients can exit a failed or conflicting live session into local mode without requiring the relay to respond
+- leaving a failed live session for local mode cancels reconnect attempts before the route transitions back to the local timer URL
 - ending a live session from a control-capable client asks for confirmation when other clients are still connected
 - closing a control-capable browser tab while other clients are connected triggers the browser's native leave-confirmation prompt
 - the UI exposes both the connection state and the last connection error

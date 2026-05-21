@@ -7,8 +7,9 @@ For product/setup context, start with the [README](../README.md).
 `pnpm dev` starts both the Next.js app and the local relay with a compatible default:
 
 - app: `http://localhost:3000`
-- relay health: `http://127.0.0.1:9100/health`
-- relay websocket: `ws://127.0.0.1:9100/ws`
+- relay bind: `0.0.0.0:9100`
+- relay websocket from the same computer: `ws://127.0.0.1:9100/ws`
+- relay websocket from another device on the LAN: `ws://<your-dev-machine-ip>:9100/ws`
 
 You can also run the relay by itself:
 

@@ -102,4 +102,26 @@ describe("SyncConflictDialog", () => {
 
     outsideButton.remove()
   })
+
+  it("shows a developer-report action when debug info is available", () => {
+    render(
+      <SyncConflictDialog
+        actions={[
+          { label: "Retry connection", onClick: () => undefined },
+          {
+            label: "Use local mode",
+            onClick: () => undefined,
+            tone: "primary",
+          },
+        ]}
+        description="The live session could not recover cleanly."
+        getDeveloperReportBody={() => "debug info"}
+        title="Live session recovery needs your decision."
+      />,
+    )
+
+    expect(
+      screen.getByRole("button", { name: "Send Debug Info" }),
+    ).toBeInTheDocument()
+  })
 })

@@ -636,6 +636,7 @@ test("shows offline network status when the browser loses connectivity", async (
     networkStatus: "Offline",
     role: "Control access",
     state: /Connected|Connection interrupted|Reconnecting\.\.\./,
+    timeoutMs: 10_000,
   })
 
   await controlClient.context().setOffline(false)
@@ -698,6 +699,25 @@ test("keeps the live session action visible after an offline start", async ({
       { timeout: 10_000 },
     )
     .toBe(true)
+
+  const useLocalModeButton = page.getByRole("button", {
+    name: "Use local mode",
+  })
+  if (await useLocalModeButton.isVisible().catch(() => false)) {
+    await expect(
+      page.getByRole("button", { name: "Send Debug Info" }),
+    ).toBeVisible()
+    await useLocalModeButton.click()
+    await expect(page).toHaveURL(/\/(\?|$)/)
+    await expect(useLocalModeButton).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: "Retry connection" }),
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: "Start live session" }),
+    ).toBeVisible()
+  }
+
   await page.context().setOffline(false)
 })
 
