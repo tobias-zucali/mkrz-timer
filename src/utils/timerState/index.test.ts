@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import { DEFAULT_SYNC_PARAMS } from "../../shared/security/input.ts"
 import {
   resolveSessionSnapshotAt,
   resolveTimerStateAt,
@@ -11,6 +12,7 @@ import {
 test("resolveTimerStateAt advances running timers by wall-clock delta", () => {
   const resolved = resolveTimerStateAt(
     {
+      currentRepeat: 1,
       elapsedTime: 12,
       isPaused: false,
       isStarted: true,
@@ -28,14 +30,17 @@ test("resolveSessionSnapshotAt preserves paused timers without adding elapsed ti
   const resolved = resolveSessionSnapshotAt(
     {
       params: {
-        bg: "#000000",
-        fg: "#ffffff",
-        m: "01",
-        pc: "#d61f69",
-        s: "00",
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            title: "Paused",
+          },
+        ],
         title: "Paused",
       },
       state: {
+        currentRepeat: 1,
         elapsedTime: 8,
         isPaused: true,
         isStarted: true,
@@ -53,6 +58,7 @@ test("resolveSessionSnapshotAt preserves paused timers without adding elapsed ti
 test("stampTimerStateAt refreshes the timestamp with the resolved current state", () => {
   const stamped = stampTimerStateAt(
     {
+      currentRepeat: 1,
       elapsedTime: 5,
       isPaused: false,
       isStarted: true,
@@ -70,14 +76,17 @@ test("stampTimerStateAt refreshes the timestamp with the resolved current state"
 test("sessionSnapshotsMatch compares resolved current running state instead of stale stored elapsed values", () => {
   const currentSnapshot = {
     params: {
-      bg: "#000000",
-      fg: "#ffffff",
-      m: "01",
-      pc: "#d61f69",
-      s: "00",
+      ...DEFAULT_SYNC_PARAMS,
+      rows: [
+        {
+          ...DEFAULT_SYNC_PARAMS.rows[0],
+          title: "Workshop",
+        },
+      ],
       title: "Workshop",
     },
     state: {
+      currentRepeat: 1,
       elapsedTime: 5,
       isPaused: false,
       isStarted: true,
@@ -89,6 +98,7 @@ test("sessionSnapshotsMatch compares resolved current running state instead of s
   const incomingSnapshot = {
     params: currentSnapshot.params,
     state: {
+      currentRepeat: 1,
       elapsedTime: 7,
       isPaused: false,
       isStarted: true,

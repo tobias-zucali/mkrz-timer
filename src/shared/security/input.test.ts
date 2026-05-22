@@ -54,6 +54,12 @@ test("normalizeQueryParams falls back safely for malformed values", () => {
     {
       ...DEFAULT_SYNC_PARAMS,
       fg: "#abcdef",
+      rows: [
+        {
+          ...DEFAULT_SYNC_PARAMS.rows[0],
+          title: "  Hello<script>  ",
+        },
+      ],
       pid: "",
       title: "  Hello<script>  ",
     },
@@ -96,10 +102,18 @@ test("normalizeSyncParams uses caller fallback for duration fields", () => {
       },
     ),
     {
+      ...DEFAULT_SYNC_PARAMS,
       bg: "#123456",
       fg: "#abcdef",
       m: "03",
       pc: "#fedcba",
+      rows: [
+        {
+          ...DEFAULT_SYNC_PARAMS.rows[0],
+          primaryColor: "#fedcba",
+          totalSeconds: 200,
+        },
+      ],
       s: "20",
       title: "",
     },
@@ -116,6 +130,7 @@ test("normalizeTimerState rejects invalid numbers and keeps safe defaults", () =
       totalDuration: -10,
     }),
     {
+      currentRepeat: 1,
       elapsedTime: 0,
       isPaused: true,
       isStarted: true,
@@ -130,14 +145,24 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
   assert.deepEqual(
     normalizeSessionSnapshot({
       params: {
+        ...DEFAULT_SYNC_PARAMS,
         bg: "#123456",
         fg: "#654321",
         m: "05",
         pc: "#abcdef",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#abcdef",
+            title: " Session ",
+            totalSeconds: 307,
+          },
+        ],
         s: "07",
         title: " Session ",
       },
       state: {
+        currentRepeat: 1,
         elapsedTime: 5,
         isPaused: false,
         isStarted: true,
@@ -148,14 +173,24 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
     }),
     {
       params: {
+        ...DEFAULT_SYNC_PARAMS,
         bg: "#123456",
         fg: "#654321",
         m: "05",
         pc: "#abcdef",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#abcdef",
+            title: " Session ",
+            totalSeconds: 307,
+          },
+        ],
         s: "07",
         title: " Session ",
       },
       state: {
+        currentRepeat: 1,
         elapsedTime: 5,
         isPaused: false,
         isStarted: true,
@@ -213,6 +248,7 @@ test("normalizeRelayClientMessage sanitizes valid sync payloads", () => {
       },
       sessionId: "session-1",
       state: {
+        currentRepeat: 1,
         elapsedTime: 10,
         isPaused: false,
         isStarted: true,
@@ -275,6 +311,7 @@ test("normalizeRelayServerMessage accepts control access tokens on session paylo
         snapshot: {
           params: DEFAULT_SYNC_PARAMS,
           state: {
+            currentRepeat: 1,
             elapsedTime: 0,
             isPaused: true,
             isStarted: false,
@@ -296,6 +333,7 @@ test("normalizeRelayServerMessage accepts control access tokens on session paylo
       snapshot: {
         params: DEFAULT_SYNC_PARAMS,
         state: {
+          currentRepeat: 1,
           elapsedTime: 0,
           isPaused: true,
           isStarted: false,

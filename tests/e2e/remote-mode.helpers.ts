@@ -14,7 +14,7 @@ function buildTimerPath({
   seconds: number
   title?: string
 }) {
-  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&bg=${backgroundColor}&fg=${foregroundColor}`
+  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
 }
 
 const timerUrl = buildTimerPath({ seconds: 60 })
@@ -192,7 +192,22 @@ export async function openClientsFromSettings(
   return clients
 }
 
+export async function resolveRecoveryDialogIfPresent(page: Page) {
+  const recoveryDialog = page.getByRole("dialog", {
+    name: "Live session recovery needs your decision.",
+  })
+
+  if (await recoveryDialog.isVisible().catch(() => false)) {
+    await recoveryDialog
+      .getByRole("button", { name: "Retry connection" })
+      .click()
+    await expect(recoveryDialog).not.toBeVisible()
+  }
+}
+
 export async function closeSettingsOverlay(page: Page) {
+  await resolveRecoveryDialogIfPresent(page)
+
   const closeButton = page.locator(
     '[data-testid^="sidebar-panel-"] button[title="Close sidebar"]',
   )
@@ -783,7 +798,7 @@ export async function expectTimerUrlParams(
     )
     await expect(page).toHaveURL(
       new RegExp(
-        `(?:\\?|&)t=${totalSeconds}%21.*%21${escapeRegex(encodedTitle)}%210(?:&|$)`,
+        `(?:\\?|&)t=${totalSeconds}%21.*%21${escapeRegex(encodedTitle)}%211%210(?:&|$)`,
       ),
     )
   }

@@ -5,6 +5,9 @@ import type {
   KeyboardEventHandler,
 } from "react"
 
+const isSpaceKey = (key: string) =>
+  key === " " || key === "Space" || key === "Spacebar"
+
 function dispatchTimerSpaceShortcut() {
   if (typeof window === "undefined") {
     return
@@ -24,19 +27,21 @@ export function getTimerSpaceShortcutButtonProps<T extends HTMLElement>({
   onKeyUp?: KeyboardEventHandler<T>
 } = {}) {
   return {
+    "data-timer-space-shortcut": "true",
     onKeyDownCapture: (event: ReactKeyboardEvent<T>) => {
-      if (event.key === " ") {
+      if (isSpaceKey(event.key)) {
         event.preventDefault()
         event.stopPropagation()
+        dispatchTimerSpaceShortcut()
+        return
       }
 
       onKeyDown?.(event)
     },
     onKeyUpCapture: (event: ReactKeyboardEvent<T>) => {
-      if (event.key === " ") {
+      if (isSpaceKey(event.key)) {
         event.preventDefault()
         event.stopPropagation()
-        dispatchTimerSpaceShortcut()
         return
       }
 

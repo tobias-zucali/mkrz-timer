@@ -1,10 +1,16 @@
+import type { TimerEndBehavior, TimerSequenceRow } from "../timerSequence"
+
+export type { TimerEndBehavior, TimerSequenceRow }
+
 export type SyncParams = {
+  activeIndex: number
   m: string
   s: string
   title: string
   bg: string
   fg: string
   pc: string
+  rows: TimerSequenceRow[]
 }
 
 export type RemoteAccessRole = "control" | "readonly"
@@ -17,6 +23,7 @@ export type RemoteAccessTokenSet = {
 export type SessionSnapshot = {
   params: SyncParams
   state: {
+    currentRepeat: number
     elapsedTime: number
     isPaused: boolean
     revision: number

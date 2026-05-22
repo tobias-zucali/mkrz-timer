@@ -17,7 +17,10 @@ import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
 import type { SyncParams } from "@/shared/remoteSession/types"
+import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
+import { normalizeSyncParams } from "@/shared/security/input"
 import { parseRemoteRoute } from "@/utils/remoteSession/route"
+import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
 import usePromoteHostControlRoute from "@/utils/timerPage/usePromoteHostControlRoute"
 import useRemoteSessionDialogs from "@/utils/timerPage/useRemoteSessionDialogs"
@@ -44,8 +47,8 @@ function TimerApp() {
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
   const { params } = paramData
-  const { title, bg, fg, pc, m, s } = params
-  const syncParams = { bg, fg, m, pc, s, title }
+  const { title, bg, fg, pc } = params
+  const syncParams = params
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
 
@@ -56,6 +59,8 @@ function TimerApp() {
   const [, setLocationVersion] = useState(0)
   const [hasRecentlyEndedLiveSession, setHasRecentlyEndedLiveSession] =
     useState(false)
+  const [pendingTimerParamPatch, setPendingTimerParamPatch] =
+    useState<Partial<SyncParams> | null>(null)
   const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
 
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
@@ -64,10 +69,14 @@ function TimerApp() {
 
   const timer = useTimer({
     canMutate: !isReadonlyClient,
-    onAction: (_action, state) => {
-      setSyncState(state)
+    onAction: (_action, payload) => {
+      if (payload.params) {
+        setPendingTimerParamPatch(payload.params)
+      }
+      setSyncState(payload.state)
     },
     params: syncParams,
+    syncParamsRef,
     shortcutsEnabled: !isReadonlyClient,
     syncStateRef,
   })
@@ -109,21 +118,66 @@ function TimerApp() {
 
   const applyParamPatch = useCallback(
     (newParams: Partial<SyncParams>) => {
-      syncParamsRef.current = {
-        ...syncParamsRef.current,
-        ...newParams,
-      }
+      syncParamsRef.current = normalizeSyncParams(
+        mergeSyncParamsPatch(syncParamsRef.current, newParams),
+        syncParamsRef.current,
+      )
       paramData.setParams(newParams)
       syncAll({ keys: Object.keys(newParams) })
     },
     [paramData, syncAll],
   )
 
-  const handleChange = useCallback(
-    (key: string, value: string) => {
-      applyParamPatch({ [key]: value })
+  const updateActiveRow = useCallback(
+    (
+      updater: (
+        row: SyncParams["rows"][number],
+        index: number,
+      ) => SyncParams["rows"][number],
+    ) => {
+      const currentParams = syncParamsRef.current
+      const nextRows = currentParams.rows.map((row, index) =>
+        index === currentParams.activeIndex ? updater(row, index) : row,
+      )
+
+      applyParamPatch({ rows: nextRows })
     },
     [applyParamPatch],
+  )
+
+  const handleChange = useCallback(
+    (key: string, value: string) => {
+      if (key === "bg" || key === "fg") {
+        applyParamPatch({ [key]: value })
+        return
+      }
+
+      if (key === "title") {
+        updateActiveRow((row) => ({ ...row, title: value }))
+        return
+      }
+
+      if (key === "pc") {
+        updateActiveRow((row) => ({ ...row, primaryColor: value }))
+        return
+      }
+
+      if (key === "m" || key === "s") {
+        const nextMinutes = key === "m" ? value : syncParamsRef.current.m
+        const nextSeconds = key === "s" ? value : syncParamsRef.current.s
+        const totalSeconds = normalizeTimeParts({
+          minutes: nextMinutes,
+          seconds: nextSeconds,
+        }).totalSeconds
+
+        updateActiveRow((row) => ({
+          ...row,
+          totalSeconds,
+        }))
+        return
+      }
+    },
+    [applyParamPatch, updateActiveRow],
   )
 
   const normalizeTimerInputs = useCallback(() => {
@@ -140,10 +194,38 @@ function TimerApp() {
     }
 
     applyParamPatch({
-      m: normalizedTime.minutes,
-      s: normalizedTime.seconds,
+      rows: syncParamsRef.current.rows.map((row, index) =>
+        index === syncParamsRef.current.activeIndex
+          ? {
+              ...row,
+              totalSeconds: normalizedTime.totalSeconds,
+            }
+          : row,
+      ),
     })
   }, [applyParamPatch])
+
+  const handleActivateSequenceRow = useCallback(
+    (rowIndex: number) => {
+      timer.activateRow(rowIndex)
+    },
+    [timer],
+  )
+
+  const handleSelectSequenceRow = useCallback(
+    (rowIndex: number) => {
+      applyParamPatch({ activeIndex: rowIndex })
+      timer.activateRow(rowIndex)
+    },
+    [applyParamPatch, timer],
+  )
+
+  const handleSequenceChange = useCallback(
+    (nextChange: { activeIndex: number; rows: SyncParams["rows"] }) => {
+      applyParamPatch(buildTimerSequenceChange(nextChange))
+    },
+    [applyParamPatch],
+  )
 
   const isHostRemoteSession =
     remoteRole === null && Boolean(sessionId || isConnecting || error)
@@ -201,6 +283,15 @@ function TimerApp() {
     setState,
     syncParamsRef,
   })
+
+  useEffect(() => {
+    if (!pendingTimerParamPatch) {
+      return
+    }
+
+    applyParamPatch(pendingTimerParamPatch)
+    setPendingTimerParamPatch(null)
+  }, [applyParamPatch, pendingTimerParamPatch])
 
   useEffect(() => {
     syncAll({ includeParams: false, state: syncState })
@@ -299,11 +390,13 @@ function TimerApp() {
         />
       ) : null}
       <Sidebar
+        activeIndex={params.activeIndex}
         floatingTimerData={floatingTimerData}
         handleChange={handleChange}
-        handleTimeBlur={normalizeTimerInputs}
         isPinnedOpen={isSidebarPinnedOpen}
+        onActivateSequenceRow={handleActivateSequenceRow}
         onEndRemoteSession={handleEndRemoteSession}
+        onSequenceChange={handleSequenceChange}
         onStartRemoteSession={handleStartRemoteSession}
         paramData={paramData}
         peerData={remoteSession}
@@ -336,9 +429,12 @@ function TimerApp() {
       />
       <div className="min-h-0 flex-1">
         <Timer
+          activeIndex={params.activeIndex}
           handleChange={handleChange}
           handleTimeBlur={normalizeTimerInputs}
           isReadonly={isReadonlyClient}
+          onSelectSequenceRow={handleSelectSequenceRow}
+          rows={params.rows}
           readonlyPlaceholder={readonlyPlaceholder}
           timer={timer}
           title={title}

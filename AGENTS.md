@@ -8,7 +8,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Use Node.js `22.12.0` or newer.
 - After edits, run `pnpm lint`, `pnpm test` and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
-- When the user explicitly asks for prototype mode, run `pnpm lint` only after changes while the behavior is still moving quickly.
+- When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
 - While prototype mode is active, defer documentation updates, test updates, and the full validation lane until the user explicitly asks to end prototype mode or finish the work.
 - As soon as prototype mode ends, add or adapt the relevant documentation and tests, then run the full required validation lane before considering the work complete.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.

@@ -1,6 +1,10 @@
 import { act, renderHook } from "@testing-library/react"
 import type { RefObject } from "react"
 
+import {
+  DEFAULT_SYNC_PARAMS,
+  DEFAULT_TIMER_STATE,
+} from "@/shared/security/input"
 import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
 import {
   parseTimerUrlState,
@@ -10,6 +14,25 @@ import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 import type useParams from "@/utils/useParams"
 import type { TimerState } from "@/utils/useTimer"
 
+const buildParams = (overrides: Partial<SyncParams> = {}): SyncParams => ({
+  ...DEFAULT_SYNC_PARAMS,
+  rows: [
+    {
+      ...DEFAULT_SYNC_PARAMS.rows[0],
+      primaryColor: "#00aa88",
+      title: "Server state",
+    },
+  ],
+  title: "Server state",
+  pc: "#00aa88",
+  ...overrides,
+})
+
+const buildState = (overrides: Partial<TimerState> = {}): TimerState => ({
+  ...DEFAULT_TIMER_STATE,
+  ...overrides,
+})
+
 describe("useSyncConflictResolution", () => {
   it("defers conflicting control snapshots and can apply the URL snapshot locally", () => {
     const urlState = parseTimerUrlState({
@@ -17,25 +40,13 @@ describe("useSyncConflictResolution", () => {
         "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee",
       ),
     })
-    const startingParams: SyncParams = {
-      bg: "#000000",
-      fg: "#ffffff",
-      m: "01",
-      pc: "#00aa88",
-      s: "00",
-      title: "Server state",
-    }
+    const startingParams: SyncParams = buildParams()
     const syncParamsRef = {
       current: startingParams,
     } as RefObject<SyncParams>
     const syncStateRef = {
       current: {
-        elapsedTime: 0,
-        isPaused: true,
-        isStarted: false,
-        lastUpdatedAt: 0,
-        revision: 0,
-        totalDuration: 60,
+        ...buildState(),
       },
     } as RefObject<TimerState>
     const applyLocalSnapshot = vi.fn()
@@ -80,6 +91,7 @@ describe("useSyncConflictResolution", () => {
     expect(applyLocalSnapshot).toHaveBeenCalledWith({
       params: projectedParams,
       state: {
+        currentRepeat: 1,
         elapsedTime: 0,
         isPaused: true,
         isStarted: false,
@@ -90,6 +102,7 @@ describe("useSyncConflictResolution", () => {
     } satisfies SessionSnapshot)
     expect(syncParamsRef.current).toEqual(projectedParams)
     expect(syncStateRef.current).toEqual({
+      currentRepeat: 1,
       elapsedTime: 0,
       isPaused: true,
       isStarted: false,
@@ -108,22 +121,15 @@ describe("useSyncConflictResolution", () => {
     })
     const syncParamsRef = {
       current: {
-        bg: "#000000",
-        fg: "#ffffff",
-        m: "01",
-        pc: "#00aa88",
-        s: "00",
-        title: "Server state",
+        ...buildParams(),
       },
     } as RefObject<SyncParams>
     const syncStateRef = {
       current: {
-        elapsedTime: 5,
-        isPaused: true,
-        isStarted: false,
-        lastUpdatedAt: 0,
-        revision: 2,
-        totalDuration: 60,
+        ...buildState({
+          elapsedTime: 5,
+          revision: 2,
+        }),
       },
     } as RefObject<TimerState>
     const applyLocalSnapshot = vi.fn()
@@ -147,14 +153,25 @@ describe("useSyncConflictResolution", () => {
     expect(applyLocalSnapshot).toHaveBeenCalledWith(reconnectSnapshot)
     expect(reconnectSnapshot).toEqual({
       params: {
+        activeIndex: 0,
         bg: "#111111",
         fg: "#eeeeee",
         m: "02",
         pc: "#ff8800",
+        rows: [
+          {
+            endBehavior: "stop",
+            primaryColor: "#ff8800",
+            repeatCount: 1,
+            title: "Opening",
+            totalSeconds: 150,
+          },
+        ],
         s: "30",
         title: "Opening",
       },
       state: {
+        currentRepeat: 1,
         elapsedTime: 5,
         isPaused: true,
         isStarted: false,
@@ -173,22 +190,17 @@ describe("useSyncConflictResolution", () => {
     })
     const syncParamsRef = {
       current: {
-        bg: "#000000",
-        fg: "#ffffff",
-        m: "01",
-        pc: "#00aa88",
-        s: "00",
-        title: "Server state",
+        ...buildParams(),
       },
     } as RefObject<SyncParams>
     const syncStateRef = {
       current: {
-        elapsedTime: 12,
-        isPaused: false,
-        isStarted: true,
-        lastUpdatedAt: 0,
-        revision: 4,
-        totalDuration: 60,
+        ...buildState({
+          elapsedTime: 12,
+          isPaused: false,
+          isStarted: true,
+          revision: 4,
+        }),
       },
     } as RefObject<TimerState>
     const paramData = {
@@ -211,6 +223,7 @@ describe("useSyncConflictResolution", () => {
         snapshot: {
           params: syncParamsRef.current,
           state: {
+            currentRepeat: 1,
             elapsedTime: 13,
             isPaused: false,
             isStarted: true,
@@ -231,22 +244,17 @@ describe("useSyncConflictResolution", () => {
     })
     const syncParamsRef = {
       current: {
-        bg: "#000000",
-        fg: "#ffffff",
-        m: "01",
-        pc: "#00aa88",
-        s: "00",
-        title: "Server state",
+        ...buildParams(),
       },
     } as RefObject<SyncParams>
     const syncStateRef = {
       current: {
-        elapsedTime: 12,
-        isPaused: false,
-        isStarted: true,
-        lastUpdatedAt: 0,
-        revision: 4,
-        totalDuration: 60,
+        ...buildState({
+          elapsedTime: 12,
+          isPaused: false,
+          isStarted: true,
+          revision: 4,
+        }),
       },
     } as RefObject<TimerState>
     const paramData = {
@@ -269,6 +277,7 @@ describe("useSyncConflictResolution", () => {
         snapshot: {
           params: syncParamsRef.current,
           state: {
+            currentRepeat: 1,
             elapsedTime: 14,
             isPaused: false,
             isStarted: true,

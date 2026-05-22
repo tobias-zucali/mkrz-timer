@@ -3,8 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 
 import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
-import { projectFirstUrlTimerRowToSyncParams } from "@/shared/urlState"
-import { getSecondsDuration } from "@/utils/timeInputHelpers"
+import { projectTimerUrlStateToSyncParams } from "@/shared/urlState"
 import type { TimerState } from "@/utils/useTimer"
 import type useParams from "@/utils/useParams"
 
@@ -15,14 +14,15 @@ const snapshotsConflict = ({
   currentSnapshot: SessionSnapshot
   incomingSnapshot: SessionSnapshot
 }) =>
-  currentSnapshot.params.m !== incomingSnapshot.params.m ||
-  currentSnapshot.params.s !== incomingSnapshot.params.s ||
-  currentSnapshot.params.title !== incomingSnapshot.params.title ||
+  currentSnapshot.params.activeIndex !== incomingSnapshot.params.activeIndex ||
   currentSnapshot.params.bg !== incomingSnapshot.params.bg ||
   currentSnapshot.params.fg !== incomingSnapshot.params.fg ||
-  currentSnapshot.params.pc !== incomingSnapshot.params.pc ||
+  JSON.stringify(currentSnapshot.params.rows) !==
+    JSON.stringify(incomingSnapshot.params.rows) ||
   currentSnapshot.state.isPaused !== incomingSnapshot.state.isPaused ||
   currentSnapshot.state.isStarted !== incomingSnapshot.state.isStarted ||
+  currentSnapshot.state.currentRepeat !==
+    incomingSnapshot.state.currentRepeat ||
   currentSnapshot.state.totalDuration !==
     incomingSnapshot.state.totalDuration ||
   Math.abs(
@@ -51,7 +51,7 @@ export default function useSyncConflictResolution({
       const effectiveTimerUrlState = currentTimerUrlState.hasTimerState
         ? currentTimerUrlState
         : initialUrlTimerStateRef.current
-      const projectedParams = projectFirstUrlTimerRowToSyncParams({
+      const projectedParams = projectTimerUrlStateToSyncParams({
         fallback: syncParamsRef.current,
         state: effectiveTimerUrlState,
       })
@@ -59,10 +59,10 @@ export default function useSyncConflictResolution({
         params: projectedParams,
         state: {
           ...syncStateRef.current,
-          totalDuration: getSecondsDuration(
-            projectedParams.m,
-            projectedParams.s,
-          ),
+          currentRepeat: 1,
+          totalDuration:
+            projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
+            syncStateRef.current.totalDuration,
         },
       } satisfies SessionSnapshot
 

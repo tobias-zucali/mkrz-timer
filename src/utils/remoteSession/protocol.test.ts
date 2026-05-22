@@ -2,6 +2,10 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  DEFAULT_SYNC_PARAMS,
+  DEFAULT_TIMER_STATE,
+} from "../../shared/security/input.ts"
+import {
   buildHeartbeatMessage,
   buildJoinMessage,
   buildLeaveMessage,
@@ -9,23 +13,9 @@ import {
   parseServerMessage,
 } from "./protocol.ts"
 
-const syncParams = {
-  bg: "#000000",
-  fg: "#ffffff",
-  m: "01",
-  pc: "#d61f69",
-  s: "00",
-  title: "",
-}
+const syncParams = DEFAULT_SYNC_PARAMS
 
-const syncState = {
-  elapsedTime: 0,
-  isPaused: true,
-  isStarted: false,
-  lastUpdatedAt: 0,
-  revision: 0,
-  totalDuration: 60,
-}
+const syncState = DEFAULT_TIMER_STATE
 
 test("buildJoinMessage creates a snapshot for session creators", () => {
   const message = buildJoinMessage({
