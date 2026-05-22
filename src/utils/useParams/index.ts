@@ -2,9 +2,10 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
 import { normalizeQueryParams } from "@/shared/security/input"
+import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
 import {
   parseTimerUrlState,
-  projectFirstUrlTimerRowToSyncParams,
+  projectTimerUrlStateToSyncParams,
 } from "@/shared/urlState"
 import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
@@ -17,16 +18,14 @@ const mergeParamsForEditing = (
   currentParams: ReturnType<typeof normalizeQueryParams>,
   newParams: Partial<ReturnType<typeof normalizeQueryParams>>,
 ) => {
+  const mergedSource = mergeSyncParamsPatch(currentParams, newParams)
   const normalizedParams = normalizeQueryParams({
-    ...currentParams,
-    ...newParams,
+    ...mergedSource,
   })
 
   return {
     ...normalizedParams,
-    m: newParams.m ?? currentParams.m,
     pid: currentParams.pid,
-    s: newParams.s ?? currentParams.s,
   }
 }
 
@@ -59,7 +58,7 @@ export default function useParams() {
 
   const [currentParams, setCurrentParams] = useState(() =>
     normalizeQueryParams(
-      projectFirstUrlTimerRowToSyncParams({
+      projectTimerUrlStateToSyncParams({
         state: parseTimerUrlState({
           allowTimerState,
           searchParams: new URLSearchParams(searchParamsString),

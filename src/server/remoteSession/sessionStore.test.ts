@@ -1,30 +1,56 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import {
+  DEFAULT_SYNC_PARAMS,
+  DEFAULT_TIMER_STATE,
+} from "../../shared/security/input.ts"
 import { InMemorySessionStore } from "./sessionStore.ts"
+
+const buildSnapshot = ({
+  params = {},
+  state = {},
+}: {
+  params?: Record<string, unknown>
+  state?: Record<string, unknown>
+} = {}) => ({
+  params: {
+    ...DEFAULT_SYNC_PARAMS,
+    rows: [
+      {
+        ...DEFAULT_SYNC_PARAMS.rows[0],
+        ...(params.title ? { title: params.title as string } : {}),
+      },
+    ],
+    ...params,
+  },
+  state: {
+    ...DEFAULT_TIMER_STATE,
+    ...state,
+  },
+})
 
 test("create returns one session with separate readonly and control tokens", () => {
   const store = new InMemorySessionStore()
   const created = store.create({
     clientId: "host",
-    snapshot: {
+    snapshot: buildSnapshot({
       params: {
         bg: "#111111",
-        fg: "#ffffff",
-        m: "01",
         pc: "#ff0000",
-        s: "00",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#ff0000",
+            title: "Host",
+          },
+        ],
         title: "Host",
       },
       state: {
-        elapsedTime: 0,
-        isPaused: true,
-        isStarted: false,
-        lastUpdatedAt: 0,
         revision: 1,
-        totalDuration: 60,
       },
-    },
+    }),
   })
 
   assert.equal(created.role, "control")
@@ -85,12 +111,18 @@ test("restore only allows controller tokens to recreate expired sessions", () =>
   assert.equal(
     store.restore({
       clientId: "viewer",
-      snapshot: {
+      snapshot: buildSnapshot({
         params: {
-          bg: "#000000",
-          fg: "#ffffff",
           m: "02",
           pc: "#00ff00",
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              primaryColor: "#00ff00",
+              title: "Recovered",
+              totalSeconds: 135,
+            },
+          ],
           s: "15",
           title: "Recovered",
         },
@@ -98,11 +130,10 @@ test("restore only allows controller tokens to recreate expired sessions", () =>
           elapsedTime: 5,
           isPaused: false,
           isStarted: true,
-          lastUpdatedAt: 0,
           revision: 3,
           totalDuration: 135,
         },
-      },
+      }),
       token: created.session.accessTokens.readonly,
     }),
     null,
@@ -110,12 +141,18 @@ test("restore only allows controller tokens to recreate expired sessions", () =>
 
   const restored = store.restore({
     clientId: "host",
-    snapshot: {
+    snapshot: buildSnapshot({
       params: {
-        bg: "#000000",
-        fg: "#ffffff",
         m: "02",
         pc: "#00ff00",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#00ff00",
+            title: "Recovered",
+            totalSeconds: 135,
+          },
+        ],
         s: "15",
         title: "Recovered",
       },
@@ -123,11 +160,10 @@ test("restore only allows controller tokens to recreate expired sessions", () =>
         elapsedTime: 5,
         isPaused: false,
         isStarted: true,
-        lastUpdatedAt: 0,
         revision: 3,
         totalDuration: 135,
       },
-    },
+    }),
     token: created.session.accessTokens.control,
   })
 
@@ -161,6 +197,7 @@ test("updateSnapshot only allows control participants to publish state", () => {
     params: { title: "Allowed" },
     sessionId: created.session.id,
     state: {
+      currentRepeat: 1,
       elapsedTime: 12,
       isPaused: false,
       isStarted: true,
@@ -179,24 +216,28 @@ test("create and updateSnapshot normalize hostile values safely", () => {
   const store = new InMemorySessionStore()
   const created = store.create({
     clientId: "host",
-    snapshot: {
+    snapshot: buildSnapshot({
       params: {
         bg: "bad" as never,
-        fg: "#ffffff",
         m: "05",
         pc: "#00ff00",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#00ff00",
+            title: "  <script>alert(1)</script>  ",
+            totalSeconds: 307,
+          },
+        ],
         s: "07",
         title: "  <script>alert(1)</script>  ",
       },
       state: {
         elapsedTime: Number.POSITIVE_INFINITY,
-        isPaused: true,
-        isStarted: false,
-        lastUpdatedAt: 0,
         revision: -1,
         totalDuration: -1,
       },
-    },
+    }),
   })
 
   assert.equal(created.session.snapshot.params.bg, "#000000")
@@ -214,6 +255,7 @@ test("create and updateSnapshot normalize hostile values safely", () => {
     },
     sessionId: created.session.id,
     state: {
+      currentRepeat: 1,
       elapsedTime: 20,
       isPaused: false,
       isStarted: true,

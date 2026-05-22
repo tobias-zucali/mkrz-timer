@@ -1,26 +1,27 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import {
+  DEFAULT_SYNC_PARAMS,
+  DEFAULT_TIMER_STATE,
+} from "../../shared/security/input.ts"
 import type { SessionSnapshot } from "../../shared/remoteSession/types.ts"
 
 import { selectLocalFallbackSnapshot } from "./fallback.ts"
 
 const createSnapshot = (title: string): SessionSnapshot => ({
   params: {
-    bg: "#000000",
-    fg: "#ffffff",
-    m: "01",
-    pc: "#d61f69",
-    s: "00",
+    ...DEFAULT_SYNC_PARAMS,
+    rows: [
+      {
+        ...DEFAULT_SYNC_PARAMS.rows[0],
+        title,
+      },
+    ],
     title,
   },
   state: {
-    elapsedTime: 0,
-    isPaused: true,
-    isStarted: false,
-    lastUpdatedAt: 0,
-    revision: 0,
-    totalDuration: 60,
+    ...DEFAULT_TIMER_STATE,
   },
 })
 

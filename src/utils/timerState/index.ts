@@ -82,13 +82,14 @@ export const sessionSnapshotsMatch = ({
   )
 
   return (
-    resolvedCurrentSnapshot.params.m === resolvedIncomingSnapshot.params.m &&
-    resolvedCurrentSnapshot.params.s === resolvedIncomingSnapshot.params.s &&
-    resolvedCurrentSnapshot.params.title ===
-      resolvedIncomingSnapshot.params.title &&
+    resolvedCurrentSnapshot.params.activeIndex ===
+      resolvedIncomingSnapshot.params.activeIndex &&
     resolvedCurrentSnapshot.params.bg === resolvedIncomingSnapshot.params.bg &&
     resolvedCurrentSnapshot.params.fg === resolvedIncomingSnapshot.params.fg &&
-    resolvedCurrentSnapshot.params.pc === resolvedIncomingSnapshot.params.pc &&
+    JSON.stringify(resolvedCurrentSnapshot.params.rows) ===
+      JSON.stringify(resolvedIncomingSnapshot.params.rows) &&
+    resolvedCurrentSnapshot.state.currentRepeat ===
+      resolvedIncomingSnapshot.state.currentRepeat &&
     resolvedCurrentSnapshot.state.isPaused ===
       resolvedIncomingSnapshot.state.isPaused &&
     resolvedCurrentSnapshot.state.isStarted ===

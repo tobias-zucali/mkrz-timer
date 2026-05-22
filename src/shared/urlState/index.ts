@@ -1,30 +1,30 @@
+import type {
+  SyncParams,
+  TimerEndBehavior,
+  TimerSequenceRow,
+} from "../remoteSession/types.ts"
 import {
   DEFAULT_SYNC_PARAMS,
   MAX_TIMER_DURATION_SECONDS,
   MAX_TITLE_LENGTH,
   normalizeColor,
+  normalizeOptionalColor,
   normalizeTitle,
 } from "../security/input.ts"
-import type { SyncParams } from "../remoteSession/types.ts"
 import {
-  getMinutesSeconds,
-  getSecondsDuration,
-} from "../../utils/timeInputHelpers/index.ts"
+  buildDurationPartsFromTotalSeconds,
+  buildDefaultTimerSequenceRow,
+  clampTimerSequenceIndex,
+} from "../timerSequence.ts"
 
 export const TIMER_URL_VERSION = "1"
 export const MAX_TIMER_URL_ROWS = 12
 export const MAX_TIMER_URL_LENGTH = 2000
 
-export type UrlTimerFlag = "0" | "1"
-
-export type UrlTimerRow = {
-  flag: UrlTimerFlag
-  primaryColor: string
-  title: string
-  totalSeconds: number
-}
+export type UrlTimerRow = TimerSequenceRow
 
 export type ParsedTimerUrlState = {
+  activeIndex: number
   bg: string
   fg: string
   hasTimerState: boolean
@@ -32,36 +32,59 @@ export type ParsedTimerUrlState = {
   version: string | null
 }
 
-const DEFAULT_URL_TIMER_FLAG: UrlTimerFlag = "0"
-
 const isDigitsOnly = (value: string) => /^\d+$/.test(value)
 
-const normalizeTimerUrlFlag = (value: string): UrlTimerFlag | null => {
-  if (value === "0" || value === "1") {
-    return value
+const parseUrlEndBehavior = (value: string): TimerEndBehavior | null => {
+  if (value === "0") {
+    return "stop"
+  }
+
+  if (value === "1") {
+    return "advance"
   }
 
   return null
 }
 
-const parseTimerUrlRow = (value: string): UrlTimerRow | null => {
-  const parts = value.split("!")
-  if (parts.length !== 4) {
+const serializeUrlEndBehavior = (value: TimerEndBehavior) =>
+  value === "advance" ? "1" : "0"
+
+const parseUrlRepeatCount = (value: string) => {
+  if (!isDigitsOnly(value)) {
     return null
   }
 
-  const [secondsValue, colorValue, encodedTitle, flagValue] = parts
+  const repeatCount = Number.parseInt(value, 10)
+
+  return repeatCount >= 1 && repeatCount <= 99 ? repeatCount : null
+}
+
+const parseUrlActiveIndex = (value: string | null, rowCount: number) => {
+  if (!value || !isDigitsOnly(value)) {
+    return 0
+  }
+
+  return clampTimerSequenceIndex({
+    activeIndex: Number.parseInt(value, 10),
+    rows: new Array(Math.max(rowCount, 1)).fill(buildDefaultTimerSequenceRow()),
+  })
+}
+
+const parseTimerUrlRow = (value: string): UrlTimerRow | null => {
+  const parts = value.split("!")
+
+  if (parts.length !== 4 && parts.length !== 5) {
+    return null
+  }
+
+  const [secondsValue, colorValue, encodedTitle, fourthValue, fifthValue] =
+    parts
   if (!isDigitsOnly(secondsValue)) {
     return null
   }
 
   const totalSeconds = Number.parseInt(secondsValue, 10)
   if (totalSeconds < 0 || totalSeconds > MAX_TIMER_DURATION_SECONDS) {
-    return null
-  }
-
-  const primaryColor = normalizeColor(colorValue, "")
-  if (!primaryColor) {
     return null
   }
 
@@ -72,15 +95,36 @@ const parseTimerUrlRow = (value: string): UrlTimerRow | null => {
     return null
   }
 
-  const flag = normalizeTimerUrlFlag(flagValue)
-  if (flag === null) {
+  const primaryColor = normalizeOptionalColor(colorValue)
+  if (colorValue !== "" && !primaryColor) {
+    return null
+  }
+
+  if (parts.length === 4) {
+    const endBehavior = parseUrlEndBehavior(fourthValue)
+    if (endBehavior === null) {
+      return null
+    }
+
+    return {
+      endBehavior: "stop",
+      primaryColor,
+      repeatCount: 1,
+      title: normalizeTitle(decodedTitle).slice(0, MAX_TITLE_LENGTH),
+      totalSeconds,
+    }
+  }
+
+  const repeatCount = parseUrlRepeatCount(fourthValue)
+  const endBehavior = parseUrlEndBehavior(fifthValue ?? "")
+  if (repeatCount === null || endBehavior === null) {
     return null
   }
 
   return {
-    flag,
-    // TODO: Interpret the reserved row flag once the product defines its behavior.
+    endBehavior,
     primaryColor,
+    repeatCount,
     title: normalizeTitle(decodedTitle).slice(0, MAX_TITLE_LENGTH),
     totalSeconds,
   }
@@ -95,6 +139,7 @@ export const parseTimerUrlState = ({
 }): ParsedTimerUrlState => {
   if (!allowTimerState) {
     return {
+      activeIndex: 0,
       bg: DEFAULT_SYNC_PARAMS.bg,
       fg: DEFAULT_SYNC_PARAMS.fg,
       hasTimerState: false,
@@ -110,6 +155,7 @@ export const parseTimerUrlState = ({
 
   if (version !== TIMER_URL_VERSION || !rowsValue) {
     return {
+      activeIndex: 0,
       bg,
       fg,
       hasTimerState: false,
@@ -125,6 +171,7 @@ export const parseTimerUrlState = ({
     .filter((row): row is UrlTimerRow => row !== null)
 
   return {
+    activeIndex: parseUrlActiveIndex(searchParams.get("a"), rows.length),
     bg,
     fg,
     hasTimerState: rows.length > 0,
@@ -134,18 +181,16 @@ export const parseTimerUrlState = ({
 }
 
 export const buildUrlTimerRow = ({
-  flag = DEFAULT_URL_TIMER_FLAG,
+  endBehavior = "stop",
   primaryColor,
+  repeatCount = 1,
   title,
   totalSeconds,
-}: {
-  flag?: UrlTimerFlag
-  primaryColor: string
-  title: string
-  totalSeconds: number
-}): UrlTimerRow => ({
-  flag,
-  primaryColor: normalizeColor(primaryColor, DEFAULT_SYNC_PARAMS.pc),
+}: Partial<UrlTimerRow> &
+  Pick<UrlTimerRow, "title" | "totalSeconds">): UrlTimerRow => ({
+  endBehavior,
+  primaryColor: normalizeOptionalColor(primaryColor ?? ""),
+  repeatCount: Math.min(Math.max(Math.floor(repeatCount), 1), 99),
   title: normalizeTitle(title).slice(0, MAX_TITLE_LENGTH),
   totalSeconds: Math.min(
     Math.max(Math.floor(totalSeconds), 0),
@@ -154,24 +199,24 @@ export const buildUrlTimerRow = ({
 })
 
 export const buildUrlTimerRowFromSyncParams = (
-  params: Pick<SyncParams, "m" | "pc" | "s" | "title">,
+  params: Pick<SyncParams, "m" | "pc" | "rows" | "s" | "title">,
 ): UrlTimerRow =>
+  params.rows[0] ??
   buildUrlTimerRow({
     primaryColor: params.pc,
     title: params.title,
-    totalSeconds: getSecondsDuration(params.m, params.s),
+    totalSeconds:
+      Number.parseInt(params.m, 10) * 60 + Number.parseInt(params.s, 10),
   })
 
-export const projectFirstUrlTimerRowToSyncParams = ({
+export const projectTimerUrlStateToSyncParams = ({
   fallback = DEFAULT_SYNC_PARAMS,
   state,
 }: {
   fallback?: SyncParams
   state: ParsedTimerUrlState
 }): SyncParams => {
-  const [firstRow] = state.rows
-
-  if (!firstRow) {
+  if (!state.rows[0]) {
     return {
       ...fallback,
       bg: state.bg,
@@ -179,34 +224,40 @@ export const projectFirstUrlTimerRowToSyncParams = ({
     }
   }
 
-  if (state.rows.length > 1) {
-    // TODO: Apply parsed URL rows beyond the first once multi-row runtime support exists.
-  }
-
-  const [minutes, seconds] = getMinutesSeconds(firstRow.totalSeconds)
+  const activeIndex = clampTimerSequenceIndex({
+    activeIndex: state.activeIndex,
+    rows: state.rows,
+  })
+  const activeRow = state.rows[activeIndex] ?? state.rows[0]
+  const duration = buildDurationPartsFromTotalSeconds(activeRow.totalSeconds)
 
   return {
+    activeIndex,
     bg: state.bg,
     fg: state.fg,
-    m: minutes,
-    pc: firstRow.primaryColor,
-    s: seconds,
-    title: firstRow.title,
+    m: duration.m,
+    pc: activeRow.primaryColor || fallback.pc,
+    rows: state.rows.map(buildUrlTimerRow),
+    s: duration.s,
+    title: activeRow.title,
   }
 }
+
+export const projectFirstUrlTimerRowToSyncParams =
+  projectTimerUrlStateToSyncParams
 
 export const syncParamsMatchParsedTimerUrlState = ({
   params,
   state,
 }: {
-  params: Pick<SyncParams, "bg" | "fg" | "m" | "pc" | "s" | "title">
+  params: Pick<SyncParams, "activeIndex" | "bg" | "fg" | "rows">
   state: ParsedTimerUrlState
 }) => {
   if (!state.hasTimerState) {
     return false
   }
 
-  const projectedParams = projectFirstUrlTimerRowToSyncParams({
+  const projectedParams = projectTimerUrlStateToSyncParams({
     fallback: DEFAULT_SYNC_PARAMS,
     state,
   })
@@ -214,10 +265,8 @@ export const syncParamsMatchParsedTimerUrlState = ({
   return (
     params.bg === projectedParams.bg &&
     params.fg === projectedParams.fg &&
-    params.m === projectedParams.m &&
-    params.pc === projectedParams.pc &&
-    params.s === projectedParams.s &&
-    params.title === projectedParams.title
+    params.activeIndex === projectedParams.activeIndex &&
+    JSON.stringify(params.rows) === JSON.stringify(projectedParams.rows)
   )
 }
 
@@ -228,16 +277,19 @@ export const serializeUrlTimerRow = (row: UrlTimerRow) => {
     normalizedRow.totalSeconds.toString(),
     normalizedRow.primaryColor.replace(/^#/, ""),
     encodeURIComponent(normalizedRow.title),
-    normalizedRow.flag,
+    normalizedRow.repeatCount.toString(),
+    serializeUrlEndBehavior(normalizedRow.endBehavior),
   ].join("!")
 }
 
 export const buildTimerUrlSearchParams = ({
+  activeIndex = 0,
   bg,
-  fg,
   extraParams = {},
+  fg,
   rows,
 }: {
+  activeIndex?: number
   bg?: string | null
   extraParams?: Record<string, string | null | undefined>
   fg?: string | null
@@ -246,10 +298,11 @@ export const buildTimerUrlSearchParams = ({
   const searchParams = new URLSearchParams()
   const normalizedBg = normalizeColor(bg, DEFAULT_SYNC_PARAMS.bg)
   const normalizedFg = normalizeColor(fg, DEFAULT_SYNC_PARAMS.fg)
+  const normalizedRows = rows.slice(0, MAX_TIMER_URL_ROWS).map(buildUrlTimerRow)
 
   let serializedRows = ""
 
-  for (const row of rows.slice(0, MAX_TIMER_URL_ROWS)) {
+  for (const row of normalizedRows) {
     const nextSerializedRow = serializeUrlTimerRow(row)
     const candidateRows = serializedRows
       ? `${serializedRows}|${nextSerializedRow}`
@@ -258,6 +311,7 @@ export const buildTimerUrlSearchParams = ({
 
     candidateSearchParams.set("v", TIMER_URL_VERSION)
     candidateSearchParams.set("t", candidateRows)
+    candidateSearchParams.set("a", activeIndex.toString())
     candidateSearchParams.set("bg", normalizedBg.replace(/^#/, ""))
     candidateSearchParams.set("fg", normalizedFg.replace(/^#/, ""))
 
@@ -277,6 +331,16 @@ export const buildTimerUrlSearchParams = ({
   if (serializedRows) {
     searchParams.set("v", TIMER_URL_VERSION)
     searchParams.set("t", serializedRows)
+    searchParams.set(
+      "a",
+      clampTimerSequenceIndex({
+        activeIndex,
+        rows:
+          normalizedRows.length > 0
+            ? normalizedRows
+            : [buildDefaultTimerSequenceRow()],
+      }).toString(),
+    )
   }
 
   if (normalizedBg !== DEFAULT_SYNC_PARAMS.bg) {

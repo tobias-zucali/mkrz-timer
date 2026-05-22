@@ -1,10 +1,9 @@
 import { normalizeSyncParamPatch } from "../../shared/security/input.ts"
-import {
-  buildTimerUrlSearchParams,
-  buildUrlTimerRowFromSyncParams,
-} from "../../shared/urlState/index.ts"
+import { buildTimerUrlSearchParams } from "../../shared/urlState/index.ts"
+import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
+import type { SyncParams } from "../../shared/remoteSession/types.ts"
 
-export type TimerParams = Record<string, string | null | undefined>
+export type TimerParams = Partial<SyncParams> & Record<string, unknown>
 
 export type ParamBuildOptions = {
   inherit?: boolean
@@ -14,7 +13,7 @@ export type ParamBuildOptions = {
 }
 
 const colorParamKeys = ["bg", "fg", "pc"] as const
-const remoteSessionOnlyOmitKeys = ["bg", "pid", "fg", "t", "v"] as const
+const remoteSessionOnlyOmitKeys = ["a", "bg", "pid", "fg", "t", "v"] as const
 export const withColorHash = (value: string) => {
   return value.startsWith("#") ? value : `#${value}`
 }
@@ -78,7 +77,12 @@ export const buildPathWithParams = (
   const passthroughParams: Record<string, string | undefined> = {}
 
   Object.entries(mergedParams).forEach(([key, value]) => {
-    if (!value || omittedParams.has(key)) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      omittedParams.has(key)
+    ) {
       return
     }
 
@@ -86,24 +90,21 @@ export const buildPathWithParams = (
       return
     }
 
-    passthroughParams[key] = value
+    if (typeof value === "string") {
+      passthroughParams[key] = value
+    }
   })
 
-  const normalizedPc = normalizeSerializableParam("pc", mergedParams.pc ?? "")
-  const normalizedTitle = normalizeSerializableParam(
-    "title",
-    mergedParams.title ?? "",
-  )
-  const normalizedMinutes = normalizeSerializableParam(
-    "m",
-    mergedParams.m ?? "",
-  )
-  const normalizedSeconds = normalizeSerializableParam(
-    "s",
-    mergedParams.s ?? "",
-  )
+  const normalizedRows =
+    Array.isArray(mergedParams.rows) && mergedParams.rows.length > 0
+      ? mergedParams.rows
+      : [buildDefaultTimerSequenceRow()]
 
   const newSearchParams = buildTimerUrlSearchParams({
+    activeIndex:
+      omittedParams.has("a") || typeof mergedParams.activeIndex !== "number"
+        ? 0
+        : mergedParams.activeIndex,
     bg:
       omittedParams.has("bg") || !mergedParams.bg
         ? null
@@ -114,21 +115,7 @@ export const buildPathWithParams = (
         ? null
         : normalizeSerializableParam("fg", mergedParams.fg),
     rows:
-      omittedParams.has("v") ||
-      omittedParams.has("t") ||
-      !normalizedPc ||
-      !normalizedMinutes ||
-      !normalizedSeconds ||
-      normalizedTitle === undefined
-        ? []
-        : [
-            buildUrlTimerRowFromSyncParams({
-              m: normalizedMinutes,
-              pc: normalizedPc,
-              s: normalizedSeconds,
-              title: normalizedTitle,
-            }),
-          ],
+      omittedParams.has("v") || omittedParams.has("t") ? [] : normalizedRows,
   })
 
   const search = newSearchParams.toString()

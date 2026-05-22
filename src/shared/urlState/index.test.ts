@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import { DEFAULT_SYNC_PARAMS } from "../security/input.ts"
 import {
   buildTimerUrlSearchParams,
   buildUrlTimerRow,
@@ -8,7 +9,7 @@ import {
   MAX_TIMER_URL_LENGTH,
   MAX_TIMER_URL_ROWS,
   parseTimerUrlState,
-  projectFirstUrlTimerRowToSyncParams,
+  projectTimerUrlStateToSyncParams,
   serializeUrlTimerRow,
   syncParamsMatchParsedTimerUrlState,
   TIMER_URL_VERSION,
@@ -17,24 +18,27 @@ import {
 test("parseTimerUrlState reads valid multi-row timer params", () => {
   const parsed = parseTimerUrlState({
     searchParams: new URLSearchParams(
-      "v=1&t=300!2563eb!Opening!1|900!dc2626!Q%26A%20Session!0&bg=111111&fg=eeeeee",
+      "v=1&t=300!!Opening!2!1|900!dc2626!Q%26A%20Session!1!0&a=1&bg=111111&fg=eeeeee",
     ),
   })
 
   assert.deepEqual(parsed, {
+    activeIndex: 1,
     bg: "#111111",
     fg: "#eeeeee",
     hasTimerState: true,
     rows: [
       {
-        flag: "1",
-        primaryColor: "#2563eb",
+        endBehavior: "advance",
+        primaryColor: "",
+        repeatCount: 2,
         title: "Opening",
         totalSeconds: 300,
       },
       {
-        flag: "0",
+        endBehavior: "stop",
         primaryColor: "#dc2626",
+        repeatCount: 1,
         title: "Q&A Session",
         totalSeconds: 900,
       },
@@ -43,14 +47,31 @@ test("parseTimerUrlState reads valid multi-row timer params", () => {
   })
 })
 
+test("parseTimerUrlState accepts legacy 4-part rows", () => {
+  const parsed = parseTimerUrlState({
+    searchParams: new URLSearchParams("v=1&t=300!2563eb!Opening!1"),
+  })
+
+  assert.equal(parsed.activeIndex, 0)
+  assert.deepEqual(parsed.rows, [
+    {
+      endBehavior: "stop",
+      primaryColor: "#2563eb",
+      repeatCount: 1,
+      title: "Opening",
+      totalSeconds: 300,
+    },
+  ])
+})
+
 test("parseTimerUrlState ignores malformed rows and rows beyond the max", () => {
   const overflowRows = Array.from(
     { length: MAX_TIMER_URL_ROWS + 2 },
-    (_, index) => `${index + 1}!2563eb!Row${index}!0`,
+    (_, index) => `${index + 1}!2563eb!Row${index}!1!0`,
   ).join("|")
   const parsed = parseTimerUrlState({
     searchParams: new URLSearchParams(
-      `v=1&t=300!badcolor!Oops!0|${overflowRows}|oops`,
+      `v=1&t=300!badcolor!Oops!1!0|${overflowRows}|oops`,
     ),
   })
 
@@ -63,9 +84,10 @@ test("parseTimerUrlState fails closed when timer state is disabled", () => {
   assert.deepEqual(
     parseTimerUrlState({
       allowTimerState: false,
-      searchParams: new URLSearchParams("v=1&t=300!2563eb!Opening!0&bg=111111"),
+      searchParams: new URLSearchParams("v=1&t=300!!Opening!1!0&bg=111111"),
     }),
     {
+      activeIndex: 0,
       bg: "#000000",
       fg: "#ffffff",
       hasTimerState: false,
@@ -75,23 +97,26 @@ test("parseTimerUrlState fails closed when timer state is disabled", () => {
   )
 })
 
-test("projectFirstUrlTimerRowToSyncParams applies only the first parsed row", () => {
-  const projected = projectFirstUrlTimerRowToSyncParams({
+test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
+  const projected = projectTimerUrlStateToSyncParams({
     state: {
+      activeIndex: 1,
       bg: "#123456",
       fg: "#abcdef",
       hasTimerState: true,
       rows: [
         buildUrlTimerRow({
-          flag: "0",
-          primaryColor: "#2563eb",
+          endBehavior: "advance",
+          primaryColor: "",
+          repeatCount: 2,
           title: "Opening",
           totalSeconds: 90,
         }),
         buildUrlTimerRow({
-          flag: "1",
+          endBehavior: "stop",
           primaryColor: "#dc2626",
-          title: "Ignored",
+          repeatCount: 3,
+          title: "Selected",
           totalSeconds: 45,
         }),
       ],
@@ -100,26 +125,45 @@ test("projectFirstUrlTimerRowToSyncParams applies only the first parsed row", ()
   })
 
   assert.deepEqual(projected, {
+    activeIndex: 1,
     bg: "#123456",
     fg: "#abcdef",
-    m: "01",
-    pc: "#2563eb",
-    s: "30",
-    title: "Opening",
+    m: "00",
+    pc: "#dc2626",
+    rows: [
+      {
+        endBehavior: "advance",
+        primaryColor: "",
+        repeatCount: 2,
+        title: "Opening",
+        totalSeconds: 90,
+      },
+      {
+        endBehavior: "stop",
+        primaryColor: "#dc2626",
+        repeatCount: 3,
+        title: "Selected",
+        totalSeconds: 45,
+      },
+    ],
+    s: "45",
+    title: "Selected",
   })
 })
 
-test("serializeUrlTimerRow and buildTimerUrlSearchParams use the v=1&t row format", () => {
+test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t format", () => {
   const row = buildUrlTimerRow({
-    flag: "0",
-    primaryColor: "#2563eb",
+    endBehavior: "advance",
+    primaryColor: "",
+    repeatCount: 2,
     title: "Line 1\nLine 2",
     totalSeconds: 75,
   })
 
-  assert.equal(serializeUrlTimerRow(row), "75!2563eb!Line%201%0ALine%202!0")
+  assert.equal(serializeUrlTimerRow(row), "75!!Line%201%0ALine%202!2!1")
 
   const query = buildTimerUrlSearchParams({
+    activeIndex: 0,
     bg: "#123456",
     extraParams: {
       settings: "1",
@@ -130,21 +174,23 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the v=1&t row forma
 
   assert.equal(
     query,
-    "v=1&t=75%212563eb%21Line%25201%250ALine%25202%210&bg=123456&fg=abcdef&settings=1",
+    "v=1&t=75%21%21Line%25201%250ALine%25202%212%211&a=0&bg=123456&fg=abcdef&settings=1",
   )
 })
 
 test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", () => {
   const longRows = Array.from({ length: MAX_TIMER_URL_ROWS }, (_, index) =>
     buildUrlTimerRow({
-      flag: "0",
-      primaryColor: "#2563eb",
+      endBehavior: "advance",
+      primaryColor: "",
+      repeatCount: 99,
       title: `${index}`.repeat(64),
       totalSeconds: 999,
     }),
   )
 
   const query = buildTimerUrlSearchParams({
+    activeIndex: 0,
     bg: "#000000",
     fg: "#ffffff",
     rows: longRows,
@@ -155,6 +201,16 @@ test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", 
 
 test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState bridge runtime params", () => {
   const row = buildUrlTimerRowFromSyncParams({
+    ...DEFAULT_SYNC_PARAMS,
+    rows: [
+      {
+        endBehavior: "advance",
+        primaryColor: "#00aa88",
+        repeatCount: 2,
+        title: "Workshop",
+        totalSeconds: 135,
+      },
+    ],
     m: "02",
     pc: "#00aa88",
     s: "15",
@@ -162,8 +218,9 @@ test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState brid
   })
 
   assert.deepEqual(row, {
-    flag: "0",
+    endBehavior: "advance",
     primaryColor: "#00aa88",
+    repeatCount: 2,
     title: "Workshop",
     totalSeconds: 135,
   })
@@ -171,14 +228,13 @@ test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState brid
   assert.equal(
     syncParamsMatchParsedTimerUrlState({
       params: {
+        activeIndex: 0,
         bg: "#123456",
         fg: "#eeeeee",
-        m: "02",
-        pc: "#00aa88",
-        s: "15",
-        title: "Workshop",
+        rows: [row],
       },
       state: {
+        activeIndex: 0,
         bg: "#123456",
         fg: "#eeeeee",
         hasTimerState: true,

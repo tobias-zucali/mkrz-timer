@@ -120,6 +120,8 @@ test("syncs the current timer state to a client that rejoins during active contr
     },
   )
 
+  await Promise.all([page, ...clients].map(expectTimerPaused))
+
   await page.getByRole("button", { name: "START" }).click()
   await Promise.all([page, ...clients].map(expectTimerRunning))
 

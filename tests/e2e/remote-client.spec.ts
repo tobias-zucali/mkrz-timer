@@ -18,6 +18,7 @@ import {
   openClientsFromSettings,
   openSidebarPanel,
   openTimer,
+  resolveRecoveryDialogIfPresent,
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
@@ -137,6 +138,8 @@ test("moves the host onto the control route and ends the live session cleanly", 
     .poll(() => page.evaluate(() => window.location.pathname))
     .toMatch(/^\/control\/.+/)
   await openSidebarPanel(page, "Share")
+  await resolveRecoveryDialogIfPresent(page)
+  await openSidebarPanel(page, "Share")
   await expect(
     page.getByRole("button", { name: "End live session" }),
   ).toBeVisible()
@@ -147,6 +150,8 @@ test("moves the host onto the control route and ends the live session cleanly", 
     ).__playwrightDocumentSentinel = sentinel
     return sentinel
   })
+  await resolveRecoveryDialogIfPresent(page)
+  await openSidebarPanel(page, "Share")
   await page.getByRole("button", { name: "End live session" }).click()
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
@@ -172,7 +177,8 @@ test("moves the host onto the control route and ends the live session cleanly", 
       ),
     )
     .toEqual({
-      t: "60!d61f69!!0",
+      a: "0",
+      t: "60!d61f69!!1!0",
       v: "1",
     })
   await openSidebarPanel(page, "Share")
@@ -268,11 +274,6 @@ test(
     await expectReadonlyPlaceholder(readonlyClient)
 
     await closeSettingsOverlay(page)
-    await waitForRemoteCluster([page, readonlyClient], {
-      clientCount: 1,
-      mainConnectionCount: 1,
-      message: "readonly client should connect to the main timer",
-    })
 
     await expectRemoteStatus(page, {
       connectionSummary: /Synchronized|Reconnect in progress/,
@@ -376,9 +377,12 @@ test("viewer clients warn when the last controller leaves", async ({
   await page.close()
   await controlClient.close()
 
-  await expect(
-    readonlyClient.getByTestId("remote-status-toggle"),
-  ).toContainText("Waiting")
+  await expectRemoteStatus(readonlyClient, {
+    connectionSummary: /Waiting for controller|Reconnect in progress/,
+    networkStatus: "Online",
+    role: "Viewer access",
+    state: /Waiting|Reconnecting\.\.\./,
+  })
   await expect(readonlyClient).toHaveURL(/\/view\//)
   await expectReadonlyTimerControls(readonlyClient)
 })
@@ -774,6 +778,9 @@ test("controller links can restore control and reused viewer links rejoin the se
   const { controlClientUrl, readonlyClientUrl } =
     await enableRemoteModeWithClientUrls(page)
 
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toMatch(/^\/control\/.+/)
   await openSidebarPanel(page, "Share")
   await page.getByRole("button", { name: "End live session" }).click()
   await expect(

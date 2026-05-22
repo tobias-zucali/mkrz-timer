@@ -82,9 +82,11 @@ function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
 }
 
 export default function Sidebar({
+  activeIndex,
   handleChange,
-  handleTimeBlur,
   isPinnedOpen,
+  onActivateSequenceRow,
+  onSequenceChange,
   peerData,
   floatingTimerData,
   onEndRemoteSession,
@@ -96,11 +98,16 @@ export default function Sidebar({
   setSelectedEntryId,
   statusPanelData,
 }: {
+  activeIndex: number
   handleChange: (key: string, value: string) => void
-  handleTimeBlur: () => void
   isPinnedOpen: boolean
   floatingTimerData: FloatingTimerData
+  onActivateSequenceRow: (rowIndex: number) => void
   onEndRemoteSession: () => Promise<void>
+  onSequenceChange: (nextChange: {
+    activeIndex: number
+    rows: ReturnType<typeof useParams>["params"]["rows"]
+  }) => void
   onStartRemoteSession: () => Promise<void>
   paramData: ReturnType<typeof useParams>
   peerData: ReturnType<typeof useRemoteSession>
@@ -253,8 +260,9 @@ export default function Sidebar({
       case "timer":
         return (
           <TimerPanel
-            handleChange={handleChange}
-            handleTimeBlur={handleTimeBlur}
+            activeIndex={activeIndex}
+            onActivateSequenceRow={onActivateSequenceRow}
+            onSequenceChange={onSequenceChange}
             params={params}
           />
         )

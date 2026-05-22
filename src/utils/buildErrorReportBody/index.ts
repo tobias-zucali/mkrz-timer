@@ -22,7 +22,7 @@ type BuildErrorReportBodyParams = {
   relayReachabilityLabel?: string
   relayLabel: string
   error?: Error | null
-  params: Record<string, string | null | undefined>
+  params: Record<string, unknown>
   isOnline: boolean | "unavailable"
   visibilityState: DocumentVisibilityState | "unavailable"
   hasFocus: boolean | "unavailable"

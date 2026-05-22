@@ -6,18 +6,31 @@ import type {
   SessionParticipant,
   SessionSnapshot,
   SyncParams,
-} from "@/shared/remoteSession/types"
+  TimerEndBehavior,
+  TimerSequenceRow,
+} from "../remoteSession/types.ts"
+import {
+  buildDefaultTimerSequenceRow,
+  buildDurationPartsFromTotalSeconds,
+  clampTimerSequenceIndex,
+  DEFAULT_TIMER_PRIMARY_COLOR,
+  getActiveTimerSequenceRow,
+  MAX_TIMER_SEQUENCE_REPEAT_COUNT,
+} from "../timerSequence.ts"
 
 export const DEFAULT_SYNC_PARAMS: SyncParams = {
+  activeIndex: 0,
   bg: "#000000",
   fg: "#ffffff",
   m: "01",
-  pc: "#d61f69",
+  pc: DEFAULT_TIMER_PRIMARY_COLOR,
+  rows: [buildDefaultTimerSequenceRow()],
   s: "00",
   title: "",
 }
 
 export const DEFAULT_TIMER_STATE = {
+  currentRepeat: 1,
   elapsedTime: 0,
   isPaused: true,
   isStarted: false,
@@ -44,6 +57,7 @@ const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 const REMOTE_ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 const HEX_COLOR_PATTERN = /^#?[0-9a-fA-F]{6}$/
 const DIGITS_ONLY_PATTERN = /^\d+$/
+const POSITIVE_DIGITS_PATTERN = /^[1-9]\d*$/
 
 type UnknownRecord = Record<string, unknown>
 
@@ -98,6 +112,14 @@ export const normalizeColor = (value: unknown, fallback: string) => {
   }
 
   return `#${value.replace(/^#/, "").toLowerCase()}`
+}
+
+export const normalizeOptionalColor = (value: unknown) => {
+  if (value === "") {
+    return ""
+  }
+
+  return normalizeColor(value, "")
 }
 
 const normalizeNumericString = ({
@@ -173,6 +195,129 @@ const normalizeDurationParams = ({
   }
 }
 
+const normalizeRepeatCount = (value: unknown, fallback = 1) => {
+  if (typeof value !== "number" && typeof value !== "string") {
+    return fallback
+  }
+
+  const textValue = `${value}`.trim()
+  if (!POSITIVE_DIGITS_PATTERN.test(textValue)) {
+    return fallback
+  }
+
+  const parsedValue = Number.parseInt(textValue, 10)
+
+  return Math.min(Math.max(parsedValue, 1), MAX_TIMER_SEQUENCE_REPEAT_COUNT)
+}
+
+const normalizeEndBehavior = (
+  value: unknown,
+  fallback: TimerEndBehavior = "stop",
+): TimerEndBehavior => {
+  if (value === "advance" || value === "stop") {
+    return value
+  }
+
+  return fallback
+}
+
+const buildSequenceRowFromLegacyFields = ({
+  duration,
+  primaryColor,
+  title,
+}: {
+  duration: Pick<SyncParams, "m" | "s">
+  primaryColor: string
+  title: string
+}): TimerSequenceRow => ({
+  endBehavior: "stop",
+  primaryColor,
+  repeatCount: 1,
+  title,
+  totalSeconds:
+    Number.parseInt(duration.m, 10) * 60 + Number.parseInt(duration.s, 10),
+})
+
+const normalizeSequenceRow = (
+  value: unknown,
+  fallback: TimerSequenceRow,
+): TimerSequenceRow => {
+  const row = isObject(value) ? value : {}
+
+  return {
+    endBehavior: normalizeEndBehavior(row.endBehavior, fallback.endBehavior),
+    primaryColor: normalizeOptionalColor(row.primaryColor),
+    repeatCount: normalizeRepeatCount(row.repeatCount, fallback.repeatCount),
+    title: normalizeTitle(row.title ?? fallback.title),
+    totalSeconds: normalizeFiniteNumber({
+      fallback: fallback.totalSeconds,
+      floor: true,
+      max: MAX_TIMER_DURATION_SECONDS,
+      min: 0,
+      value: row.totalSeconds,
+    }),
+  }
+}
+
+const normalizeSequenceRows = (
+  value: unknown,
+  fallbackRows: TimerSequenceRow[],
+) => {
+  const sourceRows = Array.isArray(value) ? value : null
+
+  if (!sourceRows) {
+    return fallbackRows
+  }
+
+  const fallbackRow =
+    fallbackRows[0] ??
+    buildSequenceRowFromLegacyFields({
+      duration: DEFAULT_SYNC_PARAMS,
+      primaryColor: DEFAULT_SYNC_PARAMS.pc,
+      title: DEFAULT_SYNC_PARAMS.title,
+    })
+
+  const normalizedRows = sourceRows
+    .slice(0, 12)
+    .map((row, index) =>
+      normalizeSequenceRow(row, fallbackRows[index] ?? fallbackRow),
+    )
+
+  return normalizedRows.length > 0 ? normalizedRows : fallbackRows
+}
+
+const deriveSequenceSyncParams = ({
+  activeIndex,
+  bg,
+  fg,
+  rows,
+}: {
+  activeIndex: number
+  bg: string
+  fg: string
+  rows: TimerSequenceRow[]
+}): SyncParams => {
+  const normalizedActiveIndex = clampTimerSequenceIndex({ activeIndex, rows })
+  const normalizedRows =
+    rows.length > 0 ? rows : [buildDefaultTimerSequenceRow()]
+  const { row: activeRow } = getActiveTimerSequenceRow({
+    activeIndex: normalizedActiveIndex,
+    rows: normalizedRows,
+  })
+  const duration = buildDurationPartsFromTotalSeconds(activeRow.totalSeconds)
+
+  return {
+    activeIndex: normalizedActiveIndex,
+    bg,
+    fg,
+    m: duration.m,
+    pc: activeRow.primaryColor || DEFAULT_TIMER_PRIMARY_COLOR,
+    rows: normalizedRows,
+    s: duration.s,
+    title: activeRow.title,
+  }
+}
+
 export const normalizeSessionId = (value: unknown) => {
   if (
     typeof value !== "string" ||
@@ -216,20 +361,50 @@ export const normalizeSyncParams = (
   fallback: SyncParams = DEFAULT_SYNC_PARAMS,
 ): SyncParams => {
   const params = isObject(value) ? value : {}
+  const normalizedBg = normalizeColor(params.bg, fallback.bg)
+  const normalizedFg = normalizeColor(params.fg, fallback.fg)
   const duration = normalizeDurationParams({
     fallback,
     minutesValue: params.m,
     secondsValue: params.s,
   })
-
-  return {
-    bg: normalizeColor(params.bg, fallback.bg),
-    fg: normalizeColor(params.fg, fallback.fg),
-    m: duration.m,
-    pc: normalizeColor(params.pc, fallback.pc),
-    s: duration.s,
+  const legacyRow = buildSequenceRowFromLegacyFields({
+    duration,
+    primaryColor: normalizeColor(params.pc, fallback.pc),
     title: normalizeTitle(params.title),
-  }
+  })
+  const normalizedRows = normalizeSequenceRows(params.rows, [legacyRow])
+  const normalizedActiveIndex = normalizeFiniteNumber({
+    fallback: fallback.activeIndex,
+    floor: true,
+    max: normalizedRows.length - 1,
+    min: 0,
+    value: params.activeIndex,
+  })
+  const hasActiveRowOverride =
+    params.m !== undefined ||
+    params.s !== undefined ||
+    params.pc !== undefined ||
+    params.title !== undefined
+  const sequenceRows = hasActiveRowOverride
+    ? normalizedRows.map((row, index) =>
+        index === normalizedActiveIndex
+          ? {
+              ...row,
+              primaryColor: legacyRow.primaryColor,
+              title: legacyRow.title,
+              totalSeconds: legacyRow.totalSeconds,
+            }
+          : row,
+      )
+    : normalizedRows
+
+  return deriveSequenceSyncParams({
+    activeIndex: normalizedActiveIndex,
+    bg: normalizedBg,
+    fg: normalizedFg,
+    rows: sequenceRows,
+  })
 }
 
 export const normalizeSyncParamPatch = (value: unknown) => {
@@ -245,6 +420,15 @@ export const normalizeSyncParamPatch = (value: unknown) => {
   if ("fg" in value) {
     normalizedPatch.fg = normalizeColor(value.fg, DEFAULT_SYNC_PARAMS.fg)
   }
+  if ("activeIndex" in value) {
+    normalizedPatch.activeIndex = normalizeFiniteNumber({
+      fallback: DEFAULT_SYNC_PARAMS.activeIndex,
+      floor: true,
+      max: 11,
+      min: 0,
+      value: value.activeIndex,
+    })
+  }
   if ("m" in value) {
     normalizedPatch.m = normalizeNumericString({
       fallback: DEFAULT_SYNC_PARAMS.m,
@@ -254,6 +438,12 @@ export const normalizeSyncParamPatch = (value: unknown) => {
   }
   if ("pc" in value) {
     normalizedPatch.pc = normalizeColor(value.pc, DEFAULT_SYNC_PARAMS.pc)
+  }
+  if ("rows" in value) {
+    normalizedPatch.rows = normalizeSequenceRows(
+      value.rows,
+      DEFAULT_SYNC_PARAMS.rows,
+    )
   }
   if ("s" in value) {
     normalizedPatch.s = normalizeNumericString({
@@ -283,6 +473,13 @@ export const normalizeTimerState = (
   })
 
   return {
+    currentRepeat: normalizeFiniteNumber({
+      fallback: fallback.currentRepeat,
+      floor: true,
+      max: MAX_TIMER_SEQUENCE_REPEAT_COUNT,
+      min: 1,
+      value: state.currentRepeat,
+    }),
     elapsedTime: normalizeFiniteNumber({
       fallback: fallback.elapsedTime,
       max: MAX_ELAPSED_TIME_SECONDS,
@@ -362,16 +559,9 @@ export const normalizeSessionParticipants = (value: unknown) => {
 }
 
 export const normalizeQueryParams = (value: unknown) => {
-  const params = isObject(value) ? value : {}
-
   return {
-    bg: normalizeColor(params.bg, DEFAULT_SYNC_PARAMS.bg),
-    fg: normalizeColor(params.fg, DEFAULT_SYNC_PARAMS.fg),
-    m: normalizeMinutes(params.m),
-    pc: normalizeColor(params.pc, DEFAULT_SYNC_PARAMS.pc),
+    ...normalizeSyncParams(value),
     pid: "",
-    s: normalizeSeconds(params.s),
-    title: normalizeTitle(params.title),
   }
 }
 

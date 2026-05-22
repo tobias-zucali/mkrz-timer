@@ -773,7 +773,7 @@ export default function useRemoteSession({
           ? keys.reduce<Partial<SyncParams>>((current, key) => {
               const value = syncParamsRef.current[key as keyof SyncParams]
               if (value !== undefined) {
-                current[key as keyof SyncParams] = value
+                ;(current as Record<string, unknown>)[key] = value
               }
               return current
             }, {})

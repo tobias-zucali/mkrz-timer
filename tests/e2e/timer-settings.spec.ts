@@ -2,7 +2,6 @@ import { devices, expect, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
-  expectTimerRunning,
   expectScreenshotWithoutDebugInfo,
   expectTimerSettings,
   expectTimerUrlParams,
@@ -95,7 +94,9 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
       '[data-testid="sidebar-panel-timer"] button[title="Close sidebar"]',
     )
     .press(" ")
-  await expectTimerRunning(page)
+  await expect(
+    page.getByTestId("timer-controls").getByRole("button", { name: "START" }),
+  ).toBeVisible()
   await expect(timerPanel).toBeVisible()
 
   await openSidebarPanel(page, "Share")

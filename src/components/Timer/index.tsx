@@ -1,8 +1,10 @@
 "use client"
 
 import Pie from "@/components/Pie"
+import type { SyncParams } from "@/shared/remoteSession/types"
 import DigitalDisplay from "@/components/DigitalDisplay"
 import TimerTitle from "@/components/TimerTitle"
+import { ChevronLeftIcon, ChevronRightIcon } from "@/utils/icons"
 import useTimer from "@/utils/useTimer"
 
 const timerButtonClassName =
@@ -22,15 +24,21 @@ type ReadonlyPlaceholder = {
 }
 
 export default function Timer({
+  activeIndex,
   isReadonly = false,
+  onSelectSequenceRow,
   readonlyPlaceholder,
+  rows,
   title,
   handleChange,
   handleTimeBlur,
   timer,
 }: {
+  activeIndex: number
   isReadonly?: boolean
+  onSelectSequenceRow?: (rowIndex: number) => void
   readonlyPlaceholder?: ReadonlyPlaceholder
+  rows: SyncParams["rows"]
   title: string
   handleChange: (key: string, value: string) => void
   handleTimeBlur: () => void
@@ -42,9 +50,50 @@ export default function Timer({
     isStarted,
     isPaused,
     isTimedOut,
+    currentRepeat,
     elapsedPercentage,
     handleAction,
   } = timer
+  const activeRow = rows[activeIndex] ?? rows[0]
+  const hasMultipleRows = rows.length > 1
+  const hasPreviousRow = hasMultipleRows && activeIndex > 0
+  const hasNextRow = hasMultipleRows && activeIndex < rows.length - 1
+  const showProgress = hasMultipleRows
+
+  const renderProgress = () => {
+    if (!showProgress) {
+      return null
+    }
+
+    return (
+      <div className="pointer-events-none absolute inset-x-0 bottom-[16%] flex justify-center px-6">
+        <div className="pointer-events-auto flex flex-col items-center gap-3">
+          <span className="text-sm font-medium text-foreground/68">
+            Step {activeIndex + 1}/{rows.length}
+          </span>
+          <div className="flex items-center gap-2">
+            {rows.map((_, index) => {
+              const isCurrent = index === activeIndex
+              const buttonClassName = isCurrent
+                ? "h-2.5 w-6 rounded-full bg-foreground"
+                : "size-2.5 rounded-full bg-foreground/22 hover:bg-foreground/42"
+
+              return (
+                <button
+                  aria-label={`Go to step ${index + 1}`}
+                  className={buttonClassName}
+                  disabled={isReadonly}
+                  key={`step-dot-${index}`}
+                  onClick={() => onSelectSequenceRow?.(index)}
+                  type="button"
+                />
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -138,6 +187,42 @@ export default function Timer({
             absolute inset-0 flex grow flex-col items-center justify-center
           "
           >
+            {hasPreviousRow && !isReadonly ? (
+              <button
+                aria-label="Previous step"
+                className="
+                  absolute top-1/2 left-4 inline-flex size-12 -translate-y-1/2
+                  items-center justify-center rounded-full border
+                  border-foreground/12 bg-background/72 text-foreground
+                  shadow-lg shadow-background/16 backdrop-blur-sm transition
+                  hover:border-primary/40 hover:text-primary
+                  focus-visible:outline-2 focus-visible:outline-offset-2
+                  focus-visible:outline-primary
+                "
+                onClick={() => handleAction("previous")}
+                type="button"
+              >
+                <ChevronLeftIcon className="size-6" />
+              </button>
+            ) : null}
+            {hasNextRow && !isReadonly ? (
+              <button
+                aria-label="Next step"
+                className="
+                  absolute top-1/2 right-4 inline-flex size-12 -translate-y-1/2
+                  items-center justify-center rounded-full border
+                  border-foreground/12 bg-background/72 text-foreground
+                  shadow-lg shadow-background/16 backdrop-blur-sm transition
+                  hover:border-primary/40 hover:text-primary
+                  focus-visible:outline-2 focus-visible:outline-offset-2
+                  focus-visible:outline-primary
+                "
+                onClick={() => handleAction("next")}
+                type="button"
+              >
+                <ChevronRightIcon className="size-6" />
+              </button>
+            ) : null}
             <DigitalDisplay
               data-testid="timer-display"
               isAlert={isTimedOut}
@@ -148,6 +233,7 @@ export default function Timer({
               onMinutesChange={(event) => handleChange("m", event.target.value)}
               onSecondsChange={(event) => handleChange("s", event.target.value)}
             />
+            {renderProgress()}
             {!isReadonly && (
               <div
                 className="
@@ -164,13 +250,17 @@ export default function Timer({
                 </button>
                 <button
                   className={timerButtonClassName}
-                  disabled={!isStarted}
-                  onClick={() => handleAction("reset")}
+                  onClick={() => handleAction("restart")}
                 >
                   RESET
                 </button>
               </div>
             )}
+            {activeRow && activeRow.repeatCount > 1 ? (
+              <div className="mt-2 text-sm font-medium text-foreground/68">
+                Loop {currentRepeat}/{activeRow.repeatCount}
+              </div>
+            ) : null}
           </div>
         )}
       </div>

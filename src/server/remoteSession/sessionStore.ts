@@ -5,6 +5,7 @@ import type {
   SessionSnapshot,
   SyncParams,
 } from "../../shared/remoteSession/types.ts"
+import { mergeSyncParamsPatch } from "../../shared/remoteSession/mergeSyncParamsPatch.ts"
 import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
@@ -285,11 +286,22 @@ export class InMemorySessionStore {
       return null
     }
 
-    session.snapshot = {
-      params: {
-        ...session.snapshot.params,
-        ...(params ? normalizeSyncParamPatch(params) : {}),
+    const mergedParams = params
+      ? mergeSyncParamsPatch(
+          session.snapshot.params,
+          normalizeSyncParamPatch(params) ?? {},
+        )
+      : session.snapshot.params
+    const normalizedParams = normalizeSessionSnapshot(
+      {
+        params: mergedParams,
+        state: session.snapshot.state,
       },
+      session.snapshot,
+    ).params
+
+    session.snapshot = {
+      params: normalizedParams,
       state: state
         ? normalizeTimerState(state, session.snapshot.state)
         : session.snapshot.state,
