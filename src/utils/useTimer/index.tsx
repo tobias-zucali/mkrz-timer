@@ -152,11 +152,10 @@ export default function useTimer({
           return
         }
 
-        const currentResolvedState = resolveTimerStateAt(currentState)
         const nextState = createNextState({
-          currentRepeat: currentResolvedState.currentRepeat,
-          elapsedTime: currentResolvedState.isStarted
-            ? currentResolvedState.elapsedTime
+          currentRepeat: currentState.currentRepeat,
+          elapsedTime: currentState.isStarted
+            ? currentState.elapsedTime
             : 0,
           isPaused: false,
           isStarted: true,
@@ -172,10 +171,9 @@ export default function useTimer({
           return
         }
 
-        const currentResolvedState = resolveTimerStateAt(currentState)
         const nextState = createNextState({
-          currentRepeat: currentResolvedState.currentRepeat,
-          elapsedTime: currentResolvedState.elapsedTime,
+          currentRepeat: currentState.currentRepeat,
+          elapsedTime: currentState.elapsedTime,
           isPaused: true,
           isStarted: true,
           lastUpdatedAt: Date.now(),
@@ -253,7 +251,10 @@ export default function useTimer({
   handleActionRef.current = handleAction
 
   useEffect(() => {
-    const currentResolvedState = resolveTimerStateAt(latestStateRef.current)
+    const currentResolvedState = {
+      ...resolvedState,
+      revision,
+    }
     const activeRowSnapshot = getSequenceRowAt({
       activeIndex: paramsRef.current.activeIndex,
       params: paramsRef.current,

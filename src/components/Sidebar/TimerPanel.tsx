@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import type { CSSProperties } from "react"
 
 import InputField from "@/components/InputField"
 import type { SyncParams } from "@/shared/remoteSession/types"
@@ -37,6 +38,9 @@ const primaryButtonClassName =
 
 const stateBadgeClassName =
   "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold"
+
+const selectedFieldClassName =
+  "focus:border-(--step-color) focus:outline-(--step-color)"
 
 const endBehaviorOptions = [
   { label: "Stop after completion", value: "stop" },
@@ -370,7 +374,14 @@ export default function TimerPanel({
                 </div>
 
                 {isSelected ? (
-                  <div className="mt-4 space-y-4 pt-1">
+                  <div
+                    className="mt-4 space-y-4 pt-1"
+                    style={
+                      {
+                        "--step-color": displayRow.primaryColor,
+                      } as CSSProperties
+                    }
+                  >
                     <div className="w-full">
                       <label
                         className="mb-2 block text-sm font-medium text-foreground"
@@ -384,7 +395,7 @@ export default function TimerPanel({
                           bg-background px-3 py-2 text-sm/6 text-foreground outline-1
                           -outline-offset-1 outline-foreground/10
                           placeholder:text-foreground/50 focus:outline-2
-                          focus:-outline-offset-2 focus:outline-primary
+                          focus:-outline-offset-2 focus:outline-(--step-color)
                         "
                         id={`sidebar-sequence-title-${index}`}
                         maxLength={MAX_TITLE_LENGTH}
@@ -404,6 +415,7 @@ export default function TimerPanel({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <InputField
+                        className={selectedFieldClassName}
                         id={`sidebar-sequence-minutes-${index}`}
                         inputMode="numeric"
                         label="Minutes"
@@ -427,6 +439,7 @@ export default function TimerPanel({
                         value={duration.m}
                       />
                       <InputField
+                        className={selectedFieldClassName}
                         id={`sidebar-sequence-seconds-${index}`}
                         inputMode="numeric"
                         label="Seconds"
@@ -464,7 +477,7 @@ export default function TimerPanel({
                             block h-10 w-full rounded-md border border-foreground/10
                             bg-background px-3 text-sm text-foreground outline-1
                             -outline-offset-1 outline-foreground/10
-                            focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+                            focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
                           "
                           id={`sidebar-sequence-repeat-count-${index}`}
                           onChange={(event) =>
@@ -497,7 +510,7 @@ export default function TimerPanel({
                           block h-10 w-full rounded-md border border-foreground/10
                           bg-background px-3 text-sm text-foreground outline-1
                           -outline-offset-1 outline-foreground/10
-                          focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+                          focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
                         "
                           id={`sidebar-sequence-end-behavior-${index}`}
                           onChange={(event) =>
@@ -521,7 +534,7 @@ export default function TimerPanel({
                     <div>
                       <ColorSwatchField
                         id={`sidebar-sequence-primary-${index}`}
-                        label="Primary Color"
+                        label="Color"
                         onChange={(event) =>
                           updateRow(index, {
                             ...sourceRow,

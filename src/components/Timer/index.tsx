@@ -59,6 +59,8 @@ export default function Timer({
   const hasPreviousRow = hasMultipleRows && activeIndex > 0
   const hasNextRow = hasMultipleRows && activeIndex < rows.length - 1
   const showProgress = hasMultipleRows
+  const highlightNextAction =
+    isTimedOut && activeRow?.endBehavior === "stop" && hasNextRow
 
   const renderProgress = () => {
     if (!showProgress) {
@@ -68,25 +70,33 @@ export default function Timer({
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[16%] flex justify-center px-6">
         <div className="pointer-events-auto flex flex-col items-center gap-3">
-          <span className="text-sm font-medium text-foreground/68">
-            Step {activeIndex + 1}/{rows.length}
-          </span>
+          {activeRow && activeRow.repeatCount > 1 ? (
+            <span className="text-xs font-medium text-foreground/52">
+              Loop {currentRepeat} of {activeRow.repeatCount}
+            </span>
+          ) : null}
           <div className="flex items-center gap-2">
-            {rows.map((_, index) => {
+            {rows.map((row, index) => {
               const isCurrent = index === activeIndex
               const buttonClassName = isCurrent
                 ? "h-2.5 w-6 rounded-full bg-foreground"
-                : "size-2.5 rounded-full bg-foreground/22 hover:bg-foreground/42"
+                : "size-2.5 cursor-pointer rounded-full bg-foreground/22 hover:bg-foreground/42"
+              const stepTitle = row.title.trim()
+                ? `Step ${index + 1}: ${row.title.trim()}`
+                : `Step ${index + 1}`
 
               return (
                 <button
-                  aria-label={`Go to step ${index + 1}`}
-                  className={buttonClassName}
+                  aria-label={stepTitle}
+                  className="-m-3 inline-flex cursor-pointer items-center justify-center p-3"
                   disabled={isReadonly}
                   key={`step-dot-${index}`}
                   onClick={() => onSelectSequenceRow?.(index)}
+                  title={stepTitle}
                   type="button"
-                />
+                >
+                  <span className={buttonClassName} />
+                </button>
               )
             })}
           </div>
@@ -191,7 +201,7 @@ export default function Timer({
               <button
                 aria-label="Previous step"
                 className="
-                  absolute top-1/2 left-4 inline-flex size-12 -translate-y-1/2
+                  absolute top-1/2 left-4 z-10 inline-flex size-12 -translate-y-1/2
                   items-center justify-center rounded-full border
                   border-foreground/12 bg-background/72 text-foreground
                   shadow-lg shadow-background/16 backdrop-blur-sm transition
@@ -208,15 +218,26 @@ export default function Timer({
             {hasNextRow && !isReadonly ? (
               <button
                 aria-label="Next step"
-                className="
-                  absolute top-1/2 right-4 inline-flex size-12 -translate-y-1/2
-                  items-center justify-center rounded-full border
-                  border-foreground/12 bg-background/72 text-foreground
-                  shadow-lg shadow-background/16 backdrop-blur-sm transition
-                  hover:border-primary/40 hover:text-primary
-                  focus-visible:outline-2 focus-visible:outline-offset-2
-                  focus-visible:outline-primary
-                "
+                className={
+                  highlightNextAction
+                    ? `
+                        absolute top-1/2 right-4 z-10 inline-flex size-12
+                        -translate-y-1/2 items-center justify-center rounded-full
+                        border border-primary bg-primary text-foreground
+                        shadow-lg shadow-background/16 backdrop-blur-sm transition
+                        hover:bg-primary/88 focus-visible:outline-2
+                        focus-visible:outline-offset-2 focus-visible:outline-primary
+                      `
+                    : `
+                        absolute top-1/2 right-4 z-10 inline-flex size-12
+                        -translate-y-1/2 items-center justify-center rounded-full
+                        border border-foreground/12 bg-background/72 text-foreground
+                        shadow-lg shadow-background/16 backdrop-blur-sm transition
+                        hover:border-primary/40 hover:text-primary
+                        focus-visible:outline-2 focus-visible:outline-offset-2
+                        focus-visible:outline-primary
+                      `
+                }
                 onClick={() => handleAction("next")}
                 type="button"
               >
@@ -256,11 +277,6 @@ export default function Timer({
                 </button>
               </div>
             )}
-            {activeRow && activeRow.repeatCount > 1 ? (
-              <div className="mt-2 text-sm font-medium text-foreground/68">
-                Loop {currentRepeat}/{activeRow.repeatCount}
-              </div>
-            ) : null}
           </div>
         )}
       </div>
