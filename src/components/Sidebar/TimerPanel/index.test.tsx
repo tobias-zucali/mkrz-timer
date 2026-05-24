@@ -99,7 +99,7 @@ describe("TimerPanel", () => {
       <TimerPanelHarness onActivateSequenceRow={onActivateSequenceRow} />,
     )
 
-    fireEvent.click(screen.getByRole("button", { name: "Make Active" }))
+    fireEvent.click(screen.getByRole("button", { name: "Make active" }))
 
     expect(onActivateSequenceRow).toHaveBeenCalledWith(1)
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue(

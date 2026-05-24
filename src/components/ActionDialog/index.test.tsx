@@ -71,12 +71,12 @@ describe("ActionDialog", () => {
         description="Choose whether the timer should stay connected."
         title="End the live session?"
       >
-        <button type="button">Send Debug Info</button>
+        <button type="button">Send debug info</button>
       </ActionDialog>,
     )
 
     expect(
-      screen.getByRole("button", { name: "Send Debug Info" }),
+      screen.getByRole("button", { name: "Send debug info" }),
     ).toBeInTheDocument()
   })
 })

@@ -88,7 +88,7 @@ export default function buildErrorReportBody({
     `- Timestamp: ${now}`,
     `- URL: ${location}`,
     `- Remote path: ${remotePath ?? "none"}`,
-    `- Session id: ${sessionId ?? "none"}`,
+    `- Session ID: ${sessionId ?? "none"}`,
     `- Participant role: ${participantRole}`,
     `- Participant status: ${participantStatus}`,
     `- Readonly client: ${isReadonlyClient ? "yes" : "no"}`,

@@ -7,7 +7,7 @@
   "floatingDescription": "Keep a compact timer visible above other windows.",
   "floatingOpen": "Open floating timer",
   "floatingOpenState": "Floating timer open",
-  "floatingUnsupported": "Floating Timer is not available in this browser.",
+  "floatingUnsupported": "Floating timer is not available in this browser.",
   "shortcutsHeading": "Keyboard Shortcuts",
   "shortcutsDescription": "Global timer shortcuts stay available when overlays are closed."
 }

@@ -123,7 +123,7 @@ describe("SyncConflictDialog", () => {
     )
 
     expect(
-      screen.getByRole("button", { name: "Send Debug Info" }),
+      screen.getByRole("button", { name: "Send debug info" }),
     ).toBeInTheDocument()
   })
 })
