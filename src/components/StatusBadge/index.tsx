@@ -1,6 +1,7 @@
 "use client"
 
 import classNames from "classnames"
+import { useTranslations } from "next-intl"
 
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
@@ -26,10 +27,11 @@ export default function StatusBadge({
   sessionPresentation: SessionPresentationModel
   sessionId?: string
 }) {
+  const t = useTranslations("StatusBadge")
   const displayStateLabel = errorText
-    ? "Error"
+    ? t("error")
     : floatingTimerErrorText
-      ? "Attention needed"
+      ? t("attentionNeeded")
       : sessionPresentation.runtimeBadgeLabel
   const compactStatusAppearance = getCompactStatusAppearance({
     errorText: errorText ?? floatingTimerErrorText,
@@ -55,7 +57,9 @@ export default function StatusBadge({
       role="status"
     >
       <button
-        aria-label={`Status: ${sessionPresentation.accessibilityLabel}`}
+        aria-label={t("toggleLabel", {
+          label: sessionPresentation.accessibilityLabel,
+        })}
         className="
           flex cursor-pointer items-center gap-1.5 rounded-full border
           border-foreground/8 bg-background/58 px-2 py-1 text-left

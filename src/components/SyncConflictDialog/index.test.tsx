@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
+
+import { renderWithIntl } from "@/test/renderWithIntl"
 
 import SyncConflictDialog from "./index"
 
 describe("SyncConflictDialog", () => {
   it("renders the conflict copy and action buttons", () => {
-    render(
+    renderWithIntl(
       <SyncConflictDialog
         actions={[
           { label: "Use server state", onClick: () => undefined },
@@ -38,7 +40,7 @@ describe("SyncConflictDialog", () => {
     const onUseLocal = vi.fn()
     const onUseServer = vi.fn()
 
-    render(
+    renderWithIntl(
       <SyncConflictDialog
         actions={[
           { label: "Use server state", onClick: onUseServer },
@@ -65,7 +67,7 @@ describe("SyncConflictDialog", () => {
     outsideButton.textContent = "Outside"
     document.body.appendChild(outsideButton)
 
-    render(
+    renderWithIntl(
       <SyncConflictDialog
         actions={[
           { label: "Use server state", onClick: () => undefined },
@@ -104,7 +106,7 @@ describe("SyncConflictDialog", () => {
   })
 
   it("shows a developer-report action when debug info is available", () => {
-    render(
+    renderWithIntl(
       <SyncConflictDialog
         actions={[
           { label: "Retry connection", onClick: () => undefined },
@@ -121,7 +123,7 @@ describe("SyncConflictDialog", () => {
     )
 
     expect(
-      screen.getByRole("button", { name: "Send Debug Info" }),
+      screen.getByRole("button", { name: "Send debug info" }),
     ).toBeInTheDocument()
   })
 })

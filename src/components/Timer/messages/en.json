@@ -1,0 +1,10 @@
+{
+  "loop": "Loop {current} of {total}",
+  "stepTitleWithName": "Step {step}: {title}",
+  "stepTitleWithoutName": "Step {step}",
+  "previousStep": "Previous step",
+  "nextStep": "Next step",
+  "start": "START",
+  "pause": "PAUSE",
+  "reset": "RESET"
+}

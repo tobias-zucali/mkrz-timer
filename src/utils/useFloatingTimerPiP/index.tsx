@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createRoot, type Root } from "react-dom/client"
+import { useTranslations } from "next-intl"
 
 import FloatingTimerContent from "@/components/FloatingTimerContent"
+import type { AppTranslationFn } from "@/i18n/translator"
 import debug from "@/utils/debug"
 
 type DocumentPictureInPictureWindow = Window & {
@@ -41,31 +43,33 @@ function extractChromiumVersion(userAgent: string) {
   return chromiumMatch ? Number(chromiumMatch[1]) : null
 }
 
-function getDocumentPictureInPictureSupportReason() {
+function getDocumentPictureInPictureSupportReason(t: AppTranslationFn) {
   if (typeof window === "undefined") {
     return null
   }
 
   if (!window.isSecureContext) {
-    return "Floating Timer requires a secure context. Use https:// or open the app on localhost."
+    return t("TimerPage.floatingTimer.requiresSecureContext")
   }
 
   const userAgent = navigator.userAgent
   const chromiumVersion = extractChromiumVersion(userAgent)
 
   if (!chromiumVersion) {
-    return "Floating Timer currently requires a Chromium-based desktop browser such as Chrome or Edge."
+    return t("TimerPage.floatingTimer.requiresChromium")
   }
 
   if (chromiumVersion < 116) {
-    return `Floating Timer requires Chrome or Edge 116 or newer. Current Chromium version: ${chromiumVersion}.`
+    return t("TimerPage.floatingTimer.requiresVersion", {
+      version: chromiumVersion,
+    })
   }
 
   if (
     !("documentPictureInPicture" in window) ||
     !window.documentPictureInPicture
   ) {
-    return "This Chromium build does not currently expose Document Picture-in-Picture."
+    return t("TimerPage.floatingTimer.missingDocumentPiP")
   }
 
   return null
@@ -110,6 +114,7 @@ export default function useFloatingTimerPiP({
   setErrorText: React.Dispatch<React.SetStateAction<string | null>>
   state: FloatingTimerState
 }): FloatingTimerData {
+  const t = useTranslations()
   const pipRootRef = useRef<Root | null>(null)
   const pipWindowRef = useRef<DocumentPictureInPictureWindow | null>(null)
   const pipCloseHandlerRef = useRef<(() => void) | null>(null)
@@ -174,7 +179,7 @@ export default function useFloatingTimerPiP({
 
       copyDocumentStyles(pipDocument)
       applyPiPDocumentStyles(pipDocument)
-      pipDocument.title = "Floating Timer"
+      pipDocument.title = t("TimerPage.floatingTimer.windowTitle")
       pipDocument.body.innerHTML = ""
 
       const container = pipDocument.createElement("div")
@@ -193,13 +198,17 @@ export default function useFloatingTimerPiP({
       renderPiPWindow()
     } catch (error) {
       debug.error(error)
-      setErrorText(`Floating timer could not open. ${String(error)}`)
+      setErrorText(
+        t("TimerPage.floatingTimer.openError", { error: String(error) }),
+      )
     }
-  }, [closePiPWindow, renderPiPWindow, setErrorText])
+  }, [closePiPWindow, renderPiPWindow, setErrorText, t])
 
   useEffect(() => {
-    setUnsupportedReason(getDocumentPictureInPictureSupportReason())
-  }, [])
+    setUnsupportedReason(
+      getDocumentPictureInPictureSupportReason(t as AppTranslationFn),
+    )
+  }, [t])
 
   useEffect(() => {
     if (!pipWindowRef.current) {

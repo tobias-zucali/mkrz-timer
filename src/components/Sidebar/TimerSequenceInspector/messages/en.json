@@ -1,0 +1,10 @@
+{
+  "title": "Title",
+  "minutes": "Minutes",
+  "seconds": "Seconds",
+  "repetitions": "Repetitions",
+  "endBehavior": "End Behavior",
+  "color": "Color",
+  "endBehaviorStop": "Stop after this step",
+  "endBehaviorContinue": "Continue to next step"
+}

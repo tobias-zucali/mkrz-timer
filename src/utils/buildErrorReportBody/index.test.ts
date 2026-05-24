@@ -50,7 +50,7 @@ test("buildErrorReportBody includes expected diagnostics", () => {
   assert.ok(report.includes("- Session: Control access"))
   assert.ok(report.includes("- Relay reachability: Unreachable"))
   assert.ok(report.includes("- Remote path: /control/controller-123"))
-  assert.ok(report.includes("- Session id: session-123"))
+  assert.ok(report.includes("- Session ID: session-123"))
   assert.ok(report.includes("- Participant role: readonly"))
   assert.ok(report.includes("- Active participants: 2"))
   assert.ok(report.includes("- Relay: Relay: localhost:9100"))

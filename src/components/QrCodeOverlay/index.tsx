@@ -2,6 +2,7 @@
 
 import { useRef } from "react"
 import { createPortal } from "react-dom"
+import { useTranslations } from "next-intl"
 
 import { QRCodeSVG } from "qrcode.react"
 
@@ -17,6 +18,7 @@ export default function QrCodeOverlay({
   onClose: () => void
   value: string
 }) {
+  const t = useTranslations("QrCodeOverlay")
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
 
@@ -66,7 +68,7 @@ export default function QrCodeOverlay({
         "
         id="qr-code-overlay-title"
       >
-        Timer · {label}
+        {t("title", { label })}
       </h1>
       <span
         className="

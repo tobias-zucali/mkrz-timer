@@ -21,8 +21,8 @@ export default function InputField({
 }: {
   containerClassName?: string
   description?: string
-  label: string
   id: string
+  label: string
   onChange?: React.ChangeEventHandler<HTMLInputElement>
   children?: React.ReactNode
 } & React.InputHTMLAttributes<HTMLInputElement>) {

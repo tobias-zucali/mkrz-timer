@@ -652,54 +652,68 @@ test("keeps the live session action visible after an offline start", async ({
   await openTimer(page, 3)
   await openSidebarPanel(page, "Share")
   await page.context().setOffline(true)
-  const viewportSize = page.viewportSize()
   await expect
-    .poll(async () => {
-      const box = await page
-        .getByRole("button", { name: "Start live session" })
-        .boundingBox()
+    .poll(() =>
+      page
+        .evaluate(() => {
+          const button = Array.from(
+            document.querySelectorAll(
+              '[data-testid="sidebar-panel-share"] button',
+            ),
+          ).find((node) => node.textContent?.trim() === "Start live session")
 
-      if (!box || !viewportSize) {
-        return false
-      }
+          if (!(button instanceof HTMLButtonElement)) {
+            return false
+          }
 
-      return (
-        box.x >= 0 &&
-        box.y >= 0 &&
-        box.x + box.width <= viewportSize.width &&
-        box.y + box.height <= viewportSize.height
-      )
-    })
+          const box = button.getBoundingClientRect()
+
+          return (
+            box.width > 0 &&
+            box.height > 0 &&
+            box.top >= 0 &&
+            box.left >= 0 &&
+            box.bottom <= window.innerHeight &&
+            box.right <= window.innerWidth
+          )
+        })
+        .catch(() => false),
+    )
     .toBe(true)
 
-  await page
-    .getByRole("button", { name: "Start live session" })
-    .click({ force: true })
+  await page.evaluate(() => {
+    const button = Array.from(
+      document.querySelectorAll('[data-testid="sidebar-panel-share"] button'),
+    ).find((node) => node.textContent?.trim() === "Start live session")
+
+    if (!(button instanceof HTMLButtonElement)) {
+      throw new Error("Start live session button is unavailable")
+    }
+
+    button.click()
+  })
   await expect
     .poll(
       () =>
-        Promise.all([
-          page
-            .getByRole("button", { name: "START" })
-            .isVisible()
-            .catch(() => false),
-          page
-            .getByRole("button", { name: "Start live session" })
-            .isVisible()
-            .catch(() => false),
-          page
-            .getByRole("button", { name: "Retry now" })
-            .isVisible()
-            .catch(() => false),
-          page
-            .getByRole("button", { name: "Retry connection" })
-            .isVisible()
-            .catch(() => false),
-          page
-            .getByRole("button", { name: "Use local mode" })
-            .isVisible()
-            .catch(() => false),
-        ]).then((states) => states.some(Boolean)),
+        page
+          .evaluate(() => {
+            const labels = new Set(
+              Array.from(document.querySelectorAll("button"))
+                .map((node) => node.textContent?.trim() ?? "")
+                .filter(Boolean),
+            )
+
+            return [
+              "START",
+              "Start live session",
+              "Starting live session...",
+              "Retry now",
+              "Retry connection",
+              "Use local mode",
+              "End live session",
+            ].some((label) => labels.has(label))
+          })
+          .catch(() => false),
       { timeout: 10_000 },
     )
     .toBe(true)

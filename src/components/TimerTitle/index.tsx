@@ -3,6 +3,7 @@
 import { MAX_TITLE_LENGTH } from "@/shared/security/input"
 import { getTimerTitleLayout } from "@/utils/timerTitleLayout"
 import classNames from "classnames"
+import { useTranslations } from "next-intl"
 import {
   type KeyboardEvent,
   useEffect,
@@ -27,6 +28,7 @@ export default function TimerTitle({
   onChange: (value: string) => void
   value: string
 }) {
+  const t = useTranslations("TimerTitle")
   const [isFocused, setIsFocused] = useState(false)
   const [viewportWidthPx, setViewportWidthPx] = useState<number | undefined>(
     undefined,
@@ -114,7 +116,7 @@ export default function TimerTitle({
       }
     >
       <textarea
-        aria-label="Title"
+        aria-label={t("title")}
         autoComplete="off"
         className={classNames(
           "w-full max-w-[22ch] resize-none overflow-hidden rounded-3xl border border-transparent bg-transparent px-3 py-1 text-center font-bold tracking-tight outline-none transition focus:border-foreground/28 focus:bg-foreground/3 focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-4",
@@ -141,7 +143,7 @@ export default function TimerTitle({
       />
       {showEmptyAction && (
         <button
-          aria-label="Add title"
+          aria-label={t("addTitle")}
           className="
             inline-flex min-h-10 items-center justify-center rounded-full border
             border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5
@@ -155,7 +157,7 @@ export default function TimerTitle({
           onClick={focusEditor}
           type="button"
         >
-          Add title
+          {t("addTitle")}
         </button>
       )}
     </div>

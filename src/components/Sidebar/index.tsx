@@ -12,6 +12,7 @@ import {
 } from "react"
 
 import classNames from "classnames"
+import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
 import SettingsPanel from "@/components/Sidebar/SettingsPanel"
@@ -44,12 +45,6 @@ type SidebarEntry = {
   label: string
 }
 
-const mainEntries: SidebarEntry[] = [
-  { icon: <ClockIcon className="size-4" />, id: "timer", label: "Timer" },
-  { icon: <ShareIcon className="size-4" />, id: "share", label: "Share" },
-  { icon: <CogIcon className="size-4" />, id: "settings", label: "Settings" },
-]
-
 function getDefaultFocusRef({
   closeButtonRef,
   isFullscreenSidebar,
@@ -73,10 +68,12 @@ function getDefaultFocusRef({
 }
 
 function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
+  const t = useTranslations("Sidebar")
+
   return (
     <div className="space-y-3">
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="text-sm/6 text-foreground/68">View mode not supported.</p>
+      <p className="text-sm/6 text-foreground/68">{t("readonlyUnsupported")}</p>
     </div>
   )
 }
@@ -136,12 +133,31 @@ export default function Sidebar({
     sessionId?: string
   }
 }) {
+  const t = useTranslations("Sidebar")
+  const tAppShell = useTranslations("AppShell")
   const isNarrowViewport = useIsNarrowViewport()
   const offcanvasRef = useRef<HTMLDivElement>(null)
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
   const panelCloseButtonRef = useRef<HTMLButtonElement>(null)
   const { params, getUrlWithParams } = paramData
   const { accessTokens } = peerData
+  const mainEntries: SidebarEntry[] = [
+    {
+      icon: <ClockIcon className="size-4" />,
+      id: "timer",
+      label: t("entries.timer"),
+    },
+    {
+      icon: <ShareIcon className="size-4" />,
+      id: "share",
+      label: t("entries.share"),
+    },
+    {
+      icon: <CogIcon className="size-4" />,
+      id: "settings",
+      label: t("entries.settings"),
+    },
+  ]
 
   const isOpen = isPinnedOpen
   const isOverlayActive = isPinnedOpen || selectedEntryId !== null
@@ -236,7 +252,7 @@ export default function Sidebar({
         />
       ),
       id: "status",
-      label: "Status",
+      label: t("entries.status"),
     },
   ]
 
@@ -297,12 +313,12 @@ export default function Sidebar({
   if (isReadonlySidebar) {
     const readonlyPanelTitle =
       selectedEntry === "timer"
-        ? "Timer"
+        ? t("entries.timer")
         : selectedEntry === "share"
-          ? "Share"
+          ? t("entries.share")
           : selectedEntry === "settings"
-            ? "Settings"
-            : "Status"
+            ? t("entries.settings")
+            : t("entries.status")
     const readonlyPanelContent =
       selectedEntry === "status" ? (
         <StatusPanel {...statusPanelData} />
@@ -314,7 +330,7 @@ export default function Sidebar({
       <div className="pointer-events-none fixed inset-0 z-30">
         {isOverlayActive && (
           <button
-            aria-label="Close sidebar"
+            aria-label={t("closeSidebar")}
             className="
               pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
               backdrop-blur-[2px] transition-opacity duration-300
@@ -367,7 +383,7 @@ export default function Sidebar({
                     onClick={closeSidebar}
                     {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     ref={panelCloseButtonRef}
-                    title="Close sidebar"
+                    title={t("closeSidebar")}
                   />
                 </div>
                 <div className="min-h-0 flex-1 pr-1 pb-16">
@@ -385,7 +401,7 @@ export default function Sidebar({
     <div className="pointer-events-none fixed inset-0 z-30">
       {isOverlayActive && (
         <button
-          aria-label="Close sidebar"
+          aria-label={t("closeSidebar")}
           className="
             pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
             backdrop-blur-[2px] transition-opacity duration-300
@@ -406,7 +422,7 @@ export default function Sidebar({
           aria-controls="sidebar-offcanvas"
           aria-expanded={isOpen}
           aria-haspopup="dialog"
-          aria-label="Toggle navigation"
+          aria-label={t("toggleNavigation")}
           className={classNames(
             "pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-lg border",
             "border-foreground/16 bg-background/84 text-foreground/78 shadow-sm backdrop-blur",
@@ -449,13 +465,13 @@ export default function Sidebar({
           "
           >
             <div className="text-xl font-semibold text-foreground">
-              mkrz timer
+              {tAppShell("metadata.title")}
             </div>
             <CloseButton
               className="sm:hidden"
               onClick={closeSidebar}
               ref={menuCloseButtonRef}
-              title="Close sidebar menu"
+              title={t("closeSidebarMenu")}
             />
           </header>
           <nav
@@ -574,7 +590,9 @@ export default function Sidebar({
                   {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   ref={panelCloseButtonRef}
                   title={
-                    isNarrowViewport ? "Back to sidebar menu" : "Close sidebar"
+                    isNarrowViewport
+                      ? t("backToSidebarMenu")
+                      : t("closeSidebar")
                   }
                 >
                   {isNarrowViewport ? (

@@ -173,6 +173,7 @@ export async function openClientFromSettings(
 
   await clientPage.goto(expectedUrl.toString())
   await expect(clientPage).toHaveURL(expectedUrl.toString())
+  await expect(clientPage.getByTestId("remote-status")).toHaveCount(1)
 
   return clientPage
 }
@@ -354,7 +355,7 @@ export async function updateTimerSettings(
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Primary Color")
+      .getByLabel("Color")
       .fill(primaryColor)
   }
 }

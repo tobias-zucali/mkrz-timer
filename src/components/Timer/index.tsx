@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import Pie from "@/components/Pie"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import DigitalDisplay from "@/components/DigitalDisplay"
@@ -44,6 +46,7 @@ export default function Timer({
   handleTimeBlur: () => void
   timer: ReturnType<typeof useTimer>
 }) {
+  const t = useTranslations("Timer")
   const {
     minutes,
     seconds,
@@ -72,7 +75,10 @@ export default function Timer({
         <div className="pointer-events-auto flex flex-col items-center gap-3">
           {activeRow && activeRow.repeatCount > 1 ? (
             <span className="text-xs font-medium text-foreground/52">
-              Loop {currentRepeat} of {activeRow.repeatCount}
+              {t("loop", {
+                current: currentRepeat,
+                total: activeRow.repeatCount,
+              })}
             </span>
           ) : null}
           <div className="flex items-center gap-2">
@@ -82,8 +88,13 @@ export default function Timer({
                 ? "h-2.5 w-6 rounded-full bg-foreground"
                 : "size-2.5 cursor-pointer rounded-full bg-foreground/22 hover:bg-foreground/42"
               const stepTitle = row.title.trim()
-                ? `Step ${index + 1}: ${row.title.trim()}`
-                : `Step ${index + 1}`
+                ? t("stepTitleWithName", {
+                    step: index + 1,
+                    title: row.title.trim(),
+                  })
+                : t("stepTitleWithoutName", {
+                    step: index + 1,
+                  })
 
               return (
                 <button
@@ -199,7 +210,7 @@ export default function Timer({
           >
             {hasPreviousRow && !isReadonly ? (
               <button
-                aria-label="Previous step"
+                aria-label={t("previousStep")}
                 className="
                   absolute top-1/2 left-4 z-10 inline-flex size-12 -translate-y-1/2
                   items-center justify-center rounded-full border
@@ -217,7 +228,7 @@ export default function Timer({
             ) : null}
             {hasNextRow && !isReadonly ? (
               <button
-                aria-label="Next step"
+                aria-label={t("nextStep")}
                 className={
                   highlightNextAction
                     ? `
@@ -267,13 +278,13 @@ export default function Timer({
                   disabled={isTimedOut}
                   onClick={() => handleAction(isPaused ? "start" : "pause")}
                 >
-                  {isPaused ? "START" : "PAUSE"}
+                  {isPaused ? t("start") : t("pause")}
                 </button>
                 <button
                   className={timerButtonClassName}
                   onClick={() => handleAction("restart")}
                 >
-                  RESET
+                  {t("reset")}
                 </button>
               </div>
             )}

@@ -1,3 +1,3 @@
-import TimerPage from "../TimerPage"
+import TimerPageRoute from "@/features/TimerPage/Route"
 
-export default TimerPage
+export default TimerPageRoute

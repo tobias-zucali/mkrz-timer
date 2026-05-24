@@ -1,9 +1,10 @@
 "use client"
 
 import { type ReactNode, useEffect, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
 
 import DeveloperReportDialog from "@/components/DeveloperReportDialog"
-import { getDocumentLocale } from "@/i18n/locale"
+import type { AppTranslationFn } from "@/i18n/translator"
 import type { SessionParticipant } from "@/shared/remoteSession/types"
 import { getPublicBuildInfo } from "@/shared/buildInfo"
 import ActionButton from "@/utils/ActionButton"
@@ -18,12 +19,26 @@ import {
   splitTimelineEntry,
 } from "@/components/StatusBadge/statusHelpers"
 
-import { getParticipantSummary } from "./participantSummary"
+import { getParticipantSummary } from "../participantSummary"
 
 type RemoteStatusConnection = {
   id: string
   isAlive: boolean
   participantLabel: "Control" | "View" | "You"
+}
+
+function getParticipantLabel(
+  participantLabel: RemoteStatusConnection["participantLabel"],
+  t: ReturnType<typeof useTranslations>,
+) {
+  switch (participantLabel) {
+    case "Control":
+      return t("participantControl")
+    case "View":
+      return t("participantView")
+    case "You":
+      return t("participantYou")
+  }
 }
 
 function DisclosureSection({
@@ -37,6 +52,7 @@ function DisclosureSection({
   testId: string
   title: string
 }) {
+  const t = useTranslations("Sidebar.status")
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
@@ -59,7 +75,7 @@ function DisclosureSection({
           text-xs font-medium tracking-[0.12em] text-foreground/52 uppercase
         "
         >
-          {isOpen ? "Hide" : "Show"}
+          {isOpen ? t("hide") : t("show")}
         </span>
       </button>
       {isOpen && (
@@ -105,8 +121,11 @@ export default function StatusPanel({
   sessionPresentation: SessionPresentationModel
   sessionId?: string
 }) {
+  const t = useTranslations("Sidebar.status")
+  const tParticipantSummary = useTranslations("Sidebar.participantSummary")
+  const tStatusBadge = useTranslations("StatusBadge")
+  const locale = useLocale()
   const [isReportOverlayOpen, setIsReportOverlayOpen] = useState(false)
-  const [locale] = useState(() => getDocumentLocale())
   const [relativeNow, setRelativeNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -121,15 +140,18 @@ export default function StatusPanel({
     }
   }, [])
 
-  const networkLabel = getNetworkLabel(isOnline)
-  const relayReachabilityLabel = getRelayReachabilityLabel(relayReachability)
+  const networkLabel = getNetworkLabel(isOnline, t as AppTranslationFn)
+  const relayReachabilityLabel = getRelayReachabilityLabel(
+    relayReachability,
+    t as AppTranslationFn,
+  )
   const displayStateLabel = errorText
-    ? "Error"
+    ? tStatusBadge("error")
     : floatingTimerErrorText
-      ? "Attention needed"
+      ? tStatusBadge("attentionNeeded")
       : sessionPresentation.statusPanel.stateLabel
   const displayDescription = floatingTimerErrorText
-    ? "A local feature reported an issue. Review the details below."
+    ? t("localFeatureIssue")
     : sessionPresentation.statusPanel.description
   const hasLiveSessionDetails =
     sessionPresentation.state !== "local" &&
@@ -137,6 +159,7 @@ export default function StatusPanel({
   const participantCountLabel = getParticipantSummary({
     localClientId,
     participants,
+    t: tParticipantSummary as AppTranslationFn,
   })
   const { buildId, buildLabel } = getPublicBuildInfo()
 
@@ -144,7 +167,9 @@ export default function StatusPanel({
     <>
       <div className="space-y-6" data-testid="remote-status-panel">
         <section className="space-y-4">
-          <h3 className="text-base font-semibold text-foreground">Status</h3>
+          <h3 className="text-base font-semibold text-foreground">
+            {t("heading")}
+          </h3>
           {errorText && (
             <div
               className="
@@ -154,7 +179,7 @@ export default function StatusPanel({
               data-testid="remote-status-error"
               role="alert"
             >
-              <p className="font-semibold text-red-50">Latest issue</p>
+              <p className="font-semibold text-red-50">{t("latestIssue")}</p>
               <p className="mt-1 leading-6 wrap-anywhere">{errorText}</p>
             </div>
           )}
@@ -168,7 +193,7 @@ export default function StatusPanel({
               role="alert"
             >
               <p className="font-semibold text-amber-50">
-                Floating timer issue
+                {t("floatingTimerIssue")}
               </p>
               <p className="mt-1 leading-6">{floatingTimerErrorText}</p>
             </div>
@@ -179,7 +204,7 @@ export default function StatusPanel({
               disabled={isRetrying}
               onClick={onRetry}
             >
-              {isRetrying ? "Retrying..." : "Retry connection"}
+              {isRetrying ? t("retrying") : t("retryConnection")}
             </ActionButton>
           )}
           <div
@@ -193,29 +218,33 @@ export default function StatusPanel({
               sm:grid-cols-[auto_1fr] sm:gap-x-3
             "
             >
-              <dt className="font-medium text-foreground">Session</dt>
+              <dt className="font-medium text-foreground">{t("session")}</dt>
               <dd data-testid="remote-status-session">
                 {sessionPresentation.statusPanel.sessionLabel}
               </dd>
-              <dt className="font-medium text-foreground">State</dt>
+              <dt className="font-medium text-foreground">{t("state")}</dt>
               <dd data-testid="remote-status-state">{displayStateLabel}</dd>
-              <dt className="font-medium text-foreground">Access</dt>
+              <dt className="font-medium text-foreground">{t("access")}</dt>
               <dd data-testid="remote-status-role">
                 {sessionPresentation.statusPanel.accessLabel}
               </dd>
-              <dt className="font-medium text-foreground">Live session</dt>
+              <dt className="font-medium text-foreground">
+                {t("liveSession")}
+              </dt>
               <dd data-testid="remote-status-link">
                 {sessionPresentation.statusPanel.summaryLabel}
               </dd>
               {hasLiveSessionDetails && (
                 <>
-                  <dt className="font-medium text-foreground">Participants</dt>
+                  <dt className="font-medium text-foreground">
+                    {t("participants")}
+                  </dt>
                   <dd data-testid="remote-status-participant-count">
                     {participantCountLabel}
                   </dd>
                 </>
               )}
-              <dt className="font-medium text-foreground">Build</dt>
+              <dt className="font-medium text-foreground">{t("build")}</dt>
               <dd
                 className="font-mono text-xs text-foreground/72"
                 data-testid="remote-status-build"
@@ -240,13 +269,13 @@ export default function StatusPanel({
             "
             onClick={() => setIsReportOverlayOpen(true)}
           >
-            Send to developer
+            {t("sendToDeveloper")}
           </ActionButton>
         </section>
 
         <DisclosureSection
           testId="remote-status-details"
-          title="Connection details"
+          title={t("connectionDetails")}
         >
           <dl
             className="
@@ -254,28 +283,30 @@ export default function StatusPanel({
             sm:grid-cols-[auto_1fr] sm:gap-x-3
           "
           >
-            <dt className="font-medium text-foreground">Network</dt>
+            <dt className="font-medium text-foreground">{t("network")}</dt>
             <dd data-testid="remote-status-network">{networkLabel}</dd>
             {hasLiveSessionDetails && (
               <>
-                <dt className="font-medium text-foreground">Access</dt>
+                <dt className="font-medium text-foreground">{t("access")}</dt>
                 <dd data-testid="remote-status-session-role">
                   {sessionPresentation.roleChipLabel}
                 </dd>
-                <dt className="font-medium text-foreground">Session id</dt>
+                <dt className="font-medium text-foreground">
+                  {t("sessionId")}
+                </dt>
                 <dd
                   className="font-mono text-xs text-foreground/72"
                   data-testid="remote-status-session-id"
                 >
-                  {sessionId ?? "Unavailable"}
+                  {sessionId ?? t("unavailable")}
                 </dd>
                 <dt className="font-medium text-foreground">
-                  Relay reachability
+                  {t("relayReachability")}
                 </dt>
                 <dd data-testid="remote-status-relay-reachability">
                   {relayReachabilityLabel}
                 </dd>
-                <dt className="font-medium text-foreground">Relay</dt>
+                <dt className="font-medium text-foreground">{t("relay")}</dt>
                 <dd data-testid="remote-status-relay">{relayLabel}</dd>
               </>
             )}
@@ -288,7 +319,7 @@ export default function StatusPanel({
                 uppercase
               "
               >
-                Participants
+                {t("participantsHeading")}
               </h4>
               <ul
                 className="
@@ -314,7 +345,7 @@ export default function StatusPanel({
                           text-foreground/72 uppercase
                         "
                         >
-                          {detail.participantLabel}
+                          {getParticipantLabel(detail.participantLabel, t)}
                         </span>
                         <span
                           className="
@@ -325,13 +356,15 @@ export default function StatusPanel({
                         </span>
                       </span>
                       <span className="text-foreground/72">
-                        {detail.isAlive ? "live" : "stale"}
+                        {detail.isAlive
+                          ? t("participantLive")
+                          : t("participantStale")}
                       </span>
                     </li>
                   ))
                 ) : (
                   <li className="text-sm text-foreground/68">
-                    No participants connected.
+                    {t("noParticipants")}
                   </li>
                 )}
               </ul>
@@ -342,7 +375,7 @@ export default function StatusPanel({
         {activityLog.length > 0 && (
           <DisclosureSection
             testId="remote-status-activity"
-            title="Recent activity"
+            title={t("recentActivity")}
           >
             <ul className="space-y-2" data-testid="remote-status-activity-log">
               {activityLog.map((entry, index) => {

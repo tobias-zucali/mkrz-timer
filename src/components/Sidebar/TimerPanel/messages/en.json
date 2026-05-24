@@ -1,0 +1,13 @@
+{
+  "heading": "Sequence",
+  "step": "Step {step}",
+  "active": "Active",
+  "makeActive": "Make active",
+  "moveStepUp": "Move step {step} up",
+  "moveStepDown": "Move step {step} down",
+  "duplicateStep": "Duplicate step {step}",
+  "deleteStep": "Delete step {step}",
+  "addStep": "Add step",
+  "autoAdvance": "Auto-advance",
+  "repeatSummary": "x{count}"
+}

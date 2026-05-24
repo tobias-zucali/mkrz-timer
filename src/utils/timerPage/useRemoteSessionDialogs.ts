@@ -2,7 +2,9 @@
 
 import type { RefObject } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 
+import type { AppTranslationFn } from "@/i18n/translator"
 import { getExitConfirmationDialog } from "@/utils/timerPage/dialogs"
 import useParams from "@/utils/useParams"
 import {
@@ -54,6 +56,7 @@ export default function useRemoteSessionDialogs({
   setState: (state: TimerState) => void
   syncParamsRef: RefObject<SyncParams>
 }) {
+  const t = useTranslations("TimerPage.dialogs")
   const [isSwitchingToLocalMode, setIsSwitchingToLocalMode] = useState(false)
   const [pendingExitConfirmation, setPendingExitConfirmation] = useState<
     "end-live-session" | "leave-control-client" | null
@@ -176,22 +179,22 @@ export default function useRemoteSessionDialogs({
       actions: hasPendingSyncConflict
         ? [
             {
-              label: "Use server state",
+              label: t("useServerState"),
               onClick: () => resolvePendingSyncConflict("use-server"),
             },
             {
-              label: "Push local changes",
+              label: t("pushLocalChanges"),
               onClick: () => resolvePendingSyncConflict("use-local"),
               tone: "primary" as const,
             },
           ]
         : [
             {
-              label: "Retry connection",
+              label: t("retryConnection"),
               onClick: retryConnection,
             },
             {
-              label: "Use local mode",
+              label: t("useLocalMode"),
               onClick: () => {
                 void handleUseLocalMode()
               },
@@ -199,13 +202,13 @@ export default function useRemoteSessionDialogs({
             },
           ],
       description: hasPendingSyncConflict
-        ? "The live session changed while this client was recovering. Choose whether to keep the fresh server state, push this client's local timer state, or leave the live session and continue locally."
+        ? t("syncConflictDescription")
         : localFallbackReason === "invalid-session"
-          ? "This live session link is no longer valid. You can retry the connection or continue with the best available local timer state."
-          : "The live session could not recover cleanly. Retry the connection or continue with the best available local timer state.",
+          ? t("invalidSessionDescription")
+          : t("recoveryDescription"),
       title: hasPendingSyncConflict
-        ? "Live session state changed during recovery."
-        : "Live session recovery needs your decision.",
+        ? t("syncConflictTitle")
+        : t("recoveryTitle"),
     }
   }, [
     handleUseLocalMode,
@@ -215,6 +218,7 @@ export default function useRemoteSessionDialogs({
     localFallbackReason,
     resolvePendingSyncConflict,
     retryConnection,
+    t,
   ])
 
   const exitConfirmationDialog = useMemo(() => {
@@ -229,8 +233,14 @@ export default function useRemoteSessionDialogs({
       },
       otherParticipantCount,
       pendingExitConfirmation,
+      t: t as AppTranslationFn,
     })
-  }, [completeEndRemoteSession, otherParticipantCount, pendingExitConfirmation])
+  }, [
+    completeEndRemoteSession,
+    otherParticipantCount,
+    pendingExitConfirmation,
+    t,
+  ])
 
   return {
     clearRecentlyEndedLiveSession: () => {

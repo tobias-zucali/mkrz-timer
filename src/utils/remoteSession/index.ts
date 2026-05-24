@@ -32,6 +32,7 @@ import {
   handleSocketError,
   toError,
 } from "./lifecycle"
+import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
 import {
   buildHeartbeatMessage,
   buildJoinMessage,
@@ -943,20 +944,53 @@ export default function useRemoteSession({
   }, [clearTimers])
 
   const connectionCount = participants.length
-  const connectionDetails = useMemo<RelayConnectionDetails[]>(
-    () =>
-      participants.map((participant) => ({
+  const connectionDetails = useMemo<RelayConnectionDetails[]>(() => {
+    const localClientId = localClientIdRef.current
+
+    const getParticipantSortRank = (participant: SessionParticipant) => {
+      const isLocalClient = participant.clientId === localClientId
+
+      if (remoteRole === null) {
+        return isLocalClient ? 0 : participant.canControl ? 1 : 2
+      }
+
+      if (remoteRole === "control") {
+        if (isPromotedHostControlClient()) {
+          return isLocalClient ? 0 : participant.canControl ? 1 : 2
+        }
+
+        return participant.canControl && !isLocalClient
+          ? 0
+          : isLocalClient
+            ? 1
+            : 2
+      }
+
+      return participant.canControl ? 0 : isLocalClient ? 2 : 1
+    }
+
+    return participants
+      .map((participant, index) => ({
+        index,
+        participant,
+      }))
+      .sort(
+        (left, right) =>
+          getParticipantSortRank(left.participant) -
+            getParticipantSortRank(right.participant) ||
+          left.index - right.index,
+      )
+      .map(({ participant }) => ({
         id: participant.clientId,
         isAlive: true,
         participantLabel:
-          participant.clientId === localClientIdRef.current
+          participant.clientId === localClientId
             ? "You"
             : participant.canControl
               ? "Control"
               : "View",
-      })),
-    [participants],
-  )
+      }))
+  }, [participants, remoteRole])
 
   return useMemo(
     () => ({

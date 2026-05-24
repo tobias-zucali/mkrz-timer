@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import HelpText from "@/components/HelpText"
 import ActionButton from "@/utils/ActionButton"
 import ColorSwatchField from "@/utils/ColorSwatchField"
@@ -18,27 +20,29 @@ export default function SettingsPanel({
     fg: string
   }
 }) {
+  const t = useTranslations("Sidebar.settings")
+
   return (
     <div className="space-y-6">
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            Appearance
+            {t("appearanceHeading")}
           </h3>
           <p className="mt-1 text-sm/6 text-foreground/68">
-            Adjust the timer colors that frame the clock.
+            {t("appearanceDescription")}
           </p>
         </div>
         <div className="grid gap-3">
           <ColorSwatchField
             id="sidebar-background"
-            label="Background"
+            label={t("background")}
             onChange={(event) => handleChange("bg", event.target.value)}
             value={params.bg}
           />
           <ColorSwatchField
             id="sidebar-foreground"
-            label="Foreground"
+            label={t("foreground")}
             onChange={(event) => handleChange("fg", event.target.value)}
             value={params.fg}
           />
@@ -47,10 +51,10 @@ export default function SettingsPanel({
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            Floating Timer
+            {t("floatingHeading")}
           </h3>
           <p className="mt-1 text-sm/6 text-foreground/68">
-            Keep a compact timer visible above other windows.
+            {t("floatingDescription")}
           </p>
         </div>
         <div className="space-y-3">
@@ -64,15 +68,14 @@ export default function SettingsPanel({
           >
             <span>
               {floatingTimerData.isOpen
-                ? "Floating timer open"
-                : "Open floating timer"}
+                ? t("floatingOpenState")
+                : t("floatingOpen")}
             </span>
             <WindowIcon className="size-4" />
           </ActionButton>
           {!floatingTimerData.isSupported && (
             <p className="text-sm/6 text-foreground/68">
-              {floatingTimerData.unsupportedReason ??
-                "Floating Timer is not available in this browser."}
+              {floatingTimerData.unsupportedReason ?? t("floatingUnsupported")}
             </p>
           )}
         </div>
@@ -80,10 +83,10 @@ export default function SettingsPanel({
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            Keyboard Shortcuts
+            {t("shortcutsHeading")}
           </h3>
           <p className="mt-1 text-sm/6 text-foreground/68">
-            Global timer shortcuts stay available when overlays are closed.
+            {t("shortcutsDescription")}
           </p>
         </div>
         <HelpText />
