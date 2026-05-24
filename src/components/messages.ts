@@ -11,6 +11,7 @@ import settingsPanelEnMessages from "./Sidebar/SettingsPanel/messages/en.json" w
 import sharePanelEnMessages from "./Sidebar/SharePanel/messages/en.json" with { type: "json" }
 import statusPanelEnMessages from "./Sidebar/StatusPanel/messages/en.json" with { type: "json" }
 import timerPanelEnMessages from "./Sidebar/TimerPanel/messages/en.json" with { type: "json" }
+import timerSequenceInspectorEnMessages from "./Sidebar/TimerSequenceInspector/messages/en.json" with { type: "json" }
 import statusBadgeEnMessages from "./StatusBadge/messages/en.json" with { type: "json" }
 import syncConflictDialogEnMessages from "./SyncConflictDialog/messages/en.json" with { type: "json" }
 import timerEnMessages from "./Timer/messages/en.json" with { type: "json" }
@@ -32,6 +33,7 @@ export const componentMessagesByLocale = {
       share: sharePanelEnMessages,
       status: statusPanelEnMessages,
       timer: timerPanelEnMessages,
+      timerSequenceInspector: timerSequenceInspectorEnMessages,
     },
     StatusBadge: statusBadgeEnMessages,
     SyncConflictDialog: syncConflictDialogEnMessages,

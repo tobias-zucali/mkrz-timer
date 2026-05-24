@@ -19,6 +19,7 @@ const iconButtonClassName =
   "ml-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.06] text-foreground/80 transition hover:bg-foreground/[0.12] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 export default function UrlCopyField({
+  description,
   label,
   showOpenButton = false,
   value,
@@ -37,10 +38,11 @@ export default function UrlCopyField({
     <>
       <InputField
         className="text-sm text-foreground/75"
+        description={description}
         id={fieldId}
+        label={label}
         value={isClient ? value : ""}
         readOnly={true}
-        label={label}
         {...otherProps}
       >
         {canCopy && (

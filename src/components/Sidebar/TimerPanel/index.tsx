@@ -1,24 +1,20 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import type { CSSProperties } from "react"
+import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import InputField from "@/components/InputField"
+import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/remoteSession/types"
-import { MAX_TITLE_LENGTH } from "@/shared/security/input"
 import {
   buildDurationPartsFromTotalSeconds,
   getEffectiveTimerSequenceRows,
 } from "@/shared/timerSequence"
-import ColorSwatchField from "@/utils/ColorSwatchField"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   DocumentDuplicateIcon,
   TrashIcon,
 } from "@/utils/icons"
-import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import {
   addTimerSequenceRow,
   buildTimerSequenceChange,
@@ -39,18 +35,6 @@ const primaryButtonClassName =
 
 const stateBadgeClassName =
   "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold"
-
-const selectedFieldClassName =
-  "focus:border-(--step-color) focus:outline-(--step-color)"
-
-const repetitionOptions = Array.from({ length: 9 }, (_, index) => {
-  const value = index + 1
-
-  return {
-    label: `${value}`,
-    value: `${value}`,
-  }
-})
 
 type SequenceRow = SyncParams["rows"][number]
 
@@ -101,17 +85,6 @@ export default function TimerPanel({
 }) {
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
-  const titleTextareaRef = useRef<HTMLTextAreaElement>(null)
-  const endBehaviorOptions = [
-    {
-      label: t("stopAfterCompletion"),
-      value: "stop",
-    },
-    {
-      label: t("autoAdvanceLoop"),
-      value: "advance",
-    },
-  ] as const
 
   useEffect(() => {
     if (params.rows.length === 0) {
@@ -123,16 +96,6 @@ export default function TimerPanel({
       setSelectedIndex(params.rows.length - 1)
     }
   }, [params.rows.length, selectedIndex])
-
-  useLayoutEffect(() => {
-    const textarea = titleTextareaRef.current
-    if (!textarea) {
-      return
-    }
-
-    textarea.style.height = "0px"
-    textarea.style.height = `${textarea.scrollHeight}px`
-  }, [params.rows, selectedIndex])
 
   const effectiveRows = getEffectiveTimerSequenceRows(params.rows)
 
@@ -151,24 +114,6 @@ export default function TimerPanel({
         rowIndex,
         rows: params.rows,
       }),
-    })
-  }
-
-  const updateRowDuration = ({
-    minutes,
-    row,
-    rowIndex,
-    seconds,
-  }: {
-    minutes: string
-    row: SequenceRow
-    rowIndex: number
-    seconds: string
-  }) => {
-    const normalized = normalizeTimeParts({ minutes, seconds })
-    updateRow(rowIndex, {
-      ...row,
-      totalSeconds: normalized.totalSeconds,
     })
   }
 
@@ -263,11 +208,9 @@ export default function TimerPanel({
             const sourceRow = params.rows[index] ?? displayRow
             const isActive = index === activeIndex
             const isSelected = index === selectedIndex
-            const duration = buildDurationPartsFromTotalSeconds(
-              sourceRow.totalSeconds,
-            )
             const canMoveUp = index > 0
             const canMoveDown = index < params.rows.length - 1
+            const canDeleteRow = params.rows.length > 1
 
             return (
               <section
@@ -377,194 +320,30 @@ export default function TimerPanel({
                     >
                       <DocumentDuplicateIcon className="size-4" />
                     </button>
-                    <button
-                      aria-label={t("deleteStep", {
-                        step: index + 1,
-                      })}
-                      className={iconButtonClassName}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        handleDeleteRow(index)
-                      }}
-                      type="button"
-                    >
-                      <TrashIcon className="size-4" />
-                    </button>
+                    {canDeleteRow ? (
+                      <button
+                        aria-label={t("deleteStep", {
+                          step: index + 1,
+                        })}
+                        className={iconButtonClassName}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          handleDeleteRow(index)
+                        }}
+                        type="button"
+                      >
+                        <TrashIcon className="size-4" />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
 
                 {isSelected ? (
-                  <div
-                    className="mt-4 space-y-4 pt-1"
-                    style={
-                      {
-                        "--step-color": displayRow.primaryColor,
-                      } as CSSProperties
-                    }
-                  >
-                    <div className="w-full">
-                      <label
-                        className="mb-2 block text-sm font-medium text-foreground"
-                        htmlFor={`sidebar-sequence-title-${index}`}
-                      >
-                        {t("title")}
-                      </label>
-                      <textarea
-                        className="
-                          block min-h-0 w-full resize-none overflow-hidden rounded-md border border-foreground/10
-                          bg-background px-3 py-2 text-sm/6 text-foreground outline-1
-                          -outline-offset-1 outline-foreground/10
-                          placeholder:text-foreground/50 focus:outline-2
-                          focus:-outline-offset-2 focus:outline-(--step-color)
-                        "
-                        id={`sidebar-sequence-title-${index}`}
-                        maxLength={MAX_TITLE_LENGTH}
-                        onChange={(event) =>
-                          updateRow(index, {
-                            ...sourceRow,
-                            title: event.target.value,
-                          })
-                        }
-                        onKeyDown={(event) => event.stopPropagation()}
-                        onKeyUp={(event) => event.stopPropagation()}
-                        ref={titleTextareaRef}
-                        rows={1}
-                        value={sourceRow.title}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <InputField
-                        className={selectedFieldClassName}
-                        id={`sidebar-sequence-minutes-${index}`}
-                        inputMode="numeric"
-                        label={t("minutes")}
-                        onBlur={() =>
-                          updateRowDuration({
-                            minutes: duration.m,
-                            row: sourceRow,
-                            rowIndex: index,
-                            seconds: duration.s,
-                          })
-                        }
-                        onChange={(event) =>
-                          updateRowDuration({
-                            minutes: event.target.value,
-                            row: sourceRow,
-                            rowIndex: index,
-                            seconds: duration.s,
-                          })
-                        }
-                        type="number"
-                        value={duration.m}
-                      />
-                      <InputField
-                        className={selectedFieldClassName}
-                        id={`sidebar-sequence-seconds-${index}`}
-                        inputMode="numeric"
-                        label={t("seconds")}
-                        onBlur={() =>
-                          updateRowDuration({
-                            minutes: duration.m,
-                            row: sourceRow,
-                            rowIndex: index,
-                            seconds: duration.s,
-                          })
-                        }
-                        onChange={(event) =>
-                          updateRowDuration({
-                            minutes: duration.m,
-                            row: sourceRow,
-                            rowIndex: index,
-                            seconds: event.target.value,
-                          })
-                        }
-                        type="number"
-                        value={duration.s}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div>
-                        <label
-                          className="mb-2 block text-sm font-medium text-foreground"
-                          htmlFor={`sidebar-sequence-repeat-count-${index}`}
-                        >
-                          {t("repetitions")}
-                        </label>
-                        <select
-                          className="
-                            block h-10 w-full rounded-md border border-foreground/10
-                            bg-background px-3 text-sm text-foreground outline-1
-                            -outline-offset-1 outline-foreground/10
-                            focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
-                          "
-                          id={`sidebar-sequence-repeat-count-${index}`}
-                          onChange={(event) =>
-                            updateRow(index, {
-                              ...sourceRow,
-                              repeatCount: Number.parseInt(
-                                event.target.value,
-                                10,
-                              ),
-                            })
-                          }
-                          value={String(sourceRow.repeatCount)}
-                        >
-                          {repetitionOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label
-                          className="mb-2 block text-sm font-medium text-foreground"
-                          htmlFor={`sidebar-sequence-end-behavior-${index}`}
-                        >
-                          {t("endBehavior")}
-                        </label>
-                        <select
-                          className="
-                          block h-10 w-full rounded-md border border-foreground/10
-                          bg-background px-3 text-sm text-foreground outline-1
-                          -outline-offset-1 outline-foreground/10
-                          focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
-                        "
-                          id={`sidebar-sequence-end-behavior-${index}`}
-                          onChange={(event) =>
-                            updateRow(index, {
-                              ...sourceRow,
-                              endBehavior: event.target
-                                .value as SyncParams["rows"][number]["endBehavior"],
-                            })
-                          }
-                          value={sourceRow.endBehavior}
-                        >
-                          {endBehaviorOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <ColorSwatchField
-                        id={`sidebar-sequence-primary-${index}`}
-                        label={t("color")}
-                        onChange={(event) =>
-                          updateRow(index, {
-                            ...sourceRow,
-                            primaryColor: event.target.value,
-                          })
-                        }
-                        value={sourceRow.primaryColor}
-                      />
-                    </div>
-                  </div>
+                  <TimerSequenceInspector
+                    onRowChange={(nextRow) => updateRow(index, nextRow)}
+                    row={sourceRow}
+                    rowIndex={index}
+                  />
                 ) : null}
               </section>
             )

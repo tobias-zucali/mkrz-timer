@@ -7,15 +7,7 @@
   "moveStepDown": "Move step {step} down",
   "duplicateStep": "Duplicate step {step}",
   "deleteStep": "Delete step {step}",
-  "title": "Title",
-  "minutes": "Minutes",
-  "seconds": "Seconds",
-  "repetitions": "Repetitions",
-  "endBehavior": "End behavior",
-  "color": "Primary color",
   "addStep": "Add step",
-  "stopAfterCompletion": "Stop after completion",
-  "autoAdvanceLoop": "Auto-advance / loop",
   "autoAdvance": "Auto-advance",
   "repeatSummary": "x{count}"
 }

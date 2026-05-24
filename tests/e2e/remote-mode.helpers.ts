@@ -355,7 +355,7 @@ export async function updateTimerSettings(
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Primary Color")
+      .getByLabel("Color")
       .fill(primaryColor)
   }
 }
