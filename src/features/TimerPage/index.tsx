@@ -9,6 +9,7 @@ import {
   useState,
 } from "react"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import ActionDialog from "@/components/ActionDialog"
 import Sidebar from "@/components/Sidebar"
@@ -39,6 +40,7 @@ export default function TimerPage() {
 }
 
 function TimerApp() {
+  const t = useTranslations("TimerPage.page")
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
   const nextPathname = usePathname()
@@ -246,9 +248,6 @@ function TimerApp() {
     },
     [],
   )
-  const openSharePanel = useCallback(() => {
-    openSidebarEntry("share")
-  }, [openSidebarEntry])
   const openStatusPanel = useCallback(() => {
     openSidebarEntry("status")
   }, [openSidebarEntry])
@@ -311,27 +310,16 @@ function TimerApp() {
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault()
-      event.returnValue =
-        "Other live-session clients are still connected to this controller."
+      event.returnValue = t("otherClientsBeforeUnload")
     }
 
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload)
     }
-  }, [hasOtherConnectedClients, isControlCapableClient])
+  }, [hasOtherConnectedClients, isControlCapableClient, t])
 
-  const {
-    floatingTimerData,
-    floatingTimerErrorText,
-    getErrorReportBody,
-    isOnline,
-    readonlyPlaceholder,
-    relayLabel,
-    relayReachability,
-    remoteErrorText,
-    sessionPresentation,
-  } = useSessionDiagnostics({
+  const { readonlyPlaceholder, ...sessionDiagnostics } = useSessionDiagnostics({
     canRetryManually,
     connectionCount,
     connectionDetails,
@@ -341,16 +329,14 @@ function TimerApp() {
     hasRecentlyEndedLiveSession,
     isHostRemoteSession,
     isReadonlyClient,
-    lifecycleState:
-      remoteLinkError && lifecycleState !== "reconnecting"
-        ? "failed"
-        : lifecycleState,
+    lifecycleState,
     onOpenStatusPanel: openStatusPanel,
     params,
     participants,
     pathname,
     peerEventTimeline,
     remoteError,
+    remoteLinkError,
     remoteRole,
     remoteStatusEnabled,
     sessionId,
@@ -366,38 +352,40 @@ function TimerApp() {
     },
   })
 
-  const handleStartRemoteSession = useCallback(async () => {
+  const clearEndedLiveSession = () => {
     clearRecentlyEndedLiveSession()
-    await connectRemote()
-  }, [clearRecentlyEndedLiveSession, connectRemote])
+  }
 
   return (
-    <div className="relative flex h-screen flex-col">
-      {recoveryDialog ? (
-        <SyncConflictDialog
-          actions={recoveryDialog.actions}
-          description={recoveryDialog.description}
-          getDeveloperReportBody={getErrorReportBody}
-          title={recoveryDialog.title}
-        />
-      ) : exitConfirmationDialog ? (
-        <ActionDialog
-          actions={exitConfirmationDialog.actions}
-          defaultFocusActionIndex={0}
-          description={exitConfirmationDialog.description}
-          eyebrow={exitConfirmationDialog.eyebrow}
-          title={exitConfirmationDialog.title}
-        />
-      ) : null}
+    <>
+      <Timer
+        activeIndex={params.activeIndex}
+        handleChange={handleChange}
+        handleTimeBlur={normalizeTimerInputs}
+        isReadonly={isReadonlyClient}
+        onSelectSequenceRow={handleSelectSequenceRow}
+        readonlyPlaceholder={readonlyPlaceholder}
+        rows={params.rows}
+        timer={timer}
+        title={title}
+      />
+      <TopRightControls
+        floatingTimerData={sessionDiagnostics.floatingTimerData}
+        isReadonlyClient={isReadonlyClient}
+        isSharePanelOpen={isSharePanelOpen}
+        onOpenSharePanel={openStatusOrSharePanel}
+      />
       <Sidebar
         activeIndex={params.activeIndex}
-        floatingTimerData={floatingTimerData}
+        floatingTimerData={sessionDiagnostics.floatingTimerData}
         handleChange={handleChange}
         isPinnedOpen={isSidebarPinnedOpen}
         onActivateSequenceRow={handleActivateSequenceRow}
         onEndRemoteSession={handleEndRemoteSession}
         onSequenceChange={handleSequenceChange}
-        onStartRemoteSession={handleStartRemoteSession}
+        onStartRemoteSession={async () => {
+          await connectRemote()
+        }}
         paramData={paramData}
         peerData={remoteSession}
         remoteRole={remoteRole}
@@ -407,49 +395,59 @@ function TimerApp() {
         statusPanelData={{
           activityLog: peerEventTimeline,
           connectionDetails,
-          errorText: remoteErrorText,
-          floatingTimerErrorText,
-          getErrorReportBody,
-          isOnline,
-          isRetrying: isConnecting,
+          errorText: sessionDiagnostics.remoteErrorText,
+          floatingTimerErrorText: sessionDiagnostics.floatingTimerErrorText,
+          getErrorReportBody: sessionDiagnostics.getErrorReportBody,
+          isOnline: sessionDiagnostics.isOnline,
+          isRetrying: lifecycleState === "reconnecting",
           localClientId,
           onRetry: retryConnection,
           participants,
-          relayLabel,
-          relayReachability,
-          sessionPresentation,
+          relayLabel: sessionDiagnostics.relayLabel,
+          relayReachability: sessionDiagnostics.relayReachability,
           sessionId,
+          sessionPresentation: sessionDiagnostics.sessionPresentation,
         }}
       />
-      <TopRightControls
-        floatingTimerData={floatingTimerData}
-        isSharePanelOpen={isSharePanelOpen}
-        isReadonlyClient={isReadonlyClient}
-        onOpenSharePanel={openSharePanel}
-      />
-      <div className="min-h-0 flex-1">
-        <Timer
-          activeIndex={params.activeIndex}
-          handleChange={handleChange}
-          handleTimeBlur={normalizeTimerInputs}
-          isReadonly={isReadonlyClient}
-          onSelectSequenceRow={handleSelectSequenceRow}
-          rows={params.rows}
-          readonlyPlaceholder={readonlyPlaceholder}
-          timer={timer}
-          title={title}
-        />
-      </div>
       <StatusBadge
         connectionCount={connectionCount}
-        errorText={remoteErrorText}
-        floatingTimerErrorText={floatingTimerErrorText}
-        isOnline={isOnline}
+        errorText={sessionDiagnostics.remoteErrorText}
+        floatingTimerErrorText={sessionDiagnostics.floatingTimerErrorText}
+        isOnline={sessionDiagnostics.isOnline}
         onOpenSharePanel={openStatusOrSharePanel}
-        relayReachability={relayReachability}
-        sessionPresentation={sessionPresentation}
+        relayReachability={sessionDiagnostics.relayReachability}
         sessionId={sessionId}
+        sessionPresentation={sessionDiagnostics.sessionPresentation}
       />
-    </div>
+      {exitConfirmationDialog ? (
+        <ActionDialog
+          actions={exitConfirmationDialog.actions}
+          description={exitConfirmationDialog.description}
+          eyebrow={exitConfirmationDialog.eyebrow}
+          title={exitConfirmationDialog.title}
+        />
+      ) : null}
+      {recoveryDialog ? (
+        <SyncConflictDialog
+          actions={recoveryDialog.actions}
+          description={recoveryDialog.description}
+          getDeveloperReportBody={sessionDiagnostics.getErrorReportBody}
+          title={recoveryDialog.title}
+        />
+      ) : null}
+      {hasRecentlyEndedLiveSession ? (
+        <ActionDialog
+          actions={[
+            {
+              label: t("dismiss"),
+              onClick: clearEndedLiveSession,
+              tone: "primary",
+            },
+          ]}
+          description={t("liveSessionEndedDescription")}
+          title={t("liveSessionEndedTitle")}
+        />
+      ) : null}
+    </>
   )
 }

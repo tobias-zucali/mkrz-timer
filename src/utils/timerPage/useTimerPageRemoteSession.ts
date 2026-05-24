@@ -6,6 +6,7 @@ import useSyncConflictResolution from "@/app/useSyncConflictResolution"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import debug from "@/utils/debug"
 import useRemoteSession from "@/utils/remoteSession"
+import { createRemoteSessionError } from "@/utils/remoteSession/lifecycle"
 import useParams from "@/utils/useParams"
 import type { TimerState } from "@/utils/useTimer"
 
@@ -28,9 +29,7 @@ export default function useTimerPageRemoteSession({
 }) {
   const remoteLinkError =
     remoteRole !== null && remoteToken === null
-      ? new Error(
-          "Live session link is malformed. Check the URL and try again.",
-        )
+      ? createRemoteSessionError("malformedLinkDetail")
       : null
 
   const {

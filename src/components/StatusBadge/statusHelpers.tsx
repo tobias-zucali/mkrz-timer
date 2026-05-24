@@ -1,5 +1,6 @@
 "use client"
 
+import type { AppTranslationFn } from "@/i18n/translator"
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -8,23 +9,24 @@ import {
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { SessionPresentationState } from "@/utils/sessionPresentation"
 
-export function getNetworkLabel(isOnline: boolean | null) {
+export function getNetworkLabel(isOnline: boolean | null, t: AppTranslationFn) {
   if (isOnline === null) {
-    return "Checking"
+    return t("networkChecking")
   }
-  return isOnline ? "Online" : "Offline"
+  return isOnline ? t("networkOnline") : t("networkOffline")
 }
 
 export function getRelayReachabilityLabel(
   relayReachability: RemoteRelayReachabilityState,
+  t: AppTranslationFn,
 ) {
   switch (relayReachability) {
     case "reachable":
-      return "Reachable"
+      return t("relayReachable")
     case "unreachable":
-      return "Unreachable"
+      return t("relayUnreachable")
     case "checking":
-      return "Checking"
+      return t("networkChecking")
   }
 }
 

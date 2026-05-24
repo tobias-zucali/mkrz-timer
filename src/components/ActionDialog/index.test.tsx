@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
+
+import { renderWithIntl } from "@/test/renderWithIntl"
 
 import ActionDialog from "./index"
 
 describe("ActionDialog", () => {
   it("renders an accessible dialog with its actions", () => {
-    render(
+    renderWithIntl(
       <ActionDialog
         actions={[
           { label: "Cancel", onClick: () => undefined },
@@ -31,7 +33,7 @@ describe("ActionDialog", () => {
     outsideButton.textContent = "Outside"
     document.body.appendChild(outsideButton)
 
-    render(
+    renderWithIntl(
       <ActionDialog
         actions={[
           { label: "Cancel", onClick: () => undefined },
@@ -63,7 +65,7 @@ describe("ActionDialog", () => {
   })
 
   it("renders optional dialog body content above the actions", () => {
-    render(
+    renderWithIntl(
       <ActionDialog
         actions={[{ label: "Continue", onClick: () => undefined }]}
         description="Choose whether the timer should stay connected."

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
 import ActionButton from "@/utils/ActionButton"
@@ -12,13 +13,14 @@ export default function DeveloperReportDialog({
   getReportBody,
   isOpen,
   onClose,
-  subject = "Status Report",
+  subject,
 }: {
   getReportBody: () => string
   isOpen: boolean
   onClose: () => void
   subject?: string
 }) {
+  const t = useTranslations("DeveloperReportDialog")
   const [reportComment, setReportComment] = useState("")
   const reportDialogRef = useRef<HTMLDivElement>(null)
   const reportCommentRef = useRef<HTMLTextAreaElement>(null)
@@ -40,16 +42,17 @@ export default function DeveloperReportDialog({
     return null
   }
 
+  const resolvedSubject = subject ?? t("subject")
   const trimmedReportComment = reportComment.trim()
   const mailBody = [
-    "User comment:",
-    trimmedReportComment || "No additional comment provided.",
+    t("userComment"),
+    trimmedReportComment || t("noAdditionalComment"),
     "",
     getReportBody(),
   ].join("\n")
 
   const openMailApp = () => {
-    window.location.href = `mailto:timer@mkrz.at?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(mailBody)}`
+    window.location.href = `mailto:timer@mkrz.at?subject=${encodeURIComponent(resolvedSubject)}&body=${encodeURIComponent(mailBody)}`
   }
 
   return createPortal(
@@ -77,16 +80,16 @@ export default function DeveloperReportDialog({
                 uppercase
               "
             >
-              Support
+              {t("support")}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-foreground">
-              Send diagnostics
+              {t("heading")}
             </h2>
           </div>
           <CloseButton onClick={onClose} />
         </div>
         <label className="mt-5 block text-sm font-medium text-foreground">
-          What happened?
+          {t("whatHappened")}
           <textarea
             className="
               mt-2 min-h-28 w-full rounded-2xl border border-foreground/12
@@ -108,10 +111,10 @@ export default function DeveloperReportDialog({
               "
               onClick={() => copyText(mailBody)}
             >
-              {isCopied ? "Copied" : "Copy report"}
+              {isCopied ? t("copied") : t("copyReport")}
             </ActionButton>
           ) : null}
-          <ActionButton onClick={openMailApp}>Send Email</ActionButton>
+          <ActionButton onClick={openMailApp}>{t("sendEmail")}</ActionButton>
         </div>
       </div>
     </div>,

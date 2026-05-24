@@ -4,6 +4,7 @@ import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import { defaultAppLocale } from "@/i18n/config"
+import { getMessagesForLocale } from "@/i18n/messages"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
+const appShellMessages = getMessagesForLocale(defaultAppLocale).AppShell
+
 export const metadata: Metadata = {
-  title: "mkrz timer",
-  description: "simple time keeping",
+  title: appShellMessages.metadata.title,
+  description: appShellMessages.metadata.description,
 }
 
 export const viewport: Viewport = {
@@ -62,7 +65,7 @@ export default function RootLayout({
           "
           href="https://www.mkrz.at/"
         >
-          by mkrz
+          {appShellMessages.footer.credit}
         </a>
       </ParamStyledBody>
     </html>

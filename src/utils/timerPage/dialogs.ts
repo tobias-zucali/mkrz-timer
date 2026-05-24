@@ -1,15 +1,25 @@
 import type { ActionDialogAction } from "@/components/ActionDialog"
+import type { AppTranslationFn } from "@/i18n/translator"
+import { getRemoteSessionErrorKey } from "@/utils/remoteSession/lifecycle"
 import getSessionPresentation, {
   type SessionPresentationModel,
 } from "@/utils/sessionPresentation"
 
-function getOtherParticipantLabel(otherParticipantCount: number) {
-  return otherParticipantCount === 1 ? "other client" : "other clients"
+function getOtherParticipantLabel(
+  otherParticipantCount: number,
+  t: AppTranslationFn,
+) {
+  return otherParticipantCount === 1 ? t("otherClient") : t("otherClients")
 }
 
-export function getConnectionErrorDetail(error: Error) {
+export function getConnectionErrorDetail(error: Error, t: AppTranslationFn) {
+  const translationKey = getRemoteSessionErrorKey(error)
+  if (translationKey) {
+    return t(translationKey)
+  }
+
   const detail = error.message.trim()
-  return detail || "An unknown error was caught."
+  return detail || t("unknownError")
 }
 
 export function getExitConfirmationDialog({
@@ -17,28 +27,33 @@ export function getExitConfirmationDialog({
   onCancel,
   otherParticipantCount,
   pendingExitConfirmation,
+  t,
 }: {
   completeEndRemoteSession: () => Promise<void>
   onCancel: () => void
   otherParticipantCount: number
   pendingExitConfirmation: "end-live-session" | "leave-control-client"
+  t: AppTranslationFn
 }): {
   actions: ActionDialogAction[]
   description: string
   eyebrow: string
   title: string
 } {
-  const otherParticipantLabel = getOtherParticipantLabel(otherParticipantCount)
+  const otherParticipantLabel = getOtherParticipantLabel(
+    otherParticipantCount,
+    t,
+  )
 
   if (pendingExitConfirmation === "end-live-session") {
     return {
       actions: [
         {
-          label: "Keep live session open",
+          label: t("keepLiveSessionOpen"),
           onClick: onCancel,
         },
         {
-          label: "End live session",
+          label: t("endLiveSession"),
           onClick: () => {
             onCancel()
             void completeEndRemoteSession()
@@ -46,20 +61,23 @@ export function getExitConfirmationDialog({
           tone: "primary",
         },
       ],
-      description: `This will disconnect ${otherParticipantCount} ${otherParticipantLabel} from the live session immediately.`,
-      eyebrow: "Live session confirmation",
-      title: "End the live session for everyone?",
+      description: t("endLiveSessionDescription", {
+        count: otherParticipantCount,
+        participants: otherParticipantLabel,
+      }),
+      eyebrow: t("liveSessionConfirmation"),
+      title: t("endLiveSessionTitle"),
     }
   }
 
   return {
     actions: [
       {
-        label: "Keep control client open",
+        label: t("keepControlClientOpen"),
         onClick: onCancel,
       },
       {
-        label: "Leave control client",
+        label: t("leaveControlClient"),
         onClick: () => {
           onCancel()
           void completeEndRemoteSession()
@@ -67,9 +85,12 @@ export function getExitConfirmationDialog({
         tone: "primary",
       },
     ],
-    description: `This control client still has ${otherParticipantCount} ${otherParticipantLabel} connected. Leaving now can interrupt the active workshop.`,
-    eyebrow: "Live session confirmation",
-    title: "Close this control client?",
+    description: t("leaveControlClientDescription", {
+      count: otherParticipantCount,
+      participants: otherParticipantLabel,
+    }),
+    eyebrow: t("liveSessionConfirmation"),
+    title: t("closeControlClientTitle"),
   }
 }
 
@@ -77,10 +98,12 @@ export function getReadonlyPlaceholder({
   onOpenStatusPanel,
   remoteError,
   sessionPresentation,
+  t,
 }: {
   onOpenStatusPanel: () => void
   remoteError: Error | null
   sessionPresentation: SessionPresentationModel
+  t: AppTranslationFn
 }) {
   const readonlyPlaceholderToneBySessionState: Partial<
     Record<
@@ -99,18 +122,20 @@ export function getReadonlyPlaceholder({
     return undefined
   }
 
-  const remoteErrorMessage = remoteError?.message.trim() ?? ""
+  const remoteErrorMessage = remoteError
+    ? getConnectionErrorDetail(remoteError, t)
+    : ""
   const showRetryLink =
     sessionPresentation.state === "liveConflict" &&
-    /retry the connection/i.test(remoteErrorMessage)
+    getRemoteSessionErrorKey(remoteError) === "retryingAutomaticallyDetail"
 
   return {
-    actionLabel: showRetryLink ? "Retry the connection" : undefined,
+    actionLabel: showRetryLink ? t("retryTheConnection") : undefined,
     body: showRetryLink
-      ? "Automatic recovery timed out."
+      ? t("automaticRecoveryTimedOut")
       : remoteErrorMessage ||
         sessionPresentation.statusPanel.description ||
-        "Waiting for the shared timer state.",
+        t("waitingForSharedTimerState"),
     eyebrow: showRetryLink
       ? undefined
       : sessionPresentation.statusPanel.summaryLabel,

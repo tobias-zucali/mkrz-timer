@@ -1,0 +1,13 @@
+{
+  "heading": "Sharing",
+  "liveSession": "Live session",
+  "viewerLink": "Viewer link",
+  "viewerLinkDescription": "Read-only display for audience screens.",
+  "controlLink": "Control link",
+  "controlLinkDescription": "Full timer and settings control with elevated permissions.",
+  "waitingForLinks": "Waiting for viewer and control links to become available.",
+  "retryNow": "Retry now",
+  "localShare": "Local share",
+  "localLink": "Local link",
+  "localLinkDescription": "Snapshot of the current timer configuration with no live synchronization."
+}

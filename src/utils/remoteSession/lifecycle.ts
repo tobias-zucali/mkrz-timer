@@ -5,6 +5,26 @@ export const HEARTBEAT_INTERVAL_MS = 10_000
 export const RETRY_DELAY_MS = 1_000
 export const RECOVERED_BADGE_TIMEOUT_MS = 4_000
 
+export type RemoteSessionErrorKey =
+  | "connectFailedDetail"
+  | "closedBeforeReadyDetail"
+  | "retryingAutomaticallyDetail"
+  | "malformedLinkDetail"
+
+type RemoteSessionError = Error & {
+  translationKey?: RemoteSessionErrorKey
+}
+
+export function createRemoteSessionError(key: RemoteSessionErrorKey) {
+  const error = new Error(key) as RemoteSessionError
+  error.translationKey = key
+  return error
+}
+
+export function getRemoteSessionErrorKey(error: Error | null | undefined) {
+  return (error as RemoteSessionError | null)?.translationKey ?? null
+}
+
 export const toError = (error: unknown) =>
   error instanceof Error ? error : new Error(String(error))
 
@@ -12,11 +32,7 @@ export const handleSocketError = ({
   currentError,
 }: {
   currentError: Error | null
-}) =>
-  currentError ??
-  new Error(
-    "Could not connect to the remote relay. Check the relay URL and try again.",
-  )
+}) => currentError ?? createRemoteSessionError("connectFailedDetail")
 
 export const handleSocketClose = ({
   hasConnectedOnce,
@@ -51,9 +67,7 @@ export const handleSocketClose = ({
   if (!nextRemoteId && !sessionId) {
     return {
       type: "failed-before-session",
-      error: new Error(
-        "Remote relay connection closed before the session was ready.",
-      ),
+      error: createRemoteSessionError("closedBeforeReadyDetail"),
     }
   }
 
@@ -61,9 +75,7 @@ export const handleSocketClose = ({
     type: "retry",
     error: hasConnectedOnce
       ? null
-      : new Error(
-          "Could not connect to the remote relay. Retrying automatically.",
-        ),
+      : createRemoteSessionError("retryingAutomaticallyDetail"),
     lifecycleState: hasConnectedOnce ? "reconnecting" : "connecting",
     retrySessionId: nextRemoteId || sessionId || "",
   }

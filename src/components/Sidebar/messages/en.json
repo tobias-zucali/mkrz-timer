@@ -1,0 +1,13 @@
+{
+  "entries": {
+    "timer": "Timer",
+    "share": "Share",
+    "settings": "Settings",
+    "status": "Status"
+  },
+  "readonlyUnsupported": "View mode not supported.",
+  "closeSidebar": "Close sidebar",
+  "closeSidebarMenu": "Close sidebar menu",
+  "toggleNavigation": "Toggle navigation",
+  "backToSidebarMenu": "Back to sidebar menu"
+}

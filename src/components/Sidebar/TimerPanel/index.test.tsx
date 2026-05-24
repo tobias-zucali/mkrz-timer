@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, screen } from "@testing-library/react"
 import { useState } from "react"
 
 import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
+import { renderWithIntl } from "@/test/renderWithIntl"
 
-import TimerPanel from "./TimerPanel"
+import TimerPanel from "./index"
 
 function buildRow({
   endBehavior = "stop",
@@ -58,7 +59,7 @@ function TimerPanelHarness({
 
 describe("TimerPanel", () => {
   it("keeps the title field focused while typing", () => {
-    render(<TimerPanelHarness />)
+    renderWithIntl(<TimerPanelHarness />)
 
     const titleField = screen.getByRole("textbox", { name: "Title" })
     titleField.focus()
@@ -72,7 +73,7 @@ describe("TimerPanel", () => {
   })
 
   it("expands the clicked step for editing", () => {
-    render(<TimerPanelHarness />)
+    renderWithIntl(<TimerPanelHarness />)
 
     fireEvent.click(screen.getByText("Q&A"))
 
@@ -80,7 +81,7 @@ describe("TimerPanel", () => {
   })
 
   it("keeps the same step in edit mode while reordering", () => {
-    render(<TimerPanelHarness />)
+    renderWithIntl(<TimerPanelHarness />)
 
     fireEvent.click(screen.getByText("Q&A"))
     fireEvent.click(screen.getByRole("button", { name: "Move step 2 up" }))
@@ -94,7 +95,9 @@ describe("TimerPanel", () => {
   it("activates a non-selected step without changing which step is being edited", () => {
     const onActivateSequenceRow = vi.fn()
 
-    render(<TimerPanelHarness onActivateSequenceRow={onActivateSequenceRow} />)
+    renderWithIntl(
+      <TimerPanelHarness onActivateSequenceRow={onActivateSequenceRow} />,
+    )
 
     fireEvent.click(screen.getByRole("button", { name: "Make Active" }))
 

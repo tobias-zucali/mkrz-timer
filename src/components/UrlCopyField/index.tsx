@@ -1,6 +1,7 @@
 import { ComponentProps, useId, useState } from "react"
 
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 
 import QrCodeOverlay from "@/components/QrCodeOverlay"
 import {
@@ -27,6 +28,7 @@ export default function UrlCopyField({
   showOpenButton?: boolean
   value: string
 }) {
+  const t = useTranslations("UrlCopyField")
   const fieldId = useId()
   const [isQrCodeOpen, setIsQrCodeOpen] = useState(false)
   const { canCopy, copyText, isCopied, isClient } = useClipboardCopy()
@@ -47,8 +49,8 @@ export default function UrlCopyField({
             onClick={() => void copyText(value)}
             {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
             type="button"
-            title={isCopied ? "Copied" : "Copy URL"}
-            aria-label={isCopied ? "Copied" : "Copy URL"}
+            title={isCopied ? t("copied") : t("copyUrl")}
+            aria-label={isCopied ? t("copied") : t("copyUrl")}
           >
             {isCopied ? (
               <CheckIcon className="size-5" />
@@ -62,8 +64,8 @@ export default function UrlCopyField({
             className={iconButtonClassName}
             href={isClient ? value : ""}
             target="_blank"
-            title="Open URL"
-            aria-label="Open URL"
+            title={t("openUrl")}
+            aria-label={t("openUrl")}
           >
             <ArrowTopRightOnSquareIcon className="size-5" />
           </Link>
@@ -73,8 +75,8 @@ export default function UrlCopyField({
             className={iconButtonClassName}
             onClick={() => setIsQrCodeOpen(true)}
             {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
-            title={`Show ${label}`}
-            aria-label={`Show ${label}`}
+            title={t("showLabel", { label })}
+            aria-label={t("showLabel", { label })}
             type="button"
           >
             <QrCodeIcon className="size-5" />

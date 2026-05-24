@@ -1,0 +1,11 @@
+{
+  "support": "Support",
+  "heading": "Send diagnostics",
+  "whatHappened": "What happened?",
+  "copyReport": "Copy report",
+  "copied": "Copied",
+  "sendEmail": "Send Email",
+  "subject": "Status Report",
+  "userComment": "User comment:",
+  "noAdditionalComment": "No additional comment provided."
+}

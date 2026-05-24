@@ -1,5 +1,6 @@
 import { useRef } from "react"
 import classNames from "classnames"
+import { useTranslations } from "next-intl"
 
 import styles from "./index.module.css"
 
@@ -22,6 +23,7 @@ function DigitalDisplay({
   onBlur?: () => void
   style?: React.CSSProperties
 }) {
+  const t = useTranslations("DigitalDisplay")
   const minuteInputRef = useRef<HTMLInputElement>(null)
   const secondsInputRef = useRef<HTMLInputElement>(null)
 
@@ -40,7 +42,7 @@ function DigitalDisplay({
       {...otherProps}
     >
       <input
-        aria-label="Minutes"
+        aria-label={t("minutes")}
         className={classNames(inputClassNames, "text-right")}
         min="0"
         readOnly={isReadonly}
@@ -57,7 +59,7 @@ function DigitalDisplay({
       />
       <div className={styles.separator}>{" : "}</div>
       <input
-        aria-label="Seconds"
+        aria-label={t("seconds")}
         className={classNames(inputClassNames, "text-left")}
         max="60"
         min="0"

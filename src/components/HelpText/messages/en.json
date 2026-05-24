@@ -1,0 +1,8 @@
+{
+  "resetShortcut": "R / Escape",
+  "resetDescription": "Reset the timer.",
+  "pauseShortcut": "P",
+  "pauseDescription": "Start or pause the timer.",
+  "toggleShortcut": "Enter / Space",
+  "toggleDescription": "Start or pause the timer, and reset when time has run out."
+}

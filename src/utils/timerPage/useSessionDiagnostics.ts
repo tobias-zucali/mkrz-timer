@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
+import type { AppTranslationFn } from "@/i18n/translator"
 import {
   getConnectionErrorDetail,
   getReadonlyPlaceholder,
@@ -34,6 +36,7 @@ export default function useSessionDiagnostics({
   pathname,
   peerEventTimeline,
   remoteError,
+  remoteLinkError,
   remoteRole,
   remoteStatusEnabled,
   sessionId,
@@ -60,6 +63,7 @@ export default function useSessionDiagnostics({
   pathname: string
   peerEventTimeline: string[]
   remoteError: Error | null
+  remoteLinkError: Error | null
   remoteRole: "control" | "readonly" | null
   remoteStatusEnabled: boolean
   sessionId?: string
@@ -75,6 +79,10 @@ export default function useSessionDiagnostics({
   }
   onOpenStatusPanel: () => void
 }) {
+  const t = useTranslations()
+  const tDialogs = useTranslations("TimerPage.dialogs")
+  const tStatusBadge = useTranslations("StatusBadge")
+  const tStatusPanel = useTranslations("Sidebar.status")
   const [floatingTimerErrorText, setFloatingTimerErrorText] = useState<
     string | null
   >(null)
@@ -85,8 +93,18 @@ export default function useSessionDiagnostics({
   const remoteStatusRole = remoteRole === "readonly" ? "readonly" : "control"
   const remoteErrorText = remoteError
     ? remoteStatusEnabled && remoteRole !== null
-      ? `Live session link has a connection problem. ${getConnectionErrorDetail(remoteError)}`
-      : `Live session could not start. ${getConnectionErrorDetail(remoteError)}`
+      ? tDialogs("connectionProblem", {
+          detail: getConnectionErrorDetail(
+            remoteError,
+            tDialogs as AppTranslationFn,
+          ),
+        })
+      : tDialogs("startProblem", {
+          detail: getConnectionErrorDetail(
+            remoteError,
+            tDialogs as AppTranslationFn,
+          ),
+        })
     : null
   const remoteStatus = getRemoteStatus({
     canRetryManually,
@@ -96,7 +114,7 @@ export default function useSessionDiagnostics({
     ),
     hasReceivedInitialSync,
     isRemoteEnabled: remoteStatusEnabled,
-    lifecycleState,
+    lifecycleState: remoteLinkError ? "failed" : lifecycleState,
     participantCount: connectionCount,
     role: remoteStatusRole,
     showPendingHostStatus: isHostRemoteSession && !sessionId,
@@ -107,12 +125,14 @@ export default function useSessionDiagnostics({
     isOnline,
     relayReachability,
     remoteStatus,
+    t: t as AppTranslationFn,
   })
   const readonlyPlaceholder = isReadonlyClient
     ? getReadonlyPlaceholder({
         onOpenStatusPanel,
         remoteError,
         sessionPresentation,
+        t: tDialogs as AppTranslationFn,
       })
     : undefined
   const getErrorReportBody = () =>
@@ -136,18 +156,22 @@ export default function useSessionDiagnostics({
         sessionPresentation.state === "liveEnded"
           ? undefined
           : relayReachability === "reachable"
-            ? "Reachable"
+            ? tStatusPanel("relayReachable")
             : relayReachability === "unreachable"
-              ? "Unreachable"
-              : "Checking",
+              ? tStatusPanel("relayUnreachable")
+              : tStatusPanel("networkChecking"),
       remotePath: pathname,
       sessionId,
       statusDescription: floatingTimerErrorText
-        ? "A local feature reported an issue. Review the details below."
+        ? tStatusPanel("localFeatureIssue")
         : sessionPresentation.statusPanel.description,
       statusModeLabel: sessionPresentation.statusPanel.sessionLabel,
       statusNetworkLabel:
-        isOnline === null ? "Checking" : isOnline ? "Online" : "Offline",
+        isOnline === null
+          ? tStatusPanel("networkChecking")
+          : isOnline
+            ? tStatusPanel("networkOnline")
+            : tStatusPanel("networkOffline"),
       statusRemoteModeLabel: sessionPresentation.statusPanel.summaryLabel,
       statusSessionLabel:
         sessionPresentation.state === "local" ||
@@ -155,9 +179,9 @@ export default function useSessionDiagnostics({
           ? undefined
           : sessionPresentation.statusPanel.accessLabel,
       statusStateLabel: remoteErrorText
-        ? "Error"
+        ? tStatusBadge("error")
         : floatingTimerErrorText
-          ? "Attention needed"
+          ? tStatusBadge("attentionNeeded")
           : sessionPresentation.statusPanel.stateLabel,
       visibilityState:
         typeof document !== "undefined"

@@ -1,0 +1,6 @@
+{
+  "control": "{count} control",
+  "view": "{count} view",
+  "you": "You",
+  "youWithOthers": "You + {roles}"
+}

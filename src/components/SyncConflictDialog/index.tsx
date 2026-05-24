@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import ActionDialog, {
   type ActionDialogAction,
@@ -10,7 +11,7 @@ import DeveloperReportDialog from "@/components/DeveloperReportDialog"
 export default function SyncConflictDialog({
   actions,
   description,
-  eyebrow = "Live session recovery",
+  eyebrow,
   getDeveloperReportBody,
   title,
 }: {
@@ -20,7 +21,9 @@ export default function SyncConflictDialog({
   getDeveloperReportBody?: (() => string) | null
   title: string
 }) {
+  const t = useTranslations("SyncConflictDialog")
   const [isReportOpen, setIsReportOpen] = useState(false)
+  const resolvedEyebrow = eyebrow ?? t("liveSessionRecovery")
 
   return (
     <>
@@ -28,7 +31,7 @@ export default function SyncConflictDialog({
         actions={actions}
         defaultFocusActionIndex={0}
         description={description}
-        eyebrow={eyebrow}
+        eyebrow={resolvedEyebrow}
         title={title}
       >
         {getDeveloperReportBody ? (
@@ -43,7 +46,7 @@ export default function SyncConflictDialog({
             "
             onClick={() => setIsReportOpen(true)}
           >
-            Send Debug Info
+            {t("sendDebugInfo")}
           </button>
         ) : null}
       </ActionDialog>

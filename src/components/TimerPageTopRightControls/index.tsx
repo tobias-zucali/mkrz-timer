@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import QrCodeOverlay from "@/components/QrCodeOverlay"
 import {
@@ -65,6 +66,7 @@ export default function TopRightControls({
   isReadonlyClient: boolean
   onOpenSharePanel: () => void
 }) {
+  const t = useTranslations("TopRightControls")
   const [isViewerShareQrCodeOpen, setIsViewerShareQrCodeOpen] = useState(false)
   const { isFullscreen, isFullscreenSupported, toggleFullscreen } =
     useFullscreenState()
@@ -75,7 +77,7 @@ export default function TopRightControls({
     <>
       <div className="absolute top-0 right-0 z-20 flex items-center p-2">
         <TopRightActionButton
-          ariaLabel={isReadonlyClient ? "Share viewer link" : "Open sharing"}
+          ariaLabel={isReadonlyClient ? t("shareViewerLink") : t("openSharing")}
           isActive={
             isReadonlyClient ? isViewerShareQrCodeOpen : isSharePanelOpen
           }
@@ -86,27 +88,29 @@ export default function TopRightControls({
                 }
               : onOpenSharePanel
           }
-          title="Share"
+          title={t("share")}
         >
           <ShareIcon className="size-4" />
         </TopRightActionButton>
         {!isReadonlyClient && floatingTimerData.isSupported ? (
           <TopRightActionButton
-            ariaLabel="Toggle floating window"
+            ariaLabel={t("toggleFloatingWindow")}
             isActive={floatingTimerData.isOpen}
             onClick={() => {
               void floatingTimerData.toggle()
             }}
-            title="Floating window"
+            title={t("floatingWindow")}
           >
             <WindowIcon className="size-4" />
           </TopRightActionButton>
         ) : null}
         {!isReadonlyClient && isFullscreenSupported ? (
           <TopRightActionButton
-            ariaLabel={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            ariaLabel={
+              isFullscreen ? t("exitFullscreen") : t("enterFullscreen")
+            }
             onClick={toggleFullscreen}
-            title={isFullscreen ? "Close fullscreen" : "Fullscreen mode"}
+            title={isFullscreen ? t("closeFullscreen") : t("fullscreenMode")}
           >
             {isFullscreen ? (
               <XMarkIcon className="size-4" />
@@ -118,7 +122,7 @@ export default function TopRightControls({
       </div>
       {isReadonlyClient && isViewerShareQrCodeOpen && viewerShareUrl ? (
         <QrCodeOverlay
-          label="Viewer link"
+          label={t("viewerLink")}
           onClose={() => setIsViewerShareQrCodeOpen(false)}
           value={viewerShareUrl}
         />

@@ -13,6 +13,7 @@ Agent-facing repo guidance lives in [AGENTS.md](./AGENTS.md).
 Technical details live in:
 
 - [docs/development.md](./docs/development.md)
+- [docs/i18n.md](./docs/i18n.md)
 - [docs/remote-mode.md](./docs/remote-mode.md)
 - [docs/title-layout.md](./docs/title-layout.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)

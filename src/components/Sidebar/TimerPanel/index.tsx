@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import type { CSSProperties } from "react"
+import { useTranslations } from "next-intl"
 
 import InputField from "@/components/InputField"
 import type { SyncParams } from "@/shared/remoteSession/types"
@@ -42,11 +43,6 @@ const stateBadgeClassName =
 const selectedFieldClassName =
   "focus:border-(--step-color) focus:outline-(--step-color)"
 
-const endBehaviorOptions = [
-  { label: "Stop after completion", value: "stop" },
-  { label: "Auto-advance / loop", value: "advance" },
-] as const
-
 const repetitionOptions = Array.from({ length: 9 }, (_, index) => {
   const value = index + 1
 
@@ -58,16 +54,19 @@ const repetitionOptions = Array.from({ length: 9 }, (_, index) => {
 
 type SequenceRow = SyncParams["rows"][number]
 
-const buildSummaryText = (row: SequenceRow) => {
+const buildSummaryText = (
+  row: SequenceRow,
+  t: ReturnType<typeof useTranslations>,
+) => {
   const duration = buildDurationPartsFromTotalSeconds(row.totalSeconds)
   const parts = [`${duration.m}:${duration.s}`]
 
   if (row.repeatCount > 1) {
-    parts.push(`x${row.repeatCount}`)
+    parts.push(t("repeatSummary", { count: row.repeatCount }))
   }
 
   if (row.endBehavior === "advance") {
-    parts.push("Auto-advance")
+    parts.push(t("autoAdvance"))
   }
 
   return parts.join(" • ")
@@ -100,8 +99,19 @@ export default function TimerPanel({
   }) => void
   params: SyncParams
 }) {
+  const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const endBehaviorOptions = [
+    {
+      label: t("stopAfterCompletion"),
+      value: "stop",
+    },
+    {
+      label: t("autoAdvanceLoop"),
+      value: "advance",
+    },
+  ] as const
 
   useEffect(() => {
     if (params.rows.length === 0) {
@@ -243,7 +253,9 @@ export default function TimerPanel({
     <div className="space-y-6">
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">Sequence</h3>
+          <h3 className="text-base font-semibold text-foreground">
+            {t("heading")}
+          </h3>
         </div>
 
         <div className="space-y-3">
@@ -280,14 +292,14 @@ export default function TimerPanel({
                         className="text-xs font-semibold tracking-[0.14em] uppercase"
                         style={{ color: displayRow.primaryColor }}
                       >
-                        Step {index + 1}
+                        {t("step", { step: index + 1 })}
                       </span>
                       {isActive ? (
                         <span
                           className={`${stateBadgeClassName} text-foreground`}
                           style={{ backgroundColor: displayRow.primaryColor }}
                         >
-                          Active
+                          {t("active")}
                         </span>
                       ) : (
                         <button
@@ -302,7 +314,7 @@ export default function TimerPanel({
                           }}
                           type="button"
                         >
-                          Make Active
+                          {t("makeActive")}
                         </button>
                       )}
                     </div>
@@ -315,7 +327,7 @@ export default function TimerPanel({
                       ) : null}
                       {!isSelected ? (
                         <p className="mt-1 text-xs text-foreground/62">
-                          {buildSummaryText(displayRow)}
+                          {buildSummaryText(displayRow, t)}
                         </p>
                       ) : null}
                     </div>
@@ -324,7 +336,9 @@ export default function TimerPanel({
                   <div className="-mt-1 -mr-1 flex shrink-0 flex-wrap justify-end gap-1 self-start">
                     {canMoveUp ? (
                       <button
-                        aria-label={`Move step ${index + 1} up`}
+                        aria-label={t("moveStepUp", {
+                          step: index + 1,
+                        })}
                         className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
@@ -337,7 +351,9 @@ export default function TimerPanel({
                     ) : null}
                     {canMoveDown ? (
                       <button
-                        aria-label={`Move step ${index + 1} down`}
+                        aria-label={t("moveStepDown", {
+                          step: index + 1,
+                        })}
                         className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
@@ -349,7 +365,9 @@ export default function TimerPanel({
                       </button>
                     ) : null}
                     <button
-                      aria-label={`Duplicate step ${index + 1}`}
+                      aria-label={t("duplicateStep", {
+                        step: index + 1,
+                      })}
                       className={iconButtonClassName}
                       onClick={(event) => {
                         event.stopPropagation()
@@ -360,7 +378,9 @@ export default function TimerPanel({
                       <DocumentDuplicateIcon className="size-4" />
                     </button>
                     <button
-                      aria-label={`Delete step ${index + 1}`}
+                      aria-label={t("deleteStep", {
+                        step: index + 1,
+                      })}
                       className={iconButtonClassName}
                       onClick={(event) => {
                         event.stopPropagation()
@@ -387,7 +407,7 @@ export default function TimerPanel({
                         className="mb-2 block text-sm font-medium text-foreground"
                         htmlFor={`sidebar-sequence-title-${index}`}
                       >
-                        Title
+                        {t("title")}
                       </label>
                       <textarea
                         className="
@@ -418,7 +438,7 @@ export default function TimerPanel({
                         className={selectedFieldClassName}
                         id={`sidebar-sequence-minutes-${index}`}
                         inputMode="numeric"
-                        label="Minutes"
+                        label={t("minutes")}
                         onBlur={() =>
                           updateRowDuration({
                             minutes: duration.m,
@@ -442,7 +462,7 @@ export default function TimerPanel({
                         className={selectedFieldClassName}
                         id={`sidebar-sequence-seconds-${index}`}
                         inputMode="numeric"
-                        label="Seconds"
+                        label={t("seconds")}
                         onBlur={() =>
                           updateRowDuration({
                             minutes: duration.m,
@@ -470,7 +490,7 @@ export default function TimerPanel({
                           className="mb-2 block text-sm font-medium text-foreground"
                           htmlFor={`sidebar-sequence-repeat-count-${index}`}
                         >
-                          Repetitions
+                          {t("repetitions")}
                         </label>
                         <select
                           className="
@@ -503,7 +523,7 @@ export default function TimerPanel({
                           className="mb-2 block text-sm font-medium text-foreground"
                           htmlFor={`sidebar-sequence-end-behavior-${index}`}
                         >
-                          End Behavior
+                          {t("endBehavior")}
                         </label>
                         <select
                           className="
@@ -534,7 +554,7 @@ export default function TimerPanel({
                     <div>
                       <ColorSwatchField
                         id={`sidebar-sequence-primary-${index}`}
-                        label="Color"
+                        label={t("color")}
                         onChange={(event) =>
                           updateRow(index, {
                             ...sourceRow,
@@ -555,7 +575,7 @@ export default function TimerPanel({
             onClick={handleAddRow}
             type="button"
           >
-            Add Step
+            {t("addStep")}
           </button>
         </div>
       </section>

@@ -1,5 +1,6 @@
 import os from "node:os"
 import type { NextConfig } from "next"
+import createNextIntlPlugin from "next-intl/plugin"
 
 const distDir = process.env.NEXT_DIST_DIR
 const isStaticExport = process.env.NODE_ENV === "production"
@@ -43,4 +44,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["localhost", "127.0.0.1", ...getLocalIPv4Addresses()],
 }
 
-export default nextConfig
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
+
+export default withNextIntl(nextConfig)

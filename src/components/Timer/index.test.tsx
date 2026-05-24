@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, screen } from "@testing-library/react"
 
 import { buildDefaultTimerSequenceRow } from "@/shared/timerSequence"
+import { renderWithIntl } from "@/test/renderWithIntl"
 import type useTimer from "@/utils/useTimer"
 
 import Timer from "./index"
@@ -30,7 +31,7 @@ const renderTimer = ({
   const handleChange = vi.fn()
   const handleTimeBlur = vi.fn()
 
-  render(
+  renderWithIntl(
     <Timer
       activeIndex={activeIndex}
       handleChange={handleChange}
@@ -103,9 +104,10 @@ describe("Timer", () => {
       screen.queryByRole("button", { name: "Previous step" }),
     ).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Next step" })).toBeVisible()
-    expect(screen.getByText("Step 1/2")).toBeVisible()
+    expect(screen.getByRole("button", { name: "Step 1" })).toBeVisible()
+    expect(screen.getByRole("button", { name: "Step 2: Q&A" })).toBeVisible()
 
-    fireEvent.click(screen.getByRole("button", { name: "Go to step 2" }))
+    fireEvent.click(screen.getByRole("button", { name: "Step 2: Q&A" }))
 
     expect(onSelectSequenceRow).toHaveBeenCalledWith(1)
   })

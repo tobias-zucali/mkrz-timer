@@ -1,5 +1,6 @@
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
 import type { RemoteStatusModel } from "@/utils/remoteStatus"
+import type { AppTranslationFn } from "@/i18n/translator"
 
 export type SessionPresentationState =
   | "local"
@@ -15,7 +16,7 @@ type SessionPresentationTone = "neutral" | "success" | "warning"
 export type SessionPresentationModel = {
   accessibilityLabel: string
   isWaitingForController: boolean
-  roleChipLabel: "CONTROL" | "VIEWER" | null
+  roleChipLabel: string | null
   runtimeBadgeLabel: string
   sharePanel: {
     bullets: string[]
@@ -41,12 +42,17 @@ export type SessionPresentationModel = {
   }
 }
 
-function getRoleChipLabel(remoteStatus: RemoteStatusModel | null) {
+function getRoleChipLabel(
+  remoteStatus: RemoteStatusModel | null,
+  t: AppTranslationFn,
+) {
   if (!remoteStatus) {
     return null
   }
 
-  return remoteStatus.role === "control" ? "CONTROL" : "VIEWER"
+  return remoteStatus.role === "control"
+    ? t("TimerPage.sessionPresentation.control")
+    : t("TimerPage.sessionPresentation.viewer")
 }
 
 function isWaitingForController(remoteStatus: RemoteStatusModel | null) {
@@ -99,63 +105,72 @@ function getSessionState({
   return "liveConnected"
 }
 
-function getStatusPanelDescription(state: SessionPresentationState) {
+function getStatusPanelDescription(
+  state: SessionPresentationState,
+  t: AppTranslationFn,
+) {
   switch (state) {
     case "local":
     case "liveEnded":
-      return "Live session is off. Open Share when you want to sync this timer across devices."
+      return t("TimerPage.sessionPresentation.liveSessionOff")
     case "liveConnecting":
-      return "Starting live synchronization and preparing separate viewer and control links."
+      return t("TimerPage.sessionPresentation.liveConnectingDescription")
     case "liveConnected":
-      return "This timer is synchronized through a live session."
+      return t("TimerPage.sessionPresentation.liveConnectedDescription")
     case "liveReconnecting":
-      return "Trying to restore live synchronization. Local changes will sync again after reconnect."
+      return t("TimerPage.sessionPresentation.liveReconnectingDescription")
     case "liveConflict":
-      return "Review is needed before live synchronization can continue."
+      return t("TimerPage.sessionPresentation.liveConflictDescription")
     case "liveOffline":
-      return "Connection is interrupted. Local changes stay usable and will sync again after reconnect."
+      return t("TimerPage.sessionPresentation.liveOfflineDescription")
   }
 }
 
-function getWaitingForControllerDescription() {
-  return "The last control client left this live session. You can keep waiting for a controller to return or switch this viewer to a private local timer."
+function getWaitingForControllerDescription(t: AppTranslationFn) {
+  return t("TimerPage.sessionPresentation.waitingForControllerDescription")
 }
 
-function getStatusPanelStateLabel(state: SessionPresentationState) {
+function getStatusPanelStateLabel(
+  state: SessionPresentationState,
+  t: AppTranslationFn,
+) {
   switch (state) {
     case "local":
-      return "Private"
+      return t("TimerPage.sessionPresentation.statePrivate")
     case "liveConnecting":
-      return "Connecting..."
+      return t("TimerPage.sessionPresentation.stateConnecting")
     case "liveConnected":
-      return "Connected"
+      return t("TimerPage.sessionPresentation.stateConnected")
     case "liveReconnecting":
-      return "Reconnecting..."
+      return t("TimerPage.sessionPresentation.stateReconnecting")
     case "liveConflict":
-      return "Error"
+      return t("TimerPage.sessionPresentation.stateError")
     case "liveOffline":
-      return "Connection interrupted"
+      return t("TimerPage.sessionPresentation.stateInterrupted")
     case "liveEnded":
-      return "Private"
+      return t("TimerPage.sessionPresentation.statePrivate")
   }
 }
 
-function getStatusPanelSummaryLabel(state: SessionPresentationState) {
+function getStatusPanelSummaryLabel(
+  state: SessionPresentationState,
+  t: AppTranslationFn,
+) {
   switch (state) {
     case "local":
-      return "Inactive"
+      return t("TimerPage.sessionPresentation.summaryInactive")
     case "liveConnecting":
-      return "Preparing viewer and control links"
+      return t("TimerPage.sessionPresentation.summaryPreparingLinks")
     case "liveConnected":
-      return "Synchronized"
+      return t("TimerPage.sessionPresentation.summarySynchronized")
     case "liveReconnecting":
-      return "Restoring synchronization"
+      return t("TimerPage.sessionPresentation.summaryRestoring")
     case "liveConflict":
-      return "Error"
+      return t("TimerPage.sessionPresentation.stateError")
     case "liveOffline":
-      return "Reconnect in progress"
+      return t("TimerPage.sessionPresentation.summaryReconnectInProgress")
     case "liveEnded":
-      return "Inactive"
+      return t("TimerPage.sessionPresentation.summaryInactive")
   }
 }
 
@@ -163,26 +178,28 @@ function getSharePanelCopy({
   isWaitingForController,
   state,
   isReadonlyParticipant,
+  t,
 }: {
   isWaitingForController: boolean
   state: SessionPresentationState
   isReadonlyParticipant: boolean
+  t: AppTranslationFn
 }) {
   const endActionLabel = isReadonlyParticipant
-    ? "Leave live session"
-    : "End live session"
+    ? t("TimerPage.sessionPresentation.leaveLiveSession")
+    : t("TimerPage.sessionPresentation.endLiveSession")
 
   switch (state) {
     case "local":
       return {
         bullets: [
-          "Live updates",
-          "Viewer and control links",
-          "Automatic reconnect support",
+          t("TimerPage.sessionPresentation.liveUpdates"),
+          t("TimerPage.sessionPresentation.viewerAndControlLinks"),
+          t("TimerPage.sessionPresentation.automaticReconnectSupport"),
         ],
-        description: "Synchronize this timer across multiple devices.",
+        description: t("TimerPage.sessionPresentation.syncAcrossDevices"),
         endActionLabel,
-        primaryActionLabel: "Start live session",
+        primaryActionLabel: t("TimerPage.sessionPresentation.startLiveSession"),
         showLinks: false,
         showRetry: false,
         statusLabel: null,
@@ -191,30 +208,34 @@ function getSharePanelCopy({
     case "liveConnecting":
       return {
         bullets: [
-          "Preparing separate viewer and control links",
-          "Switching this timer to its control link",
+          t("TimerPage.sessionPresentation.preparingSeparateLinks"),
+          t("TimerPage.sessionPresentation.switchingToControlLink"),
         ],
-        description: "Starting live synchronization and preparing share links.",
+        description: t(
+          "TimerPage.sessionPresentation.liveConnectingDescription",
+        ),
         endActionLabel,
-        primaryActionLabel: "Starting live session...",
+        primaryActionLabel: t(
+          "TimerPage.sessionPresentation.startingLiveSession",
+        ),
         showLinks: false,
         showRetry: false,
-        statusLabel: "Starting live session...",
+        statusLabel: t("TimerPage.sessionPresentation.startingLiveSession"),
         tone: "neutral" as const,
       }
     case "liveConnected":
       return {
         bullets: [],
         description: isWaitingForController
-          ? getWaitingForControllerDescription()
-          : "Share a viewer link for audience screens or a control link for full timer and settings access.",
+          ? getWaitingForControllerDescription(t)
+          : t("TimerPage.sessionPresentation.shareViewerOrControl"),
         endActionLabel,
         primaryActionLabel: null,
         showLinks: true,
         showRetry: false,
         statusLabel: isWaitingForController
-          ? "Waiting for controller"
-          : "Connected and synchronized",
+          ? t("TimerPage.sessionPresentation.waitingForController")
+          : t("TimerPage.sessionPresentation.connectedAndSynchronized"),
         tone: isWaitingForController
           ? ("warning" as const)
           : ("success" as const),
@@ -222,65 +243,63 @@ function getSharePanelCopy({
     case "liveReconnecting":
       return {
         bullets: [
-          "Local timer remains usable",
-          "Changes will synchronize after reconnect",
+          t("TimerPage.sessionPresentation.localTimerUsable"),
+          t("TimerPage.sessionPresentation.changesSyncAfterReconnect"),
         ],
-        description: "Trying to reconnect to the live session.",
+        description: t("TimerPage.sessionPresentation.tryingToReconnect"),
         endActionLabel,
         primaryActionLabel: null,
         showLinks: true,
         showRetry: true,
-        statusLabel: "Connection interrupted",
+        statusLabel: t("TimerPage.sessionPresentation.stateInterrupted"),
         tone: "warning" as const,
       }
     case "liveConflict":
       return {
         bullets: [
-          "Conflict handling continues in the review dialog",
-          "Viewer and control links stay available",
+          t("TimerPage.sessionPresentation.conflictHandlingReviewDialog"),
+          t("TimerPage.sessionPresentation.viewerAndControlStayAvailable"),
         ],
-        description: "Review the session before synchronization continues.",
+        description: t(
+          "TimerPage.sessionPresentation.reviewBeforeSyncContinues",
+        ),
         endActionLabel,
         primaryActionLabel: null,
         showLinks: true,
         showRetry: false,
-        statusLabel: "Error",
+        statusLabel: t("TimerPage.sessionPresentation.stateError"),
         tone: "warning" as const,
       }
     case "liveOffline":
       return {
         bullets: [
-          "Local timer remains usable",
-          "Changes will synchronize after reconnect",
+          t("TimerPage.sessionPresentation.localTimerUsable"),
+          t("TimerPage.sessionPresentation.changesSyncAfterReconnect"),
         ],
-        description: "Connection to the live session is interrupted.",
+        description: t("TimerPage.sessionPresentation.connectionInterrupted"),
         endActionLabel,
         primaryActionLabel: null,
         showLinks: true,
         showRetry: true,
-        statusLabel: "Connection interrupted",
+        statusLabel: t("TimerPage.sessionPresentation.stateInterrupted"),
         tone: "warning" as const,
       }
     case "liveEnded":
       return {
         bullets: [
-          "Live updates",
-          "Viewer and control links",
-          "Automatic reconnect support",
+          t("TimerPage.sessionPresentation.liveUpdates"),
+          t("TimerPage.sessionPresentation.viewerAndControlLinks"),
+          t("TimerPage.sessionPresentation.automaticReconnectSupport"),
         ],
-        description: "Synchronize this timer across multiple devices.",
+        description: t("TimerPage.sessionPresentation.syncAcrossDevices"),
         endActionLabel,
-        primaryActionLabel: "Start live session",
+        primaryActionLabel: t("TimerPage.sessionPresentation.startLiveSession"),
         showLinks: false,
         showRetry: false,
         statusLabel: null,
         tone: "neutral" as const,
       }
   }
-}
-
-export function getLocalShareDescription() {
-  return "Open this timer setup independently. No live synchronization. Changes are independent after opening."
 }
 
 export default function getSessionPresentation({
@@ -289,12 +308,14 @@ export default function getSessionPresentation({
   isOnline,
   relayReachability,
   remoteStatus,
+  t,
 }: {
   hasPendingSyncConflict: boolean
   hasRecentlyEndedSession: boolean
   isOnline: boolean | null
   relayReachability: RemoteRelayReachabilityState
   remoteStatus: RemoteStatusModel | null
+  t: AppTranslationFn
 }): SessionPresentationModel {
   const state = getSessionState({
     hasPendingSyncConflict,
@@ -304,67 +325,71 @@ export default function getSessionPresentation({
     remoteStatus,
   })
   const waitingForController = isWaitingForController(remoteStatus)
-  const roleChipLabel = getRoleChipLabel(remoteStatus)
-  const stateLabel = getStatusPanelStateLabel(state)
-  let sessionLabel = "Live session"
+  const roleChipLabel = getRoleChipLabel(remoteStatus, t)
+  const stateLabel = getStatusPanelStateLabel(state, t)
+  let sessionLabel = t("TimerPage.sessionPresentation.liveSession")
   if (state === "local" || state === "liveEnded") {
-    sessionLabel = "Private session"
+    sessionLabel = t("TimerPage.sessionPresentation.privateSession")
   }
 
-  let accessLabel = "Control access"
+  let accessLabel = t("TimerPage.sessionPresentation.controlAccess")
   if (state === "local" || state === "liveEnded") {
-    accessLabel = "Private"
+    accessLabel = t("TimerPage.sessionPresentation.privateAccess")
   } else if (remoteStatus?.role === "readonly") {
-    accessLabel = "Viewer access"
+    accessLabel = t("TimerPage.sessionPresentation.viewerAccess")
   }
 
   let runtimeBadgeLabel = stateLabel.replace("...", "")
   if (state === "liveConnected") {
-    runtimeBadgeLabel = waitingForController ? "Waiting" : "Connected"
+    runtimeBadgeLabel = waitingForController
+      ? t("TimerPage.sessionPresentation.waiting")
+      : t("TimerPage.sessionPresentation.stateConnected")
   } else if (state === "liveEnded") {
-    runtimeBadgeLabel = "Private"
+    runtimeBadgeLabel = t("TimerPage.sessionPresentation.statePrivate")
   }
 
   let sidebarStatus: SessionPresentationModel["sidebarStatus"] = {
-    eyebrow: "LIVE SESSION",
-    label: "Private session",
+    eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+    label: t("TimerPage.sessionPresentation.privateSession"),
   }
   switch (state) {
     case "local":
     case "liveEnded":
       sidebarStatus = {
-        eyebrow: "LOCAL",
-        label: "Private session",
+        eyebrow: t("TimerPage.sessionPresentation.localEyebrow"),
+        label: t("TimerPage.sessionPresentation.privateSession"),
       }
       break
     case "liveConnected":
       sidebarStatus = {
-        eyebrow: "LIVE SESSION",
-        label: waitingForController ? "Waiting for controller" : "Synchronized",
+        eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+        label: waitingForController
+          ? t("TimerPage.sessionPresentation.waitingForController")
+          : t("TimerPage.sessionPresentation.summarySynchronized"),
       }
       break
     case "liveConnecting":
       sidebarStatus = {
-        eyebrow: "LIVE SESSION",
-        label: "Connecting...",
+        eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+        label: t("TimerPage.sessionPresentation.stateConnecting"),
       }
       break
     case "liveReconnecting":
       sidebarStatus = {
-        eyebrow: "LIVE SESSION",
-        label: "Reconnecting...",
+        eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+        label: t("TimerPage.sessionPresentation.stateReconnecting"),
       }
       break
     case "liveConflict":
       sidebarStatus = {
-        eyebrow: "LIVE SESSION",
-        label: "Error",
+        eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+        label: t("TimerPage.sessionPresentation.stateError"),
       }
       break
     case "liveOffline":
       sidebarStatus = {
-        eyebrow: "LIVE SESSION",
-        label: "Connection interrupted",
+        eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
+        label: t("TimerPage.sessionPresentation.stateInterrupted"),
       }
       break
   }
@@ -372,13 +397,20 @@ export default function getSessionPresentation({
     isWaitingForController: waitingForController,
     state,
     isReadonlyParticipant: remoteStatus?.role === "readonly",
+    t,
   })
 
   return {
     accessibilityLabel: [
       sessionLabel,
-      waitingForController ? "Waiting for controller" : stateLabel,
-      roleChipLabel ? `${roleChipLabel} access` : null,
+      waitingForController
+        ? t("TimerPage.sessionPresentation.waitingForController")
+        : stateLabel,
+      roleChipLabel
+        ? t("TimerPage.sessionPresentation.roleAccess", {
+            role: roleChipLabel,
+          })
+        : null,
     ]
       .filter(Boolean)
       .join(", "),
@@ -391,13 +423,15 @@ export default function getSessionPresentation({
     statusPanel: {
       accessLabel,
       description: waitingForController
-        ? getWaitingForControllerDescription()
-        : getStatusPanelDescription(state),
+        ? getWaitingForControllerDescription(t)
+        : getStatusPanelDescription(state, t),
       sessionLabel,
-      stateLabel: waitingForController ? "Waiting for controller" : stateLabel,
+      stateLabel: waitingForController
+        ? t("TimerPage.sessionPresentation.waitingForController")
+        : stateLabel,
       summaryLabel: waitingForController
-        ? "Waiting for controller"
-        : getStatusPanelSummaryLabel(state),
+        ? t("TimerPage.sessionPresentation.waitingForController")
+        : getStatusPanelSummaryLabel(state, t),
     },
   }
 }

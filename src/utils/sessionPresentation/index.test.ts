@@ -1,7 +1,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
+import {
+  createAppTranslator,
+  type AppTranslationFn,
+} from "../../i18n/translator.ts"
+
 import getSessionPresentation from "./index.ts"
+
+const t = createAppTranslator() as AppTranslationFn
 
 function buildRemoteStatus(
   overrides: Partial<Parameters<typeof getSessionPresentation>[0]> & {
@@ -29,6 +36,7 @@ test("maps the default local state to private labels", () => {
     isOnline: true,
     relayReachability: "checking",
     remoteStatus: null,
+    t,
   })
 
   assert.equal(presentation.state, "local")
@@ -46,6 +54,7 @@ test("maps a pending host connection to liveConnecting", () => {
     isOnline: true,
     relayReachability: "checking",
     remoteStatus: buildRemoteStatus({ state: "connecting" }),
+    t,
   })
 
   assert.equal(presentation.state, "liveConnecting")
@@ -63,6 +72,7 @@ test("maps a connected control session to connected live labels", () => {
     isOnline: true,
     relayReachability: "reachable",
     remoteStatus: buildRemoteStatus({ role: "control", state: "connected" }),
+    t,
   })
 
   assert.equal(presentation.state, "liveConnected")
@@ -81,6 +91,7 @@ test("maps a connected readonly session without a controller to warning labels",
       role: "readonly",
       state: "connected",
     }),
+    t,
   })
 
   assert.equal(presentation.state, "liveConnected")
@@ -100,6 +111,7 @@ test("maps reconnecting live state", () => {
     isOnline: true,
     relayReachability: "reachable",
     remoteStatus: buildRemoteStatus({ state: "reconnecting" }),
+    t,
   })
 
   assert.equal(presentation.state, "liveReconnecting")
@@ -113,6 +125,7 @@ test("maps retry-needed recovery to error state labels", () => {
     isOnline: true,
     relayReachability: "reachable",
     remoteStatus: buildRemoteStatus({ role: "readonly", state: "failed" }),
+    t,
   })
 
   assert.equal(presentation.state, "liveConflict")
@@ -127,6 +140,7 @@ test("maps active offline interruption to liveOffline", () => {
     isOnline: false,
     relayReachability: "unreachable",
     remoteStatus: buildRemoteStatus({ state: "connected" }),
+    t,
   })
 
   assert.equal(presentation.state, "liveOffline")
@@ -140,6 +154,7 @@ test("maps an explicitly ended session to liveEnded", () => {
     isOnline: true,
     relayReachability: "checking",
     remoteStatus: null,
+    t,
   })
 
   assert.equal(presentation.state, "liveEnded")

@@ -1,10 +1,10 @@
 "use client"
 
 import classNames from "classnames"
+import { useTranslations } from "next-intl"
 
 import UrlCopyField from "@/components/UrlCopyField"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
-import { getLocalShareDescription } from "@/utils/sessionPresentation"
 import ActionButton from "@/utils/ActionButton"
 
 const liveSessionToneClassNames = {
@@ -32,13 +32,17 @@ export default function SharePanel({
   sessionPresentation: SessionPresentationModel
   timerUrl: string
 }) {
+  const t = useTranslations("Sidebar.share")
+  const tSessionPresentation = useTranslations("TimerPage.sessionPresentation")
   const { sharePanel } = sessionPresentation
 
   return (
     <div className="space-y-6">
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">Sharing</h3>
+          <h3 className="text-base font-semibold text-foreground">
+            {t("heading")}
+          </h3>
         </div>
 
         <div
@@ -49,7 +53,7 @@ export default function SharePanel({
         >
           <div className="space-y-3">
             <div>
-              <p className="font-medium text-foreground">Live session</p>
+              <p className="font-medium text-foreground">{t("liveSession")}</p>
               {sharePanel.statusLabel && (
                 <p className="mt-2 text-sm font-semibold text-foreground">
                   {sharePanel.statusLabel}
@@ -85,28 +89,28 @@ export default function SharePanel({
               {accessTokens ? (
                 <>
                   <UrlCopyField
-                    description="Read-only display for audience screens."
-                    label="Viewer link"
+                    description={t("viewerLinkDescription")}
+                    label={t("viewerLink")}
                     showOpenButton={true}
                     value={readonlyClientUrl}
                   />
                   <UrlCopyField
-                    description="Full timer and settings control with elevated permissions."
-                    label="Control link"
+                    description={t("controlLinkDescription")}
+                    label={t("controlLink")}
                     showOpenButton={true}
                     value={controlClientUrl}
                   />
                 </>
               ) : (
                 <p className="text-sm/6 text-foreground/68">
-                  Waiting for viewer and control links to become available.
+                  {t("waitingForLinks")}
                 </p>
               )}
 
               <div className="space-y-3 border-t border-foreground/10 pt-4">
                 {sharePanel.showRetry && (
                   <ActionButton fullWidth={true} onClick={onRetry}>
-                    Retry now
+                    {t("retryNow")}
                   </ActionButton>
                 )}
                 <ActionButton
@@ -133,14 +137,14 @@ export default function SharePanel({
         "
         >
           <div>
-            <p className="font-medium text-foreground">Local share</p>
+            <p className="font-medium text-foreground">{t("localShare")}</p>
             <p className="mt-1 text-sm/6 text-foreground/68">
-              {getLocalShareDescription()}
+              {tSessionPresentation("localShareDescription")}
             </p>
           </div>
           <UrlCopyField
-            description="Snapshot of the current timer configuration with no live synchronization."
-            label="Local link"
+            description={t("localLinkDescription")}
+            label={t("localLink")}
             value={timerUrl}
           />
         </div>

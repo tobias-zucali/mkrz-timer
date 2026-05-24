@@ -1,17 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, screen } from "@testing-library/react"
+
+import { renderWithIntl } from "@/test/renderWithIntl"
 
 import TimerTitle from "./index"
 
 describe("TimerTitle", () => {
   it("shows an explicit add action while keeping the textarea available", () => {
-    render(<TimerTitle onChange={() => undefined} value="" />)
+    renderWithIntl(<TimerTitle onChange={() => undefined} value="" />)
 
     expect(screen.getByRole("button", { name: "Add title" })).toBeVisible()
     expect(screen.getByLabelText("Title")).toBeInTheDocument()
   })
 
   it("enters multiline editing on demand and enforces the title length limit", () => {
-    render(<TimerTitle onChange={() => undefined} value="" />)
+    renderWithIntl(<TimerTitle onChange={() => undefined} value="" />)
 
     fireEvent.click(screen.getByRole("button", { name: "Add title" }))
 
@@ -22,7 +24,7 @@ describe("TimerTitle", () => {
   })
 
   it("renders multiline titles and scales long titles down", () => {
-    const { rerender } = render(
+    const { unmount } = renderWithIntl(
       <TimerTitle onChange={() => undefined} value={"Sprint\nreview"} />,
     )
 
@@ -32,7 +34,9 @@ describe("TimerTitle", () => {
       (shortTitle as HTMLTextAreaElement).style.fontSize,
     )
 
-    rerender(
+    unmount()
+
+    renderWithIntl(
       <TimerTitle
         onChange={() => undefined}
         value={"Quarterly planning\nretrospective and facilitator notes"}
@@ -48,7 +52,7 @@ describe("TimerTitle", () => {
   })
 
   it("keeps readonly empty titles collapsed", () => {
-    render(<TimerTitle disabled onChange={() => undefined} value="" />)
+    renderWithIntl(<TimerTitle disabled onChange={() => undefined} value="" />)
 
     expect(screen.getByTestId("timer-title")).toHaveAttribute(
       "data-title-empty",
