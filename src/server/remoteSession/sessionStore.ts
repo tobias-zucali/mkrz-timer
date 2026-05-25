@@ -4,6 +4,7 @@ import type {
   SessionParticipant,
   SessionSnapshot,
   SyncParams,
+  TimerCommand,
 } from "../../shared/remoteSession/types.ts"
 import { mergeSyncParamsPatch } from "../../shared/remoteSession/mergeSyncParamsPatch.ts"
 import {
@@ -14,6 +15,11 @@ import {
   normalizeSyncParamPatch,
   normalizeTimerState,
 } from "../../shared/security/input.ts"
+import { resolveSessionSnapshotAt } from "../../shared/timerState.ts"
+import {
+  clampTimerSequenceIndex,
+  getActiveTimerSequenceRow,
+} from "../../shared/timerSequence.ts"
 
 const DEFAULT_SESSION_TTL_MS = 5 * 60_000
 
@@ -41,6 +47,40 @@ const defaultSnapshot = (): SessionSnapshot => ({
 })
 
 const createAccessToken = () => crypto.randomUUID()
+
+const cloneSnapshot = (snapshot: SessionSnapshot) =>
+  normalizeSessionSnapshot(structuredClone(snapshot))
+
+const buildStateForCurrentRow = ({
+  revision,
+  snapshot,
+  status,
+}: {
+  revision: number
+  snapshot: SessionSnapshot
+  status: SessionSnapshot["state"]["status"]
+}): SessionSnapshot["state"] => {
+  const rowSnapshot = getActiveTimerSequenceRow({
+    activeIndex: snapshot.params.activeIndex,
+    rows: snapshot.params.rows,
+  })
+  const durationSeconds = rowSnapshot.row.totalSeconds
+
+  return {
+    ...snapshot.state,
+    anchorServerTimestamp: 0,
+    currentRepeat: 1,
+    durationSeconds,
+    elapsedSecondsAtAnchor: status === "finished" ? durationSeconds : 0,
+    elapsedTime: status === "finished" ? durationSeconds : 0,
+    isPaused: status !== "running",
+    isStarted: status !== "idle",
+    lastUpdatedAt: 0,
+    revision,
+    status,
+    totalDuration: durationSeconds,
+  }
+}
 
 export class InMemorySessionStore {
   private readonly sessions = new Map<string, RelaySessionRecord>()
@@ -77,6 +117,20 @@ export class InMemorySessionStore {
     )
   }
 
+  private writeSessionMetadata(session: RelaySessionRecord) {
+    this.sessionMetadata.set(session.id, {
+      accessTokens: session.accessTokens,
+      snapshot: cloneSnapshot(session.snapshot),
+    })
+  }
+
+  private resolveSessionRecord(session: RelaySessionRecord, now = Date.now()) {
+    session.snapshot = resolveSessionSnapshotAt(session.snapshot, now)
+    session.lastSeenAt = now
+    this.writeSessionMetadata(session)
+    return session
+  }
+
   private createSessionRecord({
     accessTokens = {
       control: createAccessToken(),
@@ -89,8 +143,8 @@ export class InMemorySessionStore {
     sessionId?: string
     snapshot?: SessionSnapshot
   }) {
-    const normalizedSnapshot = normalizeSessionSnapshot(
-      snapshot ?? defaultSnapshot(),
+    const normalizedSnapshot = resolveSessionSnapshotAt(
+      normalizeSessionSnapshot(snapshot ?? defaultSnapshot()),
     )
     const record: RelaySessionRecord = {
       accessTokens,
@@ -108,13 +162,146 @@ export class InMemorySessionStore {
       role: "readonly",
       sessionId,
     })
-    this.sessionMetadata.set(sessionId, {
-      accessTokens,
-      snapshot: normalizedSnapshot,
-    })
+    this.writeSessionMetadata(record)
 
     this.sessions.set(sessionId, record)
     return record
+  }
+
+  private getControlSession({
+    clientId,
+    sessionId,
+  }: {
+    clientId: string
+    sessionId: string
+  }) {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      return null
+    }
+
+    const participant = session.participants.find(
+      (candidate) => candidate.clientId === clientId,
+    )
+
+    if (!participant || !participant.canControl) {
+      return null
+    }
+
+    return this.resolveSessionRecord(session)
+  }
+
+  private applyTimerCommand({
+    command,
+    state,
+  }: {
+    command: TimerCommand
+    state: SessionSnapshot
+  }): SessionSnapshot {
+    const resolvedSnapshot = resolveSessionSnapshotAt(state)
+    const nextRevision = resolvedSnapshot.state.revision + 1
+
+    switch (command.type) {
+      case "start":
+        if (resolvedSnapshot.state.status === "running") {
+          return resolvedSnapshot
+        }
+
+        return {
+          params: resolvedSnapshot.params,
+          state: {
+            ...resolvedSnapshot.state,
+            anchorServerTimestamp: Date.now(),
+            isPaused: false,
+            isStarted: true,
+            lastUpdatedAt: Date.now(),
+            revision: nextRevision,
+            status: "running",
+          },
+        }
+      case "pause": {
+        if (resolvedSnapshot.state.status !== "running") {
+          return resolvedSnapshot
+        }
+
+        const pausedSnapshot = resolveSessionSnapshotAt(resolvedSnapshot)
+        const isFinished =
+          pausedSnapshot.state.elapsedSecondsAtAnchor >=
+          pausedSnapshot.state.durationSeconds
+
+        return {
+          params: pausedSnapshot.params,
+          state: {
+            ...pausedSnapshot.state,
+            anchorServerTimestamp: 0,
+            isPaused: true,
+            isStarted: true,
+            lastUpdatedAt: Date.now(),
+            revision: nextRevision,
+            status: isFinished ? "finished" : "paused",
+          },
+        }
+      }
+      case "reset":
+        return {
+          params: resolvedSnapshot.params,
+          state: buildStateForCurrentRow({
+            revision: nextRevision,
+            snapshot: resolvedSnapshot,
+            status: "idle",
+          }),
+        }
+      case "next":
+      case "previous": {
+        const direction = command.type === "next" ? 1 : -1
+        const nextIndex = clampTimerSequenceIndex({
+          activeIndex: resolvedSnapshot.params.activeIndex + direction,
+          rows: resolvedSnapshot.params.rows,
+        })
+
+        return {
+          params: {
+            ...resolvedSnapshot.params,
+            activeIndex: nextIndex,
+          },
+          state: buildStateForCurrentRow({
+            revision: nextRevision,
+            snapshot: {
+              ...resolvedSnapshot,
+              params: {
+                ...resolvedSnapshot.params,
+                activeIndex: nextIndex,
+              },
+            },
+            status: "idle",
+          }),
+        }
+      }
+      case "activate": {
+        const nextIndex = clampTimerSequenceIndex({
+          activeIndex: command.activeIndex,
+          rows: resolvedSnapshot.params.rows,
+        })
+
+        return {
+          params: {
+            ...resolvedSnapshot.params,
+            activeIndex: nextIndex,
+          },
+          state: buildStateForCurrentRow({
+            revision: nextRevision,
+            snapshot: {
+              ...resolvedSnapshot,
+              params: {
+                ...resolvedSnapshot.params,
+                activeIndex: nextIndex,
+              },
+            },
+            status: "idle",
+          }),
+        }
+      }
+    }
   }
 
   create({
@@ -130,6 +317,7 @@ export class InMemorySessionStore {
       clientId,
       session: created,
     })
+    this.writeSessionMetadata(created)
     return {
       role: "control" as const,
       session: created,
@@ -174,22 +362,23 @@ export class InMemorySessionStore {
         clientId,
         session: restored,
       })
+      this.writeSessionMetadata(restored)
       return {
         role: "control",
         session: restored,
       }
     }
 
-    existing.lastSeenAt = Date.now()
     this.upsertParticipant({
       canControl: tokenRecord.role === "control",
       clientId,
       session: existing,
     })
+    this.writeSessionMetadata(existing)
 
     return {
       role: tokenRecord.role,
-      session: existing,
+      session: this.resolveSessionRecord(existing),
     }
   }
 
@@ -214,7 +403,6 @@ export class InMemorySessionStore {
 
     const existing = this.sessions.get(tokenRecord.sessionId)
     if (existing) {
-      existing.lastSeenAt = Date.now()
       this.upsertParticipant({
         canControl: true,
         clientId,
@@ -222,7 +410,7 @@ export class InMemorySessionStore {
       })
       return {
         role: "control" as const,
-        session: existing,
+        session: this.resolveSessionRecord(existing),
       }
     }
 
@@ -255,6 +443,7 @@ export class InMemorySessionStore {
       clientId,
       session: restored,
     })
+    this.writeSessionMetadata(restored)
     return {
       role: "control" as const,
       session: restored,
@@ -263,54 +452,53 @@ export class InMemorySessionStore {
 
   updateSnapshot({
     clientId,
+    command,
     params,
     sessionId,
     state,
   }: {
     clientId: string
+    command?: TimerCommand
     params?: Partial<SyncParams>
     sessionId: string
     state?: SessionSnapshot["state"]
   }) {
-    const session = this.sessions.get(sessionId)
+    const session = this.getControlSession({ clientId, sessionId })
     if (!session) {
       return null
     }
 
-    session.lastSeenAt = Date.now()
-    const participant = session.participants.find(
-      (candidate) => candidate.clientId === clientId,
-    )
-
-    if (!participant || !participant.canControl) {
-      return null
+    let nextSnapshot = cloneSnapshot(session.snapshot)
+    if (params) {
+      const mergedParams = mergeSyncParamsPatch(
+        nextSnapshot.params,
+        normalizeSyncParamPatch(params) ?? {},
+      )
+      nextSnapshot = normalizeSessionSnapshot(
+        {
+          params: mergedParams,
+          state: nextSnapshot.state,
+        },
+        nextSnapshot,
+      )
+      nextSnapshot = resolveSessionSnapshotAt(nextSnapshot)
     }
 
-    const mergedParams = params
-      ? mergeSyncParamsPatch(
-          session.snapshot.params,
-          normalizeSyncParamPatch(params) ?? {},
-        )
-      : session.snapshot.params
-    const normalizedParams = normalizeSessionSnapshot(
-      {
-        params: mergedParams,
-        state: session.snapshot.state,
-      },
-      session.snapshot,
-    ).params
-
-    session.snapshot = {
-      params: normalizedParams,
-      state: state
-        ? normalizeTimerState(state, session.snapshot.state)
-        : session.snapshot.state,
+    if (command) {
+      nextSnapshot = this.applyTimerCommand({
+        command,
+        state: nextSnapshot,
+      })
+    } else if (state) {
+      nextSnapshot = {
+        params: nextSnapshot.params,
+        state: normalizeTimerState(state, nextSnapshot.state),
+      }
+      nextSnapshot = resolveSessionSnapshotAt(nextSnapshot)
     }
-    this.sessionMetadata.set(sessionId, {
-      accessTokens: session.accessTokens,
-      snapshot: session.snapshot,
-    })
 
+    session.snapshot = nextSnapshot
+    this.writeSessionMetadata(session)
     return session
   }
 
@@ -320,8 +508,7 @@ export class InMemorySessionStore {
       return null
     }
 
-    session.lastSeenAt = Date.now()
-    return session
+    return this.resolveSessionRecord(session)
   }
 
   leave(sessionId: string, clientId: string) {
@@ -334,6 +521,7 @@ export class InMemorySessionStore {
       (participant) => participant.clientId !== clientId,
     )
     session.lastSeenAt = Date.now()
+    this.writeSessionMetadata(session)
 
     if (session.participants.length === 0) {
       this.sessions.delete(sessionId)

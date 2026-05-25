@@ -22,19 +22,23 @@ export const createErrorMessage = (message: string): RelayServerMessage => ({
 export const createSessionMessage = (
   session: RelaySessionRecord,
   role: RemoteAccessRole,
+  serverTimestamp: number,
 ): RelayServerMessage => ({
   ...(role === "control" ? { accessTokens: session.accessTokens } : {}),
   type: "session",
   participants: session.participants,
+  serverTimestamp,
   sessionId: session.id,
   snapshot: session.snapshot,
 })
 
 export const createStateUpdatedMessage = (
   session: RelaySessionRecord,
+  serverTimestamp: number,
 ): RelayServerMessage => ({
   type: "state-updated",
   participants: session.participants,
+  serverTimestamp,
   sessionId: session.id,
   snapshot: session.snapshot,
 })
@@ -58,7 +62,11 @@ export const respondWithSession = ({
   session: RelaySessionRecord
   socket: WebSocket
 }) => {
-  registry.sendToSocket(socket, createSessionMessage(session, role))
+  const serverTimestamp = Date.now()
+  registry.sendToSocket(
+    socket,
+    createSessionMessage(session, role, serverTimestamp),
+  )
   registry.broadcastToParticipants(
     session.participants,
     createParticipantListMessage(session),

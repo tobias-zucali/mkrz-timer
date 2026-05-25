@@ -10,7 +10,13 @@ import debug from "@/utils/debug"
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp"
 import { resolveTimerStateAt, type TimerState } from "@/utils/timerState"
 
-export type TimerActions = "next" | "pause" | "previous" | "restart" | "start"
+export type TimerActions =
+  | "activate"
+  | "next"
+  | "pause"
+  | "previous"
+  | "restart"
+  | "start"
 
 export type { TimerState }
 
@@ -34,12 +40,14 @@ export default function useTimer({
   canMutate = true,
   onAction,
   params,
+  sequenceAuthority = "client",
   syncParamsRef,
   syncStateRef,
   shortcutsEnabled = true,
 }: {
   canMutate?: boolean
   params: SyncParams
+  sequenceAuthority?: "client" | "server"
   syncParamsRef?: React.RefObject<SyncParams>
   syncStateRef: React.RefObject<TimerState>
   onAction: (action: TimerActions, payload: TimerActionPayload) => void
@@ -66,23 +74,31 @@ export default function useTimer({
   )
   const [, setAnimationNow] = useState(() => Date.now())
   const latestStateRef = useRef<TimerState>({
+    anchorServerTimestamp: 0,
     currentRepeat,
+    durationSeconds: totalDuration,
+    elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
     revision,
     isStarted,
     lastUpdatedAt,
+    status: "idle",
     totalDuration,
   })
   const handleActionRef = useRef<(action: TimerActions) => void>(() => {})
 
   const resolvedState = resolveTimerStateAt({
+    anchorServerTimestamp: lastUpdatedAt,
     currentRepeat,
+    durationSeconds: totalDuration,
+    elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
     isStarted,
     lastUpdatedAt,
     revision,
+    status: !isStarted ? "idle" : isPaused ? "paused" : "running",
     totalDuration,
   })
 
@@ -153,11 +169,17 @@ export default function useTimer({
         }
 
         const nextState = createNextState({
+          anchorServerTimestamp: Date.now(),
           currentRepeat: currentState.currentRepeat,
+          durationSeconds: activeRowSnapshot.row.totalSeconds,
+          elapsedSecondsAtAnchor: currentState.isStarted
+            ? currentState.elapsedTime
+            : 0,
           elapsedTime: currentState.isStarted ? currentState.elapsedTime : 0,
           isPaused: false,
           isStarted: true,
           lastUpdatedAt: Date.now(),
+          status: "running",
           totalDuration: activeRowSnapshot.row.totalSeconds,
         })
         commitNextState(nextState)
@@ -170,11 +192,18 @@ export default function useTimer({
         }
 
         const nextState = createNextState({
+          anchorServerTimestamp: 0,
           currentRepeat: currentState.currentRepeat,
+          durationSeconds: currentState.totalDuration,
+          elapsedSecondsAtAnchor: currentState.elapsedTime,
           elapsedTime: currentState.elapsedTime,
           isPaused: true,
           isStarted: true,
           lastUpdatedAt: Date.now(),
+          status:
+            currentState.elapsedTime >= currentState.totalDuration
+              ? "finished"
+              : "paused",
           totalDuration: currentState.totalDuration,
         })
         commitNextState(nextState)
@@ -186,11 +215,15 @@ export default function useTimer({
         const next = {
           params: { activeIndex: activeRowSnapshot.activeIndex },
           state: createNextState({
+            anchorServerTimestamp: 0,
             currentRepeat: 1,
+            durationSeconds: activeRowSnapshot.row.totalSeconds,
+            elapsedSecondsAtAnchor: 0,
             elapsedTime: 0,
             isPaused: true,
             isStarted: false,
             lastUpdatedAt: nextLastUpdatedAt,
+            status: "idle",
             totalDuration: activeRowSnapshot.row.totalSeconds,
           }),
         }
@@ -211,11 +244,15 @@ export default function useTimer({
         const next = {
           params: { activeIndex: nextRowSnapshot.activeIndex },
           state: createNextState({
+            anchorServerTimestamp: 0,
             currentRepeat: 1,
+            durationSeconds: nextRowSnapshot.row.totalSeconds,
+            elapsedSecondsAtAnchor: 0,
             elapsedTime: 0,
             isPaused: true,
             isStarted: false,
             lastUpdatedAt: nextLastUpdatedAt,
+            status: "idle",
             totalDuration: nextRowSnapshot.row.totalSeconds,
           }),
         }
@@ -234,16 +271,20 @@ export default function useTimer({
     const next = {
       params: { activeIndex: nextRowSnapshot.activeIndex },
       state: createNextState({
+        anchorServerTimestamp: 0,
         currentRepeat: 1,
+        durationSeconds: nextRowSnapshot.row.totalSeconds,
+        elapsedSecondsAtAnchor: 0,
         elapsedTime: 0,
         isPaused: true,
         isStarted: false,
         lastUpdatedAt: Date.now(),
+        status: "idle",
         totalDuration: nextRowSnapshot.row.totalSeconds,
       }),
     }
     commitNextState(next.state)
-    onAction("pause", next)
+    onAction("activate", next)
   }
 
   handleActionRef.current = handleAction
@@ -256,6 +297,7 @@ export default function useTimer({
     })
 
     if (
+      sequenceAuthority !== "client" ||
       !currentResolvedState.isStarted ||
       currentResolvedState.isPaused ||
       currentResolvedState.elapsedTime < currentResolvedState.totalDuration
@@ -266,11 +308,15 @@ export default function useTimer({
     const currentRow = activeRowSnapshot.row
     if (currentResolvedState.currentRepeat < currentRow.repeatCount) {
       const nextState = createNextState({
+        anchorServerTimestamp: Date.now(),
         currentRepeat: currentResolvedState.currentRepeat + 1,
+        durationSeconds: currentRow.totalSeconds,
+        elapsedSecondsAtAnchor: 0,
         elapsedTime: 0,
         isPaused: false,
         isStarted: true,
         lastUpdatedAt: Date.now(),
+        status: "running",
         totalDuration: currentRow.totalSeconds,
       })
       commitNextState(nextState)
@@ -290,11 +336,15 @@ export default function useTimer({
       const next = {
         params: { activeIndex: nextRowSnapshot.activeIndex },
         state: createNextState({
+          anchorServerTimestamp: Date.now(),
           currentRepeat: 1,
+          durationSeconds: nextRowSnapshot.row.totalSeconds,
+          elapsedSecondsAtAnchor: 0,
           elapsedTime: 0,
           isPaused: false,
           isStarted: true,
           lastUpdatedAt: Date.now(),
+          status: "running",
           totalDuration: nextRowSnapshot.row.totalSeconds,
         }),
       }
@@ -304,16 +354,27 @@ export default function useTimer({
     }
 
     const nextState = createNextState({
+      anchorServerTimestamp: 0,
       currentRepeat: currentResolvedState.currentRepeat,
+      durationSeconds: currentResolvedState.totalDuration,
+      elapsedSecondsAtAnchor: currentResolvedState.totalDuration,
       elapsedTime: currentResolvedState.totalDuration,
       isPaused: true,
       isStarted: true,
       lastUpdatedAt: Date.now(),
+      status: "finished",
       totalDuration: currentResolvedState.totalDuration,
     })
     commitNextState(nextState)
     onAction("pause", { state: nextState })
-  }, [commitNextState, createNextState, onAction, paramsRef, resolvedState])
+  }, [
+    commitNextState,
+    createNextState,
+    onAction,
+    paramsRef,
+    resolvedState,
+    sequenceAuthority,
+  ])
 
   useGlobalKeyUp((event: KeyboardEvent) => {
     if (!shortcutsEnabled) {
@@ -399,23 +460,41 @@ export default function useTimer({
 
   const setState = useCallback(
     ({
+      anchorServerTimestamp,
       currentRepeat,
+      durationSeconds,
+      elapsedSecondsAtAnchor,
       elapsedTime,
       isPaused,
       revision,
       isStarted,
       lastUpdatedAt,
+      status,
       totalDuration,
     }: TimerState) => {
       setRevision(() => revision)
       setCurrentRepeat(() => currentRepeat)
+      latestStateRef.current = {
+        anchorServerTimestamp,
+        currentRepeat,
+        durationSeconds,
+        elapsedSecondsAtAnchor,
+        elapsedTime,
+        isPaused,
+        isStarted,
+        lastUpdatedAt,
+        revision,
+        status,
+        totalDuration,
+      }
+      syncStateRef.current = latestStateRef.current
       setElapsedTime(() => elapsedTime)
       setIsPaused(() => isPaused)
       setIsStarted(() => isStarted)
       setLastUpdatedAt(() => lastUpdatedAt)
       setTotalDuration(() => totalDuration)
     },
-    [],
+    [syncStateRef],
   )
 
   latestStateRef.current = {

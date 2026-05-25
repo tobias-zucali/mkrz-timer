@@ -20,9 +20,11 @@ function dispatchTimerSpaceShortcut() {
 }
 
 export function getTimerSpaceShortcutButtonProps<T extends HTMLElement>({
+  dispatchShortcut = true,
   onKeyDown,
   onKeyUp,
 }: {
+  dispatchShortcut?: boolean
   onKeyDown?: KeyboardEventHandler<T>
   onKeyUp?: KeyboardEventHandler<T>
 } = {}) {
@@ -32,7 +34,9 @@ export function getTimerSpaceShortcutButtonProps<T extends HTMLElement>({
       if (isSpaceKey(event.key)) {
         event.preventDefault()
         event.stopPropagation()
-        dispatchTimerSpaceShortcut()
+        if (dispatchShortcut) {
+          dispatchTimerSpaceShortcut()
+        }
         return
       }
 

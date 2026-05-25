@@ -144,7 +144,8 @@ test("maps active offline interruption to liveOffline", () => {
   })
 
   assert.equal(presentation.state, "liveOffline")
-  assert.equal(presentation.statusPanel.stateLabel, "Connection interrupted")
+  assert.equal(presentation.statusPanel.stateLabel, "Disconnected")
+  assert.equal(presentation.runtimeBadgeLabel, "Disconnected")
 })
 
 test("maps an explicitly ended session to liveEnded", () => {

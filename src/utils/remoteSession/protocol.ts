@@ -4,6 +4,7 @@ import type {
   RelayClientMessage,
   SessionSnapshot,
   SyncParams,
+  TimerCommand,
 } from "../../shared/remoteSession/types.ts"
 import {
   normalizeRelayServerMessage,
@@ -89,17 +90,20 @@ export const buildJoinMessage = ({
 
 export const buildSyncMessage = ({
   clientId,
+  command,
   params,
   sessionId,
   state,
 }: {
   clientId: string
+  command?: TimerCommand
   params?: Partial<SyncParams>
   sessionId: string
   state?: TimerState
 }): RelayClientMessage => ({
   type: "sync",
   clientId,
+  ...(command ? { command } : {}),
   params,
   sessionId,
   state,

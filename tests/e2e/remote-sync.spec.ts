@@ -1,9 +1,8 @@
-import { expect, test } from "@playwright/test"
+import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
   enableRemoteMode,
-  expectScreenshotWithoutDebugInfo,
   expectControlClientUrlParams,
   expectRemoteSessionOnlyUrl,
   expectTimerDisplayRunning,
@@ -21,6 +20,26 @@ import {
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./remote-mode.helpers"
+
+async function openIsolatedClient(
+  page: Page,
+  clientUrl: string,
+): Promise<{ client: Page; context: BrowserContext }> {
+  const browser = page.context().browser()
+  if (!browser) {
+    throw new Error("Playwright browser is unavailable")
+  }
+
+  const context = await browser.newContext()
+  const client = await context.newPage()
+  await client.goto(clientUrl)
+  await expect(client.getByTestId("remote-status")).toHaveCount(1)
+
+  return {
+    client,
+    context,
+  }
+}
 
 test(
   "syncs start and pause actions between main and three clients",
@@ -178,6 +197,82 @@ test("syncs the current timer state to a client that rejoins during active contr
   await expectTimersToMatch([...activePages, rejoinedClient])
 })
 
+test("silently republishes offline control changes when the relay stayed unchanged", async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+
+  const clientUrl = await enableRemoteMode(page)
+  const { client: isolatedControlClient, context: isolatedControlContext } =
+    await openIsolatedClient(page, clientUrl)
+
+  try {
+    await closeSettingsOverlay(page)
+    await waitForRemoteCluster([page, isolatedControlClient], {
+      clientCount: 1,
+      mainConnectionCount: 1,
+      message:
+        "isolated control client should connect before local-only recovery",
+    })
+
+    await isolatedControlContext.setOffline(true)
+    await isolatedControlClient.getByRole("button", { name: "START" }).click()
+    await expectTimerRunning(isolatedControlClient)
+    await expectTimerPaused(page)
+
+    await isolatedControlContext.setOffline(false)
+    await Promise.all([
+      expectTimerRunning(page),
+      expectTimerRunning(isolatedControlClient),
+    ])
+    await expect(
+      isolatedControlClient.getByRole("dialog", {
+        name: "Live session state changed during recovery.",
+      }),
+    ).toHaveCount(0)
+  } finally {
+    await isolatedControlContext.close()
+  }
+})
+
+test("silently accepts relay changes when an offline controller made no local edits", async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+
+  const clientUrl = await enableRemoteMode(page)
+  const { client: isolatedControlClient, context: isolatedControlContext } =
+    await openIsolatedClient(page, clientUrl)
+
+  try {
+    await closeSettingsOverlay(page)
+    await waitForRemoteCluster([page, isolatedControlClient], {
+      clientCount: 1,
+      mainConnectionCount: 1,
+      message:
+        "isolated control client should connect before relay-only recovery",
+    })
+
+    await isolatedControlContext.setOffline(true)
+    await page.getByRole("button", { name: "START" }).click()
+    await expectTimerRunning(page)
+    await expectTimerPaused(isolatedControlClient)
+
+    await isolatedControlContext.setOffline(false)
+    await Promise.all([
+      expectTimerRunning(page),
+      expectTimerRunning(isolatedControlClient),
+    ])
+    await expect(
+      isolatedControlClient.getByRole("dialog", {
+        name: "Live session state changed during recovery.",
+      }),
+    ).toHaveCount(0)
+  } finally {
+    await isolatedControlContext.close()
+  }
+})
+
 test("ignores malformed relay payload attempts without breaking active clients", async ({
   page,
 }) => {
@@ -299,148 +394,6 @@ test("syncs settings changes from main and clients", async ({ page }) => {
     ),
   )
 })
-
-test("controller routes block on URL-vs-server conflicts until the user picks server state", async ({
-  page,
-}) => {
-  test.setTimeout(90_000)
-
-  const clientUrl = await enableRemoteMode(page)
-  const hostSettings = {
-    backgroundColor: "#123456",
-    foregroundColor: "#fefefe",
-    minutes: "02",
-    primaryColor: "#00aa88",
-    seconds: "15",
-    title: "Server state",
-  }
-
-  await updateTimerSettings(page, hostSettings)
-  await closeSettingsOverlay(page)
-
-  const conflictingUrl = new URL(await clientUrl)
-  conflictingUrl.search = "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee"
-
-  const controlClient = await page.context().newPage()
-  await controlClient.goto(conflictingUrl.toString())
-
-  const conflictDialog = controlClient.getByRole("dialog", {
-    name: "Live session state changed during recovery.",
-  })
-  await expect(conflictDialog).toBeVisible()
-  await expect(
-    conflictDialog.getByRole("button", { name: "Use server state" }),
-  ).toBeFocused()
-  await controlClient.keyboard.press("Enter")
-
-  await expect(conflictDialog).not.toBeVisible()
-  await expectTimerSettings(controlClient, hostSettings)
-})
-
-test("controller routes can overwrite server state from URL params after a conflict", async ({
-  page,
-}) => {
-  test.setTimeout(90_000)
-
-  const clientUrl = await enableRemoteMode(page)
-  const hostSettings = {
-    backgroundColor: "#123456",
-    foregroundColor: "#fefefe",
-    minutes: "02",
-    primaryColor: "#00aa88",
-    seconds: "15",
-    title: "Server state",
-  }
-  const urlSettings = {
-    backgroundColor: "#111111",
-    foregroundColor: "#eeeeee",
-    minutes: "00",
-    primaryColor: "#ff8800",
-    seconds: "45",
-    title: "URL Override",
-  }
-
-  await updateTimerSettings(page, hostSettings)
-  await closeSettingsOverlay(page)
-
-  const conflictingUrl = new URL(await clientUrl)
-  conflictingUrl.search = "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee"
-
-  const controlClient = await page.context().newPage()
-  await controlClient.goto(conflictingUrl.toString())
-
-  const conflictDialog = controlClient.getByRole("dialog", {
-    name: "Live session state changed during recovery.",
-  })
-  await expect(conflictDialog).toBeVisible()
-  await expect(
-    conflictDialog.getByRole("button", {
-      name: "Use server state",
-    }),
-  ).toBeFocused()
-  await controlClient.keyboard.press("Tab")
-  await expect(
-    conflictDialog.getByRole("button", {
-      name: "Push local changes",
-    }),
-  ).toBeFocused()
-  await controlClient.keyboard.press("Space")
-
-  await expect(conflictDialog).not.toBeVisible()
-  await expectTimerSettings(page, urlSettings)
-  await expectTimerSettings(controlClient, urlSettings)
-})
-
-test(
-  "matches the blocking control sync-conflict dialog",
-  { tag: "@visual" },
-  async ({ page }) => {
-    test.setTimeout(90_000)
-
-    const clientUrl = await enableRemoteMode(page)
-    const hostSettings = {
-      backgroundColor: "#123456",
-      foregroundColor: "#fefefe",
-      minutes: "02",
-      primaryColor: "#00aa88",
-      seconds: "15",
-      title: "Server state",
-    }
-
-    await updateTimerSettings(page, hostSettings)
-    await closeSettingsOverlay(page)
-
-    const conflictingUrl = new URL(await clientUrl)
-    conflictingUrl.search =
-      "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee"
-
-    const controlClient = await page.context().newPage()
-    await controlClient.goto(conflictingUrl.toString())
-
-    const conflictDialog = controlClient.getByRole("dialog", {
-      name: "Live session state changed during recovery.",
-    })
-    await expect(conflictDialog).toBeVisible()
-
-    const styleTag = await controlClient.addStyleTag({
-      content: `
-        [data-testid="remote-status-activity-log"] { display: none !important; }
-      `,
-    })
-
-    try {
-      await expectScreenshotWithoutDebugInfo(controlClient, {
-        fullPage: true,
-        message: "sync-conflict dialog should stay visually stable",
-        name: "remote-control-sync-conflict-dialog.png",
-      })
-    } finally {
-      await styleTag.evaluate((node) => {
-        node.parentNode?.removeChild(node)
-      })
-    }
-  },
-)
 
 test("new clients inherit host settings without resetting the session", async ({
   page,
