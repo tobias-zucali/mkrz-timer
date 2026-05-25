@@ -6,7 +6,7 @@ import {
   type AppTranslationFn,
 } from "../../../i18n/translator.ts"
 
-import { getParticipantSummary } from "./index"
+import { getParticipantSummary } from "./index.ts"
 
 const appTranslator = createAppTranslator()
 const t: AppTranslationFn = (key, values) =>

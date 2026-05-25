@@ -40,6 +40,10 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ## Local Dev / Test Lanes
 
+- Local validation lanes:
+  - `pnpm lint`: static validation only
+  - `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code, including component-adjacent logic helpers that do not need jsdom
+  - `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
 - Default Playwright lane:
   - app: `http://127.0.0.1:3100`
   - relay health: `http://127.0.0.1:9100/health`
@@ -61,6 +65,8 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Tag smoke coverage with `@smoke` so it is exercised by `pnpm test` and `pnpm agent:test`.
 - Tag visual-regression coverage with `@visual` so it is exercised by `pnpm test:e2e:visual` and excluded from `pnpm test:ci`.
 - Leave broader end-to-end coverage untagged unless it belongs in a filtered lane.
+- Keep `@smoke` limited to the minimum browser flows that should gate the default local and agent lanes.
+- Keep `@visual` limited to screenshot or layout-regression coverage; broader behavioral assertions should stay untagged unless they also need visual gating.
 - When adding or changing remote-mode behavior, make sure the affected Playwright coverage carries the right tags for the intended lane.
 
 ## Commands
@@ -68,9 +74,11 @@ This file captures durable repo conventions for agents. For product/setup contex
 - `pnpm lint`: ESLint plus typecheck validation
 - `pnpm lint:fix`: ESLint autofixes plus a follow-up typecheck
 - `pnpm format:fix`: Prettier rewrites only
-- `pnpm test`: lint, unit tests, and Playwright tests tagged `@smoke`
-- `pnpm test:ci`: lint, unit tests, and Playwright tests except those tagged `@visual`
-- `pnpm test:full`: lint, unit tests, full e2e
+- `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code
+- `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
+- `pnpm test`: lint, unit tests, component tests, and Playwright tests tagged `@smoke`
+- `pnpm test:ci`: lint, unit tests, component tests, and Playwright tests except those tagged `@visual`
+- `pnpm test:full`: lint, unit tests, component tests, and full e2e
 - `pnpm build`: production app build only
 - `pnpm build:full`: `pnpm test:full` plus production app build
 - `pnpm build:docker`: `pnpm build:full` plus `docker compose build`
