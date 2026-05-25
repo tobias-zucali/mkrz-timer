@@ -29,19 +29,11 @@ function TopRightActionButton({
   return (
     <button
       aria-label={ariaLabel}
-      className={`
-        inline-flex size-9 cursor-pointer items-center justify-center rounded-lg
-        bg-background/84 transition
-        focus:outline-2 focus:-outline-offset-2 focus:outline-primary
-        ${
-          isActive
-            ? "bg-background/96 text-primary"
-            : `
-            text-foreground/78
-            hover:bg-background hover:text-primary
-          `
-        }
-      `}
+      className={[
+        "inline-flex size-9 cursor-pointer items-center justify-center rounded-lg transition",
+        "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
+        isActive ? "text-primary" : "text-foreground/78 hover:text-primary",
+      ].join(" ")}
       onClick={onClick}
       title={title}
       type="button"
@@ -75,7 +67,7 @@ export default function TopRightControls({
 
   return (
     <>
-      <div className="absolute top-0 right-0 z-20 flex items-center p-2">
+      <div className="absolute top-0 right-0 z-20 m-2 hidden items-center rounded-lg bg-background/58 backdrop-blur-xs hover:bg-background/74 sm:flex">
         <TopRightActionButton
           ariaLabel={isReadonlyClient ? t("shareViewerLink") : t("openSharing")}
           isActive={

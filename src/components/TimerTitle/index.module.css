@@ -1,0 +1,73 @@
+@layer components {
+  .mainShortTitle {
+    @media (max-width: 1100px) {
+      font-size: clamp(3rem, 6.4vw, 4.5rem) !important;
+    }
+
+    @media (max-height: 820px) {
+      font-size: clamp(3rem, 7.5vh, 4.5rem) !important;
+    }
+
+    @media (max-width: 820px) {
+      font-size: clamp(2.4rem, 7.2vw, 3.5rem) !important;
+    }
+
+    @media (max-height: 640px) {
+      font-size: clamp(2.4rem, 6.4vh, 3.5rem) !important;
+    }
+  }
+
+  .mainLongTitle {
+    @media (max-width: 1100px) {
+      font-size: clamp(2.5rem, 5.4vw, 3.75rem) !important;
+    }
+
+    @media (max-height: 820px) {
+      font-size: clamp(2.5rem, 6.6vh, 3.75rem) !important;
+    }
+
+    @media (max-width: 820px) {
+      font-size: clamp(2rem, 6vw, 3rem) !important;
+    }
+
+    @media (max-height: 640px) {
+      font-size: clamp(2rem, 5.7vh, 3rem) !important;
+    }
+  }
+
+  .floatingShortTitle {
+    @media (max-width: 520px) {
+      font-size: clamp(1.8rem, 8vw, 2.8rem) !important;
+    }
+
+    @media (max-height: 520px) {
+      font-size: clamp(1.8rem, 6.5vh, 2.8rem) !important;
+    }
+
+    @media (max-width: 400px) {
+      font-size: clamp(1.45rem, 7.2vw, 2.25rem) !important;
+    }
+
+    @media (max-height: 400px) {
+      font-size: clamp(1.45rem, 5.8vh, 2.25rem) !important;
+    }
+  }
+
+  .floatingLongTitle {
+    @media (max-width: 520px) {
+      font-size: clamp(1.55rem, 7vw, 2.35rem) !important;
+    }
+
+    @media (max-height: 520px) {
+      font-size: clamp(1.55rem, 5.8vh, 2.35rem) !important;
+    }
+
+    @media (max-width: 400px) {
+      font-size: clamp(1.25rem, 6.3vw, 1.9rem) !important;
+    }
+
+    @media (max-height: 400px) {
+      font-size: clamp(1.25rem, 5.1vh, 1.9rem) !important;
+    }
+  }
+}

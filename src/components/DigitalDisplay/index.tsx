@@ -36,6 +36,7 @@ function DigitalDisplay({
     <div
       className={classNames(
         "flex content-center font-mono text-[5em] font-bold relative text-center w-full md:text-[8em]",
+        styles.displayRoot,
         isReadonly && "opacity-50",
         isAlert && classNames(styles.blink, "text-primary opacity-100"),
       )}

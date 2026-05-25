@@ -1,0 +1,39 @@
+@layer components {
+  .controls {
+    @media (max-height: 640px) {
+      padding-block: 0;
+    }
+
+    @media (min-height: 640px) {
+      padding-block: 0.375rem;
+    }
+
+    @media (min-height: 768px) {
+      padding-block: 0.5rem;
+    }
+  }
+
+  .actionButton {
+    @media (max-height: 640px) {
+      min-height: 2rem;
+      min-width: 4.25rem;
+      padding: 0.25rem 0.625rem;
+    }
+
+    @media (min-height: 640px) {
+      min-height: 2.5rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    @media (min-height: 768px) {
+      min-height: 2.75rem;
+      padding: 0.625rem 0.875rem;
+    }
+  }
+
+  .tightCenterCluster {
+    @media (max-height: 640px) {
+      gap: 0.25rem;
+    }
+  }
+}

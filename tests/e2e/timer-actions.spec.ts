@@ -6,6 +6,51 @@ import {
   openTimer,
 } from "./remote-mode.helpers"
 
+const timerVisualFormFactors = [
+  {
+    name: "desktop",
+    contextOptions: {
+      viewport: { width: 1440, height: 1100 },
+    },
+  },
+  {
+    name: "desktop-short",
+    contextOptions: {
+      viewport: { width: 1280, height: 720 },
+    },
+  },
+  {
+    name: "tablet-portrait",
+    contextOptions: {
+      ...devices["iPad Mini"],
+    },
+  },
+  {
+    name: "tablet-landscape",
+    contextOptions: {
+      ...devices["iPad Mini landscape"],
+    },
+  },
+  {
+    name: "phone-portrait",
+    contextOptions: {
+      ...devices["iPhone 13"],
+    },
+  },
+  {
+    name: "phone-landscape",
+    contextOptions: {
+      ...devices["iPhone 13 landscape"],
+    },
+  },
+  {
+    name: "phone-small",
+    contextOptions: {
+      ...devices["iPhone SE"],
+    },
+  },
+] as const
+
 async function setTimer(page: Page, minutes: string, seconds: string) {
   const timerDisplay = page.getByTestId("timer-display")
   await timerDisplay.getByLabel("Minutes").fill(minutes)
@@ -23,6 +68,22 @@ async function setInlineTitle(page: Page, title: string) {
 
   await editor.fill(title)
   await page.getByTestId("timer-display").click()
+}
+
+function buildTimerUrl({
+  backgroundColor = "000000",
+  foregroundColor = "ffffff",
+  primaryColor = "d61f69",
+  seconds = 3,
+  title = "",
+}: {
+  backgroundColor?: string
+  foregroundColor?: string
+  primaryColor?: string
+  seconds?: number
+  title?: string
+}) {
+  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
 }
 
 async function getTitleMetrics(page: Page) {
@@ -64,6 +125,134 @@ async function getTitleRootHeight(page: Page) {
   return page
     .getByTestId("timer-title")
     .evaluate((node) => node.getBoundingClientRect().height)
+}
+
+async function getTitlePositionMetrics(page: Page) {
+  return page.evaluate(() => {
+    const titleRoot = document.querySelector(
+      '[data-testid="timer-title"]',
+    ) as HTMLElement | null
+    const displayTitle = document.querySelector(
+      '[data-testid="timer-title-text"]',
+    ) as HTMLElement | null
+    const inputTitle = document.querySelector(
+      '[data-testid="timer-title-input"]',
+    ) as HTMLTextAreaElement | null
+
+    const toRect = (element: HTMLElement | null) => {
+      if (!element) {
+        return null
+      }
+
+      const rect = element.getBoundingClientRect()
+      return {
+        height: rect.height,
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+      }
+    }
+
+    return {
+      display: toRect(displayTitle),
+      input: toRect(inputTitle),
+      root: toRect(titleRoot),
+    }
+  })
+}
+
+async function getDisplayClampMetrics(page: Page) {
+  return page.getByTestId("timer-title-text").evaluate((node) => {
+    const element = node as HTMLElement
+    const computedStyle = window.getComputedStyle(element)
+    const lineHeightPx = Number.parseFloat(computedStyle.lineHeight) || 0
+    const paddingTopPx = Number.parseFloat(computedStyle.paddingTop) || 0
+    const paddingBottomPx = Number.parseFloat(computedStyle.paddingBottom) || 0
+
+    return {
+      clientHeight: element.clientHeight,
+      lineHeightPx,
+      paddingBottomPx,
+      paddingTopPx,
+      scrollHeight: element.scrollHeight,
+    }
+  })
+}
+
+async function expectMainTimerContentToFitViewport(page: Page) {
+  const viewport = page.viewportSize()
+  expect(viewport).not.toBeNull()
+
+  const metrics = await page.evaluate(() => {
+    const body = document.body
+    const documentElement = document.documentElement
+    const title = document.querySelector('[data-testid="timer-title"]')
+    const display = document.querySelector('[data-testid="timer-display"]')
+    const controls = document.querySelector('[data-testid="timer-controls"]')
+    const startButton = Array.from(document.querySelectorAll("button")).find(
+      (node) => node.textContent?.trim() === "START",
+    )
+
+    const toRect = (node: Element | null) => {
+      if (!node) {
+        return null
+      }
+
+      const rect = node.getBoundingClientRect()
+
+      return {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      }
+    }
+
+    return {
+      bodyScrollWidth: body.scrollWidth,
+      controls: toRect(controls),
+      display: toRect(display),
+      documentScrollWidth: documentElement.scrollWidth,
+      startButton: toRect(startButton ?? null),
+      title: toRect(title),
+    }
+  })
+
+  expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(
+    (viewport?.width ?? 0) + 1,
+  )
+  expect(metrics.documentScrollWidth).toBeLessThanOrEqual(
+    (viewport?.width ?? 0) + 1,
+  )
+  expect(metrics.title).not.toBeNull()
+  expect(metrics.display).not.toBeNull()
+  expect(metrics.controls).not.toBeNull()
+  expect(metrics.startButton).not.toBeNull()
+
+  const elements = [
+    metrics.title,
+    metrics.display,
+    metrics.controls,
+    metrics.startButton,
+  ]
+
+  for (const rect of elements) {
+    expect(rect?.height ?? 0).toBeGreaterThan(0)
+    expect(rect?.width ?? 0).toBeGreaterThan(0)
+    expect(rect?.left ?? 0).toBeGreaterThanOrEqual(-1)
+    expect(rect?.right ?? 0).toBeLessThanOrEqual((viewport?.width ?? 0) + 1)
+    expect(rect?.top ?? 0).toBeGreaterThanOrEqual(-1)
+    expect(rect?.bottom ?? 0).toBeLessThanOrEqual((viewport?.height ?? 0) + 1)
+  }
+
+  expect((metrics.title?.bottom ?? 0) <= (metrics.display?.top ?? 0) + 8).toBe(
+    true,
+  )
+  expect(
+    (metrics.display?.bottom ?? 0) <= (metrics.controls?.top ?? 0) + 8,
+  ).toBe(true)
 }
 
 const durationCases = [
@@ -120,7 +309,7 @@ test("keeps the timer usable after strange duration input", async ({
     .toBeLessThan(3)
 })
 
-test("supports multiline titles with adaptive scaling and a compact empty state", async ({
+test("supports wrapped single-paragraph titles with class-based sizing and a compact empty state", async ({
   page,
 }) => {
   await openTimer(page, 3)
@@ -138,22 +327,40 @@ test("supports multiline titles with adaptive scaling and a compact empty state"
   await setInlineTitle(page, "Sprint")
   const shortTitleMetrics = await getTitleMetrics(page)
   expect(shortTitleMetrics.text).toBe("Sprint")
+  expect(shortTitleMetrics.rootHeight).toBeGreaterThan(50)
 
   const displayHeight = await getTitleRootHeight(page)
+  const displayPosition = await getTitlePositionMetrics(page)
   await titleRoot.getByTestId("timer-title-input").click()
   await expect(titleRoot.getByTestId("timer-title-input")).toBeFocused()
   const focusHeight = await getTitleRootHeight(page)
+  const focusPosition = await getTitlePositionMetrics(page)
   expect(Math.abs(focusHeight - displayHeight)).toBeLessThan(10)
+  expect(
+    Math.abs(
+      (displayPosition.display?.top ?? 0) - (focusPosition.input?.top ?? 0),
+    ),
+  ).toBeLessThan(1.5)
+  expect(
+    Math.abs(
+      (displayPosition.display?.left ?? 0) - (focusPosition.input?.left ?? 0),
+    ),
+  ).toBeLessThan(1.5)
+  expect(
+    Math.abs(
+      (displayPosition.display?.width ?? 0) - (focusPosition.input?.width ?? 0),
+    ),
+  ).toBeLessThan(1.5)
   await page.getByTestId("timer-display").click()
 
   await setInlineTitle(
     page,
-    "Quarterly planning\nretrospective and facilitator notes",
+    "Quarterly planning retrospective and facilitator notes",
   )
   const longTitleMetrics = await getTitleMetrics(page)
 
   expect(longTitleMetrics.text).toBe(
-    "Quarterly planning\nretrospective and facilitator notes",
+    "Quarterly planning retrospective and facilitator notes",
   )
   expect(longTitleMetrics.fontSize).toBeLessThan(shortTitleMetrics.fontSize)
   expect(longTitleMetrics.rootHeight).toBeLessThan(160)
@@ -168,13 +375,30 @@ test("supports multiline titles with adaptive scaling and a compact empty state"
   ).resolves.toBeLessThan(80)
 })
 
-test("keeps long multiline titles readable in fullscreen mode", async ({
+test("keeps long non-focused titles fully visible within the title height budget", async ({
   page,
 }) => {
   await openTimer(page, 3)
   await setInlineTitle(
     page,
-    "Quarterly planning\nretrospective and facilitator notes",
+    "das ist eine sehr schoene und doch auch spannende loesung fuer einen absichtlich langen titel der auf jeden fall in eine dritte zeile umbrechen wuerde",
+  )
+
+  const clampMetrics = await getDisplayClampMetrics(page)
+
+  expect(clampMetrics.scrollHeight - clampMetrics.clientHeight).toBeLessThan(4)
+  expect(clampMetrics.clientHeight).toBeGreaterThan(
+    clampMetrics.lineHeightPx * 2.5,
+  )
+})
+
+test("keeps long wrapped titles readable in fullscreen mode", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await setInlineTitle(
+    page,
+    "Quarterly planning retrospective and facilitator notes",
   )
 
   await page.locator("body").click()
@@ -262,28 +486,9 @@ test(
   "matches full timer layout across simulated form factors",
   { tag: "@visual" },
   async ({ baseURL, browser }) => {
-    const formFactors = [
-      {
-        name: "desktop",
-        contextOptions: {
-          viewport: { width: 1440, height: 1100 },
-        },
-      },
-      {
-        name: "tablet",
-        contextOptions: {
-          ...devices["iPad Mini"],
-        },
-      },
-      {
-        name: "phone",
-        contextOptions: {
-          ...devices["iPhone 13"],
-        },
-      },
-    ] as const
+    test.slow()
 
-    for (const { name, contextOptions } of formFactors) {
+    for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
       const devicePage = await context.newPage()
 
@@ -291,6 +496,7 @@ test(
       await expect(
         devicePage.getByRole("button", { name: "START" }),
       ).toBeVisible()
+      await expectMainTimerContentToFitViewport(devicePage)
 
       await expectScreenshotWithoutDebugInfo(devicePage, {
         fullPage: true,
@@ -304,65 +510,108 @@ test(
 )
 
 test(
-  "matches long-title layouts across form factors and orientations",
+  "matches short-title layouts across form factors and orientations",
   { tag: "@visual" },
   async ({ baseURL, browser }) => {
-    const encodedTitle = encodeURIComponent(
-      "Quarterly planning\nretrospective and facilitator notes",
-    )
-    const formFactors = [
-      {
-        name: "desktop-long-title",
-        contextOptions: {
-          viewport: { width: 1440, height: 1100 },
-        },
-      },
-      {
-        name: "tablet-portrait-long-title",
-        contextOptions: {
-          ...devices["iPad Mini"],
-        },
-      },
-      {
-        name: "tablet-landscape-long-title",
-        contextOptions: {
-          ...devices["iPad Mini landscape"],
-        },
-      },
-      {
-        name: "phone-portrait-long-title",
-        contextOptions: {
-          ...devices["iPhone 13"],
-        },
-      },
-      {
-        name: "phone-landscape-long-title",
-        contextOptions: {
-          ...devices["iPhone 13 landscape"],
-        },
-      },
-    ] as const
+    test.slow()
 
-    for (const { name, contextOptions } of formFactors) {
+    const title = "Sprint review"
+    for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
       const devicePage = await context.newPage()
 
       await devicePage.goto(
         baseURL
-          ? new URL(
-              `/?v=1&t=3!d61f69!${encodedTitle}!0&bg=000000&fg=ffffff`,
-              baseURL,
-            ).toString()
-          : `/?v=1&t=3!d61f69!${encodedTitle}!0&bg=000000&fg=ffffff`,
+          ? new URL(buildTimerUrl({ title }), baseURL).toString()
+          : buildTimerUrl({ title }),
       )
       await expect(
         devicePage.getByRole("button", { name: "START" }),
       ).toBeVisible()
+      await expectMainTimerContentToFitViewport(devicePage)
 
       await expectScreenshotWithoutDebugInfo(devicePage, {
         fullPage: true,
-        message: `${name} layout should keep the long title readable`,
-        name: `timer-layout-${name}.png`,
+        message: `${name} layout should keep the short title readable`,
+        name: `timer-layout-${name}-short-title.png`,
+      })
+
+      await context.close()
+    }
+  },
+)
+
+test(
+  "matches long-title bucket layouts across form factors and orientations",
+  { tag: "@visual" },
+  async ({ baseURL, browser }) => {
+    test.slow()
+
+    const title = "Quarterly planning retrospective and facilitator notes"
+    for (const { name, contextOptions } of timerVisualFormFactors) {
+      const context = await browser.newContext(contextOptions)
+      const devicePage = await context.newPage()
+
+      await devicePage.goto(
+        baseURL
+          ? new URL(buildTimerUrl({ title }), baseURL).toString()
+          : buildTimerUrl({ title }),
+      )
+      await expect(
+        devicePage.getByRole("button", { name: "START" }),
+      ).toBeVisible()
+      await expectMainTimerContentToFitViewport(devicePage)
+
+      await expectScreenshotWithoutDebugInfo(devicePage, {
+        fullPage: true,
+        message: `${name} layout should keep the long title bucket readable`,
+        name: `timer-layout-${name}-long-title.png`,
+      })
+
+      await context.close()
+    }
+  },
+)
+
+test(
+  "matches clamped-title layouts across form factors and orientations",
+  { tag: "@visual" },
+  async ({ baseURL, browser }) => {
+    test.slow()
+
+    const title =
+      "das ist eine sehr schoene und doch auch spannende loesung fuer einen absichtlich langen titel der auf jeden fall in eine dritte zeile umbrechen wuerde"
+    for (const { name, contextOptions } of timerVisualFormFactors) {
+      const context = await browser.newContext(contextOptions)
+      const devicePage = await context.newPage()
+
+      await devicePage.goto(
+        baseURL
+          ? new URL(buildTimerUrl({ title }), baseURL).toString()
+          : buildTimerUrl({ title }),
+      )
+      await expect(
+        devicePage.getByRole("button", { name: "START" }),
+      ).toBeVisible()
+      await expectMainTimerContentToFitViewport(devicePage)
+
+      const clampMetrics = await getDisplayClampMetrics(devicePage)
+      const expectedTwoLineHeight =
+        clampMetrics.lineHeightPx * 2 +
+        clampMetrics.paddingTopPx +
+        clampMetrics.paddingBottomPx
+
+      expect(clampMetrics.scrollHeight).toBeGreaterThan(
+        clampMetrics.clientHeight,
+      )
+      expect(clampMetrics.clientHeight).toBeLessThanOrEqual(
+        Math.ceil(expectedTwoLineHeight) + 1,
+      )
+
+      await expectScreenshotWithoutDebugInfo(devicePage, {
+        fullPage: true,
+        message: `${name} layout should clamp long titles without a visible third row`,
+        name: `timer-layout-${name}-clamped-title.png`,
       })
 
       await context.close()

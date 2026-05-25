@@ -29,9 +29,9 @@ test("normalizeTitle treats user input as plain text and strips unsafe control c
   assert.equal(normalizeTitle(maliciousTitle), expectedTitle)
 })
 
-test("normalizeTitle preserves ordinary spaces while normalizing line breaks", () => {
+test("normalizeTitle preserves ordinary spaces while flattening line breaks", () => {
   assert.equal(normalizeTitle("a b"), "a b")
-  assert.equal(normalizeTitle("a\tb\nc"), "a b\nc")
+  assert.equal(normalizeTitle("a\tb\nc"), "a b c")
 })
 
 test("normalizeTitle enforces a maximum length", () => {

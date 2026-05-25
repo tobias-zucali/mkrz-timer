@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl"
 
 import Pie from "@/components/Pie"
+import styles from "@/components/Timer/index.module.css"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import DigitalDisplay from "@/components/DigitalDisplay"
 import TimerTitle from "@/components/TimerTitle"
@@ -10,11 +11,14 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@/utils/icons"
 import useTimer from "@/utils/useTimer"
 
 const timerButtonClassName =
-  "inline-flex min-h-11 min-w-24 appearance-none items-center justify-center " +
-  "rounded-md bg-foreground px-3.5 py-2.5 text-base font-bold text-background " +
+  "inline-flex appearance-none items-center justify-center " +
+  "min-h-9 min-w-20 rounded-md px-2.5 py-1.5 text-sm " +
+  "sm:min-w-24 sm:text-base md:min-h-11 md:px-3.5 md:py-2.5 " +
+  "bg-foreground font-bold text-background " +
   "shadow-sm transition-colors hover:bg-foreground/90 " +
   "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation"
+  "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation " +
+  styles.actionButton
 
 type ReadonlyPlaceholder = {
   actionLabel?: string
@@ -64,6 +68,9 @@ export default function Timer({
   const showProgress = hasMultipleRows
   const highlightNextAction =
     isTimedOut && activeRow?.endBehavior === "stop" && hasNextRow
+  const shouldReserveTitleSpace = rows.some(
+    (row) => row.title.trim().length > 0,
+  )
 
   const renderProgress = () => {
     if (!showProgress) {
@@ -120,6 +127,7 @@ export default function Timer({
     <div className="flex h-full flex-col">
       <TimerTitle
         disabled={isReadonly}
+        reserveSpace={shouldReserveTitleSpace}
         value={title}
         onChange={(value) => handleChange("title", value)}
       />
@@ -204,9 +212,7 @@ export default function Timer({
           </div>
         ) : (
           <div
-            className="
-            absolute inset-0 flex grow flex-col items-center justify-center
-          "
+            className={`absolute inset-0 flex grow flex-col items-center justify-center ${styles.tightCenterCluster}`}
           >
             {hasPreviousRow && !isReadonly ? (
               <button
@@ -268,9 +274,7 @@ export default function Timer({
             {renderProgress()}
             {!isReadonly && (
               <div
-                className="
-                  flex flex-wrap items-center justify-center gap-2 py-[0.625em]
-                "
+                className={`flex flex-wrap items-center justify-center gap-1.5 py-1 sm:gap-2 ${styles.controls}`}
                 data-testid="timer-controls"
               >
                 <button

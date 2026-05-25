@@ -417,7 +417,7 @@ export default function Sidebar({
       <div
         className="
         absolute top-3 left-3
-        sm:top-4 sm:left-4
+        md:top-4 md:left-4
       "
       >
         <button
@@ -426,8 +426,10 @@ export default function Sidebar({
           aria-haspopup="dialog"
           aria-label={t("toggleNavigation")}
           className={classNames(
-            "pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-lg border",
-            "border-foreground/16 bg-background/84 text-foreground/78 shadow-sm backdrop-blur",
+            "size-9",
+            "pointer-events-auto inline-flex items-center justify-center rounded-lg border",
+            "border-foreground/16 bg-background/64 text-foreground/78 shadow-sm",
+            "cursor-pointer bg-background/58 backdrop-blur-xs hover:bg-background/74 hover:text-primary",
             "transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
             "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
             isOpen && "border-primary/45 text-primary",
@@ -438,7 +440,7 @@ export default function Sidebar({
           })}
           type="button"
         >
-          <Bars3Icon className="size-5" />
+          <Bars3Icon className="size-4" />
         </button>
       </div>
       <div

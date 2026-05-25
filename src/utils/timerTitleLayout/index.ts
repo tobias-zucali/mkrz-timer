@@ -1,127 +1,89 @@
-type TimerTitleVariant = "floating" | "main"
+export type TimerTitleVariant = "floating" | "main"
 
-type TimerTitleLayout = {
-  fontSizeRem: number
-  hasText: boolean
+export const LONG_TIMER_TITLE_LENGTH = 32
+export const TIMER_TITLE_TEXT_CLASS_NAME =
+  "m-0 box-border w-full overflow-hidden text-center font-bold tracking-tight [overflow-wrap:anywhere]"
+
+export type TimerTitleLayoutConfig = {
   lineHeight: number
-  lineCount: number
   maxVisibleLines: number
 }
 
-type TimerTitleLayoutOptions = {
-  viewportWidthPx?: number
+const TIMER_TITLE_LAYOUT_CONFIG: TimerTitleLayoutConfig = {
+  lineHeight: 0.94,
+  maxVisibleLines: 4,
 }
 
-const layoutConfigByVariant: Record<
+const fontClassNamesByVariant: Record<
   TimerTitleVariant,
   {
-    baseFontSizeRem: number
-    baseLineLength: number
-    charPenaltyRem: number
-    linePenaltyRem: number
-    lineHeight: number
-    maxFontSizeRem: number
-    maxVisibleLines: number
-    minFontSizeRem: number
+    longTitle: string
+    shortTitle: string
   }
 > = {
   floating: {
-    baseFontSizeRem: 3.1,
-    baseLineLength: 12,
-    charPenaltyRem: 0.07,
-    linePenaltyRem: 0.4,
-    lineHeight: 0.98,
-    maxFontSizeRem: 3,
-    maxVisibleLines: 3,
-    minFontSizeRem: 1.05,
+    longTitle: "text-2xl sm:text-3xl md:text-4xl",
+    shortTitle: "text-3xl sm:text-4xl md:text-5xl",
   },
   main: {
-    baseFontSizeRem: 5.25,
-    baseLineLength: 14,
-    charPenaltyRem: 0.08,
-    linePenaltyRem: 0.55,
-    lineHeight: 0.94,
-    maxFontSizeRem: 5,
-    maxVisibleLines: 4,
-    minFontSizeRem: 1.75,
+    longTitle: "text-4xl sm:text-5xl md:text-6xl",
+    shortTitle: "text-5xl sm:text-6xl md:text-7xl",
   },
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
+const TIMER_TITLE_BOX_SPACING = {
+  emptyReservedMinHeight: "clamp(2.75rem, min(5.8vw, 5.2vh), 3.25rem)",
+  reservedMinHeight: "clamp(3.1rem, min(6.6vw, 5.9vh), 4.1rem)",
+  horizontalPaddingEm: 0.6,
+  verticalPaddingEm: 0.18,
 }
 
-function getVisibleLines(title: string) {
-  return title
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
+export function getTimerTitleLayoutConfig() {
+  return TIMER_TITLE_LAYOUT_CONFIG
 }
 
-function getViewportWidthBonusRem(
-  variant: TimerTitleVariant,
-  viewportWidthPx?: number,
-) {
-  if (variant !== "main" || viewportWidthPx === undefined) {
-    return 0
-  }
-
-  return clamp(((viewportWidthPx - 900) / 700) * 0.55, 0, 0.55)
-}
-
-export function getTimerTitleLayout(
-  title: string,
-  variant: TimerTitleVariant = "main",
-  options: TimerTitleLayoutOptions = {},
-): TimerTitleLayout {
-  const plainText = title.trim()
-
-  if (!plainText) {
-    const config = layoutConfigByVariant[variant]
-
-    return {
-      fontSizeRem: config.maxFontSizeRem,
-      hasText: false,
-      lineCount: 0,
-      lineHeight: config.lineHeight,
-      maxVisibleLines: config.maxVisibleLines,
-    }
-  }
-
-  const config = layoutConfigByVariant[variant]
-  const lines = getVisibleLines(title)
-  const lineCount = Math.max(lines.length, 1)
-  const longestLineLength = Math.max(
-    ...lines.map((line) => line.length),
-    plainText.length,
-    1,
-  )
-  const totalVisibleCharacters = lines.reduce(
-    (sum, line) => sum + line.length,
-    0,
-  )
-  const densityPenaltyRem = Math.max(0, totalVisibleCharacters - 28) * 0.018
-  const viewportWidthBonusRem = getViewportWidthBonusRem(
-    variant,
-    options.viewportWidthPx,
-  )
-
-  const fontSizeRem = clamp(
-    config.baseFontSizeRem -
-      Math.max(0, longestLineLength - config.baseLineLength) *
-        config.charPenaltyRem -
-      (lineCount - 1) * config.linePenaltyRem -
-      densityPenaltyRem +
-      viewportWidthBonusRem,
-    config.minFontSizeRem,
-    config.maxFontSizeRem,
-  )
+export function getTimerTitleBoxStyle() {
+  const layout = getTimerTitleLayoutConfig()
+  const spacing = TIMER_TITLE_BOX_SPACING
 
   return {
-    fontSizeRem: Number(fontSizeRem.toFixed(3)),
-    hasText: true,
-    lineCount,
-    lineHeight: config.lineHeight,
-    maxVisibleLines: config.maxVisibleLines,
+    boxSizing: "border-box" as const,
+    lineHeight: layout.lineHeight,
+    maxHeight: `${
+      layout.maxVisibleLines * layout.lineHeight + spacing.verticalPaddingEm * 2
+    }em`,
+    minHeight: `${layout.lineHeight + spacing.verticalPaddingEm * 2}em`,
+    paddingBottom: `${spacing.verticalPaddingEm}em`,
+    paddingLeft: `${spacing.horizontalPaddingEm}em`,
+    paddingRight: `${spacing.horizontalPaddingEm}em`,
+    paddingTop: `${spacing.verticalPaddingEm}em`,
   }
+}
+
+export function getTimerTitleReservedMinHeight({
+  hasText,
+}: {
+  hasText: boolean
+}) {
+  return hasText
+    ? TIMER_TITLE_BOX_SPACING.reservedMinHeight
+    : TIMER_TITLE_BOX_SPACING.emptyReservedMinHeight
+}
+
+export function getTimerTitleFontClassName({
+  text,
+  variant = "main",
+}: {
+  text: string
+  variant?: TimerTitleVariant
+}) {
+  const fontClassNames = fontClassNamesByVariant[variant]
+
+  return isLongTimerTitle(text)
+    ? fontClassNames.longTitle
+    : fontClassNames.shortTitle
+}
+
+export function isLongTimerTitle(text: string) {
+  return text.trim().length > LONG_TIMER_TITLE_LENGTH
 }

@@ -13,37 +13,44 @@ const baseProps = {
 }
 
 describe("FloatingTimerContent", () => {
-  it("renders multiline titles in the floating timer", () => {
-    render(<FloatingTimerContent {...baseProps} title={"Facilitator\nnotes"} />)
+  it("renders floating titles as single-paragraph wrapped text", () => {
+    render(<FloatingTimerContent {...baseProps} title="Facilitator notes" />)
 
     const title = screen.getByTestId("floating-timer-title")
     expect(title).toHaveTextContent("Facilitator")
     expect(title).toHaveTextContent("notes")
   })
 
-  it("scales long titles down before they overflow", () => {
+  it("uses the short and long floating title class buckets", () => {
     const { rerender } = render(
       <FloatingTimerContent {...baseProps} title="Sprint" />,
     )
 
     const shortTitle = screen.getByTestId("floating-timer-title")
-    const shortSize = Number.parseFloat(
-      shortTitle.parentElement?.style.fontSize ?? "0",
-    )
+    expect(shortTitle).toHaveClass("text-3xl")
 
     rerender(
       <FloatingTimerContent
         {...baseProps}
-        title={"Quarterly planning\nretrospective and facilitator notes"}
+        title="Quarterly planning retrospective and facilitator notes"
       />,
     )
 
     const longTitle = screen.getByTestId("floating-timer-title")
-    const longSize = Number.parseFloat(
-      longTitle.parentElement?.style.fontSize ?? "0",
+    expect(longTitle).toHaveClass("text-2xl")
+  })
+
+  it("keeps floating titles unclamped", () => {
+    render(
+      <FloatingTimerContent
+        {...baseProps}
+        title="Quarterly planning retrospective and facilitator notes"
+      />,
     )
 
-    expect(longSize).toBeLessThan(shortSize)
+    expect(screen.getByTestId("floating-timer-title")).not.toHaveClass(
+      "line-clamp-2",
+    )
   })
 
   it("keeps the title area compact when no title is set", () => {

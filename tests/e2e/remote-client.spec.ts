@@ -530,7 +530,7 @@ test("summarizes participants relative to the current client and labels the raw 
   })
 })
 
-test("keeps long multiline titles readable in readonly remote clients", async ({
+test("keeps long wrapped titles readable in readonly remote clients", async ({
   page,
 }) => {
   const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
@@ -544,10 +544,10 @@ test("keeps long multiline titles readable in readonly remote clients", async ({
   await waitForRemoteCluster([page, readonlyClient], {
     clientCount: 1,
     mainConnectionCount: 1,
-    message: "readonly client should connect before multiline title sync",
+    message: "readonly client should connect before wrapped title sync",
   })
 
-  const longTitle = "Quarterly planning\nretrospective and facilitator notes"
+  const longTitle = "Quarterly planning retrospective and facilitator notes"
 
   await openSettingsOverlay(page)
   await updateTimerSettings(page, { title: longTitle })

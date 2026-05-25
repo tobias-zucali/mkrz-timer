@@ -21,7 +21,7 @@ Technical details live in:
 ## Security Notes
 
 - Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
-- Timer titles are plain text only and shared session snapshots are validated before use.
+- Timer titles are plain text only, normalized to a single paragraph, and shared session snapshots are validated before use.
 - See [docs/remote-mode.md](./docs/remote-mode.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
 
 ## Getting Started
