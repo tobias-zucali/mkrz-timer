@@ -36,7 +36,7 @@ test("buildJoinMessage creates a snapshot for session creators", () => {
   assert.ok(message.snapshot.state.lastUpdatedAt > 0)
 })
 
-test("buildJoinMessage only includes retry snapshots for control clients", () => {
+test("buildJoinMessage downgrades readonly reconnects to a standard join", () => {
   assert.deepEqual(
     buildJoinMessage({
       clientId: "viewer",
@@ -49,12 +49,13 @@ test("buildJoinMessage only includes retry snapshots for control clients", () =>
     {
       clientId: "viewer",
       role: "readonly",
-      snapshot: undefined,
       token: "viewer-token",
-      type: "retry-join-session",
+      type: "join-session",
     },
   )
+})
 
+test("buildJoinMessage only includes retry snapshots for control clients", () => {
   const controlRetryMessage = buildJoinMessage({
     clientId: "viewer",
     remoteRole: "control",

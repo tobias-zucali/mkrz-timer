@@ -235,6 +235,47 @@ test("silently republishes offline control changes when the relay stayed unchang
   }
 })
 
+test("rejoins readonly clients after a controller restores an offline session", async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+
+  await enableRemoteMode(page)
+  const readonlyClient = await openClientFromSettings(
+    page,
+    await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
+    "Viewer link",
+  )
+
+  await closeSettingsOverlay(page)
+  await waitForRemoteCluster([page, readonlyClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message: "readonly client should connect before offline restore",
+  })
+
+  await page.getByRole("button", { name: "START" }).click()
+  await Promise.all([
+    expectTimerRunning(page),
+    expectTimerDisplayRunning(readonlyClient),
+  ])
+
+  await page.context().setOffline(true)
+
+  await page.getByRole("button", { name: "PAUSE" }).click()
+  await expectTimerPaused(page)
+
+  await page.context().setOffline(false)
+  await expectTimerPaused(page)
+  await expect
+    .poll(() => getDisplayedSeconds(readonlyClient), {
+      message: "readonly client should receive the restored paused timer value",
+      timeout: 20_000,
+    })
+    .toBeGreaterThan(0)
+  await expectTimersToMatch([page, readonlyClient])
+})
+
 test("silently accepts relay changes when an offline controller made no local edits", async ({
   page,
 }) => {

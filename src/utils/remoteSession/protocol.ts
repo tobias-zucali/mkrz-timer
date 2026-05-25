@@ -67,14 +67,11 @@ export const buildJoinMessage = ({
     throw new Error("Remote join links require a role and token.")
   }
 
-  if (retryType === "retry-join-session") {
+  if (retryType === "retry-join-session" && remoteRole === "control") {
     return {
       clientId,
       role: remoteRole,
-      snapshot:
-        remoteRole === "control"
-          ? createSnapshot({ syncParams, syncState })
-          : undefined,
+      snapshot: createSnapshot({ syncParams, syncState }),
       token: remoteToken,
       type: "retry-join-session",
     }

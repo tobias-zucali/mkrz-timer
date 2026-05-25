@@ -50,6 +50,20 @@ type LocalFallbackReason =
   | "invalid-session"
   | "reconnect-failed"
 
+const getReconnectRetryType = ({
+  role,
+  token,
+}: {
+  role: RemoteAccessRole | null
+  token: string | null
+}): "create-session" | "join-session" | "retry-join-session" => {
+  if (!token) {
+    return "create-session"
+  }
+
+  return role === "control" ? "retry-join-session" : "join-session"
+}
+
 export default function useRemoteSession({
   getReconnectSnapshot,
   onIncomingSyncConflict,
@@ -207,7 +221,10 @@ export default function useRemoteSession({
           openSocketRef.current?.({
             nextRemoteRole,
             nextRemoteToken,
-            retryType: "retry-join-session",
+            retryType: getReconnectRetryType({
+              role: nextRemoteRole,
+              token: nextRemoteToken,
+            }),
           })
         } catch (nextError) {
           setError(toError(nextError))
@@ -512,7 +529,12 @@ export default function useRemoteSession({
 
         if (message.type === "error") {
           const nextError = new Error(message.message)
-          if (retryType === "retry-join-session" && nextRemoteToken) {
+          const shouldAutoRetryRecoveryError =
+            nextRemoteToken !== null &&
+            (retryType === "retry-join-session" ||
+              (retryType === "join-session" && hasConnectedOnceRef.current))
+
+          if (shouldAutoRetryRecoveryError) {
             setError(nextError)
             setLifecycleState("reconnecting")
             setIsConnecting(false)
@@ -1055,7 +1077,10 @@ export default function useRemoteSession({
     openSocket({
       nextRemoteRole: retryRole,
       nextRemoteToken: retryToken,
-      retryType: retryToken ? "retry-join-session" : "create-session",
+      retryType: getReconnectRetryType({
+        role: retryRole,
+        token: retryToken,
+      }),
     })
   }, [clearLocalFallback, getRetryTarget, openSocket, remoteRole, remoteToken])
 
