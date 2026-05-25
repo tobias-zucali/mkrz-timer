@@ -4,30 +4,10 @@ import { useCallback, useRef, useState } from "react"
 
 import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
 import { projectTimerUrlStateToSyncParams } from "@/shared/urlState"
+import { decideSnapshotRecovery } from "@/utils/remoteSession/recovery"
+import { stampSessionSnapshotAt } from "@/utils/timerState"
 import type { TimerState } from "@/utils/useTimer"
 import type useParams from "@/utils/useParams"
-
-const snapshotsConflict = ({
-  currentSnapshot,
-  incomingSnapshot,
-}: {
-  currentSnapshot: SessionSnapshot
-  incomingSnapshot: SessionSnapshot
-}) =>
-  currentSnapshot.params.activeIndex !== incomingSnapshot.params.activeIndex ||
-  currentSnapshot.params.bg !== incomingSnapshot.params.bg ||
-  currentSnapshot.params.fg !== incomingSnapshot.params.fg ||
-  JSON.stringify(currentSnapshot.params.rows) !==
-    JSON.stringify(incomingSnapshot.params.rows) ||
-  currentSnapshot.state.isPaused !== incomingSnapshot.state.isPaused ||
-  currentSnapshot.state.isStarted !== incomingSnapshot.state.isStarted ||
-  currentSnapshot.state.currentRepeat !==
-    incomingSnapshot.state.currentRepeat ||
-  currentSnapshot.state.totalDuration !==
-    incomingSnapshot.state.totalDuration ||
-  Math.abs(
-    currentSnapshot.state.elapsedTime - incomingSnapshot.state.elapsedTime,
-  ) > 1
 
 export default function useSyncConflictResolution({
   applyLocalSnapshot,
@@ -44,6 +24,12 @@ export default function useSyncConflictResolution({
 }) {
   const [hasSyncConflict, setHasSyncConflict] = useState(false)
   const initialUrlTimerStateRef = useRef(paramData.readTimerUrlState())
+  const initialLocalSnapshotRef = useRef(
+    stampSessionSnapshotAt({
+      params: syncParamsRef.current,
+      state: syncStateRef.current,
+    }),
+  )
 
   const buildCurrentUrlSnapshot = useCallback(
     (applyToLocalState = false) => {
@@ -59,10 +45,20 @@ export default function useSyncConflictResolution({
         params: projectedParams,
         state: {
           ...syncStateRef.current,
+          anchorServerTimestamp: 0,
           currentRepeat: 1,
+          durationSeconds:
+            projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
+            syncStateRef.current.totalDuration,
+          elapsedSecondsAtAnchor: syncStateRef.current.elapsedTime,
           totalDuration:
             projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
             syncStateRef.current.totalDuration,
+          status: syncStateRef.current.isStarted
+            ? syncStateRef.current.isPaused
+              ? "paused"
+              : "running"
+            : "idle",
         },
       } satisfies SessionSnapshot
 
@@ -85,27 +81,35 @@ export default function useSyncConflictResolution({
     setHasSyncConflict(true)
   }, [])
 
-  const shouldDeferIncomingSnapshot = useCallback(
+  const resolveIncomingSnapshot = useCallback(
     ({ snapshot }: { snapshot: { params: SyncParams; state: TimerState } }) => {
       if (remoteRole !== "control") {
-        return false
+        return {
+          resolution: "accept-server" as const,
+        }
       }
 
       const currentUrlSnapshot = buildCurrentUrlSnapshot(false)
       if (!currentUrlSnapshot.hasTimerState) {
-        return false
+        return {
+          resolution: "accept-server" as const,
+        }
       }
 
-      return snapshotsConflict({
-        currentSnapshot: {
-          params: currentUrlSnapshot.params,
-          state: currentUrlSnapshot.state,
-        },
-        incomingSnapshot: {
-          params: snapshot.params,
-          state: snapshot.state,
-        },
+      const localSnapshot = {
+        params: currentUrlSnapshot.params,
+        state: currentUrlSnapshot.state,
+      } satisfies SessionSnapshot
+      const { resolution } = decideSnapshotRecovery({
+        baselineSnapshot: initialLocalSnapshotRef.current,
+        localSnapshot,
+        serverSnapshot: snapshot,
       })
+
+      return {
+        localSnapshot,
+        resolution,
+      }
     },
     [buildCurrentUrlSnapshot, remoteRole],
   )
@@ -135,6 +139,6 @@ export default function useSyncConflictResolution({
     getReconnectSnapshot,
     hasSyncConflict,
     notifyIncomingSyncConflict,
-    shouldDeferIncomingSnapshot,
+    resolveIncomingSnapshot,
   }
 }

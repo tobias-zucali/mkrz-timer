@@ -197,12 +197,17 @@ test("updateSnapshot only allows control participants to publish state", () => {
     params: { title: "Allowed" },
     sessionId: created.session.id,
     state: {
+      ...DEFAULT_TIMER_STATE,
+      anchorServerTimestamp: 0,
       currentRepeat: 1,
+      durationSeconds: 60,
+      elapsedSecondsAtAnchor: 12,
       elapsedTime: 12,
       isPaused: false,
       isStarted: true,
       lastUpdatedAt: 0,
       revision: 4,
+      status: "running",
       totalDuration: 60,
     },
   })
@@ -246,7 +251,7 @@ test("create and updateSnapshot normalize hostile values safely", () => {
     "  <script>alert(1)</script>  ",
   )
   assert.equal(created.session.snapshot.state.elapsedTime, 0)
-  assert.equal(created.session.snapshot.state.totalDuration, 60)
+  assert.equal(created.session.snapshot.state.totalDuration, 307)
 
   const updated = store.updateSnapshot({
     clientId: "host",
@@ -255,19 +260,24 @@ test("create and updateSnapshot normalize hostile values safely", () => {
     },
     sessionId: created.session.id,
     state: {
+      ...DEFAULT_TIMER_STATE,
+      anchorServerTimestamp: 0,
       currentRepeat: 1,
+      durationSeconds: 67,
+      elapsedSecondsAtAnchor: 20,
       elapsedTime: 20,
       isPaused: false,
       isStarted: true,
       lastUpdatedAt: 0,
       revision: 2,
+      status: "running",
       totalDuration: 67,
     },
   })
 
   assert.ok(updated)
   assert.equal(updated.snapshot.params.title, "Hello  world ")
-  assert.equal(updated.snapshot.state.totalDuration, 67)
+  assert.equal(updated.snapshot.state.totalDuration, 307)
 })
 
 test("leave removes participants and sweepExpired drops idle sessions without deleting token recovery", () => {

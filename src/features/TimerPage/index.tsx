@@ -63,7 +63,9 @@ function TimerApp() {
     useState(false)
   const [pendingTimerParamPatch, setPendingTimerParamPatch] =
     useState<Partial<SyncParams> | null>(null)
-  const [syncState, setSyncState] = useState<TimerState>({} as TimerState)
+  const [pendingTimerCommand, setPendingTimerCommand] = useState<
+    "next" | "pause" | "previous" | "reset" | "start" | "activate" | null
+  >(null)
 
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
   const remoteToken = remoteRoute.isRemote ? remoteRoute.token : null
@@ -71,13 +73,23 @@ function TimerApp() {
 
   const timer = useTimer({
     canMutate: !isReadonlyClient,
-    onAction: (_action, payload) => {
+    onAction: (action, payload) => {
       if (payload.params) {
         setPendingTimerParamPatch(payload.params)
       }
-      setSyncState(payload.state)
+      setPendingTimerCommand(
+        action === "restart"
+          ? "reset"
+          : action === "pause" ||
+              action === "start" ||
+              action === "next" ||
+              action === "previous"
+            ? action
+            : null,
+      )
     },
     params: syncParams,
+    sequenceAuthority: remoteRole !== null ? "server" : "client",
     syncParamsRef,
     shortcutsEnabled: !isReadonlyClient,
     syncStateRef,
@@ -293,8 +305,22 @@ function TimerApp() {
   }, [applyParamPatch, pendingTimerParamPatch])
 
   useEffect(() => {
-    syncAll({ includeParams: false, state: syncState })
-  }, [syncAll, syncState])
+    if (!pendingTimerCommand) {
+      return
+    }
+
+    syncAll({
+      command:
+        pendingTimerCommand === "activate"
+          ? {
+              activeIndex: syncParamsRef.current.activeIndex,
+              type: "activate",
+            }
+          : { type: pendingTimerCommand },
+      includeParams: false,
+    })
+    setPendingTimerCommand(null)
+  }, [pendingTimerCommand, syncAll, syncParamsRef])
 
   usePromoteHostControlRoute({
     accessControlToken: accessTokens?.control,

@@ -35,7 +35,7 @@ export default function useTimerPageRemoteSession({
   const {
     getReconnectSnapshot,
     notifyIncomingSyncConflict,
-    shouldDeferIncomingSnapshot,
+    resolveIncomingSnapshot,
   } = useSyncConflictResolution({
     applyLocalSnapshot: (snapshot) => {
       paramData.setParams(snapshot.params)
@@ -65,7 +65,7 @@ export default function useTimerPageRemoteSession({
       remoteLinkError || hasRecentlyEndedLiveSession ? null : remoteRole,
     remoteToken:
       remoteLinkError || hasRecentlyEndedLiveSession ? null : remoteToken,
-    shouldDeferIncomingSnapshot,
+    resolveIncomingSnapshot,
     syncParamsRef,
     syncStateRef,
   })

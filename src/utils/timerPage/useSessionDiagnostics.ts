@@ -17,6 +17,7 @@ import getRemoteStatus from "@/utils/remoteStatus"
 import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
 import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
 import getSessionPresentation from "@/utils/sessionPresentation"
+import { shouldDisplayRemoteError } from "@/utils/timerPage/remoteErrorVisibility"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
 import useNetworkStatus from "@/utils/useNetworkStatus"
 
@@ -91,7 +92,7 @@ export default function useSessionDiagnostics({
   const relayLabel = getRemoteRelayLabel()
   const relayReachability = useRemoteRelayReachability(remoteStatusEnabled)
   const remoteStatusRole = remoteRole === "readonly" ? "readonly" : "control"
-  const remoteErrorText = remoteError
+  const rawRemoteErrorText = remoteError
     ? remoteStatusEnabled && remoteRole !== null
       ? tDialogs("connectionProblem", {
           detail: getConnectionErrorDetail(
@@ -127,6 +128,9 @@ export default function useSessionDiagnostics({
     remoteStatus,
     t: t as AppTranslationFn,
   })
+  const remoteErrorText = shouldDisplayRemoteError(sessionPresentation.state)
+    ? rawRemoteErrorText
+    : null
   const readonlyPlaceholder = isReadonlyClient
     ? getReadonlyPlaceholder({
         onOpenStatusPanel,

@@ -6,6 +6,7 @@ import type {
   SessionParticipant,
   SessionSnapshot,
   SyncParams,
+  TimerCommand,
   TimerEndBehavior,
   TimerSequenceRow,
 } from "../remoteSession/types.ts"
@@ -30,12 +31,16 @@ export const DEFAULT_SYNC_PARAMS: SyncParams = {
 }
 
 export const DEFAULT_TIMER_STATE = {
+  anchorServerTimestamp: 0,
   currentRepeat: 1,
+  durationSeconds: 60,
+  elapsedSecondsAtAnchor: 0,
   elapsedTime: 0,
   isPaused: true,
   isStarted: false,
   lastUpdatedAt: 0,
   revision: 0,
+  status: "idle",
   totalDuration: 60,
 } satisfies SessionSnapshot["state"]
 
@@ -473,6 +478,13 @@ export const normalizeTimerState = (
   })
 
   return {
+    anchorServerTimestamp: normalizeFiniteNumber({
+      fallback: fallback.anchorServerTimestamp,
+      floor: true,
+      max: MAX_TIMER_TIMESTAMP_MS,
+      min: 0,
+      value: state.anchorServerTimestamp ?? state.lastUpdatedAt,
+    }),
     currentRepeat: normalizeFiniteNumber({
       fallback: fallback.currentRepeat,
       floor: true,
@@ -480,11 +492,18 @@ export const normalizeTimerState = (
       min: 1,
       value: state.currentRepeat,
     }),
+    durationSeconds: totalDuration,
+    elapsedSecondsAtAnchor: normalizeFiniteNumber({
+      fallback: fallback.elapsedSecondsAtAnchor ?? fallback.elapsedTime ?? 0,
+      max: MAX_ELAPSED_TIME_SECONDS,
+      min: 0,
+      value: state.elapsedSecondsAtAnchor ?? state.elapsedTime,
+    }),
     elapsedTime: normalizeFiniteNumber({
       fallback: fallback.elapsedTime,
       max: MAX_ELAPSED_TIME_SECONDS,
       min: 0,
-      value: state.elapsedTime,
+      value: state.elapsedTime ?? state.elapsedSecondsAtAnchor,
     }),
     isPaused:
       typeof state.isPaused === "boolean" ? state.isPaused : fallback.isPaused,
@@ -506,7 +525,53 @@ export const normalizeTimerState = (
       min: 0,
       value: state.revision,
     }),
+    status:
+      state.status === "idle" ||
+      state.status === "running" ||
+      state.status === "paused" ||
+      state.status === "finished"
+        ? state.status
+        : typeof state.isStarted === "boolean"
+          ? state.isStarted
+            ? state.isPaused
+              ? "paused"
+              : "running"
+            : "idle"
+          : fallback.status,
     totalDuration,
+  }
+}
+
+const normalizeTimerCommand = (value: unknown): TimerCommand | null => {
+  if (!isObject(value) || typeof value.type !== "string") {
+    return null
+  }
+
+  switch (value.type) {
+    case "start":
+    case "pause":
+    case "reset":
+    case "next":
+    case "previous":
+      return { type: value.type }
+    case "activate": {
+      if (!hasOnlyKeys(value, ["activeIndex", "type"])) {
+        return null
+      }
+
+      return {
+        activeIndex: normalizeFiniteNumber({
+          fallback: 0,
+          floor: true,
+          max: 11,
+          min: 0,
+          value: value.activeIndex,
+        }),
+        type: "activate",
+      }
+    }
+    default:
+      return null
   }
 }
 
@@ -679,6 +744,7 @@ export const normalizeRelayClientMessage = (
       if (
         !hasOnlyKeys(parsedValue, [
           "clientId",
+          "command",
           "params",
           "sessionId",
           "state",
@@ -702,10 +768,15 @@ export const normalizeRelayClientMessage = (
         parsedValue.state === undefined
           ? undefined
           : normalizeTimerState(parsedValue.state)
+      const command =
+        parsedValue.command === undefined
+          ? undefined
+          : normalizeTimerCommand(parsedValue.command)
 
       if (
         (parsedValue.params !== undefined && params === null) ||
-        (parsedValue.state !== undefined && !isObject(parsedValue.state))
+        (parsedValue.state !== undefined && !isObject(parsedValue.state)) ||
+        (parsedValue.command !== undefined && command === null)
       ) {
         return null
       }
@@ -714,6 +785,7 @@ export const normalizeRelayClientMessage = (
         clientId,
         ...(params ? { params } : {}),
         sessionId,
+        ...(command ? { command } : {}),
         ...(state ? { state } : {}),
         type: "sync",
       }
@@ -790,6 +862,7 @@ export const normalizeRelayServerMessage = (
         !hasOnlyKeys(parsedValue, [
           "accessTokens",
           "participants",
+          "serverTimestamp",
           "sessionId",
           "snapshot",
           "type",
@@ -805,9 +878,17 @@ export const normalizeRelayServerMessage = (
         parsedValue.accessTokens === undefined
           ? undefined
           : normalizeRemoteAccessTokenSet(parsedValue.accessTokens)
+      const serverTimestamp = normalizeFiniteNumber({
+        fallback: 0,
+        floor: true,
+        max: MAX_TIMER_TIMESTAMP_MS,
+        min: 0,
+        value: parsedValue.serverTimestamp,
+      })
       if (
         participants === null ||
         sessionId === null ||
+        serverTimestamp <= 0 ||
         (parsedValue.accessTokens !== undefined && accessTokens === null)
       ) {
         return null
@@ -815,6 +896,7 @@ export const normalizeRelayServerMessage = (
       return {
         ...(accessTokens ? { accessTokens } : {}),
         participants,
+        serverTimestamp,
         sessionId,
         snapshot: normalizeSessionSnapshot(parsedValue.snapshot),
         type: parsedValue.type,

@@ -20,15 +20,42 @@ export type RemoteAccessTokenSet = {
   readonly: string
 }
 
+export type TimerStatus = "idle" | "running" | "paused" | "finished"
+
+export type TimerCommand =
+  | {
+      type: "start"
+    }
+  | {
+      type: "pause"
+    }
+  | {
+      type: "reset"
+    }
+  | {
+      type: "next"
+    }
+  | {
+      type: "previous"
+    }
+  | {
+      activeIndex: number
+      type: "activate"
+    }
+
 export type SessionSnapshot = {
   params: SyncParams
   state: {
+    anchorServerTimestamp: number
     currentRepeat: number
+    durationSeconds: number
+    elapsedSecondsAtAnchor: number
     elapsedTime: number
     isPaused: boolean
     revision: number
     isStarted: boolean
     lastUpdatedAt: number
+    status: TimerStatus
     totalDuration: number
   }
 }
@@ -73,6 +100,7 @@ export type RelayClientMessage =
   | {
       type: "sync"
       clientId: string
+      command?: TimerCommand
       sessionId: string
       params?: Partial<SyncParams>
       state?: SessionSnapshot["state"]
@@ -92,6 +120,7 @@ export type RelayServerMessage =
       type: "session"
       accessTokens?: RemoteAccessTokenSet
       participants: SessionParticipant[]
+      serverTimestamp: number
       sessionId: string
       snapshot: SessionSnapshot
     }
@@ -103,6 +132,7 @@ export type RelayServerMessage =
   | {
       type: "state-updated"
       sessionId: string
+      serverTimestamp: number
       snapshot: SessionSnapshot
       participants: SessionParticipant[]
     }

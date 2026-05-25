@@ -279,13 +279,13 @@ test(
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
       role: "Control access",
-      state: /Connected|Connection interrupted|Reconnecting\.\.\./,
+      state: /Connected|Disconnected|Reconnecting\.\.\./,
     })
     await expectRemoteStatus(readonlyClient, {
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
       role: "Viewer access",
-      state: /Connected|Connection interrupted|Reconnecting\.\.\./,
+      state: /Connected|Disconnected|Reconnecting\.\.\./,
     })
     await closeSettingsOverlay(page)
 
@@ -639,9 +639,36 @@ test("shows offline network status when the browser loses connectivity", async (
       /Reconnect in progress|Restoring synchronization|Synchronized/,
     networkStatus: "Offline",
     role: "Control access",
-    state: /Connected|Connection interrupted|Reconnecting\.\.\./,
+    state: /Connected|Disconnected|Reconnecting\.\.\./,
     timeoutMs: 10_000,
   })
+  await expect(
+    controlClient.getByTestId("remote-status-toggle"),
+  ).not.toContainText("Error")
+  await expect(controlClient.getByTestId("remote-status-error")).toHaveCount(0)
+  await expect(
+    controlClient.getByRole("button", { name: "Use local mode" }),
+  ).toHaveCount(0)
+  await expect(
+    controlClient.getByRole("button", { name: "Retry connection" }),
+  ).toHaveCount(0)
+
+  await controlClient.waitForTimeout(20_000)
+
+  await expectRemoteStatus(controlClient, {
+    connectionSummary:
+      /Reconnect in progress|Restoring synchronization|Synchronized/,
+    networkStatus: "Offline",
+    role: "Control access",
+    state: /Connected|Disconnected|Reconnecting\.\.\./,
+    timeoutMs: 10_000,
+  })
+  await expect(
+    controlClient.getByRole("button", { name: "Use local mode" }),
+  ).toHaveCount(0)
+  await expect(
+    controlClient.getByRole("button", { name: "Retry connection" }),
+  ).toHaveCount(0)
 
   await controlClient.context().setOffline(false)
 })

@@ -347,7 +347,6 @@ export default function getSessionPresentation({
   } else if (state === "liveEnded") {
     runtimeBadgeLabel = t("TimerPage.sessionPresentation.statePrivate")
   }
-
   let sidebarStatus: SessionPresentationModel["sidebarStatus"] = {
     eyebrow: t("TimerPage.sessionPresentation.liveSessionEyebrow"),
     label: t("TimerPage.sessionPresentation.privateSession"),

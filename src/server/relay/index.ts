@@ -50,9 +50,10 @@ const broadcastSession = (sessionId: string) => {
     return
   }
 
+  const serverTimestamp = Date.now()
   registry.broadcastToParticipants(
     session.participants,
-    createStateUpdatedMessage(session),
+    createStateUpdatedMessage(session, serverTimestamp),
   )
 }
 
@@ -166,6 +167,7 @@ wss.on("connection", (socket: WebSocket) => {
       case "sync": {
         const session = store.updateSnapshot({
           clientId: message.clientId,
+          command: message.command,
           params: message.params,
           sessionId: message.sessionId,
           state: message.state,

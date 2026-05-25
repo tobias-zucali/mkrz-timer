@@ -4,6 +4,7 @@ import type {
   RelayClientMessage,
   SessionSnapshot,
   SyncParams,
+  TimerCommand,
 } from "../../shared/remoteSession/types.ts"
 import {
   normalizeRelayServerMessage,
@@ -66,14 +67,11 @@ export const buildJoinMessage = ({
     throw new Error("Remote join links require a role and token.")
   }
 
-  if (retryType === "retry-join-session") {
+  if (retryType === "retry-join-session" && remoteRole === "control") {
     return {
       clientId,
       role: remoteRole,
-      snapshot:
-        remoteRole === "control"
-          ? createSnapshot({ syncParams, syncState })
-          : undefined,
+      snapshot: createSnapshot({ syncParams, syncState }),
       token: remoteToken,
       type: "retry-join-session",
     }
@@ -89,17 +87,20 @@ export const buildJoinMessage = ({
 
 export const buildSyncMessage = ({
   clientId,
+  command,
   params,
   sessionId,
   state,
 }: {
   clientId: string
+  command?: TimerCommand
   params?: Partial<SyncParams>
   sessionId: string
   state?: TimerState
 }): RelayClientMessage => ({
   type: "sync",
   clientId,
+  ...(command ? { command } : {}),
   params,
   sessionId,
   state,

@@ -30,7 +30,11 @@ The relay owns:
 - new clients receive the current timer snapshot immediately after joining
 - viewers stay readonly
 - control clients can publish timer and settings updates
-- running timer snapshots carry wall-clock metadata so reconnecting clients can resolve current elapsed time safely
+- running timer snapshots use a relay-owned anchor model with `durationSeconds`, `elapsedSecondsAtAnchor`, `anchorServerTimestamp`, and `status`
+- relay `session` and `state-updated` messages also include a trusted `serverTimestamp`
+- clients derive live elapsed time from the received anchor state plus the local delta from `serverTimestamp`
+- controllers send timer commands such as start, pause, reset, and row changes instead of elapsed-time ticks
+- the relay does not increment elapsed time on an interval; it resolves canonical running state when handling commands, joins, reconnects, and broadcasts
 - local routes can carry timer setup in `v=1&t=...` URL state, while viewer and shared controller routes stay focused on opaque session tokens only
 - controller links can restore the latest relay snapshot without extra setup
 - in local development, when the configured relay URL points at loopback, clients opened from a LAN host rewrite that relay hostname to the current page hostname before connecting or probing relay health
@@ -49,6 +53,7 @@ The relay owns:
 - the sidebar menu and status surfaces use fullscreen overlays on small screens and readonly clients, while wider screens keep a constrained off-canvas width
 - readonly clients expose a top-right share action that opens a fullscreen QR code for the current viewer link
 - viewer clients stay readonly through disconnect and reconnect cycles, and they explicitly surface when they are waiting on controller presence
+- the installable offline shell depends on the production service worker; local `pnpm dev` sessions do not provide offline reload support
 
 ## Recovery Model
 
@@ -72,6 +77,7 @@ The relay owns:
 - Viewer and controller tokens are untrusted input until validated.
 - Relay snapshots are the only persisted shared state in the current implementation, and they stay in memory only.
 - Viewers must treat every shared field from the relay as untrusted, even when it originated from another control client.
+- Viewers must never be able to overwrite relay timer progression, including reconnect and recovery flows.
 
 ## Validation and Escaping Rules
 
@@ -99,9 +105,10 @@ The relay owns:
 - Add unit coverage for malformed input and Playwright coverage when the field crosses clients.
 - Update this document and `AGENTS.md` when the trust boundary or review expectations change.
 
-## Assumptions and Limitations
+## Assumptions and Follow-Ups
 
 - Current persistence scope is limited to URL-derived state and the relay's in-memory session snapshot.
+- TODO: add durable local persistence for the running timer state so offline tab eviction or browser restart can recover the live runtime state on mobile browsers.
 - React escaping is relied on as the final rendering defense, but only after application-level validation and normalization.
 - Transport-level controls such as CSP or additional proxy-enforced request filtering are not the main protection for live-session payloads today; input validation is.
 

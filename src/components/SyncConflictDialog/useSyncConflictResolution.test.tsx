@@ -34,7 +34,7 @@ const buildState = (overrides: Partial<TimerState> = {}): TimerState => ({
 })
 
 describe("useSyncConflictResolution", () => {
-  it("defers conflicting control snapshots and can apply the URL snapshot locally", () => {
+  it("flags a conflict only when both the URL snapshot and relay snapshot changed", () => {
     const urlState = parseTimerUrlState({
       searchParams: new URLSearchParams(
         "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee",
@@ -66,13 +66,59 @@ describe("useSyncConflictResolution", () => {
     )
 
     expect(
-      result.current.shouldDeferIncomingSnapshot({
+      result.current.resolveIncomingSnapshot({
         snapshot: {
-          params: startingParams,
-          state: syncStateRef.current,
+          params: buildParams({
+            bg: "#333333",
+            fg: "#eeeeee",
+            pc: "#ff2200",
+            rows: [
+              {
+                ...DEFAULT_SYNC_PARAMS.rows[0],
+                primaryColor: "#ff2200",
+                title: "Relay override",
+                totalSeconds: 90,
+              },
+            ],
+            title: "Relay override",
+          }),
+          state: {
+            ...DEFAULT_TIMER_STATE,
+            currentRepeat: 1,
+            durationSeconds: 90,
+            elapsedSecondsAtAnchor: 0,
+            elapsedTime: 0,
+            isPaused: true,
+            isStarted: false,
+            lastUpdatedAt: 0,
+            revision: 3,
+            status: "idle",
+            totalDuration: 90,
+          },
         },
       }),
-    ).toBe(true)
+    ).toEqual({
+      localSnapshot: {
+        params: projectFirstUrlTimerRowToSyncParams({
+          fallback: startingParams,
+          state: urlState,
+        }),
+        state: {
+          ...DEFAULT_TIMER_STATE,
+          currentRepeat: 1,
+          durationSeconds: 45,
+          elapsedSecondsAtAnchor: 0,
+          elapsedTime: 0,
+          isPaused: true,
+          isStarted: false,
+          lastUpdatedAt: 0,
+          revision: 0,
+          status: "idle",
+          totalDuration: 45,
+        },
+      },
+      resolution: "conflict",
+    })
 
     act(() => {
       result.current.notifyIncomingSyncConflict()
@@ -91,23 +137,31 @@ describe("useSyncConflictResolution", () => {
     expect(applyLocalSnapshot).toHaveBeenCalledWith({
       params: projectedParams,
       state: {
+        ...DEFAULT_TIMER_STATE,
         currentRepeat: 1,
+        durationSeconds: 45,
+        elapsedSecondsAtAnchor: 0,
         elapsedTime: 0,
         isPaused: true,
         isStarted: false,
         lastUpdatedAt: 0,
         revision: 0,
+        status: "idle",
         totalDuration: 45,
       },
     } satisfies SessionSnapshot)
     expect(syncParamsRef.current).toEqual(projectedParams)
     expect(syncStateRef.current).toEqual({
+      ...DEFAULT_TIMER_STATE,
       currentRepeat: 1,
+      durationSeconds: 45,
+      elapsedSecondsAtAnchor: 0,
       elapsedTime: 0,
       isPaused: true,
       isStarted: false,
       lastUpdatedAt: 0,
       revision: 0,
+      status: "idle",
       totalDuration: 45,
     })
     expect(result.current.hasSyncConflict).toBe(false)
@@ -171,21 +225,25 @@ describe("useSyncConflictResolution", () => {
         title: "Opening",
       },
       state: {
+        ...DEFAULT_TIMER_STATE,
         currentRepeat: 1,
+        durationSeconds: 150,
+        elapsedSecondsAtAnchor: 5,
         elapsedTime: 5,
         isPaused: true,
         isStarted: false,
         lastUpdatedAt: 0,
         revision: 2,
+        status: "idle",
         totalDuration: 150,
       },
     })
   })
 
-  it("ignores elapsed-time differences within one second when params match", () => {
-    const matchingUrlState = parseTimerUrlState({
+  it("accepts local URL changes silently when the relay still matches the baseline", () => {
+    const localOnlyUrlState = parseTimerUrlState({
       searchParams: new URLSearchParams(
-        "v=1&t=60!00aa88!Server%20state!0&bg=000000&fg=ffffff",
+        "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee",
       ),
     })
     const syncParamsRef = {
@@ -196,15 +254,20 @@ describe("useSyncConflictResolution", () => {
     const syncStateRef = {
       current: {
         ...buildState({
+          currentRepeat: 1,
+          durationSeconds: 60,
+          elapsedSecondsAtAnchor: 12,
           elapsedTime: 12,
           isPaused: false,
           isStarted: true,
+          status: "running",
+          totalDuration: 60,
           revision: 4,
         }),
       },
     } as RefObject<TimerState>
     const paramData = {
-      readTimerUrlState: () => matchingUrlState,
+      readTimerUrlState: () => localOnlyUrlState,
       setParams: vi.fn(),
     } as unknown as ReturnType<typeof useParams>
 
@@ -219,24 +282,18 @@ describe("useSyncConflictResolution", () => {
     )
 
     expect(
-      result.current.shouldDeferIncomingSnapshot({
+      result.current.resolveIncomingSnapshot({
         snapshot: {
-          params: syncParamsRef.current,
-          state: {
-            currentRepeat: 1,
-            elapsedTime: 13,
-            isPaused: false,
-            isStarted: true,
-            lastUpdatedAt: 0,
-            revision: 7,
-            totalDuration: 60,
-          },
+          params: buildParams(),
+          state: syncStateRef.current,
         },
       }),
-    ).toBe(false)
+    ).toMatchObject({
+      resolution: "accept-local",
+    })
   })
 
-  it("treats elapsed-time differences above one second as a reconnect conflict", () => {
+  it("accepts relay updates silently when the URL snapshot did not change", () => {
     const matchingUrlState = parseTimerUrlState({
       searchParams: new URLSearchParams(
         "v=1&t=60!00aa88!Server%20state!0&bg=000000&fg=ffffff",
@@ -250,9 +307,14 @@ describe("useSyncConflictResolution", () => {
     const syncStateRef = {
       current: {
         ...buildState({
+          currentRepeat: 1,
+          durationSeconds: 60,
+          elapsedSecondsAtAnchor: 12,
           elapsedTime: 12,
           isPaused: false,
           isStarted: true,
+          status: "running",
+          totalDuration: 60,
           revision: 4,
         }),
       },
@@ -273,20 +335,38 @@ describe("useSyncConflictResolution", () => {
     )
 
     expect(
-      result.current.shouldDeferIncomingSnapshot({
+      result.current.resolveIncomingSnapshot({
         snapshot: {
           params: syncParamsRef.current,
           state: {
+            ...DEFAULT_TIMER_STATE,
             currentRepeat: 1,
+            durationSeconds: 60,
+            elapsedSecondsAtAnchor: 14,
             elapsedTime: 14,
             isPaused: false,
             isStarted: true,
             lastUpdatedAt: 0,
             revision: 7,
+            status: "running",
             totalDuration: 60,
           },
         },
       }),
-    ).toBe(true)
+    ).toEqual({
+      localSnapshot: {
+        params: syncParamsRef.current,
+        state: {
+          ...syncStateRef.current,
+          anchorServerTimestamp: 0,
+          currentRepeat: 1,
+          durationSeconds: 60,
+          elapsedSecondsAtAnchor: 12,
+          status: "running",
+          totalDuration: 60,
+        },
+      },
+      resolution: "accept-server",
+    })
   })
 })
