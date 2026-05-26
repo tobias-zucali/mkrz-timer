@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl"
 
 import InputField from "@/components/InputField"
 import type { SyncParams } from "@/shared/remoteSession/types"
-import { MAX_TITLE_LENGTH } from "@/shared/security/input"
+import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
 import ColorSwatchField from "@/utils/ColorSwatchField"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
@@ -48,6 +48,8 @@ export default function TimerSequenceInspector({
     textarea.style.height = `${textarea.scrollHeight}px`
   }, [row.title])
 
+  const normalizedTitle = normalizeTitle(row.title)
+
   const commitDurationChange = ({
     minutes,
     seconds,
@@ -88,13 +90,39 @@ export default function TimerSequenceInspector({
           id={`sidebar-sequence-title-${rowIndex}`}
           maxLength={MAX_TITLE_LENGTH}
           onChange={(event) =>
-            onRowChange({ ...row, title: event.target.value })
+            onRowChange({ ...row, title: normalizeTitle(event.target.value) })
           }
-          onKeyDown={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            event.stopPropagation()
+
+            if (event.key === "Enter") {
+              event.preventDefault()
+            }
+          }}
           onKeyUp={(event) => event.stopPropagation()}
+          onPaste={(event) => {
+            event.preventDefault()
+
+            const textarea = event.currentTarget
+            const pastedText = normalizeTitle(
+              event.clipboardData.getData("text"),
+            )
+            const selectionStart =
+              textarea.selectionStart ?? normalizedTitle.length
+            const selectionEnd = textarea.selectionEnd ?? selectionStart
+
+            onRowChange({
+              ...row,
+              title: normalizeTitle(
+                `${normalizedTitle.slice(0, selectionStart)}${pastedText}${normalizedTitle.slice(
+                  selectionEnd,
+                )}`,
+              ),
+            })
+          }}
           ref={titleTextareaRef}
           rows={1}
-          value={row.title}
+          value={normalizedTitle}
         />
       </div>
 

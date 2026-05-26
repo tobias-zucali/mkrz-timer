@@ -24,7 +24,7 @@
     "test": "run-s lint test:unit test:components test:e2e:smoke",
     "test:ci": "run-s lint test:unit test:components test:e2e:ci",
     "test:full": "run-s lint test:unit test:components test:e2e:full",
-    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/i18n/**/*.test.ts src/shared/**/*.test.ts src/utils/**/*.test.ts src/server/**/*.test.ts",
+    "test:unit": "node --no-warnings=ExperimentalWarning --experimental-strip-types --experimental-default-type=module --test src/**/*.test.ts",
     "test:components": "vitest run src/components/**/*.test.tsx",
     "test:e2e:smoke": "rimraf test-results playwright-report && playwright test --grep @smoke",
     "test:e2e:ci": "rimraf test-results playwright-report && playwright test --grep-invert @visual",

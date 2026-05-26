@@ -12,6 +12,51 @@ import {
   updateTimerSettings,
 } from "./remote-mode.helpers"
 
+const sidebarVisualScenarios = [
+  {
+    name: "desktop",
+    contextOptions: {
+      viewport: { width: 1440, height: 1100 },
+    },
+  },
+  {
+    name: "desktop-short",
+    contextOptions: {
+      viewport: { width: 1280, height: 720 },
+    },
+  },
+  {
+    name: "tablet-portrait",
+    contextOptions: {
+      ...devices["iPad Mini"],
+    },
+  },
+  {
+    name: "tablet-landscape",
+    contextOptions: {
+      ...devices["iPad Mini landscape"],
+    },
+  },
+  {
+    name: "phone-portrait",
+    contextOptions: {
+      ...devices["iPhone 13"],
+    },
+  },
+  {
+    name: "phone-landscape",
+    contextOptions: {
+      ...devices["iPhone 13 landscape"],
+    },
+  },
+  {
+    name: "phone-small",
+    contextOptions: {
+      ...devices["iPhone SE"],
+    },
+  },
+] as const
+
 test(
   "opens and closes the timer URL QR overlay",
   { tag: "@smoke" },
@@ -126,22 +171,9 @@ test(
   "matches sidebar menu and panel layouts on desktop and mobile",
   { tag: "@visual" },
   async ({ baseURL, browser }) => {
-    const scenarios = [
-      {
-        name: "desktop",
-        contextOptions: {
-          viewport: { width: 1440, height: 1100 },
-        },
-      },
-      {
-        name: "mobile",
-        contextOptions: {
-          ...devices["iPhone 13"],
-        },
-      },
-    ] as const
+    test.slow()
 
-    for (const { contextOptions, name } of scenarios) {
+    for (const { contextOptions, name } of sidebarVisualScenarios) {
       const context = await browser.newContext(contextOptions)
       const devicePage = await context.newPage()
 
@@ -150,6 +182,9 @@ test(
         .getByRole("button", { name: "Toggle navigation" })
         .click()
       await expect(devicePage.getByTestId("sidebar-offcanvas")).toBeVisible()
+      await expect(
+        devicePage.getByRole("button", { exact: true, name: "Timer" }),
+      ).toBeVisible()
 
       await expectScreenshotWithoutDebugInfo(devicePage, {
         message: `${name} sidebar menu should stay visually stable`,

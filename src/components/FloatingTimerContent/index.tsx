@@ -1,6 +1,15 @@
+"use client"
+
 import Pie from "@/components/Pie"
-import { getTimerTitleLayout } from "@/utils/timerTitleLayout"
 import { hexToRgbChannels } from "@/utils/colors"
+import { getResponsiveClamp } from "@/utils/responsiveClamp"
+import {
+  getTimerTitleBoxStyle,
+  getTimerTitleFontStyle,
+  getTimerTitleReservedHeight,
+  TIMER_TITLE_TEXT_CLASS_NAME,
+} from "@/utils/timerTitleLayout"
+import classNames from "classnames"
 
 export default function FloatingTimerContent({
   title,
@@ -21,7 +30,11 @@ export default function FloatingTimerContent({
   isTimedOut: boolean
   elapsedPercentage: number
 }) {
-  const titleLayout = getTimerTitleLayout(title, "floating")
+  const titleFontStyle = getTimerTitleFontStyle({
+    text: title,
+  })
+  const titleBoxStyle = getTimerTitleBoxStyle()
+  const hasTitle = title.trim().length > 0
 
   return (
     <div
@@ -35,31 +48,33 @@ export default function FloatingTimerContent({
         ["--primary"]: hexToRgbChannels(primaryColor),
       }}
     >
-      {titleLayout.hasText ? (
-        <div
-          className="shrink-0 overflow-hidden px-4 pt-4 text-center font-bold"
-          style={{
-            fontSize: `${titleLayout.fontSizeRem}rem`,
-            lineHeight: titleLayout.lineHeight,
-            maxHeight: `${titleLayout.maxVisibleLines * titleLayout.lineHeight}em`,
-          }}
-        >
+      <div
+        className={classNames(
+          hasTitle && "relative z-10 shrink-0 overflow-visible",
+        )}
+        style={{
+          height: hasTitle
+            ? getTimerTitleReservedHeight({
+                hasText: true,
+              })
+            : undefined,
+        }}
+      >
+        {hasTitle ? (
           <p
-            className="
-              m-0 mx-auto block max-w-[20ch] overflow-hidden wrap-break-word
-              whitespace-pre-wrap
-            "
+            className={`${TIMER_TITLE_TEXT_CLASS_NAME} whitespace-pre-wrap`}
             data-testid="floating-timer-title"
+            style={{
+              ...titleBoxStyle,
+              ...titleFontStyle,
+            }}
           >
             {title}
           </p>
-        </div>
-      ) : (
-        <div
-          className="shrink-0 px-4 pt-2"
-          data-testid="floating-timer-title"
-        />
-      )}
+        ) : (
+          <div data-testid="floating-timer-title" />
+        )}
+      </div>
       <div className="relative min-h-0 grow p-4">
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
@@ -68,10 +83,16 @@ export default function FloatingTimerContent({
           <div
             className={`
               flex max-w-full flex-nowrap items-baseline justify-center
-              font-mono text-[clamp(3rem,19vw,7rem)] font-bold
+              font-mono font-bold
               ${isTimedOut ? "animate-pulse text-primary" : ""}
             `}
             data-testid="floating-timer-display"
+            style={{
+              fontSize: getResponsiveClamp({
+                max: 7,
+                min: 3,
+              }),
+            }}
           >
             <span className="min-w-0 text-right">{minutes}</span>
             <span className="shrink-0 px-[0.12em] text-center">:</span>

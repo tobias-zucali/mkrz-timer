@@ -26,6 +26,24 @@ Environment variables:
 
 ## Test Lanes
 
+Local validation lanes:
+
+- `pnpm lint`: ESLint and TypeScript validation
+- `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code
+- `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
+- `pnpm test`: local validation entrypoint for lint + unit + component + Playwright `@smoke`
+- `pnpm test:ci`: lint + unit + component + Playwright except `@visual`
+- `pnpm test:full`: lint + unit + component + full Playwright coverage
+
+Authoring rules:
+
+- use `.test.ts` for pure logic tests that should run under `node:test`, even when the file sits near a component
+- use `.test.tsx` for React/jsdom tests that should run under Vitest
+- use Playwright tags to control browser-lane scope:
+  - `@smoke` for the minimum must-pass browser checks
+  - `@visual` for screenshot and layout-regression coverage
+  - leave broader behavioral coverage untagged so it runs in the full lane only
+
 Default Playwright lane:
 
 - app: `http://127.0.0.1:3100`

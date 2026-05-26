@@ -108,7 +108,9 @@ export const normalizeTitle = (value: unknown) => {
     return DEFAULT_SYNC_PARAMS.title
   }
 
-  return normalizeTextWhitespace(value).slice(0, MAX_TITLE_LENGTH)
+  return normalizeTextWhitespace(value)
+    .replace(/\s*\n+\s*/g, " ")
+    .slice(0, MAX_TITLE_LENGTH)
 }
 
 export const normalizeColor = (value: unknown, fallback: string) => {
@@ -832,7 +834,7 @@ export const normalizeRelayServerMessage = (
       }
       return typeof parsedValue.message === "string"
         ? {
-            message: normalizeTitle(parsedValue.message).slice(
+            message: normalizeTextWhitespace(parsedValue.message).slice(
               0,
               MAX_TITLE_LENGTH,
             ),

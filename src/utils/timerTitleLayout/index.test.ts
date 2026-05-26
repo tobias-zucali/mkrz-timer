@@ -1,50 +1,44 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { getTimerTitleLayout } from "./index.ts"
+import {
+  getTimerTitleFontStyle,
+  getTimerTitleBoxStyle,
+  getTimerTitleReservedHeight,
+  LONG_TIMER_TITLE_LENGTH,
+} from "./index.ts"
 
-test("uses the largest title size when the title is short", () => {
-  const layout = getTimerTitleLayout("Sprint")
+test("returns unclamped title box sizing", () => {
+  const boxStyle = getTimerTitleBoxStyle()
 
-  assert.equal(layout.hasText, true)
-  assert.equal(layout.fontSizeRem, 5)
-  assert.equal(layout.lineCount, 1)
+  assert.equal(boxStyle.lineHeight, 0.94)
+  assert.equal(boxStyle.minHeight, "1.2999999999999998em")
+  assert.ok(!("maxHeight" in boxStyle))
 })
 
-test("reduces the main timer font size for longer multiline titles", () => {
-  const shortTitleLayout = getTimerTitleLayout("Sprint")
-  const longTitleLayout = getTimerTitleLayout(
-    "Quarterly planning\nretrospective and facilitator notes",
+test("returns the reserved min-height clamp for empty and populated titles", () => {
+  assert.equal(
+    getTimerTitleReservedHeight({ hasText: false }),
+    "clamp(2.75rem, min(5.5vw, 5.5vh), 3.25rem)",
+  )
+  assert.equal(
+    getTimerTitleReservedHeight({ hasText: true }),
+    "clamp(2.6rem, min(7vw, 7vh), 4.1rem)",
+  )
+})
+
+test("uses the long-title font bucket only above the length threshold", () => {
+  assert.equal(
+    getTimerTitleFontStyle({
+      text: "x".repeat(LONG_TIMER_TITLE_LENGTH),
+    }).fontSize,
+    "clamp(2.4rem, min(6.8vw, 6.8vh), 4.5rem)",
   )
 
-  assert.equal(longTitleLayout.lineCount, 2)
-  assert.ok(longTitleLayout.fontSizeRem < shortTitleLayout.fontSizeRem)
-  assert.ok(longTitleLayout.fontSizeRem >= 1.75)
-})
-
-test("keeps floating titles on a smaller scale than the main timer", () => {
-  const mainLayout = getTimerTitleLayout("Workshop agenda")
-  const floatingLayout = getTimerTitleLayout("Workshop agenda", "floating")
-
-  assert.ok(floatingLayout.fontSizeRem < mainLayout.fontSizeRem)
-  assert.equal(floatingLayout.maxVisibleLines, 3)
-})
-
-test("increases main title size on wider viewports", () => {
-  const title = "Quarterly planning\nfacilitator notes"
-  const narrowLayout = getTimerTitleLayout(title, "main", {
-    viewportWidthPx: 820,
-  })
-  const wideLayout = getTimerTitleLayout(title, "main", {
-    viewportWidthPx: 1440,
-  })
-
-  assert.ok(wideLayout.fontSizeRem > narrowLayout.fontSizeRem)
-})
-
-test("treats empty titles as having no rendered text", () => {
-  const layout = getTimerTitleLayout("   ")
-
-  assert.equal(layout.hasText, false)
-  assert.equal(layout.lineCount, 0)
+  assert.equal(
+    getTimerTitleFontStyle({
+      text: "x".repeat(LONG_TIMER_TITLE_LENGTH + 1),
+    }).fontSize,
+    "clamp(2rem, min(5.8vw, 5.8vh), 3.75rem)",
+  )
 })

@@ -21,7 +21,7 @@ Technical details live in:
 ## Security Notes
 
 - Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
-- Timer titles are plain text only and shared session snapshots are validated before use.
+- Timer titles are plain text only, normalized to a single paragraph, and shared session snapshots are validated before use.
 - See [docs/remote-mode.md](./docs/remote-mode.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
 
 ## Getting Started
@@ -113,12 +113,20 @@ See [docs/development.md](./docs/development.md) for:
 - `pnpm lint:fix`: applies ESLint autofixes, then reruns typechecking for validation
 - `pnpm format`: checks Prettier formatting only
 - `pnpm format:fix`: rewrites formatting only
-- `pnpm test`: lint + unit tests + smoke e2e
-- `pnpm test:ci`: lint + unit tests + CI-safe e2e
-- `pnpm test:full`: lint + unit tests + full e2e
+- `pnpm test:unit`: runs plain-Node `.test.ts` coverage for pure logic and server-safe code
+- `pnpm test:components`: runs Vitest/jsdom `.test.tsx` coverage for React component behavior
+- `pnpm test`: lint + unit tests + component tests + smoke e2e
+- `pnpm test:ci`: lint + unit tests + component tests + CI-safe e2e
+- `pnpm test:full`: lint + unit tests + component tests + full e2e
 - `pnpm build`: builds the app only
 - `pnpm build:full`: runs `pnpm test:full` first, then builds the app
 - `pnpm build:docker`: runs the full validated app build, then `docker compose build`
+
+Playwright lane intent:
+
+- `@smoke`: minimum browser coverage that should gate the default local `pnpm test` lane
+- `@visual`: screenshot and layout-regression coverage run via `pnpm test:e2e:visual` and excluded from `pnpm test:ci`
+- untagged e2e tests: broader behavioral coverage reserved for `pnpm test:full`
 
 ## Deployment
 

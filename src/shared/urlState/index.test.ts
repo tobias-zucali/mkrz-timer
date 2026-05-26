@@ -156,11 +156,11 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t
     endBehavior: "advance",
     primaryColor: "",
     repeatCount: 2,
-    title: "Line 1\nLine 2",
+    title: "Line 1 Line 2",
     totalSeconds: 75,
   })
 
-  assert.equal(serializeUrlTimerRow(row), "75!!Line%201%0ALine%202!2!1")
+  assert.equal(serializeUrlTimerRow(row), "75!!Line%201%20Line%202!2!1")
 
   const query = buildTimerUrlSearchParams({
     activeIndex: 0,
@@ -174,7 +174,7 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t
 
   assert.equal(
     query,
-    "v=1&t=75%21%21Line%25201%250ALine%25202%212%211&a=0&bg=123456&fg=abcdef&settings=1",
+    "v=1&t=75%21%21Line%25201%2520Line%25202%212%211&a=0&bg=123456&fg=abcdef&settings=1",
   )
 })
 
