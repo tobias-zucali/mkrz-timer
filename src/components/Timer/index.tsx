@@ -3,22 +3,21 @@
 import { useTranslations } from "next-intl"
 
 import Pie from "@/components/Pie"
-import styles from "@/components/Timer/index.module.css"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import DigitalDisplay from "@/components/DigitalDisplay"
 import TimerTitle from "@/components/TimerTitle"
 import { ChevronLeftIcon, ChevronRightIcon } from "@/utils/icons"
+import { getResponsiveClamp } from "@/utils/responsiveClamp"
 import useTimer from "@/utils/useTimer"
 
 const timerButtonClassName =
   "inline-flex appearance-none items-center justify-center " +
-  "min-h-9 min-w-20 rounded-md px-2.5 py-1.5 text-sm " +
-  "sm:min-w-24 sm:text-base md:min-h-11 md:px-3.5 md:py-2.5 " +
+  "rounded-md bg-foreground/80 text-background " +
+  "text-background " +
   "bg-foreground font-bold text-background " +
-  "shadow-sm transition-colors hover:bg-foreground/90 " +
+  "shadow-sm transition-colors hover:bg-foreground " +
   "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation " +
-  styles.actionButton
+  "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground/80 touch-manipulation"
 
 type ReadonlyPlaceholder = {
   actionLabel?: string
@@ -71,6 +70,28 @@ export default function Timer({
   const shouldReserveTitleSpace = rows.some(
     (row) => row.title.trim().length > 0,
   )
+  const timerButtonStyle = {
+    fontSize: getResponsiveClamp({
+      factor: 4,
+      max: 1,
+      min: 0.5,
+    }),
+    minWidth: getResponsiveClamp({
+      factor: 9,
+      max: 6,
+      min: 3.5,
+    }),
+    paddingBlock: getResponsiveClamp({
+      factor: 3,
+      max: 0.625,
+      min: 0.1,
+    }),
+    paddingInline: getResponsiveClamp({
+      factor: 3,
+      max: 0.9,
+      min: 0.1,
+    }),
+  }
 
   const renderProgress = () => {
     if (!showProgress) {
@@ -132,9 +153,7 @@ export default function Timer({
         onChange={(value) => handleChange("title", value)}
       />
       <div
-        className="
-        relative flex h-[10em] grow items-center justify-center p-[1em]
-      "
+        className="relative flex h-[10em] grow items-center justify-center p-[1em]"
       >
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
@@ -211,9 +230,7 @@ export default function Timer({
             </div>
           </div>
         ) : (
-          <div
-            className={`absolute inset-0 flex grow flex-col items-center justify-center ${styles.tightCenterCluster}`}
-          >
+          <div className="absolute inset-0 flex grow flex-col items-center justify-center">
             {hasPreviousRow && !isReadonly ? (
               <button
                 aria-label={t("previousStep")}
@@ -274,19 +291,21 @@ export default function Timer({
             {renderProgress()}
             {!isReadonly && (
               <div
-                className={`flex flex-wrap items-center justify-center gap-1.5 py-1 sm:gap-2 ${styles.controls}`}
+                className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2"
                 data-testid="timer-controls"
               >
                 <button
                   className={timerButtonClassName}
                   disabled={isTimedOut}
                   onClick={() => handleAction(isPaused ? "start" : "pause")}
+                  style={timerButtonStyle}
                 >
                   {isPaused ? t("start") : t("pause")}
                 </button>
                 <button
                   className={timerButtonClassName}
                   onClick={() => handleAction("restart")}
+                  style={timerButtonStyle}
                 >
                   {t("reset")}
                 </button>

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
-  getTimerTitleFontClassName,
+  getTimerTitleFontStyle,
   getTimerTitleLayoutConfig,
   LONG_TIMER_TITLE_LENGTH,
 } from "./index.ts"
@@ -16,19 +16,18 @@ test("returns the main timer title class config", () => {
   })
 })
 
-test("uses the long-title class bucket only above the length threshold", () => {
+test("uses the long-title font bucket only above the length threshold", () => {
   assert.equal(
-    getTimerTitleFontClassName({
+    getTimerTitleFontStyle({
       text: "x".repeat(LONG_TIMER_TITLE_LENGTH),
-    }),
-    "text-5xl sm:text-6xl md:text-7xl",
+    }).fontSize,
+    "clamp(2.4rem, min(6.8vw, 6.8vh), 4.5rem)",
   )
 
   assert.equal(
-    getTimerTitleFontClassName({
+    getTimerTitleFontStyle({
       text: "x".repeat(LONG_TIMER_TITLE_LENGTH + 1),
-      variant: "floating",
-    }),
-    "text-2xl sm:text-3xl md:text-4xl",
+    }).fontSize,
+    "clamp(2rem, min(5.8vw, 5.8vh), 3.75rem)",
   )
 })

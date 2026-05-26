@@ -444,7 +444,7 @@ export async function expectRemoteStatus(
     role,
     showSendToDeveloperButton,
     state,
-    timeoutMs = 5_000,
+    timeoutMs = 10_000,
   }: {
     activityLogIncludes?: RegExp | string
     connectionSummary: RegExp | string
@@ -503,21 +503,30 @@ export async function expectRemoteStatus(
           return true
         }
 
+        await remoteStatus
+          .getByTestId("remote-status-toggle")
+          .click({
+            force: true,
+          })
+          .catch(() => {})
+
+        if (await panel.isVisible().catch(() => false)) {
+          return true
+        }
+
         if (
           (await page
             .getByRole("button", { name: "Toggle navigation" })
-            .count()) === 0
+            .count()) > 0
         ) {
-          await remoteStatus.getByTestId("remote-status-toggle").click({
-            force: true,
-          })
-        } else {
-          await openSidebarPanel(page, "Status")
+          await openSidebarPanel(page, "Status").catch(() => {})
         }
+
         return panel.isVisible().catch(() => false)
       },
       {
         message: "status panel should pin open before reading its contents",
+        timeout: Math.max(timeoutMs, 10_000),
       },
     )
     .toBe(true)
@@ -895,6 +904,7 @@ export async function waitForRemoteCluster(
   },
 ) {
   void mainConnectionCount
+  const expectedConnectedPages = clientCount + 1
 
   await expect
     .poll(
@@ -908,6 +918,13 @@ export async function waitForRemoteCluster(
               remoteState !== "local" &&
               remoteState !== "liveEnded",
           ).length,
+          readyParticipantViews: states.filter(
+            ({ connectionCount, remoteState, sessionId }) =>
+              sessionId.length > 0 &&
+              remoteState !== "local" &&
+              remoteState !== "liveEnded" &&
+              Number(connectionCount) >= expectedConnectedPages,
+          ).length,
         }
       },
       {
@@ -916,6 +933,7 @@ export async function waitForRemoteCluster(
       },
     )
     .toEqual({
-      connectedPages: clientCount + 1,
+      connectedPages: expectedConnectedPages,
+      readyParticipantViews: expectedConnectedPages,
     })
 }

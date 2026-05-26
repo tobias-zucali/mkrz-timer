@@ -2,10 +2,11 @@
 
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import {
+  isClampedTimerTitle,
+  getTimerTitleLayoutConfig,
   getTimerTitleBoxStyle,
-  getTimerTitleFontClassName,
+  getTimerTitleFontStyle,
   getTimerTitleReservedMinHeight,
-  isLongTimerTitle,
   TIMER_TITLE_TEXT_CLASS_NAME,
 } from "@/utils/timerTitleLayout"
 import classNames from "classnames"
@@ -18,7 +19,6 @@ import {
   useRef,
   useState,
 } from "react"
-import styles from "./index.module.css"
 
 function stopPropagation(event: KeyboardEvent<HTMLTextAreaElement>) {
   event.stopPropagation()
@@ -73,28 +73,41 @@ export default function TimerTitle({
   value: string
 }) {
   const t = useTranslations("TimerTitle")
+  const [hasEditedTitle, setHasEditedTitle] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const normalizedValue = normalizeTitle(value)
   const hasText = normalizedValue.trim().length > 0
-  const isLongTitle = isLongTimerTitle(normalizedValue)
-  const titleFontClassName = getTimerTitleFontClassName({
+  const isClampedTitle = isClampedTimerTitle(normalizedValue)
+  const titleFontStyle = getTimerTitleFontStyle({
     text: normalizedValue,
-    variant: "main",
   })
+  const titleSurfaceClassName =
+    "box-border w-full rounded-3xl border border-transparent bg-transparent text-center font-bold tracking-tight"
   const titleBoxStyle = getTimerTitleBoxStyle()
-  const showTextarea = hasText || isFocused
+  const titleLayout = getTimerTitleLayoutConfig()
   const showEmptyAction = !hasText && !isFocused
+  const showFocusedTextarea = isFocused
   const shouldReserveTitleSpace =
-    reserveSpace || showTextarea || showEmptyAction
+    reserveSpace || hasText || showFocusedTextarea || showEmptyAction
   const rootStyle = shouldReserveTitleSpace
     ? {
         height: getTimerTitleReservedMinHeight({
-          hasText: showTextarea,
+          hasText,
         }),
       }
     : undefined
+  const shouldClampDisplayTitle = isClampedTitle && !hasEditedTitle
+  const displayTitleStyle = shouldClampDisplayTitle
+    ? {
+        ...titleBoxStyle,
+        maxHeight: `${titleLayout.lineHeight * 2 + 0.36}em`,
+      }
+    : titleBoxStyle
+  const activeTextareaStyle = showFocusedTextarea
+    ? titleBoxStyle
+    : displayTitleStyle
 
   useEffect(() => {
     if (disabled) {
@@ -111,16 +124,16 @@ export default function TimerTitle({
   }, [isFocused])
 
   useLayoutEffect(() => {
-    if (!showTextarea || !textareaRef.current) {
+    if (!hasText || !textareaRef.current) {
       return
     }
 
     updateTextareaHeight(textareaRef.current)
-  }, [showTextarea, normalizedValue, titleFontClassName])
+  }, [hasText, normalizedValue, showFocusedTextarea, titleFontStyle.fontSize])
 
   useLayoutEffect(() => {
     if (
-      !showTextarea ||
+      !hasText ||
       !textareaRef.current ||
       !rootRef.current ||
       typeof ResizeObserver === "undefined"
@@ -156,7 +169,7 @@ export default function TimerTitle({
       }
       observer.disconnect()
     }
-  }, [showTextarea, titleFontClassName])
+  }, [hasText, showFocusedTextarea, titleFontStyle.fontSize])
 
   if (disabled) {
     return (
@@ -172,12 +185,14 @@ export default function TimerTitle({
           <p
             className={classNames(
               TIMER_TITLE_TEXT_CLASS_NAME,
-              "whitespace-normal rounded-3xl border border-transparent bg-transparent",
-              titleFontClassName,
-              isLongTitle ? styles.mainLongTitle : styles.mainShortTitle,
+              titleSurfaceClassName,
+              "whitespace-pre-wrap",
             )}
             data-testid="timer-title-text"
-            style={titleBoxStyle}
+            style={{
+              ...displayTitleStyle,
+              ...titleFontStyle,
+            }}
           >
             {normalizedValue}
           </p>
@@ -189,7 +204,7 @@ export default function TimerTitle({
   return (
     <div
       ref={rootRef}
-      className="relative z-10 w-full overflow-visible px-4 pt-2 pb-1"
+      className="relative z-10 w-full overflow-visible"
       data-testid="timer-title"
       data-title-empty={hasText ? "false" : "true"}
       data-title-mode={
@@ -197,34 +212,26 @@ export default function TimerTitle({
       }
       style={rootStyle}
     >
-      {showTextarea ? (
-        <p
-          className={classNames(
-            TIMER_TITLE_TEXT_CLASS_NAME,
-            "pointer-events-none absolute inset-x-0 top-0 whitespace-normal rounded-3xl border border-transparent bg-transparent opacity-0",
-            titleFontClassName,
-            isLongTitle ? styles.mainLongTitle : styles.mainShortTitle,
-          )}
-          data-testid="timer-title-text"
-          style={titleBoxStyle}
-        >
-          {normalizedValue}
-        </p>
-      ) : null}
       <textarea
         aria-label={t("title")}
         autoComplete="off"
         className={classNames(
-          "box-border w-full resize-none overflow-hidden whitespace-pre-wrap rounded-3xl border border-transparent bg-transparent text-center font-bold tracking-tight outline-none transition focus:bg-foreground/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-foreground/70",
-          showTextarea ? "relative z-10" : "absolute inset-x-0 top-0 opacity-0",
-          titleFontClassName,
-          isLongTitle ? styles.mainLongTitle : styles.mainShortTitle,
-          !showTextarea && "pointer-events-none",
+          titleSurfaceClassName,
+          "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-foreground/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-foreground/70",
+          showFocusedTextarea
+            ? "relative z-10"
+            : hasText
+              ? "relative z-10 cursor-text"
+              : "absolute inset-x-0 top-0 opacity-0",
+          !showFocusedTextarea && !hasText && "pointer-events-none",
         )}
         data-testid="timer-title-input"
         maxLength={MAX_TITLE_LENGTH}
         onBlur={() => setIsFocused(false)}
-        onChange={(event) => onChange(normalizeTitle(event.target.value))}
+        onChange={(event) => {
+          setHasEditedTitle(true)
+          onChange(normalizeTitle(event.target.value))
+        }}
         onFocus={() => setIsFocused(true)}
         onKeyDown={(event) => {
           stopPropagation(event)
@@ -248,6 +255,7 @@ export default function TimerTitle({
             textarea.selectionStart ?? normalizedValue.length
           const selectionEnd = textarea.selectionEnd ?? selectionStart
 
+          setHasEditedTitle(true)
           onChange(
             buildPastedTitleValue({
               currentValue: normalizedValue,
@@ -257,22 +265,27 @@ export default function TimerTitle({
             }),
           )
         }}
+        readOnly={!showFocusedTextarea}
         ref={textareaRef}
         rows={1}
         spellCheck={false}
-        style={titleBoxStyle}
+        style={{
+          ...activeTextareaStyle,
+          ...titleFontStyle,
+        }}
         value={normalizedValue}
       />
       {showEmptyAction ? (
         <button
           aria-label={t("addTitle")}
           className="
-            absolute top-1/2 left-1/2 inline-flex min-h-10 -translate-1/2
-            items-center justify-center rounded-full border
-            border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5 text-sm
-            font-semibold text-foreground/72 transition hover:border-foreground/28
-            hover:bg-foreground/6 hover:text-foreground
-            focus-visible:outline-2 focus-visible:outline-offset-2
+            absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2
+            cursor-pointer items-center justify-center rounded-full
+            border border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5
+            text-sm font-semibold text-foreground/72 transition
+            hover:border-foreground/28 hover:bg-foreground/6
+            hover:text-foreground focus-visible:outline-2
+            focus-visible:outline-offset-2
             focus-visible:outline-primary
           "
           data-testid="timer-title-empty-action"

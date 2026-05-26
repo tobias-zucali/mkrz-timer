@@ -2,6 +2,7 @@ import { useRef } from "react"
 import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
+import { getResponsiveClamp } from "@/utils/responsiveClamp"
 import styles from "./index.module.css"
 
 function DigitalDisplay({
@@ -35,11 +36,16 @@ function DigitalDisplay({
   return (
     <div
       className={classNames(
-        "flex content-center font-mono text-[5em] font-bold relative text-center w-full md:text-[8em]",
-        styles.displayRoot,
+        "relative flex w-full content-center text-center font-mono font-bold",
         isReadonly && "opacity-50",
         isAlert && classNames(styles.blink, "text-primary opacity-100"),
       )}
+      style={{
+        fontSize: getResponsiveClamp({
+          max: 8,
+          min: 3,
+        }),
+      }}
       {...otherProps}
     >
       <input
@@ -58,7 +64,7 @@ function DigitalDisplay({
         onBlur={onBlur}
         onChange={onMinutesChange}
       />
-      <div className={styles.separator}>{" : "}</div>
+      <div>{" : "}</div>
       <input
         aria-label={t("seconds")}
         className={classNames(inputClassNames, "text-left")}

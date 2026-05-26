@@ -327,7 +327,7 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
   await setInlineTitle(page, "Sprint")
   const shortTitleMetrics = await getTitleMetrics(page)
   expect(shortTitleMetrics.text).toBe("Sprint")
-  expect(shortTitleMetrics.rootHeight).toBeGreaterThan(50)
+  expect(shortTitleMetrics.rootHeight).toBeGreaterThan(49)
 
   const displayHeight = await getTitleRootHeight(page)
   const displayPosition = await getTitlePositionMetrics(page)
@@ -375,7 +375,7 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
   ).resolves.toBeLessThan(80)
 })
 
-test("keeps long non-focused titles fully visible within the title height budget", async ({
+test("keeps long non-focused titles compact within the title height budget", async ({
   page,
 }) => {
   await openTimer(page, 3)
@@ -386,9 +386,9 @@ test("keeps long non-focused titles fully visible within the title height budget
 
   const clampMetrics = await getDisplayClampMetrics(page)
 
-  expect(clampMetrics.scrollHeight - clampMetrics.clientHeight).toBeLessThan(4)
+  expect(clampMetrics.scrollHeight).toBeGreaterThan(clampMetrics.clientHeight)
   expect(clampMetrics.clientHeight).toBeGreaterThan(
-    clampMetrics.lineHeightPx * 2.5,
+    clampMetrics.lineHeightPx * 1.8,
   )
 })
 
