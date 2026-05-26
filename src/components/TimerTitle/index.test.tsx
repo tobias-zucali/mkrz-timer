@@ -29,7 +29,11 @@ describe("TimerTitle", () => {
       <TimerTitle onChange={() => undefined} value="Sprint review" />,
     )
 
-    expect(screen.getByTestId("timer-title-text")).toHaveClass("text-5xl")
+    const shortTitle = screen.getByLabelText("Title")
+    expect(shortTitle).toHaveTextContent("Sprint review")
+    expect(shortTitle).toHaveStyle({
+      fontSize: "clamp(2.4rem, min(6.8vw, 6.8vh), 4.5rem)",
+    })
 
     unmount()
 
@@ -40,7 +44,13 @@ describe("TimerTitle", () => {
       />,
     )
 
-    expect(screen.getByTestId("timer-title-text")).toHaveClass("text-4xl")
+    const longTitle = screen.getByLabelText("Title")
+    expect(longTitle).toHaveTextContent(
+      "Quarterly planning retrospective and facilitator notes",
+    )
+    expect(longTitle).toHaveStyle({
+      fontSize: "clamp(2rem, min(5.8vw, 5.8vh), 3.75rem)",
+    })
   })
 
   it("normalizes typed and pasted line breaks into spaces", () => {
@@ -81,7 +91,7 @@ describe("TimerTitle", () => {
     expect(keyDownEvent.defaultPrevented).toBe(true)
   })
 
-  it("keeps long non-editing titles unclamped", () => {
+  it("keeps long non-editing titles fully visible", () => {
     renderWithIntl(
       <TimerTitle
         onChange={() => undefined}
@@ -89,8 +99,8 @@ describe("TimerTitle", () => {
       />,
     )
 
-    expect(screen.getByTestId("timer-title-text")).not.toHaveClass(
-      "line-clamp-2",
+    expect(screen.getByLabelText("Title").getAttribute("style")).not.toContain(
+      "max-height",
     )
   })
 

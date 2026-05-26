@@ -27,7 +27,9 @@ describe("FloatingTimerContent", () => {
     )
 
     const shortTitle = screen.getByTestId("floating-timer-title")
-    expect(shortTitle).toHaveClass("text-3xl")
+    expect(shortTitle).toHaveStyle({
+      fontSize: "clamp(2.4rem, min(6.8vw, 6.8vh), 4.5rem)",
+    })
 
     rerender(
       <FloatingTimerContent
@@ -37,10 +39,12 @@ describe("FloatingTimerContent", () => {
     )
 
     const longTitle = screen.getByTestId("floating-timer-title")
-    expect(longTitle).toHaveClass("text-2xl")
+    expect(longTitle).toHaveStyle({
+      fontSize: "clamp(2rem, min(5.8vw, 5.8vh), 3.75rem)",
+    })
   })
 
-  it("keeps floating titles unclamped", () => {
+  it("keeps floating titles fully visible", () => {
     render(
       <FloatingTimerContent
         {...baseProps}
@@ -48,9 +52,9 @@ describe("FloatingTimerContent", () => {
       />,
     )
 
-    expect(screen.getByTestId("floating-timer-title")).not.toHaveClass(
-      "line-clamp-2",
-    )
+    expect(
+      screen.getByTestId("floating-timer-title").getAttribute("style"),
+    ).not.toContain("max-height")
   })
 
   it("keeps the title area compact when no title is set", () => {

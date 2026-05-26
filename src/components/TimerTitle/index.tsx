@@ -2,8 +2,6 @@
 
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import {
-  isClampedTimerTitle,
-  getTimerTitleLayoutConfig,
   getTimerTitleBoxStyle,
   getTimerTitleFontStyle,
   getTimerTitleReservedMinHeight,
@@ -43,6 +41,27 @@ function updateTextareaHeight(textarea: HTMLTextAreaElement) {
   )}px`
 }
 
+function scheduleTextareaHeightSync(textarea: HTMLTextAreaElement) {
+  updateTextareaHeight(textarea)
+
+  const animationFrameIds = [
+    window.requestAnimationFrame(() => {
+      updateTextareaHeight(textarea)
+    }),
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        updateTextareaHeight(textarea)
+      })
+    }),
+  ]
+
+  return () => {
+    for (const animationFrameId of animationFrameIds) {
+      window.cancelAnimationFrame(animationFrameId)
+    }
+  }
+}
+
 function buildPastedTitleValue({
   currentValue,
   pastedText,
@@ -73,41 +92,30 @@ export default function TimerTitle({
   value: string
 }) {
   const t = useTranslations("TimerTitle")
-  const [hasEditedTitle, setHasEditedTitle] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const normalizedValue = normalizeTitle(value)
   const hasText = normalizedValue.trim().length > 0
-  const isClampedTitle = isClampedTimerTitle(normalizedValue)
   const titleFontStyle = getTimerTitleFontStyle({
     text: normalizedValue,
   })
   const titleSurfaceClassName =
     "box-border w-full rounded-3xl border border-transparent bg-transparent text-center font-bold tracking-tight"
   const titleBoxStyle = getTimerTitleBoxStyle()
-  const titleLayout = getTimerTitleLayoutConfig()
   const showEmptyAction = !hasText && !isFocused
   const showFocusedTextarea = isFocused
+  const shouldUseFilledTitleHeight = hasText || showFocusedTextarea
   const shouldReserveTitleSpace =
     reserveSpace || hasText || showFocusedTextarea || showEmptyAction
   const rootStyle = shouldReserveTitleSpace
     ? {
-        height: getTimerTitleReservedMinHeight({
-          hasText,
+        minHeight: getTimerTitleReservedMinHeight({
+          hasText: shouldUseFilledTitleHeight,
         }),
       }
     : undefined
-  const shouldClampDisplayTitle = isClampedTitle && !hasEditedTitle
-  const displayTitleStyle = shouldClampDisplayTitle
-    ? {
-        ...titleBoxStyle,
-        maxHeight: `${titleLayout.lineHeight * 2 + 0.36}em`,
-      }
-    : titleBoxStyle
-  const activeTextareaStyle = showFocusedTextarea
-    ? titleBoxStyle
-    : displayTitleStyle
+  const displayTitleStyle = titleBoxStyle
 
   useEffect(() => {
     if (disabled) {
@@ -124,16 +132,15 @@ export default function TimerTitle({
   }, [isFocused])
 
   useLayoutEffect(() => {
-    if (!hasText || !textareaRef.current) {
+    if (!textareaRef.current) {
       return
     }
 
-    updateTextareaHeight(textareaRef.current)
+    return scheduleTextareaHeightSync(textareaRef.current)
   }, [hasText, normalizedValue, showFocusedTextarea, titleFontStyle.fontSize])
 
   useLayoutEffect(() => {
     if (
-      !hasText ||
       !textareaRef.current ||
       !rootRef.current ||
       typeof ResizeObserver === "undefined"
@@ -142,34 +149,58 @@ export default function TimerTitle({
     }
 
     const textarea = textareaRef.current
-    let animationFrameId = 0
     const updateHeightAfterLayout = () => {
-      updateTextareaHeight(textarea)
-
-      animationFrameId = window.requestAnimationFrame(() => {
-        updateTextareaHeight(textarea)
-      })
+      return scheduleTextareaHeightSync(textarea)
     }
+    let cancelScheduledHeightSync = () => {}
 
     const observer = new ResizeObserver(() => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
-
-      updateHeightAfterLayout()
+      cancelScheduledHeightSync()
+      cancelScheduledHeightSync = updateHeightAfterLayout()
     })
 
     observer.observe(rootRef.current)
     observer.observe(textarea)
-    updateHeightAfterLayout()
+    cancelScheduledHeightSync = updateHeightAfterLayout()
 
     return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
+      cancelScheduledHeightSync()
       observer.disconnect()
     }
   }, [hasText, showFocusedTextarea, titleFontStyle.fontSize])
+
+  useEffect(() => {
+    if (
+      !textareaRef.current ||
+      typeof document === "undefined" ||
+      !("fonts" in document)
+    ) {
+      return
+    }
+
+    const { fonts } = document
+    const syncHeight = () => {
+      if (!textareaRef.current) {
+        return
+      }
+
+      return scheduleTextareaHeightSync(textareaRef.current)
+    }
+
+    let cancelScheduledHeightSync = syncHeight() ?? (() => {})
+    const handleFontLoadingDone = () => {
+      cancelScheduledHeightSync()
+      cancelScheduledHeightSync = syncHeight() ?? (() => {})
+    }
+
+    void fonts.ready.then(handleFontLoadingDone)
+    fonts.addEventListener("loadingdone", handleFontLoadingDone)
+
+    return () => {
+      cancelScheduledHeightSync()
+      fonts.removeEventListener("loadingdone", handleFontLoadingDone)
+    }
+  }, [normalizedValue, titleFontStyle.fontSize])
 
   if (disabled) {
     return (
@@ -204,7 +235,7 @@ export default function TimerTitle({
   return (
     <div
       ref={rootRef}
-      className="relative z-10 w-full overflow-visible"
+      className="relative z-10 w-full overflow-visible px-4 pt-2 pb-1"
       data-testid="timer-title"
       data-title-empty={hasText ? "false" : "true"}
       data-title-mode={
@@ -218,20 +249,17 @@ export default function TimerTitle({
         className={classNames(
           titleSurfaceClassName,
           "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-foreground/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-foreground/70",
-          showFocusedTextarea
-            ? "relative z-10"
-            : hasText
-              ? "relative z-10 cursor-text"
+          hasText
+            ? "relative z-10 cursor-text"
+            : showFocusedTextarea
+              ? "relative z-10"
               : "absolute inset-x-0 top-0 opacity-0",
           !showFocusedTextarea && !hasText && "pointer-events-none",
         )}
         data-testid="timer-title-input"
         maxLength={MAX_TITLE_LENGTH}
         onBlur={() => setIsFocused(false)}
-        onChange={(event) => {
-          setHasEditedTitle(true)
-          onChange(normalizeTitle(event.target.value))
-        }}
+        onChange={(event) => onChange(normalizeTitle(event.target.value))}
         onFocus={() => setIsFocused(true)}
         onKeyDown={(event) => {
           stopPropagation(event)
@@ -255,7 +283,6 @@ export default function TimerTitle({
             textarea.selectionStart ?? normalizedValue.length
           const selectionEnd = textarea.selectionEnd ?? selectionStart
 
-          setHasEditedTitle(true)
           onChange(
             buildPastedTitleValue({
               currentValue: normalizedValue,
@@ -265,12 +292,11 @@ export default function TimerTitle({
             }),
           )
         }}
-        readOnly={!showFocusedTextarea}
         ref={textareaRef}
         rows={1}
         spellCheck={false}
         style={{
-          ...activeTextareaStyle,
+          ...displayTitleStyle,
           ...titleFontStyle,
         }}
         value={normalizedValue}

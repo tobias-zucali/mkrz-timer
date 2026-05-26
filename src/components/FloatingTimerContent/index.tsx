@@ -50,12 +50,14 @@ export default function FloatingTimerContent({
     >
       <div
         className={classNames(
-          hasTitle && "relative z-10 shrink-0 overflow-visible"
+          hasTitle && "relative z-10 shrink-0 overflow-visible",
         )}
         style={{
-          height: hasTitle ? getTimerTitleReservedMinHeight({
-            hasText: true,
-          }) : undefined,
+          minHeight: hasTitle
+            ? getTimerTitleReservedMinHeight({
+                hasText: true,
+              })
+            : undefined,
         }}
       >
         {hasTitle ? (

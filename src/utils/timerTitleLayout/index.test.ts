@@ -3,17 +3,16 @@ import test from "node:test"
 
 import {
   getTimerTitleFontStyle,
-  getTimerTitleLayoutConfig,
+  getTimerTitleBoxStyle,
   LONG_TIMER_TITLE_LENGTH,
 } from "./index.ts"
 
-test("returns the main timer title class config", () => {
-  const layout = getTimerTitleLayoutConfig()
+test("returns unclamped title box sizing", () => {
+  const boxStyle = getTimerTitleBoxStyle()
 
-  assert.deepEqual(layout, {
-    lineHeight: 0.94,
-    maxVisibleLines: 4,
-  })
+  assert.equal(boxStyle.lineHeight, 0.94)
+  assert.equal(boxStyle.minHeight, "1.2999999999999998em")
+  assert.ok(!("maxHeight" in boxStyle))
 })
 
 test("uses the long-title font bucket only above the length threshold", () => {

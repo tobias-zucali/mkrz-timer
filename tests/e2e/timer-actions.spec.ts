@@ -154,27 +154,9 @@ async function getTitlePositionMetrics(page: Page) {
     }
 
     return {
-      display: toRect(displayTitle),
+      display: toRect(displayTitle ?? inputTitle),
       input: toRect(inputTitle),
       root: toRect(titleRoot),
-    }
-  })
-}
-
-async function getDisplayClampMetrics(page: Page) {
-  return page.getByTestId("timer-title-text").evaluate((node) => {
-    const element = node as HTMLElement
-    const computedStyle = window.getComputedStyle(element)
-    const lineHeightPx = Number.parseFloat(computedStyle.lineHeight) || 0
-    const paddingTopPx = Number.parseFloat(computedStyle.paddingTop) || 0
-    const paddingBottomPx = Number.parseFloat(computedStyle.paddingBottom) || 0
-
-    return {
-      clientHeight: element.clientHeight,
-      lineHeightPx,
-      paddingBottomPx,
-      paddingTopPx,
-      scrollHeight: element.scrollHeight,
     }
   })
 }
@@ -375,21 +357,13 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
   ).resolves.toBeLessThan(80)
 })
 
-test("keeps long non-focused titles compact within the title height budget", async ({
-  page,
-}) => {
+test("keeps long non-focused titles fully visible", async ({ page }) => {
   await openTimer(page, 3)
-  await setInlineTitle(
-    page,
-    "das ist eine sehr schoene und doch auch spannende loesung fuer einen absichtlich langen titel der auf jeden fall in eine dritte zeile umbrechen wuerde",
-  )
-
-  const clampMetrics = await getDisplayClampMetrics(page)
-
-  expect(clampMetrics.scrollHeight).toBeGreaterThan(clampMetrics.clientHeight)
-  expect(clampMetrics.clientHeight).toBeGreaterThan(
-    clampMetrics.lineHeightPx * 1.8,
-  )
+  const title = "das ist eine spannende loesung und auf jeden fall gut sichtbar"
+  await setInlineTitle(page, title)
+  const titleMetrics = await getTitleMetrics(page)
+  expect(titleMetrics.text).toBe(title)
+  expect(titleMetrics.rootHeight).toBeGreaterThan(80)
 })
 
 test("keeps long wrapped titles readable in fullscreen mode", async ({
@@ -566,52 +540,6 @@ test(
         fullPage: true,
         message: `${name} layout should keep the long title bucket readable`,
         name: `timer-layout-${name}-long-title.png`,
-      })
-
-      await context.close()
-    }
-  },
-)
-
-test(
-  "matches clamped-title layouts across form factors and orientations",
-  { tag: "@visual" },
-  async ({ baseURL, browser }) => {
-    test.slow()
-
-    const title =
-      "das ist eine sehr schoene und doch auch spannende loesung fuer einen absichtlich langen titel der auf jeden fall in eine dritte zeile umbrechen wuerde"
-    for (const { name, contextOptions } of timerVisualFormFactors) {
-      const context = await browser.newContext(contextOptions)
-      const devicePage = await context.newPage()
-
-      await devicePage.goto(
-        baseURL
-          ? new URL(buildTimerUrl({ title }), baseURL).toString()
-          : buildTimerUrl({ title }),
-      )
-      await expect(
-        devicePage.getByRole("button", { name: "START" }),
-      ).toBeVisible()
-      await expectMainTimerContentToFitViewport(devicePage)
-
-      const clampMetrics = await getDisplayClampMetrics(devicePage)
-      const expectedTwoLineHeight =
-        clampMetrics.lineHeightPx * 2 +
-        clampMetrics.paddingTopPx +
-        clampMetrics.paddingBottomPx
-
-      expect(clampMetrics.scrollHeight).toBeGreaterThan(
-        clampMetrics.clientHeight,
-      )
-      expect(clampMetrics.clientHeight).toBeLessThanOrEqual(
-        Math.ceil(expectedTwoLineHeight) + 1,
-      )
-
-      await expectScreenshotWithoutDebugInfo(devicePage, {
-        fullPage: true,
-        message: `${name} layout should clamp long titles without a visible third row`,
-        name: `timer-layout-${name}-clamped-title.png`,
       })
 
       await context.close()

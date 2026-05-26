@@ -152,9 +152,7 @@ export default function Timer({
         value={title}
         onChange={(value) => handleChange("title", value)}
       />
-      <div
-        className="relative flex h-[10em] grow items-center justify-center p-[1em]"
-      >
+      <div className="relative flex h-[10em] grow items-center justify-center p-[1em]">
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
         />

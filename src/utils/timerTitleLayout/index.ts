@@ -1,24 +1,14 @@
 import { getResponsiveClamp } from "@/utils/responsiveClamp"
 
 export const LONG_TIMER_TITLE_LENGTH = 32
-export const CLAMPED_TIMER_TITLE_LENGTH = 56
 export const TIMER_TITLE_TEXT_CLASS_NAME =
-  "m-0 box-border w-full overflow-hidden text-center font-bold tracking-tight [overflow-wrap:anywhere]"
-
-export type TimerTitleLayoutConfig = {
-  lineHeight: number
-  maxVisibleLines: number
-}
+  "m-0 box-border w-full text-center font-bold tracking-tight [overflow-wrap:anywhere]"
 
 type TimerTitleFontConfig = {
   longTitle: string
   shortTitle: string
 }
-
-const TIMER_TITLE_LAYOUT_CONFIG: TimerTitleLayoutConfig = {
-  lineHeight: 0.94,
-  maxVisibleLines: 4,
-}
+const TIMER_TITLE_LINE_HEIGHT = 0.94
 
 const timerTitleFontSizes: TimerTitleFontConfig = {
   longTitle: getResponsiveClamp({
@@ -48,21 +38,13 @@ const TIMER_TITLE_BOX_SPACING = {
   verticalPaddingEm: 0.18,
 }
 
-export function getTimerTitleLayoutConfig() {
-  return TIMER_TITLE_LAYOUT_CONFIG
-}
-
 export function getTimerTitleBoxStyle() {
-  const layout = getTimerTitleLayoutConfig()
   const spacing = TIMER_TITLE_BOX_SPACING
 
   return {
     boxSizing: "border-box" as const,
-    lineHeight: layout.lineHeight,
-    maxHeight: `${
-      layout.maxVisibleLines * layout.lineHeight + spacing.verticalPaddingEm * 2
-    }em`,
-    minHeight: `${layout.lineHeight + spacing.verticalPaddingEm * 2}em`,
+    lineHeight: TIMER_TITLE_LINE_HEIGHT,
+    minHeight: `${TIMER_TITLE_LINE_HEIGHT + spacing.verticalPaddingEm * 2}em`,
     paddingBottom: `${spacing.verticalPaddingEm}em`,
     paddingLeft: `${spacing.horizontalPaddingEm}em`,
     paddingRight: `${spacing.horizontalPaddingEm}em`,
@@ -90,8 +72,4 @@ export function getTimerTitleFontStyle({ text }: { text: string }) {
 
 export function isLongTimerTitle(text: string) {
   return text.trim().length > LONG_TIMER_TITLE_LENGTH
-}
-
-export function isClampedTimerTitle(text: string) {
-  return text.trim().length > CLAMPED_TIMER_TITLE_LENGTH
 }
