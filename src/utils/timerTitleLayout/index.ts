@@ -52,11 +52,7 @@ export function getTimerTitleBoxStyle() {
   }
 }
 
-export function getTimerTitleReservedHeight({
-  hasText,
-}: {
-  hasText: boolean
-}) {
+export function getTimerTitleReservedHeight({ hasText }: { hasText: boolean }) {
   return hasText
     ? TIMER_TITLE_BOX_SPACING.reservedHeight
     : TIMER_TITLE_BOX_SPACING.emptyReservedHeight

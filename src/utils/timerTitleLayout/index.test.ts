@@ -12,7 +12,7 @@ test("returns unclamped title box sizing", () => {
   const boxStyle = getTimerTitleBoxStyle()
 
   assert.equal(boxStyle.lineHeight, 0.94)
-  assert.equal(boxStyle.height, "1.2999999999999998em")
+  assert.equal(boxStyle.minHeight, "1.2999999999999998em")
   assert.ok(!("maxHeight" in boxStyle))
 })
 
