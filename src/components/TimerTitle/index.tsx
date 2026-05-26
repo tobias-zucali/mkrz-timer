@@ -4,7 +4,7 @@ import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import {
   getTimerTitleBoxStyle,
   getTimerTitleFontStyle,
-  getTimerTitleReservedMinHeight,
+  getTimerTitleReservedHeight,
   TIMER_TITLE_TEXT_CLASS_NAME,
 } from "@/utils/timerTitleLayout"
 import classNames from "classnames"
@@ -110,7 +110,7 @@ export default function TimerTitle({
     reserveSpace || hasText || showFocusedTextarea || showEmptyAction
   const rootStyle = shouldReserveTitleSpace
     ? {
-        minHeight: getTimerTitleReservedMinHeight({
+        height: getTimerTitleReservedHeight({
           hasText: shouldUseFilledTitleHeight,
         }),
       }

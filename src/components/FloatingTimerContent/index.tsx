@@ -6,7 +6,7 @@ import { getResponsiveClamp } from "@/utils/responsiveClamp"
 import {
   getTimerTitleBoxStyle,
   getTimerTitleFontStyle,
-  getTimerTitleReservedMinHeight,
+  getTimerTitleReservedHeight,
   TIMER_TITLE_TEXT_CLASS_NAME,
 } from "@/utils/timerTitleLayout"
 import classNames from "classnames"
@@ -53,8 +53,8 @@ export default function FloatingTimerContent({
           hasTitle && "relative z-10 shrink-0 overflow-visible",
         )}
         style={{
-          minHeight: hasTitle
-            ? getTimerTitleReservedMinHeight({
+          height: hasTitle
+            ? getTimerTitleReservedHeight({
                 hasText: true,
               })
             : undefined,

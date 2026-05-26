@@ -4,6 +4,7 @@ import test from "node:test"
 import {
   getTimerTitleFontStyle,
   getTimerTitleBoxStyle,
+  getTimerTitleReservedHeight,
   LONG_TIMER_TITLE_LENGTH,
 } from "./index.ts"
 
@@ -11,8 +12,19 @@ test("returns unclamped title box sizing", () => {
   const boxStyle = getTimerTitleBoxStyle()
 
   assert.equal(boxStyle.lineHeight, 0.94)
-  assert.equal(boxStyle.minHeight, "1.2999999999999998em")
+  assert.equal(boxStyle.height, "1.2999999999999998em")
   assert.ok(!("maxHeight" in boxStyle))
+})
+
+test("returns the reserved min-height clamp for empty and populated titles", () => {
+  assert.equal(
+    getTimerTitleReservedHeight({ hasText: false }),
+    "clamp(2.75rem, min(5.5vw, 5.5vh), 3.25rem)",
+  )
+  assert.equal(
+    getTimerTitleReservedHeight({ hasText: true }),
+    "clamp(2.6rem, min(7vw, 7vh), 4.1rem)",
+  )
 })
 
 test("uses the long-title font bucket only above the length threshold", () => {

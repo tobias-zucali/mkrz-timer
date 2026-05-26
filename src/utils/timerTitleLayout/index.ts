@@ -24,12 +24,12 @@ const timerTitleFontSizes: TimerTitleFontConfig = {
 }
 
 const TIMER_TITLE_BOX_SPACING = {
-  emptyReservedMinHeight: getResponsiveClamp({
+  emptyReservedHeight: getResponsiveClamp({
     factor: 5.5,
     max: 3.25,
     min: 2.75,
   }),
-  reservedMinHeight: getResponsiveClamp({
+  reservedHeight: getResponsiveClamp({
     factor: 7,
     max: 4.1,
     min: 2.6,
@@ -52,14 +52,14 @@ export function getTimerTitleBoxStyle() {
   }
 }
 
-export function getTimerTitleReservedMinHeight({
+export function getTimerTitleReservedHeight({
   hasText,
 }: {
   hasText: boolean
 }) {
   return hasText
-    ? TIMER_TITLE_BOX_SPACING.reservedMinHeight
-    : TIMER_TITLE_BOX_SPACING.emptyReservedMinHeight
+    ? TIMER_TITLE_BOX_SPACING.reservedHeight
+    : TIMER_TITLE_BOX_SPACING.emptyReservedHeight
 }
 
 export function getTimerTitleFontStyle({ text }: { text: string }) {
