@@ -119,6 +119,14 @@ The relay owns:
 - relay implementation: [src/server/relay/index.ts](../src/server/relay/index.ts)
 - relay session store: [src/server/remoteSession/sessionStore.ts](../src/server/remoteSession/sessionStore.ts)
 
+## Testing Strategy
+
+- Keep browser coverage focused on role separation, route behavior, synchronized timer UX, recovery UX, and other outcomes the user can actually observe.
+- Prefer unit or server-safe tests for protocol validation, merge/reconciliation branches, malformed payload handling, and other non-visual relay logic.
+- For relay-backed browser coverage, default to one control client plus one viewer/client unless the scenario specifically needs more participants.
+- Treat relay debug state and participant-count surfaces as diagnostics; do not make exact intermediate cluster timing the primary pass condition in e2e.
+- Put multi-client, reconnect, offline, and PiP coverage in the isolated remote Playwright lane so those tests do not destabilize the default parallel local lane.
+
 ## Maintenance Decision
 
 The relay/session boilerplate is intentionally being reduced with **internal abstractions on top of `ws`**, not by migrating to a new realtime framework.

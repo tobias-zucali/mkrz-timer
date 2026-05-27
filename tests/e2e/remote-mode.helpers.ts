@@ -903,28 +903,33 @@ export async function waitForRemoteCluster(
     timeout?: number
   },
 ) {
-  void mainConnectionCount
   const expectedConnectedPages = clientCount + 1
+  const expectedMainConnectionCount = mainConnectionCount + 1
 
   await expect
     .poll(
       async () => {
         const states = await Promise.all(pages.map(getPeerDebugState))
+        const connectedStates = states.filter(
+          ({ remoteState, sessionId }) =>
+            sessionId.length > 0 &&
+            remoteState !== "local" &&
+            remoteState !== "liveEnded",
+        )
+        const sessionIds = connectedStates.map(({ sessionId }) => sessionId)
+        const mainConnectionCountValue = Number.parseInt(
+          states[0]?.connectionCount ?? "",
+          10,
+        )
 
         return {
-          connectedPages: states.filter(
-            ({ remoteState, sessionId }) =>
-              sessionId.length > 0 &&
-              remoteState !== "local" &&
-              remoteState !== "liveEnded",
-          ).length,
-          readyParticipantViews: states.filter(
-            ({ connectionCount, remoteState, sessionId }) =>
-              sessionId.length > 0 &&
-              remoteState !== "local" &&
-              remoteState !== "liveEnded" &&
-              Number(connectionCount) >= expectedConnectedPages,
-          ).length,
+          connectedPages: connectedStates.length,
+          mainConnectionReady:
+            Number.isFinite(mainConnectionCountValue) &&
+            mainConnectionCountValue >= expectedMainConnectionCount,
+          sharedSessionReady:
+            sessionIds.length === expectedConnectedPages &&
+            new Set(sessionIds).size === 1,
         }
       },
       {
@@ -934,6 +939,7 @@ export async function waitForRemoteCluster(
     )
     .toEqual({
       connectedPages: expectedConnectedPages,
-      readyParticipantViews: expectedConnectedPages,
+      mainConnectionReady: true,
+      sharedSessionReady: true,
     })
 }

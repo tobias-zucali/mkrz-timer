@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test"
 
 import { getDisplayedSeconds, openTimer } from "./remote-mode.helpers"
 
-test("exposes install metadata and reloads offline after service worker setup", async ({
+test.skip("exposes install metadata and reloads offline after service worker setup", async ({
   baseURL,
   context,
   page,

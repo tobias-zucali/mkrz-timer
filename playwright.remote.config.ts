@@ -2,11 +2,15 @@ import { defineConfig, devices } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: ["**/remote-*.spec.ts"],
-  fullyParallel: true,
-  workers: 2,
+  testMatch: ["**/remote-*.spec.ts"],
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never", outputFolder: "playwright-report-remote" }],
+  ],
+  outputDir: "test-results-remote",
   use: {
     baseURL: "http://127.0.0.1:3100",
     trace: "on-first-retry",

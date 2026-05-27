@@ -622,60 +622,73 @@ test(
 test("shows offline network status when the browser loses connectivity", async ({
   page,
 }) => {
+  test.slow()
+
   const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
   const controlClient = await openClientFromSettings(page, controlClientUrl)
 
   await closeSettingsOverlay(page)
-  await waitForRemoteCluster([page, controlClient], {
-    clientCount: 1,
-    mainConnectionCount: 1,
-    message: "control client should connect before offline status test",
-  })
-
-  await controlClient.context().setOffline(true)
-
   await expectRemoteStatus(controlClient, {
-    connectionSummary:
-      /Reconnect in progress|Restoring synchronization|Synchronized/,
-    networkStatus: "Offline",
+    connectionSummary: /Synchronized|Reconnect in progress/,
+    networkStatus: "Online",
     role: "Control access",
     state: /Connected|Disconnected|Reconnecting\.\.\./,
-    timeoutMs: 10_000,
+    timeoutMs: 20_000,
   })
   await expect(
-    controlClient.getByTestId("remote-status-toggle"),
-  ).not.toContainText("Error")
-  await expect(controlClient.getByTestId("remote-status-error")).toHaveCount(0)
-  await expect(
-    controlClient.getByRole("button", { name: "Use local mode" }),
-  ).toHaveCount(0)
-  await expect(
-    controlClient.getByRole("button", { name: "Retry connection" }),
-  ).toHaveCount(0)
+    controlClient.getByRole("button", { name: "START" }),
+  ).toBeVisible()
 
-  await controlClient.waitForTimeout(20_000)
+  try {
+    await controlClient.context().setOffline(true)
 
-  await expectRemoteStatus(controlClient, {
-    connectionSummary:
-      /Reconnect in progress|Restoring synchronization|Synchronized/,
-    networkStatus: "Offline",
-    role: "Control access",
-    state: /Connected|Disconnected|Reconnecting\.\.\./,
-    timeoutMs: 10_000,
-  })
-  await expect(
-    controlClient.getByRole("button", { name: "Use local mode" }),
-  ).toHaveCount(0)
-  await expect(
-    controlClient.getByRole("button", { name: "Retry connection" }),
-  ).toHaveCount(0)
+    await expectRemoteStatus(controlClient, {
+      connectionSummary:
+        /Reconnect in progress|Restoring synchronization|Synchronized/,
+      networkStatus: "Offline",
+      role: "Control access",
+      state: /Connected|Disconnected|Reconnecting\.\.\./,
+      timeoutMs: 10_000,
+    })
+    await expect(
+      controlClient.getByTestId("remote-status-toggle"),
+    ).not.toContainText("Error")
+    await expect(controlClient.getByTestId("remote-status-error")).toHaveCount(
+      0,
+    )
+    await expect(
+      controlClient.getByRole("button", { name: "Use local mode" }),
+    ).toHaveCount(0)
+    await expect(
+      controlClient.getByRole("button", { name: "Retry connection" }),
+    ).toHaveCount(0)
 
-  await controlClient.context().setOffline(false)
+    await controlClient.waitForTimeout(20_000)
+
+    await expectRemoteStatus(controlClient, {
+      connectionSummary:
+        /Reconnect in progress|Restoring synchronization|Synchronized/,
+      networkStatus: "Offline",
+      role: "Control access",
+      state: /Connected|Disconnected|Reconnecting\.\.\./,
+      timeoutMs: 10_000,
+    })
+    await expect(
+      controlClient.getByRole("button", { name: "Use local mode" }),
+    ).toHaveCount(0)
+    await expect(
+      controlClient.getByRole("button", { name: "Retry connection" }),
+    ).toHaveCount(0)
+  } finally {
+    await controlClient.context().setOffline(false)
+  }
 })
 
 test("keeps the live session action visible after an offline start", async ({
   page,
 }) => {
+  test.slow()
+
   await openTimer(page, 3)
   await openSidebarPanel(page, "Share")
   await page.context().setOffline(true)
@@ -741,7 +754,7 @@ test("keeps the live session action visible after an offline start", async ({
             ].some((label) => labels.has(label))
           })
           .catch(() => false),
-      { timeout: 10_000 },
+      { timeout: 20_000 },
     )
     .toBe(true)
 

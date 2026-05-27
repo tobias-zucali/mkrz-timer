@@ -49,6 +49,7 @@ pnpm dev:relay
 pnpm test
 pnpm test:ci
 pnpm test:full
+pnpm test:e2e:remote
 pnpm build
 pnpm build:full
 pnpm build:docker
@@ -90,7 +91,7 @@ pnpm build:docker
 ## Prototype Mode
 
 - If you explicitly ask for prototype mode, the working agreement changes temporarily:
-- during prototype mode, only `pnpm lint` is required after changes so fast UI or behavior iteration stays cheap
+- during prototype mode, validation commands can be skipped while fast UI or behavior iteration is still in progress
 - documentation updates, test updates, and the full validation lane can wait until you explicitly ask to end prototype mode or finish the work
 - once prototype mode ends, the expectation returns to updating the relevant docs and tests and then running the full required validation lane
 
@@ -109,24 +110,13 @@ See [docs/development.md](./docs/development.md) for:
 
 ## Testing
 
-- `pnpm lint`: runs ESLint and TypeScript typechecking without touching formatting
-- `pnpm lint:fix`: applies ESLint autofixes, then reruns typechecking for validation
-- `pnpm format`: checks Prettier formatting only
-- `pnpm format:fix`: rewrites formatting only
-- `pnpm test:unit`: runs plain-Node `.test.ts` coverage for pure logic and server-safe code
-- `pnpm test:components`: runs Vitest/jsdom `.test.tsx` coverage for React component behavior
-- `pnpm test`: lint + unit tests + component tests + smoke e2e
-- `pnpm test:ci`: lint + unit tests + component tests + CI-safe e2e
-- `pnpm test:full`: lint + unit tests + component tests + full e2e
-- `pnpm build`: builds the app only
-- `pnpm build:full`: runs `pnpm test:full` first, then builds the app
-- `pnpm build:docker`: runs the full validated app build, then `docker compose build`
+- `pnpm test`: default validation, including smoke browser coverage only
+- `pnpm test:ci`: non-visual browser coverage across the local and remote Playwright lanes
+- `pnpm test:full`: full browser coverage across the local and remote Playwright lanes
+- `pnpm test:e2e:remote`: serial relay-backed browser coverage for multi-client, reconnect, offline, and PiP scenarios
+- `pnpm test:e2e:visual`: visual browser coverage
 
-Playwright lane intent:
-
-- `@smoke`: minimum browser coverage that should gate the default local `pnpm test` lane
-- `@visual`: screenshot and layout-regression coverage run via `pnpm test:e2e:visual` and excluded from `pnpm test:ci`
-- untagged e2e tests: broader behavioral coverage reserved for `pnpm test:full`
+Detailed lane definitions and test-authoring rules live in [docs/development.md](./docs/development.md).
 
 ## Deployment
 

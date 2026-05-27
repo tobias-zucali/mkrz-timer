@@ -38,50 +38,13 @@ This file captures durable repo conventions for agents. For product/setup contex
 - When remote-mode behavior changes, update both docs and Playwright coverage in the same change.
 - Future sharing or session features must preserve strict separation between readonly and control capabilities.
 
-## Local Dev / Test Lanes
+## Testing
 
-- Local validation lanes:
-  - `pnpm lint`: static validation only
-  - `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code, including component-adjacent logic helpers that do not need jsdom
-  - `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
-- Default Playwright lane:
-  - app: `http://127.0.0.1:3100`
-  - relay health: `http://127.0.0.1:9100/health`
-  - relay websocket: `ws://127.0.0.1:9100/ws`
-- Agent lane:
-  - app: `http://127.0.0.1:3300`
-  - relay health: `http://127.0.0.1:9200/health`
-  - relay websocket: `ws://127.0.0.1:9200/ws`
-- Use `pnpm dev:relay` when you need the relay outside Playwright.
-- Use `pnpm agent:serve:relay` for the tracked agent relay.
-- `pnpm agent:test` is the canonical agent Playwright entrypoint.
-- `pnpm agent:test:attach` is the attach-mode Playwright entrypoint.
-- `pnpm agent:test:full` runs the full tracked agent lane.
-- Use `pnpm agent:status` to inspect tracked processes and port ownership.
-- Use `pnpm agent:stop` to stop only tracked lane services.
-
-## Playwright Tags
-
-- Tag smoke coverage with `@smoke` so it is exercised by `pnpm test` and `pnpm agent:test`.
-- Tag visual-regression coverage with `@visual` so it is exercised by `pnpm test:e2e:visual` and excluded from `pnpm test:ci`.
-- Leave broader end-to-end coverage untagged unless it belongs in a filtered lane.
-- Keep `@smoke` limited to the minimum browser flows that should gate the default local and agent lanes.
-- Keep `@visual` limited to screenshot or layout-regression coverage; broader behavioral assertions should stay untagged unless they also need visual gating.
-- When adding or changing remote-mode behavior, make sure the affected Playwright coverage carries the right tags for the intended lane.
-
-## Commands
-
-- `pnpm lint`: ESLint plus typecheck validation
-- `pnpm lint:fix`: ESLint autofixes plus a follow-up typecheck
-- `pnpm format:fix`: Prettier rewrites only
-- `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code
-- `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
-- `pnpm test`: lint, unit tests, component tests, and Playwright tests tagged `@smoke`
-- `pnpm test:ci`: lint, unit tests, component tests, and Playwright tests except those tagged `@visual`
-- `pnpm test:full`: lint, unit tests, component tests, and full e2e
-- `pnpm build`: production app build only
-- `pnpm build:full`: `pnpm test:full` plus production app build
-- `pnpm build:docker`: `pnpm build:full` plus `docker compose build`
+- `docs/development.md` is the source of truth for test lanes, Playwright tagging, agent-lane commands, and browser-test authoring rules.
+- Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
+- Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.
+- Multi-client relay coverage belongs in the isolated remote Playwright lane, not the default local lane.
+- If a browser test must be skipped for instability, keep the skip narrow, document the specific reason inline, and treat it as temporary containment.
 
 ## Deployment
 

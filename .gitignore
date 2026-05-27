@@ -14,8 +14,12 @@
 /coverage
 /playwright-report
 /playwright-report-agent
+/playwright-report-agent-remote
+/playwright-report-remote
 /test-results
 /test-results-agent
+/test-results-agent-remote
+/test-results-remote
 
 # next.js
 /.next/

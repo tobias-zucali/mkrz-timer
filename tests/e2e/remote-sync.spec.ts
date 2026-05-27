@@ -42,33 +42,33 @@ async function openIsolatedClient(
 }
 
 test(
-  "syncs start and pause actions between main and three clients",
+  "syncs start and pause actions between main and one control client",
   { tag: "@smoke" },
   async ({ page }) => {
     test.setTimeout(60_000)
 
     const clientUrl = await enableRemoteMode(page)
-    const clients = await openClientsFromSettings(page, clientUrl, 3)
+    const controlClient = await openClientFromSettings(page, clientUrl)
 
     await closeSettingsOverlay(page)
 
-    await waitForRemoteCluster([page, ...clients], {
-      clientCount: 3,
-      mainConnectionCount: 3,
+    await waitForRemoteCluster([page, controlClient], {
+      clientCount: 1,
+      mainConnectionCount: 1,
       message: "remote cluster should stabilize before sync smoke actions",
     })
 
     await page.getByRole("button", { name: "START" }).click()
-    await Promise.all([page, ...clients].map(expectTimerRunning))
+    await Promise.all([page, controlClient].map(expectTimerRunning))
 
     await page.getByRole("button", { name: "PAUSE" }).click()
-    await Promise.all([page, ...clients].map(expectTimerPaused))
+    await Promise.all([page, controlClient].map(expectTimerPaused))
 
-    await clients[0].getByRole("button", { name: "START" }).click()
-    await Promise.all([page, ...clients].map(expectTimerRunning))
+    await controlClient.getByRole("button", { name: "START" }).click()
+    await Promise.all([page, controlClient].map(expectTimerRunning))
 
-    await clients[0].getByRole("button", { name: "PAUSE" }).click()
-    await Promise.all([page, ...clients].map(expectTimerPaused))
+    await controlClient.getByRole("button", { name: "PAUSE" }).click()
+    await Promise.all([page, controlClient].map(expectTimerPaused))
   },
 )
 
