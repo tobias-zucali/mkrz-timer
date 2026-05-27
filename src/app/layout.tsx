@@ -33,8 +33,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang={defaultAppLocale} className="h-full">
+    <html lang={defaultAppLocale} className="h-full" suppressHydrationWarning>
       <head>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/first-paint-theme.js" />
         {/* Favicon for general browsers */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

@@ -86,6 +86,15 @@ function buildTimerUrl({
   return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
 }
 
+function toComputedRgb(hexColor: string) {
+  const normalized = hexColor.replace(/^#/, "")
+  const red = Number.parseInt(normalized.slice(0, 2), 16)
+  const green = Number.parseInt(normalized.slice(2, 4), 16)
+  const blue = Number.parseInt(normalized.slice(4, 6), 16)
+
+  return `rgb(${red}, ${green}, ${blue})`
+}
+
 async function getTitleMetrics(page: Page) {
   const titleRoot = page.getByTestId("timer-title")
   const titleText = titleRoot.getByTestId("timer-title-text")
@@ -117,6 +126,23 @@ async function getTitleMetrics(page: Page) {
       fontSize: Number.parseFloat(computedStyle.fontSize),
       rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
       text: (node as HTMLTextAreaElement).value,
+    }
+  })
+}
+
+async function getTitleOverflowMetrics(page: Page) {
+  return page.evaluate(() => {
+    const inputTitle = document.querySelector(
+      '[data-testid="timer-title-input"]',
+    ) as HTMLTextAreaElement | null
+
+    if (!inputTitle) {
+      return null
+    }
+
+    return {
+      clientHeight: inputTitle.clientHeight,
+      scrollHeight: inputTitle.scrollHeight,
     }
   })
 }
@@ -236,6 +262,73 @@ async function expectMainTimerContentToFitViewport(page: Page) {
     (metrics.display?.bottom ?? 0) <= (metrics.controls?.top ?? 0) + 8,
   ).toBe(true)
 }
+
+test("applies custom URL colors on the first load without waiting for interaction", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    ;(
+      window as typeof window & {
+        __themeSamples?: Array<{
+          background: string
+          foreground: string
+          primary: string
+        }>
+      }
+    ).__themeSamples = []
+
+    document.addEventListener("DOMContentLoaded", () => {
+      requestAnimationFrame(() => {
+        const rootStyle = window.getComputedStyle(document.documentElement)
+        const bodyStyle = window.getComputedStyle(document.body)
+
+        ;(
+          window as typeof window & {
+            __themeSamples?: Array<{
+              background: string
+              foreground: string
+              primary: string
+            }>
+          }
+        ).__themeSamples?.push({
+          background: bodyStyle.backgroundColor,
+          foreground: bodyStyle.color,
+          primary: rootStyle.getPropertyValue("--primary").trim(),
+        })
+      })
+    })
+  })
+
+  await page.goto(
+    buildTimerUrl({
+      backgroundColor: "112233",
+      foregroundColor: "ddeeff",
+      primaryColor: "d61f69",
+      seconds: 60,
+      title: "First paint",
+    }),
+  )
+
+  const themeSamples = await page.evaluate(() => {
+    return (
+      window as typeof window & {
+        __themeSamples?: Array<{
+          background: string
+          foreground: string
+          primary: string
+        }>
+      }
+    ).__themeSamples
+  })
+
+  expect(themeSamples).toEqual([
+    {
+      background: toComputedRgb("#112233"),
+      foreground: toComputedRgb("#ddeeff"),
+      primary: "214 31 105",
+    },
+  ])
+})
 
 const durationCases = [
   { minutes: "00", seconds: "05", totalSeconds: 5 },
@@ -362,8 +455,13 @@ test("keeps long non-focused titles fully visible", async ({ page }) => {
   const title = "das ist eine spannende loesung und auf jeden fall gut sichtbar"
   await setInlineTitle(page, title)
   const titleMetrics = await getTitleMetrics(page)
+  const titleOverflowMetrics = await getTitleOverflowMetrics(page)
   expect(titleMetrics.text).toBe(title)
-  expect(titleMetrics.rootHeight).toBeGreaterThan(80)
+  expect(titleOverflowMetrics).not.toBeNull()
+  expect(
+    (titleOverflowMetrics?.scrollHeight ?? 0) -
+      (titleOverflowMetrics?.clientHeight ?? 0),
+  ).toBeLessThanOrEqual(2)
 })
 
 test("keeps long wrapped titles readable in fullscreen mode", async ({

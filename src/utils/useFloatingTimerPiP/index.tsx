@@ -116,6 +116,7 @@ export default function useFloatingTimerPiP({
 }): FloatingTimerData {
   const t = useTranslations()
   const pipRootRef = useRef<Root | null>(null)
+  const pipRootMountedRef = useRef(false)
   const pipWindowRef = useRef<DocumentPictureInPictureWindow | null>(null)
   const pipCloseHandlerRef = useRef<(() => void) | null>(null)
 
@@ -125,7 +126,19 @@ export default function useFloatingTimerPiP({
   const [isOpen, setIsOpen] = useState(false)
 
   const renderPiPWindow = useCallback(() => {
-    pipRootRef.current?.render(
+    const pipRoot = pipRootRef.current
+    const pipWindow = pipWindowRef.current
+
+    if (
+      !pipRoot ||
+      !pipRootMountedRef.current ||
+      !pipWindow ||
+      pipWindow.closed
+    ) {
+      return
+    }
+
+    pipRoot.render(
       <FloatingTimerContent
         backgroundColor={state.backgroundColor}
         elapsedPercentage={state.elapsedPercentage}
@@ -146,6 +159,7 @@ export default function useFloatingTimerPiP({
     }
 
     pipCloseHandlerRef.current = null
+    pipRootMountedRef.current = false
     pipRootRef.current?.unmount()
     pipRootRef.current = null
     pipWindowRef.current = null
@@ -186,6 +200,7 @@ export default function useFloatingTimerPiP({
       pipDocument.body.appendChild(container)
 
       pipRootRef.current = createRoot(container)
+      pipRootMountedRef.current = true
       pipWindowRef.current = pipWindow
 
       const handlePageHide = () => {
