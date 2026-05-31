@@ -27,6 +27,7 @@ import usePromoteHostControlRoute from "@/utils/timerPage/usePromoteHostControlR
 import useRemoteSessionDialogs from "@/utils/timerPage/useRemoteSessionDialogs"
 import useSessionDiagnostics from "@/utils/timerPage/useSessionDiagnostics"
 import useTimerPageRemoteSession from "@/utils/timerPage/useTimerPageRemoteSession"
+import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useParams from "@/utils/useParams"
 import useTimer, { type TimerState } from "@/utils/useTimer"
@@ -41,6 +42,7 @@ export default function TimerPage() {
 
 function TimerApp() {
   const t = useTranslations("TimerPage.page")
+  const tAppShell = useTranslations("AppShell")
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
   const nextPathname = usePathname()
@@ -48,7 +50,7 @@ function TimerApp() {
     typeof window === "undefined" ? nextPathname : window.location.pathname
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
-  const { params } = paramData
+  const { pageTitle, params } = paramData
   const { title, bg, fg, pc } = params
   const syncParams = params
   const syncParamsRef = useRef<SyncParams>(syncParams)
@@ -294,6 +296,13 @@ function TimerApp() {
     setState,
     syncParamsRef,
   })
+
+  useEffect(() => {
+    document.title = buildDocumentTitle({
+      appTitle: tAppShell("metadata.title"),
+      pageTitle,
+    })
+  }, [pageTitle, tAppShell])
 
   useEffect(() => {
     if (!pendingTimerParamPatch) {
