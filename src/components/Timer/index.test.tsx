@@ -21,12 +21,16 @@ const timerStub = {
 
 const renderTimer = ({
   activeIndex = 0,
+  isReadonly = false,
   onSelectSequenceRow,
   rows = [buildDefaultTimerSequenceRow()],
+  timer = timerStub,
 }: {
   activeIndex?: number
+  isReadonly?: boolean
   onSelectSequenceRow?: (rowIndex: number) => void
   rows?: ReturnType<typeof buildRows>
+  timer?: ReturnType<typeof useTimer>
 } = {}) => {
   const handleChange = vi.fn()
   const handleTimeBlur = vi.fn()
@@ -36,9 +40,10 @@ const renderTimer = ({
       activeIndex={activeIndex}
       handleChange={handleChange}
       handleTimeBlur={handleTimeBlur}
+      isReadonly={isReadonly}
       onSelectSequenceRow={onSelectSequenceRow}
       rows={rows}
-      timer={timerStub}
+      timer={timer}
       title="Agenda"
     />,
   )
@@ -110,5 +115,24 @@ describe("Timer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Step 2: Q&A" }))
 
     expect(onSelectSequenceRow).toHaveBeenCalledWith(1)
+  })
+
+  it("renders a semantic timer readout for readonly and started states", () => {
+    renderTimer({
+      isReadonly: true,
+      timer: {
+        ...timerStub,
+        isPaused: false,
+        isStarted: true,
+      } as ReturnType<typeof useTimer>,
+    })
+
+    expect(
+      screen.getByRole("timer", {
+        name: "View only. Remaining time. 1 minute",
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("spinbutton", { name: "Minutes" })).toBeNull()
+    expect(screen.queryByRole("spinbutton", { name: "Seconds" })).toBeNull()
   })
 })

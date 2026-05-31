@@ -33,7 +33,9 @@ async function openIsolatedClient(
   const context = await browser.newContext()
   const client = await context.newPage()
   await client.goto(clientUrl)
-  await expect(client.getByTestId("remote-status")).toHaveCount(1)
+  await expect(
+    client.getByRole("button", { name: /^Open session status\./ }),
+  ).toHaveCount(1)
 
   return {
     client,

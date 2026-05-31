@@ -1,4 +1,16 @@
 {
+  "screenHeading": "Timer",
+  "currentStep": "Step {step} of {total}",
+  "currentStepWithName": "Step {step} of {total}: {title}",
+  "remainingTimeLabel": "Remaining time",
+  "stateReady": "Ready",
+  "stateRunning": "Running",
+  "statePaused": "Paused",
+  "stateFinished": "Finished",
+  "stateViewOnly": "View only",
+  "durationOnlyMinutes": "{minutes, plural, one {# minute} other {# minutes}}",
+  "durationOnlySeconds": "{seconds, plural, one {# second} other {# seconds}}",
+  "durationMinutesAndSeconds": "{minutes, plural, one {# minute} other {# minutes}}, {seconds, plural, one {# second} other {# seconds}}",
   "loop": "Loop {current} of {total}",
   "stepTitleWithName": "Step {step}: {title}",
   "stepTitleWithoutName": "Step {step}",
@@ -6,5 +18,12 @@
   "nextStep": "Next step",
   "start": "START",
   "pause": "PAUSE",
-  "reset": "RESET"
+  "reset": "RESET",
+  "announcementStarted": "Timer started. {time} remaining.",
+  "announcementPaused": "Timer paused. {time} remaining.",
+  "announcementReset": "Timer reset to {time}.",
+  "announcementFinished": "Time is up.",
+  "announcementStepChanged": "Switched to {step}. {time} remaining.",
+  "announcementOneMinuteRemaining": "1 minute remaining.",
+  "announcementSecondsRemaining": "{seconds, plural, one {# second remaining.} other {# seconds remaining.}}"
 }

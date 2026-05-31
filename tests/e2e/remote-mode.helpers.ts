@@ -60,6 +60,10 @@ const DEBUG_INFO_SELECTORS = [
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
+function getSessionStatusToggle(page: Page) {
+  return page.getByRole("button", { name: /^Open session status\./ })
+}
+
 async function setDocumentSentinel(page: Page) {
   return page.evaluate(() => {
     const sentinel = `sentinel-${Math.random().toString(36).slice(2)}`
@@ -173,7 +177,7 @@ export async function openClientFromSettings(
 
   await clientPage.goto(expectedUrl.toString())
   await expect(clientPage).toHaveURL(expectedUrl.toString())
-  await expect(clientPage.getByTestId("remote-status")).toHaveCount(1)
+  await expect(getSessionStatusToggle(clientPage)).toHaveCount(1)
 
   return clientPage
 }
@@ -412,7 +416,6 @@ export async function expectTimerDisplayRunning(page: Page) {
 }
 
 export async function expectReadonlyTimerControls(page: Page) {
-  const timerDisplay = page.getByTestId("timer-display")
   await expect(page.getByRole("button", { name: "START" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "PAUSE" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "RESET" })).toHaveCount(0)
@@ -420,14 +423,13 @@ export async function expectReadonlyTimerControls(page: Page) {
   await expect(
     page.getByRole("button", { name: "Toggle navigation" }),
   ).toHaveCount(0)
-  await expect(timerDisplay.getByLabel("Minutes")).toHaveAttribute(
-    "readonly",
-    "",
-  )
-  await expect(timerDisplay.getByLabel("Seconds")).toHaveAttribute(
-    "readonly",
-    "",
-  )
+  await expect(
+    page.getByRole("timer", {
+      name: /View only\. Remaining time\./,
+    }),
+  ).toBeVisible()
+  await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(0)
+  await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(0)
 }
 
 export async function expectRemoteStatus(
@@ -460,10 +462,12 @@ export async function expectRemoteStatus(
     timeoutMs?: number
   },
 ) {
-  const remoteStatus = page.getByTestId("remote-status")
+  const remoteStatusToggle = getSessionStatusToggle(page)
   const panel = page.getByTestId("remote-status-panel")
-  const detailsToggle = page.getByTestId("remote-status-details-toggle")
-  const activityToggle = page.getByTestId("remote-status-activity-toggle")
+  const detailsToggle = panel.getByRole("button", {
+    name: "Connection details",
+  })
+  const activityToggle = panel.getByRole("button", { name: "Recent activity" })
   const getFieldText = async (testId: string) =>
     ((await panel.getByTestId(testId).textContent()) ?? "")
       .replace(/\s+/g, " ")
@@ -492,10 +496,7 @@ export async function expectRemoteStatus(
       .replace(/\s+/g, " ")
       .trim()
 
-  await expect(remoteStatus).toHaveCount(1, { timeout: 15_000 })
-  await expect(remoteStatus).toHaveAttribute("role", "status", {
-    timeout: 15_000,
-  })
+  await expect(remoteStatusToggle).toHaveCount(1, { timeout: 15_000 })
   await expect
     .poll(
       async () => {
@@ -503,12 +504,7 @@ export async function expectRemoteStatus(
           return true
         }
 
-        await remoteStatus
-          .getByTestId("remote-status-toggle")
-          .click({
-            force: true,
-          })
-          .catch(() => {})
+        await remoteStatusToggle.click({ force: true }).catch(() => {})
 
         if (await panel.isVisible().catch(() => false)) {
           return true
@@ -706,8 +702,21 @@ export async function expectTimerControlsToMatch(pages: Page[]) {
 
 export async function getDisplayedSeconds(page: Page) {
   const timerDisplay = page.getByTestId("timer-display")
-  const minutes = Number(await timerDisplay.getByLabel("Minutes").inputValue())
-  const seconds = Number(await timerDisplay.getByLabel("Seconds").inputValue())
+  const minutesInput = timerDisplay.getByLabel("Minutes")
+  const secondsInput = timerDisplay.getByLabel("Seconds")
+
+  if ((await minutesInput.count()) > 0 && (await secondsInput.count()) > 0) {
+    const minutes = Number(await minutesInput.inputValue())
+    const seconds = Number(await secondsInput.inputValue())
+
+    return minutes * 60 + seconds
+  }
+
+  const displayText =
+    ((await timerDisplay.textContent()) ?? "").replace(/\s+/g, "") || "00:00"
+  const [minutes, seconds] = displayText
+    .split(":")
+    .map((value) => Number(value))
 
   return minutes * 60 + seconds
 }

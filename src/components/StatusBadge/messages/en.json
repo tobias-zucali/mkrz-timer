@@ -1,5 +1,5 @@
 {
   "error": "Error",
   "attentionNeeded": "Attention needed",
-  "toggleLabel": "Status: {label}"
+  "toggleLabel": "Open session status. {label}"
 }

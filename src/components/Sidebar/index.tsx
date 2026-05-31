@@ -7,6 +7,7 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
 } from "react"
@@ -15,10 +16,18 @@ import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
-import SettingsPanel from "@/components/Sidebar/SettingsPanel"
-import SharePanel from "@/components/Sidebar/SharePanel"
-import StatusPanel from "@/components/Sidebar/StatusPanel"
-import TimerPanel from "@/components/Sidebar/TimerPanel"
+import SettingsPanel, {
+  type SettingsPanelProps,
+} from "@/components/Sidebar/SettingsPanel"
+import SharePanel, {
+  type SharePanelProps,
+} from "@/components/Sidebar/SharePanel"
+import StatusPanel, {
+  type StatusPanelProps,
+} from "@/components/Sidebar/StatusPanel"
+import TimerPanel, {
+  type TimerPanelProps,
+} from "@/components/Sidebar/TimerPanel"
 import { getCompactStatusAppearance } from "@/components/StatusBadge/statusHelpers"
 import {
   Bars3Icon,
@@ -30,13 +39,6 @@ import {
 import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useIsNarrowViewport from "@/utils/useIsNarrowViewport"
-import useParams from "@/utils/useParams"
-import { getRemoteSessionOnlyOmitKeys } from "@/utils/useParams/params"
-import useRemoteSession from "@/utils/remoteSession"
-import type { SessionParticipant } from "@/shared/remoteSession/types"
-import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
-import type { SessionPresentationModel } from "@/utils/sessionPresentation"
-import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
 type SidebarEntryId = "settings" | "share" | "status" | "timer"
 
@@ -44,6 +46,19 @@ type SidebarEntry = {
   icon: ReactElement
   id: SidebarEntryId
   label: string
+}
+
+type SidebarShellProps = {
+  isPinnedOpen: boolean
+  selectedEntryId: SidebarEntryId | null
+  setIsPinnedOpen: Dispatch<SetStateAction<boolean>>
+  setSelectedEntryId: Dispatch<SetStateAction<SidebarEntryId | null>>
+  sidebarOffcanvasId?: string
+}
+
+type SidebarSharePanelProps = {
+  panelProps: Omit<SharePanelProps, "onRetry" | "sessionPresentation">
+  remoteRole: "control" | "readonly" | null
 }
 
 function getDefaultFocusRef({
@@ -80,73 +95,35 @@ function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
 }
 
 export default function Sidebar({
-  activeIndex,
-  handleChange,
-  isPinnedOpen,
-  onActivateSequenceRow,
-  onSequenceChange,
-  peerData,
-  floatingTimerData,
-  onEndRemoteSession,
-  onStartRemoteSession,
-  paramData,
-  remoteRole,
-  selectedEntryId,
-  setIsPinnedOpen,
-  setSelectedEntryId,
+  shell,
+  settingsPanel,
   statusPanelData,
+  sharePanel,
+  timerPanel,
 }: {
-  activeIndex: number
-  handleChange: (key: string, value: string) => void
-  isPinnedOpen: boolean
-  floatingTimerData: FloatingTimerData
-  onActivateSequenceRow: (rowIndex: number) => void
-  onEndRemoteSession: () => Promise<void>
-  onSequenceChange: (nextChange: {
-    activeIndex: number
-    rows: ReturnType<typeof useParams>["params"]["rows"]
-  }) => void
-  onStartRemoteSession: () => Promise<void>
-  paramData: ReturnType<typeof useParams>
-  peerData: ReturnType<typeof useRemoteSession>
-  remoteRole: "control" | "readonly" | null
-  selectedEntryId: SidebarEntryId | null
-  setIsPinnedOpen: Dispatch<SetStateAction<boolean>>
-  setSelectedEntryId: Dispatch<SetStateAction<SidebarEntryId | null>>
-  statusPanelData: {
-    activityLog: string[]
-    connectionDetails: {
-      id: string
-      isAlive: boolean
-      participantLabel: "Control" | "View" | "You"
-    }[]
-    errorText: string | null
-    floatingTimerErrorText: string | null
-    getErrorReportBody: () => string
-    isOnline: boolean | null
-    isRetrying: boolean
-    localClientId: string
-    onRetry: () => void
-    participants: SessionParticipant[]
-    relayLabel: string
-    relayReachability: RemoteRelayReachabilityState
-    sessionPresentation: SessionPresentationModel
-    sessionId?: string
-  }
+  shell: SidebarShellProps
+  settingsPanel: SettingsPanelProps
+  sharePanel: SidebarSharePanelProps
+  statusPanelData: StatusPanelProps
+  timerPanel: TimerPanelProps
 }) {
+  const generatedOffcanvasId = useId()
   const t = useTranslations("Sidebar")
   const tAppShell = useTranslations("AppShell")
   const isNarrowViewport = useIsNarrowViewport()
   const offcanvasRef = useRef<HTMLDivElement>(null)
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
   const panelCloseButtonRef = useRef<HTMLButtonElement>(null)
-  const { getUrlWithParams, pageTitle, params, setPageTitle } = paramData
-  const { accessTokens } = peerData
-  const timerEntryLabel = pageTitle.trim() || t("entries.timer")
-  const shareableParams = {
-    ...params,
-    pageTitle,
-  }
+  const {
+    isPinnedOpen,
+    selectedEntryId,
+    setIsPinnedOpen,
+    setSelectedEntryId,
+    sidebarOffcanvasId,
+  } = shell
+  const { panelProps: sharePanelProps, remoteRole } = sharePanel
+  const { floatingTimerData, handleChange } = settingsPanel
+  const timerEntryLabel = timerPanel.pageTitle.trim() || t("entries.timer")
   const mainEntries: SidebarEntry[] = [
     {
       icon: <ClockIcon className="size-4" />,
@@ -167,30 +144,8 @@ export default function Sidebar({
 
   const isOpen = isPinnedOpen
   const isOverlayActive = isPinnedOpen || selectedEntryId !== null
-  const timerUrl = getUrlWithParams()
-  const readonlyClientUrl =
-    accessTokens && typeof window !== "undefined"
-      ? getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/view/${accessTokens.readonly}`,
-          ),
-          pathname: `/view/${accessTokens.readonly}`,
-        })
-      : ""
-  const controlClientUrl =
-    accessTokens && typeof window !== "undefined"
-      ? getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/control/${accessTokens.control}`,
-          ),
-          pathname: `/control/${accessTokens.control}`,
-        })
-      : ""
   const isReadonlySidebar = remoteRole === "readonly"
+  const offcanvasId = sidebarOffcanvasId ?? generatedOffcanvasId
 
   const selectedEntry = useMemo(
     () => selectedEntryId ?? null,
@@ -233,6 +188,21 @@ export default function Sidebar({
     openEntry("share")
   }
   const isFullscreenSidebar = isReadonlySidebar || isNarrowViewport
+  const getPanelHeading = useCallback(
+    (entry: SidebarEntryId) => {
+      switch (entry) {
+        case "timer":
+          return timerEntryLabel
+        case "share":
+          return t("entries.share")
+        case "settings":
+          return t("entries.settings")
+        case "status":
+          return t("entries.status")
+      }
+    },
+    [t, timerEntryLabel],
+  )
 
   useDialogFocusTrap({
     active: isOverlayActive && isFullscreenSidebar,
@@ -288,27 +258,13 @@ export default function Sidebar({
   const renderSelectedPanel = () => {
     switch (selectedEntry) {
       case "timer":
-        return (
-          <TimerPanel
-            activeIndex={activeIndex}
-            onActivateSequenceRow={onActivateSequenceRow}
-            onPageTitleChange={setPageTitle}
-            onSequenceChange={onSequenceChange}
-            pageTitle={pageTitle}
-            params={params}
-          />
-        )
+        return <TimerPanel {...timerPanel} />
       case "share":
         return (
           <SharePanel
-            accessTokens={accessTokens}
-            controlClientUrl={controlClientUrl}
-            onEndRemoteSession={onEndRemoteSession}
             onRetry={statusPanelData.onRetry}
-            onStartRemoteSession={onStartRemoteSession}
-            readonlyClientUrl={readonlyClientUrl}
             sessionPresentation={statusPanelData.sessionPresentation}
-            timerUrl={timerUrl}
+            {...sharePanelProps}
           />
         )
       case "settings":
@@ -316,7 +272,7 @@ export default function Sidebar({
           <SettingsPanel
             floatingTimerData={floatingTimerData}
             handleChange={handleChange}
-            params={params}
+            params={settingsPanel.params}
           />
         )
       case "status":
@@ -364,7 +320,7 @@ export default function Sidebar({
             selectedEntry ? "right-0 w-full" : "hidden w-0",
           )}
           data-testid="sidebar-offcanvas"
-          id="sidebar-offcanvas"
+          id={offcanvasId}
           ref={offcanvasRef}
           role="dialog"
           tabIndex={-1}
@@ -388,7 +344,7 @@ export default function Sidebar({
               >
                 <div className="sticky top-0 z-10 ml-auto">
                   <h2 className="sr-only" id={`sidebar-panel-${selectedEntry}`}>
-                    {selectedEntry}
+                    {getPanelHeading(selectedEntry)}
                   </h2>
                   <CloseButton
                     className="
@@ -437,7 +393,7 @@ export default function Sidebar({
       "
       >
         <button
-          aria-controls="sidebar-offcanvas"
+          aria-controls={offcanvasId}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           aria-label={t("toggleNavigation")}
@@ -468,7 +424,7 @@ export default function Sidebar({
             : "right-0 w-full sm:w-64",
         )}
         data-testid="sidebar-offcanvas"
-        id="sidebar-offcanvas"
+        id={offcanvasId}
         ref={offcanvasRef}
         role="dialog"
         tabIndex={-1}
@@ -606,7 +562,7 @@ export default function Sidebar({
             >
               <div className="sticky top-0 z-10 ml-auto">
                 <h2 className="sr-only" id={`sidebar-panel-${selectedEntry}`}>
-                  {selectedEntry}
+                  {getPanelHeading(selectedEntry)}
                 </h2>
                 <CloseButton
                   className="

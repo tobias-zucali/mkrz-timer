@@ -32,6 +32,7 @@ export default function SyncConflictDialog({
         defaultFocusActionIndex={0}
         description={description}
         eyebrow={resolvedEyebrow}
+        role="alertdialog"
         title={title}
       >
         {getDeveloperReportBody ? (

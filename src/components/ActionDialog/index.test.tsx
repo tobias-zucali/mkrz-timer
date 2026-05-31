@@ -79,4 +79,19 @@ describe("ActionDialog", () => {
       screen.getByRole("button", { name: "Send debug info" }),
     ).toBeInTheDocument()
   })
+
+  it("supports alertdialog semantics for interruptive confirmations", () => {
+    renderWithIntl(
+      <ActionDialog
+        actions={[{ label: "Continue", onClick: () => undefined }]}
+        description="Choose whether the timer should stay connected."
+        role="alertdialog"
+        title="End the live session?"
+      />,
+    )
+
+    expect(
+      screen.getByRole("alertdialog", { name: "End the live session?" }),
+    ).toBeInTheDocument()
+  })
 })

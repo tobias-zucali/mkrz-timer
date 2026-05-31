@@ -1,0 +1,6 @@
+- alertdialog "End the live session for everyone?":
+    - paragraph: Live session confirmation
+    - heading "End the live session for everyone?" [level=2]
+    - paragraph: This will disconnect 1 other client from the live session immediately.
+    - button "Keep live session open"
+    - button "End live session"

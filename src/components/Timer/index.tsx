@@ -1,32 +1,25 @@
 "use client"
 
+import { useId } from "react"
 import { useTranslations } from "next-intl"
 
-import Pie from "@/components/Pie"
-import type { SyncParams } from "@/shared/remoteSession/types"
 import DigitalDisplay from "@/components/DigitalDisplay"
+import Pie from "@/components/Pie"
+import TimerControls from "@/components/Timer/TimerControls"
+import TimerReadonlyPlaceholder, {
+  type ReadonlyPlaceholder,
+} from "@/components/Timer/TimerReadonlyPlaceholder"
+import TimerSequenceProgress from "@/components/Timer/TimerSequenceProgress"
 import TimerTitle from "@/components/TimerTitle"
+import type { SyncParams } from "@/shared/remoteSession/types"
+import {
+  buildTimerReadoutLabel,
+  buildTimerStepLabel,
+  getTimerReadoutStateLabel,
+  type TimerReadoutState,
+} from "@/utils/accessibility/timer"
 import { ChevronLeftIcon, ChevronRightIcon } from "@/utils/icons"
-import { getResponsiveClamp } from "@/utils/responsiveClamp"
 import useTimer from "@/utils/useTimer"
-
-const timerButtonClassName =
-  "inline-flex appearance-none items-center justify-center " +
-  "rounded-md bg-foreground/80 text-background " +
-  "text-background " +
-  "bg-foreground font-bold text-background " +
-  "shadow-sm transition-colors hover:bg-foreground " +
-  "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground/80 touch-manipulation"
-
-type ReadonlyPlaceholder = {
-  actionLabel?: string
-  body: string
-  eyebrow?: string
-  heading: string
-  onAction?: () => void
-  tone: "connecting" | "failed" | "reconnecting"
-}
 
 export default function Timer({
   activeIndex,
@@ -49,6 +42,7 @@ export default function Timer({
   handleTimeBlur: () => void
   timer: ReturnType<typeof useTimer>
 }) {
+  const headingId = useId()
   const t = useTranslations("Timer")
   const {
     minutes,
@@ -64,88 +58,66 @@ export default function Timer({
   const hasMultipleRows = rows.length > 1
   const hasPreviousRow = hasMultipleRows && activeIndex > 0
   const hasNextRow = hasMultipleRows && activeIndex < rows.length - 1
-  const showProgress = hasMultipleRows
   const highlightNextAction =
     isTimedOut && activeRow?.endBehavior === "stop" && hasNextRow
   const shouldReserveTitleSpace = rows.some(
     (row) => row.title.trim().length > 0,
   )
-  const timerButtonStyle = {
-    fontSize: getResponsiveClamp({
-      factor: 4,
-      max: 1,
-      min: 0.5,
-    }),
-    minWidth: getResponsiveClamp({
-      factor: 9,
-      max: 6,
-      min: 3.5,
-    }),
-    paddingBlock: getResponsiveClamp({
-      factor: 3,
-      max: 0.625,
-      min: 0.1,
-    }),
-    paddingInline: getResponsiveClamp({
-      factor: 3,
-      max: 0.9,
-      min: 0.1,
-    }),
+  let readoutState: TimerReadoutState = "editing"
+  if (isReadonly) {
+    readoutState = "viewOnly"
+  } else if (isTimedOut) {
+    readoutState = "finished"
+  } else if (isStarted && isPaused) {
+    readoutState = "paused"
+  } else if (isStarted) {
+    readoutState = "running"
   }
-
-  const renderProgress = () => {
-    if (!showProgress) {
-      return null
+  const remainingSeconds =
+    Number.parseInt(minutes || "0", 10) * 60 +
+    Number.parseInt(seconds || "0", 10)
+  const readoutSummary = buildTimerReadoutLabel({
+    activeIndex,
+    readoutState,
+    remainingSeconds,
+    rowCount: rows.length,
+    stepTitle: activeRow?.title ?? "",
+    t,
+  })
+  const stepSummary = hasMultipleRows
+    ? buildTimerStepLabel({
+        activeIndex,
+        rowCount: rows.length,
+        t,
+        title: activeRow?.title ?? "",
+      })
+    : null
+  const currentRepeatLabel =
+    activeRow && activeRow.repeatCount > 1
+      ? t("loop", {
+          current: currentRepeat,
+          total: activeRow.repeatCount,
+        })
+      : null
+  const stepTitles = rows.map((row, index) => {
+    const rowTitle = row.title.trim()
+    if (rowTitle) {
+      return t("stepTitleWithName", {
+        step: index + 1,
+        title: rowTitle,
+      })
     }
 
-    return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-[16%] flex justify-center px-6">
-        <div className="pointer-events-auto flex flex-col items-center gap-3">
-          {activeRow && activeRow.repeatCount > 1 ? (
-            <span className="text-xs font-medium text-foreground/52">
-              {t("loop", {
-                current: currentRepeat,
-                total: activeRow.repeatCount,
-              })}
-            </span>
-          ) : null}
-          <div className="flex items-center gap-2">
-            {rows.map((row, index) => {
-              const isCurrent = index === activeIndex
-              const buttonClassName = isCurrent
-                ? "h-2.5 w-6 rounded-full bg-foreground"
-                : "size-2.5 cursor-pointer rounded-full bg-foreground/22 hover:bg-foreground/42"
-              const stepTitle = row.title.trim()
-                ? t("stepTitleWithName", {
-                    step: index + 1,
-                    title: row.title.trim(),
-                  })
-                : t("stepTitleWithoutName", {
-                    step: index + 1,
-                  })
-
-              return (
-                <button
-                  aria-label={stepTitle}
-                  className="-m-3 inline-flex cursor-pointer items-center justify-center p-3"
-                  disabled={isReadonly}
-                  key={`step-dot-${index}`}
-                  onClick={() => onSelectSequenceRow?.(index)}
-                  title={stepTitle}
-                  type="button"
-                >
-                  <span className={buttonClassName} />
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    )
-  }
+    return t("stepTitleWithoutName", {
+      step: index + 1,
+    })
+  })
 
   return (
-    <div className="flex h-full flex-col">
+    <section aria-labelledby={headingId} className="flex h-full flex-col">
+      <h1 className="sr-only" id={headingId}>
+        {title.trim() || t("screenHeading")}
+      </h1>
       <TimerTitle
         disabled={isReadonly}
         reserveSpace={shouldReserveTitleSpace}
@@ -158,75 +130,7 @@ export default function Timer({
         />
 
         {readonlyPlaceholder ? (
-          <div
-            className="absolute inset-0 flex items-center justify-center px-6"
-            data-testid="readonly-timer-placeholder"
-          >
-            <div
-              className="
-              w-full max-w-lg rounded-3xl border border-foreground/12
-              bg-background/72 px-6 py-8 text-center shadow-xl
-              shadow-background/20 backdrop-blur-sm
-            "
-            >
-              {readonlyPlaceholder.eyebrow ? (
-                <p
-                  className="
-                  text-xs font-semibold tracking-[0.2em] text-primary/80
-                  uppercase
-                "
-                >
-                  {readonlyPlaceholder.eyebrow}
-                </p>
-              ) : null}
-              <div className="mt-5 flex items-center justify-center gap-3">
-                <div
-                  className={`
-                    size-4 rounded-full
-                    motion-safe:animate-pulse
-                    ${
-                      readonlyPlaceholder.tone === "failed"
-                        ? "bg-primary"
-                        : "bg-primary/80"
-                    }
-                  `}
-                />
-                <div
-                  className="
-                  size-4 rounded-full bg-foreground/30 [animation-delay:150ms]
-                  motion-safe:animate-pulse
-                "
-                />
-                <div
-                  className="
-                  size-4 rounded-full bg-foreground/18 [animation-delay:300ms]
-                  motion-safe:animate-pulse
-                "
-                />
-              </div>
-              <p className="mt-5 text-lg font-semibold text-foreground">
-                {readonlyPlaceholder.heading}
-              </p>
-              <p className="mt-2 text-sm/6 text-foreground/68">
-                {readonlyPlaceholder.body}
-              </p>
-              {readonlyPlaceholder.actionLabel &&
-              readonlyPlaceholder.onAction ? (
-                <button
-                  className="
-                    mt-4 cursor-pointer text-sm font-medium text-primary
-                    underline decoration-primary/60 underline-offset-4
-                    transition
-                    hover:text-primary/82
-                  "
-                  onClick={readonlyPlaceholder.onAction}
-                  type="button"
-                >
-                  {readonlyPlaceholder.actionLabel}
-                </button>
-              ) : null}
-            </div>
-          </div>
+          <TimerReadonlyPlaceholder placeholder={readonlyPlaceholder} />
         ) : (
           <div className="absolute inset-0 flex grow flex-col items-center justify-center">
             {hasPreviousRow && !isReadonly ? (
@@ -277,41 +181,45 @@ export default function Timer({
               </button>
             ) : null}
             <DigitalDisplay
+              accessibleText={readoutSummary}
               data-testid="timer-display"
+              displayMode={isReadonly || isStarted ? "readout" : "editable"}
               isAlert={isTimedOut}
               isReadonly={isReadonly || isStarted}
               minutes={minutes}
               onBlur={handleTimeBlur}
-              seconds={seconds}
               onMinutesChange={(event) => handleChange("m", event.target.value)}
               onSecondsChange={(event) => handleChange("s", event.target.value)}
+              seconds={seconds}
             />
-            {renderProgress()}
+            <div className="sr-only" data-testid="timer-readout-summary">
+              {readoutSummary}
+              {stepSummary ? ` ${stepSummary}.` : ""}
+            </div>
+            <TimerSequenceProgress
+              activeIndex={activeIndex}
+              currentRepeatLabel={currentRepeatLabel}
+              isReadonly={isReadonly}
+              rows={rows}
+              stepTitles={stepTitles}
+              onSelectSequenceRow={onSelectSequenceRow}
+            />
             {!isReadonly && (
-              <div
-                className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2"
-                data-testid="timer-controls"
-              >
-                <button
-                  className={timerButtonClassName}
-                  disabled={isTimedOut}
-                  onClick={() => handleAction(isPaused ? "start" : "pause")}
-                  style={timerButtonStyle}
-                >
-                  {isPaused ? t("start") : t("pause")}
-                </button>
-                <button
-                  className={timerButtonClassName}
-                  onClick={() => handleAction("restart")}
-                  style={timerButtonStyle}
-                >
-                  {t("reset")}
-                </button>
-              </div>
+              <TimerControls
+                isPaused={isPaused}
+                isTimedOut={isTimedOut}
+                pauseLabel={t("pause")}
+                resetLabel={t("reset")}
+                startLabel={t("start")}
+                stateLabel={getTimerReadoutStateLabel(readoutState, t)}
+                onPause={() => handleAction("pause")}
+                onReset={() => handleAction("restart")}
+                onStart={() => handleAction("start")}
+              />
             )}
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }

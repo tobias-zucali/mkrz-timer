@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
@@ -70,14 +70,7 @@ const getCardAccentStyle = ({
   }`,
 })
 
-export default function TimerPanel({
-  activeIndex,
-  onActivateSequenceRow,
-  onPageTitleChange,
-  onSequenceChange,
-  pageTitle,
-  params,
-}: {
+export type TimerPanelProps = {
   activeIndex: number
   onActivateSequenceRow: (rowIndex: number) => void
   onPageTitleChange: (title: string) => void
@@ -87,7 +80,17 @@ export default function TimerPanel({
   }) => void
   pageTitle: string
   params: SyncParams
-}) {
+}
+
+export default function TimerPanel({
+  activeIndex,
+  onActivateSequenceRow,
+  onPageTitleChange,
+  onSequenceChange,
+  pageTitle,
+  params,
+}: TimerPanelProps) {
+  const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
 
@@ -202,7 +205,7 @@ export default function TimerPanel({
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <label className="sr-only" htmlFor="sidebar-page-title">
+        <label className="sr-only" htmlFor={pageTitleInputId}>
           {t("pageTitleLabel")}
         </label>
         <input
@@ -212,7 +215,7 @@ export default function TimerPanel({
             text-foreground outline-none placeholder:text-foreground/42
           "
           data-testid="sidebar-page-title-input"
-          id="sidebar-page-title"
+          id={pageTitleInputId}
           maxLength={MAX_TITLE_LENGTH}
           onChange={(event) =>
             onPageTitleChange(normalizeTitle(event.target.value))
