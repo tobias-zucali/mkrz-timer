@@ -22,7 +22,7 @@ describe("SyncConflictDialog", () => {
     )
 
     expect(
-      screen.getByRole("dialog", {
+      screen.getByRole("alertdialog", {
         name: "Live session state changed during recovery.",
       }),
     ).toBeInTheDocument()

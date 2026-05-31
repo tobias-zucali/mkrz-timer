@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useEffect, useId, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 
 import DeveloperReportDialog from "@/components/DeveloperReportDialog"
@@ -54,11 +54,12 @@ function DisclosureSection({
 }) {
   const t = useTranslations("Sidebar.status")
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const contentId = useId()
 
   return (
     <section className="rounded-2xl border border-foreground/10 bg-foreground/4">
       <button
-        aria-controls={`${testId}-content`}
+        aria-controls={contentId}
         aria-expanded={isOpen}
         className="
           flex w-full cursor-pointer items-center justify-between gap-3 px-4
@@ -81,15 +82,29 @@ function DisclosureSection({
         </span>
       </button>
       {isOpen && (
-        <div
-          className="border-t border-foreground/10 p-4"
-          id={`${testId}-content`}
-        >
+        <div className="border-t border-foreground/10 p-4" id={contentId}>
           {children}
         </div>
       )}
     </section>
   )
+}
+
+export type StatusPanelProps = {
+  activityLog: string[]
+  connectionDetails: RemoteStatusConnection[]
+  errorText: string | null
+  floatingTimerErrorText: string | null
+  getErrorReportBody: () => string
+  isOnline: boolean | null
+  isRetrying: boolean
+  localClientId: string
+  onRetry: () => void
+  participants: SessionParticipant[]
+  relayLabel: string
+  relayReachability: RemoteRelayReachabilityState
+  sessionPresentation: SessionPresentationModel
+  sessionId?: string
 }
 
 export default function StatusPanel({
@@ -107,22 +122,7 @@ export default function StatusPanel({
   relayReachability,
   sessionPresentation,
   sessionId,
-}: {
-  activityLog: string[]
-  connectionDetails: RemoteStatusConnection[]
-  errorText: string | null
-  floatingTimerErrorText: string | null
-  getErrorReportBody: () => string
-  isOnline: boolean | null
-  isRetrying: boolean
-  localClientId: string
-  onRetry: () => void
-  participants: SessionParticipant[]
-  relayLabel: string
-  relayReachability: RemoteRelayReachabilityState
-  sessionPresentation: SessionPresentationModel
-  sessionId?: string
-}) {
+}: StatusPanelProps) {
   const t = useTranslations("Sidebar.status")
   const tParticipantSummary = useTranslations("Sidebar.participantSummary")
   const tStatusBadge = useTranslations("StatusBadge")

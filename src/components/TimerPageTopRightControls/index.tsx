@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import QrCodeOverlay from "@/components/QrCodeOverlay"
@@ -15,12 +15,20 @@ import useFullscreenState from "@/utils/timerPage/useFullscreenState"
 
 function TopRightActionButton({
   ariaLabel,
+  ariaControls,
+  ariaExpanded,
+  ariaHaspopup,
+  ariaPressed,
   children,
   isActive = false,
   onClick,
   title,
 }: {
   ariaLabel: string
+  ariaControls?: string
+  ariaExpanded?: boolean
+  ariaHaspopup?: "dialog"
+  ariaPressed?: boolean
   children: ReactNode
   isActive?: boolean
   onClick: () => void
@@ -29,6 +37,10 @@ function TopRightActionButton({
   return (
     <button
       aria-label={ariaLabel}
+      aria-controls={ariaControls}
+      aria-expanded={ariaExpanded}
+      aria-haspopup={ariaHaspopup}
+      aria-pressed={ariaPressed}
       className={[
         "inline-flex size-9 cursor-pointer items-center justify-center rounded-lg transition",
         "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
@@ -48,6 +60,7 @@ export default function TopRightControls({
   isSharePanelOpen,
   isReadonlyClient,
   onOpenSharePanel,
+  sidebarOffcanvasId,
 }: {
   floatingTimerData: {
     isOpen: boolean
@@ -57,9 +70,11 @@ export default function TopRightControls({
   isSharePanelOpen: boolean
   isReadonlyClient: boolean
   onOpenSharePanel: () => void
+  sidebarOffcanvasId: string
 }) {
   const t = useTranslations("TopRightControls")
   const [isViewerShareQrCodeOpen, setIsViewerShareQrCodeOpen] = useState(false)
+  const viewerShareQrCodeId = useId()
   const { isFullscreen, isFullscreenSupported, toggleFullscreen } =
     useFullscreenState()
   const viewerShareUrl =
@@ -70,6 +85,13 @@ export default function TopRightControls({
       <div className="absolute top-0 right-0 z-20 m-2 hidden items-center rounded-lg bg-background/58 backdrop-blur-xs hover:bg-background/74 sm:flex">
         <TopRightActionButton
           ariaLabel={isReadonlyClient ? t("shareViewerLink") : t("openSharing")}
+          ariaControls={
+            isReadonlyClient ? viewerShareQrCodeId : sidebarOffcanvasId
+          }
+          ariaExpanded={
+            isReadonlyClient ? isViewerShareQrCodeOpen : isSharePanelOpen
+          }
+          ariaHaspopup="dialog"
           isActive={
             isReadonlyClient ? isViewerShareQrCodeOpen : isSharePanelOpen
           }
@@ -87,6 +109,7 @@ export default function TopRightControls({
         {!isReadonlyClient && floatingTimerData.isSupported ? (
           <TopRightActionButton
             ariaLabel={t("toggleFloatingWindow")}
+            ariaPressed={floatingTimerData.isOpen}
             isActive={floatingTimerData.isOpen}
             onClick={() => {
               void floatingTimerData.toggle()
@@ -116,6 +139,7 @@ export default function TopRightControls({
         <QrCodeOverlay
           label={t("viewerLink")}
           onClose={() => setIsViewerShareQrCodeOpen(false)}
+          overlayId={viewerShareQrCodeId}
           value={viewerShareUrl}
         />
       ) : null}

@@ -554,6 +554,37 @@ test(
   },
 )
 
+test("announces timer state changes and uses semantic readout mode", async ({
+  page,
+}) => {
+  await openTimer(page, 12)
+
+  const liveRegion = page.getByRole("status", { name: "Timer announcements" })
+
+  await page.getByRole("button", { name: "START" }).click()
+  await expect(
+    page.getByRole("timer", {
+      name: /Running\. Remaining time\. 12 seconds/i,
+    }),
+  ).toBeVisible()
+  await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(0)
+  await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(0)
+  await expect(liveRegion).toContainText("Timer started. 12 seconds remaining.")
+
+  await expect
+    .poll(async () => (await liveRegion.textContent()) ?? "", {
+      message: "timer should announce the final countdown milestone",
+      timeout: 4_000,
+    })
+    .toContain("10 seconds remaining.")
+
+  await page.getByRole("button", { name: "PAUSE" }).click()
+  await expect(liveRegion).toContainText("Timer paused.")
+
+  await page.getByRole("button", { name: "RESET" }).click()
+  await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
+})
+
 test(
   "matches full timer layout across simulated form factors",
   { tag: "@visual" },
@@ -642,5 +673,17 @@ test(
 
       await context.close()
     }
+  },
+)
+
+test(
+  "matches the local timer screen aria structure",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await openTimer(page, 3)
+
+    await expect(page.locator("body")).toMatchAriaSnapshot({
+      name: "local-timer-screen.aria.yml",
+    })
   },
 )

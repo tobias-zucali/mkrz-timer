@@ -69,13 +69,17 @@ async function expectParticipantLabels(
         .getByRole("button", { name: "Toggle navigation" })
         .count()) === 0
     ) {
-      await page.getByTestId("remote-status-toggle").click({ force: true })
+      await page
+        .getByRole("button", { name: /^Open session status\./ })
+        .click({ force: true })
     } else {
       await openSidebarPanel(page, "Status")
     }
   }
 
-  const detailsToggle = page.getByTestId("remote-status-details-toggle")
+  const detailsToggle = panel.getByRole("button", {
+    name: "Connection details",
+  })
   if ((await detailsToggle.getAttribute("aria-expanded")) !== "true") {
     await detailsToggle.click()
   }
@@ -121,6 +125,9 @@ test(
   async ({ page }) => {
     const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
     const clientPage = await openClientFromSettings(page, controlClientUrl)
+    await expect(clientPage.locator("body")).toMatchAriaSnapshot({
+      name: "remote-control-client-screen.aria.yml",
+    })
     await expect(
       clientPage.getByRole("button", { name: "START" }),
     ).toBeVisible()
@@ -207,10 +214,13 @@ test("confirms before ending a live session when other clients are connected", a
   await openSidebarPanel(page, "Share")
   await page.getByRole("button", { name: "End live session" }).click()
 
-  const confirmationDialog = page.getByRole("dialog", {
+  const confirmationDialog = page.getByRole("alertdialog", {
     name: "End the live session for everyone?",
   })
   await expect(confirmationDialog).toBeVisible()
+  await expect(confirmationDialog).toMatchAriaSnapshot({
+    name: "remote-end-session-confirmation-dialog.aria.yml",
+  })
   await expect(
     confirmationDialog.getByText(
       "This will disconnect 1 other client from the live session immediately.",
@@ -291,6 +301,9 @@ test(
 
     await expect(readonlyClient).not.toHaveURL(/\/control\//)
     await expectReadonlyTimerControls(readonlyClient)
+    await expect(readonlyClient.locator("body")).toMatchAriaSnapshot({
+      name: "remote-readonly-client-screen.aria.yml",
+    })
     const initialReadonlySeconds = await getDisplayedSeconds(readonlyClient)
 
     await readonlyClient.keyboard.press(" ")
@@ -337,6 +350,9 @@ test("readonly clients expose fullscreen share and status overlays", async ({
     name: "Timer · Viewer link",
   })
   await expect(qrCodeDialog).toBeVisible()
+  await expect(qrCodeDialog).toMatchAriaSnapshot({
+    name: "remote-readonly-share-qr-dialog.aria.yml",
+  })
   const qrCodeBounds = await qrCodeDialog.boundingBox()
   const qrViewport = readonlyClient.viewportSize()
 
@@ -345,9 +361,16 @@ test("readonly clients expose fullscreen share and status overlays", async ({
   await qrCodeDialog.click()
   await expect(qrCodeDialog).not.toBeVisible()
 
-  await readonlyClient.getByTestId("remote-status-toggle").click()
+  await readonlyClient
+    .getByRole("button", { name: /^Open session status\./ })
+    .click()
   const offcanvas = readonlyClient.getByTestId("sidebar-offcanvas")
   await expect(readonlyClient.getByTestId("sidebar-panel-status")).toBeVisible()
+  await expect(
+    readonlyClient.getByTestId("sidebar-panel-status"),
+  ).toMatchAriaSnapshot({
+    name: "remote-readonly-status-panel.aria.yml",
+  })
   const offcanvasBounds = await offcanvas.boundingBox()
   const statusViewport = readonlyClient.viewportSize()
 
@@ -651,7 +674,7 @@ test("shows offline network status when the browser loses connectivity", async (
       timeoutMs: 10_000,
     })
     await expect(
-      controlClient.getByTestId("remote-status-toggle"),
+      controlClient.getByRole("button", { name: /^Open session status\./ }),
     ).not.toContainText("Error")
     await expect(controlClient.getByTestId("remote-status-error")).toHaveCount(
       0,
@@ -784,6 +807,9 @@ test("shows a recoverable error for malformed viewer links", async ({
 }) => {
   await page.goto("/view")
 
+  await expect(page.locator("body")).toMatchAriaSnapshot({
+    name: "remote-malformed-viewer-link-screen.aria.yml",
+  })
   await expectRemoteStatus(page, {
     connectionSummary: "Error",
     errorText: /Live session link is malformed\. Check the URL and try again\./,
@@ -889,6 +915,9 @@ test(
 
     const expiredViewerPage = await page.context().newPage()
     await expiredViewerPage.goto(readonlyClientUrl)
+    await expect(expiredViewerPage.locator("body")).toMatchAriaSnapshot({
+      name: "remote-expired-viewer-link-screen.aria.yml",
+    })
 
     const styleTag = await expiredViewerPage.addStyleTag({
       content: `

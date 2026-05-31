@@ -13,6 +13,17 @@ const liveSessionToneClassNames = {
   warning: "border-amber-400/25 bg-amber-500/10",
 }
 
+export type SharePanelProps = {
+  accessTokens: { control: string; readonly: string } | null | undefined
+  controlClientUrl: string
+  onEndRemoteSession: () => Promise<void>
+  onRetry: () => void
+  onStartRemoteSession: () => Promise<void>
+  readonlyClientUrl: string
+  sessionPresentation: SessionPresentationModel
+  timerUrl: string
+}
+
 export default function SharePanel({
   accessTokens,
   controlClientUrl,
@@ -22,16 +33,7 @@ export default function SharePanel({
   readonlyClientUrl,
   sessionPresentation,
   timerUrl,
-}: {
-  accessTokens: { control: string; readonly: string } | null | undefined
-  controlClientUrl: string
-  onEndRemoteSession: () => Promise<void>
-  onRetry: () => void
-  onStartRemoteSession: () => Promise<void>
-  readonlyClientUrl: string
-  sessionPresentation: SessionPresentationModel
-  timerUrl: string
-}) {
+}: SharePanelProps) {
   const t = useTranslations("Sidebar.share")
   const tSessionPresentation = useTranslations("TimerPage.sessionPresentation")
   const { sharePanel } = sessionPresentation

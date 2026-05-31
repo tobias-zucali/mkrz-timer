@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useId, useRef } from "react"
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
 
@@ -12,15 +12,20 @@ import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 export default function QrCodeOverlay({
   label,
   onClose,
+  overlayId,
   value,
 }: {
   label: string
   onClose: () => void
+  overlayId?: string
   value: string
 }) {
   const t = useTranslations("QrCodeOverlay")
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const fallbackOverlayId = useId()
+  const resolvedOverlayId = overlayId ?? fallbackOverlayId
+  const titleId = `${resolvedOverlayId}-title`
 
   useDialogFocusTrap({
     active: true,
@@ -34,13 +39,14 @@ export default function QrCodeOverlay({
 
   return createPortal(
     <div
-      aria-labelledby="qr-code-overlay-title"
+      aria-labelledby={titleId}
       aria-modal="true"
       className="
         fixed inset-0 z-70 flex cursor-pointer flex-col items-center
         justify-center gap-6 bg-black px-5 py-6 text-center text-white
         sm:gap-8 sm:p-8
       "
+      id={resolvedOverlayId}
       onClick={onClose}
       ref={dialogRef}
       role="dialog"
@@ -66,7 +72,7 @@ export default function QrCodeOverlay({
           sm:text-4xl
           lg:text-5xl
         "
-        id="qr-code-overlay-title"
+        id={titleId}
       >
         {t("title", { label })}
       </h1>

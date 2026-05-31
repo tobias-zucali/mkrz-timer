@@ -12,6 +12,7 @@ import {
 import classNames from "classnames"
 
 export default function FloatingTimerContent({
+  accessibleTimerText,
   title,
   backgroundColor,
   foregroundColor,
@@ -21,6 +22,7 @@ export default function FloatingTimerContent({
   isTimedOut,
   elapsedPercentage,
 }: {
+  accessibleTimerText: string
   title: string
   backgroundColor: string
   foregroundColor: string
@@ -80,13 +82,16 @@ export default function FloatingTimerContent({
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
         />
         <div className="absolute inset-0 flex items-center justify-center px-6">
-          <div
+          <output
+            aria-atomic="true"
+            aria-label={accessibleTimerText}
             className={`
               flex max-w-full flex-nowrap items-baseline justify-center
               font-mono font-bold
               ${isTimedOut ? "animate-pulse text-primary" : ""}
             `}
             data-testid="floating-timer-display"
+            role="timer"
             style={{
               fontSize: getResponsiveClamp({
                 max: 7,
@@ -94,10 +99,19 @@ export default function FloatingTimerContent({
               }),
             }}
           >
-            <span className="min-w-0 text-right">{minutes}</span>
-            <span className="shrink-0 px-[0.12em] text-center">:</span>
-            <span className="min-w-0 text-left">{seconds}</span>
-          </div>
+            <span aria-hidden="true" className="min-w-0 text-right">
+              {minutes}
+            </span>
+            <span
+              aria-hidden="true"
+              className="shrink-0 px-[0.12em] text-center"
+            >
+              :
+            </span>
+            <span aria-hidden="true" className="min-w-0 text-left">
+              {seconds}
+            </span>
+          </output>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -17,6 +18,7 @@ import StatusBadge from "@/components/StatusBadge"
 import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
+import TimerAnnouncements from "@/features/TimerPage/TimerAnnouncements"
 import type { SyncParams } from "@/shared/remoteSession/types"
 import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
 import { normalizeSyncParams } from "@/shared/security/input"
@@ -30,6 +32,7 @@ import useTimerPageRemoteSession from "@/utils/timerPage/useTimerPageRemoteSessi
 import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useParams from "@/utils/useParams"
+import { getRemoteSessionOnlyOmitKeys } from "@/utils/useParams/params"
 import useTimer, { type TimerState } from "@/utils/useTimer"
 
 export default function TimerPage() {
@@ -43,6 +46,7 @@ export default function TimerPage() {
 function TimerApp() {
   const t = useTranslations("TimerPage.page")
   const tAppShell = useTranslations("AppShell")
+  const sidebarOffcanvasId = useId()
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
   const nextPathname = usePathname()
@@ -72,6 +76,13 @@ function TimerApp() {
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
   const remoteToken = remoteRoute.isRemote ? remoteRoute.token : null
   const isReadonlyClient = remoteRole === "readonly"
+  const shareableParams = useMemo(
+    () => ({
+      ...params,
+      pageTitle,
+    }),
+    [pageTitle, params],
+  )
 
   const timer = useTimer({
     canMutate: !isReadonlyClient,
@@ -391,42 +402,96 @@ function TimerApp() {
     clearRecentlyEndedLiveSession()
   }
 
+  const timerUrl = paramData.getUrlWithParams()
+  const readonlyClientUrl =
+    remoteSession.accessTokens && typeof window !== "undefined"
+      ? paramData.getUrlWithParams({
+          omit: getRemoteSessionOnlyOmitKeys(
+            shareableParams,
+            [],
+            `/view/${remoteSession.accessTokens.readonly}`,
+          ),
+          pathname: `/view/${remoteSession.accessTokens.readonly}`,
+        })
+      : ""
+  const controlClientUrl =
+    remoteSession.accessTokens && typeof window !== "undefined"
+      ? paramData.getUrlWithParams({
+          omit: getRemoteSessionOnlyOmitKeys(
+            shareableParams,
+            [],
+            `/control/${remoteSession.accessTokens.control}`,
+          ),
+          pathname: `/control/${remoteSession.accessTokens.control}`,
+        })
+      : ""
+
   return (
     <>
-      <Timer
-        activeIndex={params.activeIndex}
-        handleChange={handleChange}
-        handleTimeBlur={normalizeTimerInputs}
-        isReadonly={isReadonlyClient}
-        onSelectSequenceRow={handleSelectSequenceRow}
-        readonlyPlaceholder={readonlyPlaceholder}
-        rows={params.rows}
-        timer={timer}
-        title={title}
-      />
-      <TopRightControls
-        floatingTimerData={sessionDiagnostics.floatingTimerData}
-        isReadonlyClient={isReadonlyClient}
-        isSharePanelOpen={isSharePanelOpen}
-        onOpenSharePanel={openStatusOrSharePanel}
-      />
+      <main
+        aria-label={title.trim() || tAppShell("metadata.title")}
+        className="h-full"
+      >
+        <TimerAnnouncements
+          activeIndex={params.activeIndex}
+          isPaused={timer.isPaused}
+          isStarted={timer.isStarted}
+          isTimedOut={timer.isTimedOut}
+          minutes={minutes}
+          rowsLength={params.rows.length}
+          seconds={seconds}
+          sessionAccessibilityLabel={
+            sessionDiagnostics.sessionPresentation.accessibilityLabel
+          }
+        />
+        <Timer
+          activeIndex={params.activeIndex}
+          handleChange={handleChange}
+          handleTimeBlur={normalizeTimerInputs}
+          isReadonly={isReadonlyClient}
+          onSelectSequenceRow={handleSelectSequenceRow}
+          readonlyPlaceholder={readonlyPlaceholder}
+          rows={params.rows}
+          timer={timer}
+          title={title}
+        />
+        <TopRightControls
+          floatingTimerData={sessionDiagnostics.floatingTimerData}
+          isReadonlyClient={isReadonlyClient}
+          isSharePanelOpen={isSharePanelOpen}
+          onOpenSharePanel={openStatusOrSharePanel}
+          sidebarOffcanvasId={sidebarOffcanvasId}
+        />
+      </main>
       <Sidebar
-        activeIndex={params.activeIndex}
-        floatingTimerData={sessionDiagnostics.floatingTimerData}
-        handleChange={handleChange}
-        isPinnedOpen={isSidebarPinnedOpen}
-        onActivateSequenceRow={handleActivateSequenceRow}
-        onEndRemoteSession={handleEndRemoteSession}
-        onSequenceChange={handleSequenceChange}
-        onStartRemoteSession={async () => {
-          await connectRemote()
+        settingsPanel={{
+          floatingTimerData: sessionDiagnostics.floatingTimerData,
+          handleChange,
+          params: {
+            bg: params.bg,
+            fg: params.fg,
+          },
         }}
-        paramData={paramData}
-        peerData={remoteSession}
-        remoteRole={remoteRole}
-        selectedEntryId={selectedSidebarEntryId}
-        setIsPinnedOpen={setIsSidebarPinnedOpen}
-        setSelectedEntryId={setSelectedSidebarEntryId}
+        sharePanel={{
+          panelProps: {
+            accessTokens: remoteSession.accessTokens,
+            controlClientUrl,
+            onEndRemoteSession: handleEndRemoteSession,
+            onStartRemoteSession: async () => {
+              await connectRemote()
+            },
+            readonlyClientUrl,
+            timerUrl,
+          },
+          remoteRole,
+        }}
+        shell={{
+          isPinnedOpen: isSidebarPinnedOpen,
+          selectedEntryId: selectedSidebarEntryId,
+          setIsPinnedOpen: setIsSidebarPinnedOpen,
+          setSelectedEntryId: setSelectedSidebarEntryId,
+          sidebarOffcanvasId,
+        }}
         statusPanelData={{
           activityLog: peerEventTimeline,
           connectionDetails,
@@ -442,6 +507,14 @@ function TimerApp() {
           relayReachability: sessionDiagnostics.relayReachability,
           sessionId,
           sessionPresentation: sessionDiagnostics.sessionPresentation,
+        }}
+        timerPanel={{
+          activeIndex: params.activeIndex,
+          onActivateSequenceRow: handleActivateSequenceRow,
+          onPageTitleChange: paramData.setPageTitle,
+          onSequenceChange: handleSequenceChange,
+          pageTitle,
+          params,
         }}
       />
       <StatusBadge
@@ -459,6 +532,7 @@ function TimerApp() {
           actions={exitConfirmationDialog.actions}
           description={exitConfirmationDialog.description}
           eyebrow={exitConfirmationDialog.eyebrow}
+          role="alertdialog"
           title={exitConfirmationDialog.title}
         />
       ) : null}
@@ -480,6 +554,7 @@ function TimerApp() {
             },
           ]}
           description={t("liveSessionEndedDescription")}
+          role="dialog"
           title={t("liveSessionEndedTitle")}
         />
       ) : null}

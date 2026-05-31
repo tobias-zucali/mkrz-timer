@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react"
 import FloatingTimerContent from "./index"
 
 const baseProps = {
+  accessibleTimerText: "View only. Remaining time. 12 minutes, 34 seconds.",
   backgroundColor: "#000000",
   elapsedPercentage: 0.35,
   foregroundColor: "#ffffff",
@@ -13,6 +14,16 @@ const baseProps = {
 }
 
 describe("FloatingTimerContent", () => {
+  it("exposes the floating timer readout semantically", () => {
+    render(<FloatingTimerContent {...baseProps} title="Facilitator notes" />)
+
+    expect(
+      screen.getByRole("timer", {
+        name: "View only. Remaining time. 12 minutes, 34 seconds.",
+      }),
+    ).toBeInTheDocument()
+  })
+
   it("renders floating titles as single-paragraph wrapped text", () => {
     render(<FloatingTimerContent {...baseProps} title="Facilitator notes" />)
 

@@ -5,54 +5,52 @@ import {
   normalizeQueryParams,
 } from "@/shared/security/input"
 import { renderWithIntl } from "@/test/renderWithIntl"
-import type useParams from "@/utils/useParams"
-import type useRemoteSession from "@/utils/remoteSession"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
 import Sidebar from "./index"
 
-function buildParamData(pageTitle = "") {
+function buildTimerPanel(pageTitle = "") {
   return {
-    getPathWithParams: vi.fn(() => "/"),
-    getUrlWithParams: vi.fn(() => "http://localhost:3000/"),
-    isSearchParamsEmpty: false,
+    activeIndex: 0,
+    onActivateSequenceRow: vi.fn(),
+    onPageTitleChange: vi.fn(),
+    onSequenceChange: vi.fn(),
     pageTitle,
     params: normalizeQueryParams(DEFAULT_SYNC_PARAMS),
-    parsedTimerUrlState: {
-      activeIndex: 0,
-      bg: DEFAULT_SYNC_PARAMS.bg,
-      fg: DEFAULT_SYNC_PARAMS.fg,
-      hasTimerState: false,
-      rows: [],
-      version: null,
-    },
-    readTimerUrlState: vi.fn(),
-    setPageTitle: vi.fn(),
-    setParams: vi.fn(),
-  } satisfies ReturnType<typeof useParams>
+  }
 }
 
 const baseProps = {
-  activeIndex: 0,
-  floatingTimerData: {
-    isOpen: false,
-    isSupported: true,
-    toggle: vi.fn(async () => undefined),
-    unsupportedReason: null,
-  } satisfies FloatingTimerData,
-  handleChange: vi.fn(),
-  isPinnedOpen: true,
-  onActivateSequenceRow: vi.fn(),
-  onEndRemoteSession: vi.fn(async () => undefined),
-  onSequenceChange: vi.fn(),
-  onStartRemoteSession: vi.fn(async () => undefined),
-  peerData: {
-    accessTokens: undefined,
-  } as unknown as ReturnType<typeof useRemoteSession>,
-  remoteRole: null,
-  selectedEntryId: null,
-  setIsPinnedOpen: vi.fn(),
-  setSelectedEntryId: vi.fn(),
+  settingsPanel: {
+    floatingTimerData: {
+      isOpen: false,
+      isSupported: true,
+      toggle: vi.fn(async () => undefined),
+      unsupportedReason: null,
+    } satisfies FloatingTimerData,
+    handleChange: vi.fn(),
+    params: {
+      bg: DEFAULT_SYNC_PARAMS.bg,
+      fg: DEFAULT_SYNC_PARAMS.fg,
+    },
+  },
+  sharePanel: {
+    panelProps: {
+      accessTokens: undefined,
+      controlClientUrl: "",
+      onEndRemoteSession: vi.fn(async () => undefined),
+      onStartRemoteSession: vi.fn(async () => undefined),
+      readonlyClientUrl: "",
+      timerUrl: "http://localhost:3000/",
+    },
+    remoteRole: null,
+  },
+  shell: {
+    isPinnedOpen: true,
+    selectedEntryId: null,
+    setIsPinnedOpen: vi.fn(),
+    setSelectedEntryId: vi.fn(),
+  },
   statusPanelData: {
     activityLog: [],
     connectionDetails: [],
@@ -95,6 +93,7 @@ const baseProps = {
       },
     },
   },
+  timerPanel: buildTimerPanel(),
 }
 
 describe("Sidebar", () => {
@@ -109,14 +108,14 @@ describe("Sidebar", () => {
 
   it("shows the page title instead of the timer label when present", () => {
     renderWithIntl(
-      <Sidebar {...baseProps} paramData={buildParamData("Workshop timer")} />,
+      <Sidebar {...baseProps} timerPanel={buildTimerPanel("Workshop timer")} />,
     )
 
     expect(screen.getByRole("button", { name: "Workshop timer" })).toBeVisible()
   })
 
   it("falls back to the localized timer label when no page title is set", () => {
-    renderWithIntl(<Sidebar {...baseProps} paramData={buildParamData()} />)
+    renderWithIntl(<Sidebar {...baseProps} timerPanel={buildTimerPanel()} />)
 
     expect(screen.getByRole("button", { name: "Timer" })).toBeVisible()
   })

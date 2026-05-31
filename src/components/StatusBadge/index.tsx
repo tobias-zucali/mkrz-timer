@@ -44,8 +44,6 @@ export default function StatusBadge({
 
   return (
     <section
-      aria-atomic="true"
-      aria-live="polite"
       className="absolute bottom-4 left-4 z-20"
       data-connection-count={String(connectionCount)}
       data-remote-role={
@@ -54,12 +52,12 @@ export default function StatusBadge({
       data-remote-state={sessionPresentation.state}
       data-session-id={sessionId ?? ""}
       data-testid="remote-status"
-      role="status"
     >
       <button
         aria-label={t("toggleLabel", {
           label: sessionPresentation.accessibilityLabel,
         })}
+        aria-haspopup="dialog"
         className="
           flex cursor-pointer items-center gap-1.5 rounded-full border
           border-foreground/8 bg-background/58 px-2 py-1 text-left

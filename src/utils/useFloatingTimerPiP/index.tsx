@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl"
 
 import FloatingTimerContent from "@/components/FloatingTimerContent"
 import type { AppTranslationFn } from "@/i18n/translator"
+import { buildTimerReadoutLabel } from "@/utils/accessibility/timer"
 import debug from "@/utils/debug"
 
 type DocumentPictureInPictureWindow = Window & {
@@ -115,6 +116,7 @@ export default function useFloatingTimerPiP({
   state: FloatingTimerState
 }): FloatingTimerData {
   const t = useTranslations()
+  const tTimer = useTranslations("Timer")
   const pipRootRef = useRef<Root | null>(null)
   const pipRootMountedRef = useRef(false)
   const pipWindowRef = useRef<DocumentPictureInPictureWindow | null>(null)
@@ -140,6 +142,15 @@ export default function useFloatingTimerPiP({
 
     pipRoot.render(
       <FloatingTimerContent
+        accessibleTimerText={buildTimerReadoutLabel({
+          activeIndex: 0,
+          readoutState: state.isTimedOut ? "finished" : "viewOnly",
+          remainingSeconds:
+            Number.parseInt(state.minutes, 10) * 60 +
+            Number.parseInt(state.seconds, 10),
+          rowCount: 1,
+          t: tTimer,
+        })}
         backgroundColor={state.backgroundColor}
         elapsedPercentage={state.elapsedPercentage}
         foregroundColor={state.foregroundColor}
@@ -150,7 +161,7 @@ export default function useFloatingTimerPiP({
         title={state.title}
       />,
     )
-  }, [state])
+  }, [state, tTimer])
 
   const closePiPWindow = useCallback((shouldCloseWindow = true) => {
     const pipWindow = pipWindowRef.current

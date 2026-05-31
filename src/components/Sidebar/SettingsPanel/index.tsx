@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import { useTranslations } from "next-intl"
 
 import HelpText from "@/components/HelpText"
@@ -8,19 +9,23 @@ import ColorSwatchField from "@/utils/ColorSwatchField"
 import { WindowIcon } from "@/utils/icons"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
-export default function SettingsPanel({
-  floatingTimerData,
-  handleChange,
-  params,
-}: {
+export type SettingsPanelProps = {
   floatingTimerData: FloatingTimerData
   handleChange: (key: string, value: string) => void
   params: {
     bg: string
     fg: string
   }
-}) {
+}
+
+export default function SettingsPanel({
+  floatingTimerData,
+  handleChange,
+  params,
+}: SettingsPanelProps) {
   const t = useTranslations("Sidebar.settings")
+  const backgroundId = useId()
+  const foregroundId = useId()
 
   return (
     <div className="space-y-6">
@@ -35,13 +40,13 @@ export default function SettingsPanel({
         </div>
         <div className="grid gap-3">
           <ColorSwatchField
-            id="sidebar-background"
+            id={backgroundId}
             label={t("background")}
             onChange={(event) => handleChange("bg", event.target.value)}
             value={params.bg}
           />
           <ColorSwatchField
-            id="sidebar-foreground"
+            id={foregroundId}
             label={t("foreground")}
             onChange={(event) => handleChange("fg", event.target.value)}
             value={params.fg}

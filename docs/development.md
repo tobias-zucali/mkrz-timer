@@ -2,6 +2,8 @@
 
 For product/setup context, start with the [README](../README.md).
 
+Accessibility tree conventions live in [docs/accessibility-tree.md](./accessibility-tree.md).
+
 ## Local App And Relay
 
 `pnpm dev` starts both the Next.js app and the local relay with a compatible default:
@@ -40,6 +42,7 @@ Authoring rules:
 - use `.test.ts` for pure logic tests that should run under `node:test`, even when the file sits near a component
 - use `.test.tsx` for React/jsdom tests that should run under Vitest
 - keep browser tests focused on visible product guarantees such as route behavior, control permissions, readonly behavior, synchronized timer state, recovery UX, and first-load rendering
+- prefer accessibility queries such as `getByRole`, `getByLabel`, and `getByText` when the element is user-perceivable
 - move protocol/state-machine edge cases, merge branches, malformed payload handling, and other non-visual logic into unit or server-safe tests where possible
 - avoid making remote debug attributes or exact participant-count convergence the main acceptance criteria for multi-client coverage
 - prefer one control client plus one viewer/client for remote behavior by default; reserve 3+ clients for dedicated concurrency coverage only
@@ -111,6 +114,7 @@ The lane split is still useful because it isolates Playwright ports, dist dirs, 
 - Prefer behavior-driven readiness checks such as visible controls, readonly UI, synchronized timer values, or recovery dialogs over internal cluster readiness heuristics.
 - Use tolerant numeric assertions for timer drift and small layout tolerances for pixel rounding.
 - Keep helpers diagnostic rather than authoritative; if a helper needs relay debug state, treat it as a fallback signal instead of the core pass condition.
+- Keep `data-testid` for non-semantic geometry checks, diagnostics, or cases where no stable accessible query exists.
 - Restore broad mutable state inside each test with `finally` blocks when the test changes offline mode, opens extra contexts/pages, or creates PiP windows.
 
 ## Docker Locally

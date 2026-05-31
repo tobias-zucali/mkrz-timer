@@ -16,6 +16,7 @@ export default function ActionDialog({
   defaultFocusActionIndex = 0,
   description,
   eyebrow,
+  role = "dialog",
   title,
 }: {
   actions: ActionDialogAction[]
@@ -23,6 +24,7 @@ export default function ActionDialog({
   defaultFocusActionIndex?: number
   description: string
   eyebrow?: string
+  role?: "alertdialog" | "dialog"
   title: string
 }) {
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -45,7 +47,7 @@ export default function ActionDialog({
         fixed inset-0 z-50 flex items-center justify-center bg-background/72 p-6
         backdrop-blur-sm
       "
-      role="dialog"
+      role={role}
     >
       <div
         className="

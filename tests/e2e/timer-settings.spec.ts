@@ -70,6 +70,9 @@ test(
     })
 
     await expect(qrCodeDialog).toBeVisible()
+    await expect(qrCodeDialog).toMatchAriaSnapshot({
+      name: "local-share-qr-dialog.aria.yml",
+    })
     await expect(
       qrCodeDialog.getByRole("heading", { name: "Timer · Local link" }),
     ).toBeVisible()
@@ -92,6 +95,25 @@ test(
     ).toBeVisible()
   },
 )
+
+test("matches sidebar panel aria structures", async ({ page }) => {
+  await openTimer(page, 3)
+
+  await openSidebarPanel(page, "Timer")
+  await expect(page.getByTestId("sidebar-panel-timer")).toMatchAriaSnapshot({
+    name: "sidebar-timer-panel.aria.yml",
+  })
+
+  await openSidebarPanel(page, "Share")
+  await expect(page.getByTestId("sidebar-panel-share")).toMatchAriaSnapshot({
+    name: "sidebar-share-panel.aria.yml",
+  })
+
+  await openSidebarPanel(page, "Settings")
+  await expect(page.getByTestId("sidebar-panel-settings")).toMatchAriaSnapshot({
+    name: "sidebar-settings-panel.aria.yml",
+  })
+})
 
 test(
   "updates title, duration, and colors through settings",

@@ -93,6 +93,7 @@
     "openError": "Floating timer could not open. {error}"
   },
   "page": {
+    "screenReaderAnnouncements": "Timer announcements",
     "dismiss": "Dismiss",
     "otherClientsBeforeUnload": "Other live-session clients are still connected to this controller.",
     "liveSessionEndedTitle": "Live session ended",

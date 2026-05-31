@@ -19,7 +19,7 @@ This file captures durable repo conventions for agents. For product/setup contex
   - if a component mostly passes state, callbacks, or derived values through to children, move that state/logic down or extract a helper closer to the consumer
   - if a file starts mixing route orchestration, UI rendering, dialog state, and feature-specific side effects, split those concerns immediately into components, hooks, or utilities
   - prefer small, purpose-built props and hook arguments over broad “bag of state” interfaces when the narrower shape is clear
-- Do not use nested inline conditionals; prefer an `if` chain or a small helper.
+- Do not use nested inline conditionals or nested ternaries.
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
