@@ -1,9 +1,16 @@
-import { normalizeSyncParamPatch } from "../../shared/security/input.ts"
+import {
+  normalizeSyncParamPatch,
+  normalizeTitle,
+} from "../../shared/security/input.ts"
 import { buildTimerUrlSearchParams } from "../../shared/urlState/index.ts"
 import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
 import type { SyncParams } from "../../shared/remoteSession/types.ts"
 
-export type TimerParams = Partial<SyncParams> & Record<string, unknown>
+export const PAGE_TITLE_QUERY_PARAM = "title"
+
+export type TimerParams = Partial<SyncParams> & {
+  pageTitle?: string
+} & Record<string, unknown>
 
 export type ParamBuildOptions = {
   inherit?: boolean
@@ -14,6 +21,10 @@ export type ParamBuildOptions = {
 
 const colorParamKeys = ["bg", "fg", "pc"] as const
 const remoteSessionOnlyOmitKeys = ["a", "bg", "pid", "fg", "t", "v"] as const
+const readonlyRemoteOnlyOmitKeys = [
+  ...remoteSessionOnlyOmitKeys,
+  PAGE_TITLE_QUERY_PARAM,
+] as const
 export const withColorHash = (value: string) => {
   return value.startsWith("#") ? value : `#${value}`
 }
@@ -43,6 +54,8 @@ const normalizeSerializableParam = (key: string, value: string) => {
       return normalizeSyncParamPatch({ [key]: value })?.[
         key as keyof ReturnType<typeof normalizeSyncParamPatch>
       ] as string | undefined
+    case "pageTitle":
+      return normalizeTitle(value)
     default:
       return value
   }
@@ -58,6 +71,10 @@ export const getRemoteSessionOnlyOmitKeys = (
 
   if (!pathname || !/^\/(?:view|control)(?:\/|$)/.test(pathname)) {
     return []
+  }
+
+  if (pathname.startsWith("/view/")) {
+    return [...readonlyRemoteOnlyOmitKeys]
   }
 
   return [...remoteSessionOnlyOmitKeys]
@@ -81,8 +98,17 @@ export const buildPathWithParams = (
       value === null ||
       value === undefined ||
       value === "" ||
-      omittedParams.has(key)
+      omittedParams.has(key) ||
+      (key === "pageTitle" && omittedParams.has(PAGE_TITLE_QUERY_PARAM))
     ) {
+      return
+    }
+
+    if (key === "pageTitle" && typeof value === "string") {
+      passthroughParams[PAGE_TITLE_QUERY_PARAM] = normalizeSerializableParam(
+        "pageTitle",
+        value,
+      )
       return
     }
 

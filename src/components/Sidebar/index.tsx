@@ -31,6 +31,7 @@ import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useIsNarrowViewport from "@/utils/useIsNarrowViewport"
 import useParams from "@/utils/useParams"
+import { getRemoteSessionOnlyOmitKeys } from "@/utils/useParams/params"
 import useRemoteSession from "@/utils/remoteSession"
 import type { SessionParticipant } from "@/shared/remoteSession/types"
 import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
@@ -139,13 +140,18 @@ export default function Sidebar({
   const offcanvasRef = useRef<HTMLDivElement>(null)
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
   const panelCloseButtonRef = useRef<HTMLButtonElement>(null)
-  const { params, getUrlWithParams } = paramData
+  const { getUrlWithParams, pageTitle, params, setPageTitle } = paramData
   const { accessTokens } = peerData
+  const timerEntryLabel = pageTitle.trim() || t("entries.timer")
+  const shareableParams = {
+    ...params,
+    pageTitle,
+  }
   const mainEntries: SidebarEntry[] = [
     {
       icon: <ClockIcon className="size-4" />,
       id: "timer",
-      label: t("entries.timer"),
+      label: timerEntryLabel,
     },
     {
       icon: <ShareIcon className="size-4" />,
@@ -164,17 +170,25 @@ export default function Sidebar({
   const timerUrl = getUrlWithParams()
   const readonlyClientUrl =
     accessTokens && typeof window !== "undefined"
-      ? new URL(
-          `/view/${accessTokens.readonly}`,
-          window.location.origin,
-        ).toString()
+      ? getUrlWithParams({
+          omit: getRemoteSessionOnlyOmitKeys(
+            shareableParams,
+            [],
+            `/view/${accessTokens.readonly}`,
+          ),
+          pathname: `/view/${accessTokens.readonly}`,
+        })
       : ""
   const controlClientUrl =
     accessTokens && typeof window !== "undefined"
-      ? new URL(
-          `/control/${accessTokens.control}`,
-          window.location.origin,
-        ).toString()
+      ? getUrlWithParams({
+          omit: getRemoteSessionOnlyOmitKeys(
+            shareableParams,
+            [],
+            `/control/${accessTokens.control}`,
+          ),
+          pathname: `/control/${accessTokens.control}`,
+        })
       : ""
   const isReadonlySidebar = remoteRole === "readonly"
 
@@ -278,7 +292,9 @@ export default function Sidebar({
           <TimerPanel
             activeIndex={activeIndex}
             onActivateSequenceRow={onActivateSequenceRow}
+            onPageTitleChange={setPageTitle}
             onSequenceChange={onSequenceChange}
+            pageTitle={pageTitle}
             params={params}
           />
         )
@@ -313,7 +329,7 @@ export default function Sidebar({
   if (isReadonlySidebar) {
     const readonlyPanelTitle =
       selectedEntry === "timer"
-        ? t("entries.timer")
+        ? timerEntryLabel
         : selectedEntry === "share"
           ? t("entries.share")
           : selectedEntry === "settings"

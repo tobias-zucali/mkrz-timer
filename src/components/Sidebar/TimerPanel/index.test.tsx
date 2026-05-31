@@ -30,9 +30,11 @@ function buildRow({
 
 function TimerPanelHarness({
   initialParams,
+  initialPageTitle = "",
   onActivateSequenceRow,
 }: {
   initialParams?: typeof DEFAULT_SYNC_PARAMS
+  initialPageTitle?: string
   onActivateSequenceRow?: (rowIndex: number) => void
 }) {
   const [params, setParams] = useState(
@@ -41,23 +43,42 @@ function TimerPanelHarness({
       rows: [buildRow({ title: "Opening" }), buildRow({ title: "Q&A" })],
     },
   )
+  const [pageTitle, setPageTitle] = useState(initialPageTitle)
 
   return (
     <TimerPanel
       activeIndex={params.activeIndex}
       onActivateSequenceRow={onActivateSequenceRow ?? vi.fn()}
+      onPageTitleChange={setPageTitle}
       onSequenceChange={(nextChange) =>
         setParams((currentParams) => ({
           ...currentParams,
           ...nextChange,
         }))
       }
+      pageTitle={pageTitle}
       params={params}
     />
   )
 }
 
 describe("TimerPanel", () => {
+  it("renders and updates the optional page title", () => {
+    renderWithIntl(<TimerPanelHarness initialPageTitle="Workshop timer" />)
+
+    const pageTitleField = screen.getByRole("textbox", {
+      name: "Page heading",
+    })
+    pageTitleField.focus()
+
+    fireEvent.change(pageTitleField, {
+      target: { value: "Workshop notes" },
+    })
+
+    expect(pageTitleField).toHaveValue("Workshop notes")
+    expect(pageTitleField).toHaveFocus()
+  })
+
   it("keeps the title field focused while typing", () => {
     renderWithIntl(<TimerPanelHarness />)
 

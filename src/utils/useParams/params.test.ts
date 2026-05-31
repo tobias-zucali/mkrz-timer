@@ -13,6 +13,7 @@ import {
 
 const buildParams = () => ({
   ...DEFAULT_SYNC_PARAMS,
+  pageTitle: "Workshop timer",
   rows: [
     {
       ...buildDefaultTimerSequenceRow(),
@@ -37,7 +38,7 @@ test("serializeParamValue strips hashes only from color params", () => {
 test("buildPathWithParams serializes timer state with v=1&t rows", () => {
   assert.equal(
     buildPathWithParams(buildParams()),
-    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0",
+    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop%20timer",
   )
 })
 
@@ -63,7 +64,7 @@ test("buildPathWithParams preserves non-timer params alongside the new timer for
         pathname: "/control/token-1",
       },
     ),
-    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&settings=1",
+    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&title=Workshop%20timer&settings=1",
   )
 })
 
@@ -89,7 +90,7 @@ test("buildPathWithParams can skip inheritance for client URLs", () => {
 test("buildPathWithParams can omit timer-state params on readonly remote routes", () => {
   assert.equal(
     buildPathWithParams(buildParams(), {
-      omit: ["a", "bg", "fg", "t", "v"],
+      omit: ["a", "bg", "fg", "t", "title", "v"],
     }),
     "/",
   )
@@ -109,6 +110,6 @@ test("getRemoteSessionOnlyOmitKeys strips timer params on control routes", () =>
 test("getRemoteSessionOnlyOmitKeys strips timer params on readonly routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(buildParams(), [], "/view/viewer-token"),
-    ["a", "bg", "pid", "fg", "t", "v"],
+    ["a", "bg", "pid", "fg", "t", "v", "title"],
   )
 })

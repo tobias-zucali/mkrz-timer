@@ -1,4 +1,6 @@
 {
+  "pageTitleLabel": "Page heading",
+  "pageTitlePlaceholder": "Timer",
   "heading": "Sequence",
   "step": "Step {step}",
   "active": "Active",

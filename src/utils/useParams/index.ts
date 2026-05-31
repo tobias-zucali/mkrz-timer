@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
-import { normalizeQueryParams } from "@/shared/security/input"
+import { normalizeQueryParams, normalizeTitle } from "@/shared/security/input"
 import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
 import {
   parseTimerUrlState,
@@ -10,24 +10,44 @@ import {
 import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 import type { ParamBuildOptions } from "./params"
-import { buildPathWithParams, getRemoteSessionOnlyOmitKeys } from "./params"
+import {
+  buildPathWithParams,
+  getRemoteSessionOnlyOmitKeys,
+  PAGE_TITLE_QUERY_PARAM,
+} from "./params"
 
 const URL_SYNC_DEBOUNCE_MS = 500
+type CurrentParams = ReturnType<typeof normalizeQueryParams> & {
+  pageTitle: string
+}
 
 const mergeParamsForEditing = (
-  currentParams: ReturnType<typeof normalizeQueryParams>,
-  newParams: Partial<ReturnType<typeof normalizeQueryParams>>,
+  currentParams: CurrentParams,
+  newParams: Partial<CurrentParams>,
 ) => {
-  const mergedSource = mergeSyncParamsPatch(currentParams, newParams)
+  const { pageTitle = currentParams.pageTitle, ...syncParamPatch } = newParams
+  const mergedSource = mergeSyncParamsPatch(currentParams, syncParamPatch)
   const normalizedParams = normalizeQueryParams({
     ...mergedSource,
   })
 
   return {
     ...normalizedParams,
+    pageTitle: normalizeTitle(pageTitle),
     pid: currentParams.pid,
   }
 }
+
+const getPageTitleFromSearchParams = ({
+  allowPageTitle,
+  searchParams,
+}: {
+  allowPageTitle: boolean
+  searchParams: URLSearchParams
+}) =>
+  allowPageTitle
+    ? normalizeTitle(searchParams.get(PAGE_TITLE_QUERY_PARAM) ?? "")
+    : ""
 
 export default function useParams() {
   const nextSearchParams = useSearchParams()
@@ -47,6 +67,7 @@ export default function useParams() {
   )
   const isSearchParamsEmpty = searchParams.size === 0
   const allowTimerState = !pathname.startsWith("/view")
+  const allowPageTitle = !pathname.startsWith("/view")
   const parsedTimerUrlState = useMemo(
     () =>
       parseTimerUrlState({
@@ -56,15 +77,26 @@ export default function useParams() {
     [allowTimerState, searchParamsString],
   )
 
-  const [currentParams, setCurrentParams] = useState(() =>
-    normalizeQueryParams(
-      projectTimerUrlStateToSyncParams({
-        state: parseTimerUrlState({
-          allowTimerState,
+  const [currentParams, setCurrentParams] = useState(
+    () =>
+      ({
+        ...normalizeQueryParams(
+          projectTimerUrlStateToSyncParams({
+            state: parseTimerUrlState({
+              allowTimerState,
+              searchParams: new URLSearchParams(searchParamsString),
+            }),
+          }),
+        ),
+        pageTitle: getPageTitleFromSearchParams({
+          allowPageTitle,
           searchParams: new URLSearchParams(searchParamsString),
         }),
-      }),
-    ),
+      }) satisfies CurrentParams,
+  )
+  const syncParams = useMemo(
+    () => normalizeQueryParams(currentParams),
+    [currentParams],
   )
 
   useEffect(() => {
@@ -145,9 +177,10 @@ export default function useParams() {
     () => ({
       isSearchParamsEmpty,
       parsedTimerUrlState,
-      params: currentParams,
+      params: syncParams,
       getPathWithParams,
       getUrlWithParams,
+      pageTitle: currentParams.pageTitle,
       readTimerUrlState: () =>
         parseTimerUrlState({
           allowTimerState:
@@ -159,6 +192,11 @@ export default function useParams() {
               ? new URLSearchParams(searchParamsString)
               : new URLSearchParams(window.location.search),
         }),
+      setPageTitle: (nextPageTitle: string) => {
+        setCurrentParams((curr) =>
+          mergeParamsForEditing(curr, { pageTitle: nextPageTitle }),
+        )
+      },
       setParams,
     }),
     [
@@ -169,6 +207,7 @@ export default function useParams() {
       isSearchParamsEmpty,
       parsedTimerUrlState,
       searchParamsString,
+      syncParams,
       setParams,
     ],
   )

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/remoteSession/types"
+import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import {
   buildDurationPartsFromTotalSeconds,
   getEffectiveTimerSequenceRows,
@@ -72,15 +73,19 @@ const getCardAccentStyle = ({
 export default function TimerPanel({
   activeIndex,
   onActivateSequenceRow,
+  onPageTitleChange,
   onSequenceChange,
+  pageTitle,
   params,
 }: {
   activeIndex: number
   onActivateSequenceRow: (rowIndex: number) => void
+  onPageTitleChange: (title: string) => void
   onSequenceChange: (nextChange: {
     activeIndex: number
     rows: SyncParams["rows"]
   }) => void
+  pageTitle: string
   params: SyncParams
 }) {
   const t = useTranslations("Sidebar.timer")
@@ -196,6 +201,30 @@ export default function TimerPanel({
 
   return (
     <div className="space-y-6">
+      <section className="space-y-2">
+        <label className="sr-only" htmlFor="sidebar-page-title">
+          {t("pageTitleLabel")}
+        </label>
+        <input
+          autoComplete="off"
+          className="
+            block w-full border-none bg-transparent px-0 text-2xl font-semibold
+            text-foreground outline-none placeholder:text-foreground/42
+          "
+          data-testid="sidebar-page-title-input"
+          id="sidebar-page-title"
+          maxLength={MAX_TITLE_LENGTH}
+          onChange={(event) =>
+            onPageTitleChange(normalizeTitle(event.target.value))
+          }
+          onKeyDown={(event) => event.stopPropagation()}
+          onKeyUp={(event) => event.stopPropagation()}
+          placeholder={t("pageTitlePlaceholder")}
+          spellCheck={false}
+          type="text"
+          value={pageTitle}
+        />
+      </section>
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
