@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import {
+  applyTimerCommandToSnapshot,
+  resolveSessionSnapshotAt,
+} from "@/shared/timerState"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { getTimerFinishedSoundOption } from "@/shared/timerSettings"
 import { getActiveTimerSequenceRow } from "@/shared/timerSequence"
@@ -9,7 +13,7 @@ import { prefixZeros, getMinutesSeconds } from "@/utils/timeInputHelpers"
 import useAnimationFrame from "@/utils/useAnimationFrame"
 import debug from "@/utils/debug"
 import useGlobalKeyUp from "@/utils/useGlobalKeyUp"
-import { resolveTimerStateAt, type TimerState } from "@/utils/timerState"
+import type { TimerState } from "@/utils/timerState"
 
 export type TimerActions =
   | "activate"
@@ -54,14 +58,21 @@ export default function useTimer({
   onAction: (action: TimerActions, payload: TimerActionPayload) => void
   shortcutsEnabled?: boolean
 }) {
-  const localParamsRef = useRef(params)
-  localParamsRef.current = params
-  const paramsRef = syncParamsRef ?? localParamsRef
+  void syncParamsRef
 
-  const getActiveRowSnapshot = (activeIndex = paramsRef.current.activeIndex) =>
+  const [activeIndex, setActiveIndex] = useState(() => params.activeIndex)
+  const buildEffectiveParams = () => ({
+    ...params,
+    activeIndex,
+  })
+  const effectiveParams = buildEffectiveParams()
+
+  const getActiveRowSnapshot = (
+    nextActiveIndex = effectiveParams.activeIndex,
+  ) =>
     getSequenceRowAt({
-      activeIndex,
-      params: paramsRef.current,
+      activeIndex: nextActiveIndex,
+      params: effectiveParams,
     })
 
   const [elapsedTime, setElapsedTime] = useState<number>(0)
@@ -70,10 +81,11 @@ export default function useTimer({
   const [isStarted, setIsStarted] = useState(false)
   const [lastUpdatedAt, setLastUpdatedAt] = useState(0)
   const [revision, setRevision] = useState(0)
+  const [status, setStatus] = useState<TimerState["status"]>("idle")
   const [totalDuration, setTotalDuration] = useState<number>(
     () => getActiveRowSnapshot().row.totalSeconds,
   )
-  const [, setAnimationNow] = useState(() => Date.now())
+  const [animationNow, setAnimationNow] = useState(() => Date.now())
   const latestStateRef = useRef<TimerState>({
     anchorServerTimestamp: 0,
     currentRepeat,
@@ -84,15 +96,14 @@ export default function useTimer({
     revision,
     isStarted,
     lastUpdatedAt,
-    status: "idle",
+    status,
     totalDuration,
   })
   const handleActionRef = useRef<(action: TimerActions) => void>(() => {})
-  const hasPlayedFinishedSoundRef = useRef(false)
   const finishSoundAudioRef = useRef<HTMLAudioElement | null>(null)
   const previousIsTimedOutRef = useRef(false)
-
-  const resolvedState = resolveTimerStateAt({
+  const previousCompletedStepKeyRef = useRef<string | null>(null)
+  const rawState: TimerState = {
     anchorServerTimestamp: lastUpdatedAt,
     currentRepeat,
     durationSeconds: totalDuration,
@@ -102,30 +113,46 @@ export default function useTimer({
     isStarted,
     lastUpdatedAt,
     revision,
-    status: !isStarted ? "idle" : isPaused ? "paused" : "running",
+    status,
     totalDuration,
+  }
+  const resolvedSnapshot = resolveSessionSnapshotAt({
+    params: effectiveParams,
+    state: rawState,
   })
+  const resolvedState = resolvedSnapshot.state
 
   const elapsedPercentage =
     resolvedState.totalDuration === 0
       ? 1
       : resolvedState.elapsedTime / resolvedState.totalDuration
   const isTimedOut = elapsedPercentage >= 1
+  const rawElapsedTime =
+    rawState.status === "running" && rawState.anchorServerTimestamp > 0
+      ? rawState.elapsedSecondsAtAnchor +
+        Math.max(0, animationNow - rawState.anchorServerTimestamp) / 1000
+      : rawState.elapsedTime
+  const hasCompletedCurrentStep =
+    rawState.status === "running" &&
+    rawState.totalDuration > 0 &&
+    rawElapsedTime >= rawState.totalDuration
+  const completedStepKey = hasCompletedCurrentStep
+    ? `${activeIndex}:${rawState.currentRepeat}:${rawState.revision}`
+    : null
 
   useEffect(() => {
     const didJustTimeOut = !previousIsTimedOutRef.current && isTimedOut
     previousIsTimedOutRef.current = isTimedOut
 
-    if (!isTimedOut) {
-      hasPlayedFinishedSoundRef.current = false
+    const didCompleteNewStep =
+      completedStepKey !== null &&
+      completedStepKey !== previousCompletedStepKeyRef.current
+    previousCompletedStepKeyRef.current = completedStepKey
+
+    if (!didJustTimeOut && !didCompleteNewStep) {
       return
     }
 
-    if (!didJustTimeOut || hasPlayedFinishedSoundRef.current) {
-      return
-    }
-
-    hasPlayedFinishedSoundRef.current = true
     const sound = getTimerFinishedSoundOption(params.snd)
     if (!sound.src) {
       return
@@ -140,7 +167,7 @@ export default function useTimer({
         return
       }
     })
-  }, [isTimedOut, params.snd])
+  }, [completedStepKey, isTimedOut, params.snd])
 
   useEffect(() => {
     return () => {
@@ -161,14 +188,6 @@ export default function useTimer({
     { isPaused: !isStarted || isPaused },
   )
 
-  const createNextState = useCallback(
-    (nextState: Omit<TimerState, "revision">): TimerState => ({
-      ...nextState,
-      revision: latestStateRef.current.revision + 1,
-    }),
-    [],
-  )
-
   const commitNextState = useCallback(
     (nextState: TimerState) => {
       setCurrentRepeat(nextState.currentRepeat)
@@ -176,6 +195,7 @@ export default function useTimer({
       setIsPaused(nextState.isPaused)
       setIsStarted(nextState.isStarted)
       setLastUpdatedAt(nextState.lastUpdatedAt)
+      setStatus(nextState.status)
       setTotalDuration(nextState.totalDuration)
       setRevision(nextState.revision)
       latestStateRef.current = nextState
@@ -184,112 +204,76 @@ export default function useTimer({
     [syncStateRef],
   )
 
-  const handleAction = (action: TimerActions) => {
+  const commitSnapshot = useCallback(
+    (nextSnapshot: { params: SyncParams; state: TimerState }) => {
+      setActiveIndex(nextSnapshot.params.activeIndex)
+      commitNextState(nextSnapshot.state)
+    },
+    [commitNextState],
+  )
+
+  const buildActionPayload = useCallback(
+    ({
+      currentActiveIndex,
+      nextSnapshot,
+    }: {
+      currentActiveIndex: number
+      nextSnapshot: { params: SyncParams; state: TimerState }
+    }) => ({
+      params:
+        nextSnapshot.params.activeIndex !== currentActiveIndex
+          ? { activeIndex: nextSnapshot.params.activeIndex }
+          : undefined,
+      state: nextSnapshot.state,
+    }),
+    [],
+  )
+
+  const runAction = (action: TimerActions) => {
     if (!canMutate) {
       return
     }
 
-    const currentState = latestStateRef.current
-    const activeRowSnapshot = getActiveRowSnapshot()
-
-    switch (action) {
-      case "start": {
-        if (currentState.isStarted && !currentState.isPaused) {
-          return
-        }
-
-        const nextState = createNextState({
-          anchorServerTimestamp: Date.now(),
-          currentRepeat: currentState.currentRepeat,
-          durationSeconds: activeRowSnapshot.row.totalSeconds,
-          elapsedSecondsAtAnchor: currentState.isStarted
-            ? currentState.elapsedTime
-            : 0,
-          elapsedTime: currentState.isStarted ? currentState.elapsedTime : 0,
-          isPaused: false,
-          isStarted: true,
-          lastUpdatedAt: Date.now(),
-          status: "running",
-          totalDuration: activeRowSnapshot.row.totalSeconds,
-        })
-        commitNextState(nextState)
-        onAction("start", { state: nextState })
-        return
-      }
-      case "pause": {
-        if (!currentState.isStarted || currentState.isPaused) {
-          return
-        }
-
-        const nextState = createNextState({
-          anchorServerTimestamp: 0,
-          currentRepeat: currentState.currentRepeat,
-          durationSeconds: currentState.totalDuration,
-          elapsedSecondsAtAnchor: currentState.elapsedTime,
-          elapsedTime: currentState.elapsedTime,
-          isPaused: true,
-          isStarted: true,
-          lastUpdatedAt: Date.now(),
-          status:
-            currentState.elapsedTime >= currentState.totalDuration
-              ? "finished"
-              : "paused",
-          totalDuration: currentState.totalDuration,
-        })
-        commitNextState(nextState)
-        onAction("pause", { state: nextState })
-        return
-      }
-      case "restart": {
-        const nextLastUpdatedAt = Date.now()
-        const next = {
-          params: { activeIndex: activeRowSnapshot.activeIndex },
-          state: createNextState({
-            anchorServerTimestamp: 0,
-            currentRepeat: 1,
-            durationSeconds: activeRowSnapshot.row.totalSeconds,
-            elapsedSecondsAtAnchor: 0,
-            elapsedTime: 0,
-            isPaused: true,
-            isStarted: false,
-            lastUpdatedAt: nextLastUpdatedAt,
-            status: "idle",
-            totalDuration: activeRowSnapshot.row.totalSeconds,
-          }),
-        }
-        commitNextState(next.state)
-        onAction("restart", next)
-        return
-      }
-      case "next":
-      case "previous": {
-        const direction = action === "next" ? 1 : -1
-        const nextIndex = paramsRef.current.activeIndex + direction
-        if (nextIndex < 0 || nextIndex >= paramsRef.current.rows.length) {
-          return
-        }
-
-        const nextRowSnapshot = getActiveRowSnapshot(nextIndex)
-        const nextLastUpdatedAt = Date.now()
-        const next = {
-          params: { activeIndex: nextRowSnapshot.activeIndex },
-          state: createNextState({
-            anchorServerTimestamp: 0,
-            currentRepeat: 1,
-            durationSeconds: nextRowSnapshot.row.totalSeconds,
-            elapsedSecondsAtAnchor: 0,
-            elapsedTime: 0,
-            isPaused: true,
-            isStarted: false,
-            lastUpdatedAt: nextLastUpdatedAt,
-            status: "idle",
-            totalDuration: nextRowSnapshot.row.totalSeconds,
-          }),
-        }
-        commitNextState(next.state)
-        onAction(action, next)
-      }
+    const currentSnapshot = {
+      params: buildEffectiveParams(),
+      state: latestStateRef.current,
     }
+    const currentActiveIndex = currentSnapshot.params.activeIndex
+    const now = Date.now()
+    const nextSnapshot = applyTimerCommandToSnapshot({
+      command:
+        action === "restart"
+          ? { type: "reset" }
+          : action === "activate"
+            ? {
+                activeIndex: currentActiveIndex,
+                type: "activate",
+              }
+            : { type: action },
+      now,
+      snapshot: currentSnapshot,
+    })
+
+    if (
+      nextSnapshot.params.activeIndex === currentActiveIndex &&
+      nextSnapshot.state.revision === currentSnapshot.state.revision &&
+      nextSnapshot.state.status === currentSnapshot.state.status
+    ) {
+      return
+    }
+
+    commitSnapshot(nextSnapshot)
+    onAction(
+      action,
+      buildActionPayload({
+        currentActiveIndex,
+        nextSnapshot,
+      }),
+    )
+  }
+
+  const handleAction = (action: TimerActions) => {
+    runAction(action)
   }
 
   const activateRow = (activeIndex: number) => {
@@ -297,114 +281,72 @@ export default function useTimer({
       return
     }
 
-    const nextRowSnapshot = getActiveRowSnapshot(activeIndex)
-    const next = {
-      params: { activeIndex: nextRowSnapshot.activeIndex },
-      state: createNextState({
-        anchorServerTimestamp: 0,
-        currentRepeat: 1,
-        durationSeconds: nextRowSnapshot.row.totalSeconds,
-        elapsedSecondsAtAnchor: 0,
-        elapsedTime: 0,
-        isPaused: true,
-        isStarted: false,
-        lastUpdatedAt: Date.now(),
-        status: "idle",
-        totalDuration: nextRowSnapshot.row.totalSeconds,
-      }),
+    const currentSnapshot = {
+      params: buildEffectiveParams(),
+      state: latestStateRef.current,
     }
-    commitNextState(next.state)
-    onAction("activate", next)
+    const currentActiveIndex = currentSnapshot.params.activeIndex
+    const nextSnapshot = applyTimerCommandToSnapshot({
+      command: {
+        activeIndex,
+        type: "activate",
+      },
+      now: Date.now(),
+      snapshot: currentSnapshot,
+    })
+
+    commitSnapshot(nextSnapshot)
+    onAction(
+      "activate",
+      buildActionPayload({
+        currentActiveIndex,
+        nextSnapshot,
+      }),
+    )
   }
 
   handleActionRef.current = handleAction
 
   useEffect(() => {
-    const currentResolvedState = resolvedState
-    const activeRowSnapshot = getSequenceRowAt({
-      activeIndex: paramsRef.current.activeIndex,
-      params: paramsRef.current,
-    })
-
     if (
       sequenceAuthority !== "client" ||
-      !currentResolvedState.isStarted ||
-      currentResolvedState.isPaused ||
-      currentResolvedState.elapsedTime < currentResolvedState.totalDuration
+      (resolvedSnapshot.params.activeIndex === activeIndex &&
+        resolvedState.revision === latestStateRef.current.revision &&
+        resolvedState.status === latestStateRef.current.status &&
+        resolvedState.currentRepeat === latestStateRef.current.currentRepeat)
     ) {
       return
     }
 
-    const currentRow = activeRowSnapshot.row
-    if (currentResolvedState.currentRepeat < currentRow.repeatCount) {
-      const nextState = createNextState({
-        anchorServerTimestamp: Date.now(),
-        currentRepeat: currentResolvedState.currentRepeat + 1,
-        durationSeconds: currentRow.totalSeconds,
-        elapsedSecondsAtAnchor: 0,
-        elapsedTime: 0,
-        isPaused: false,
-        isStarted: true,
-        lastUpdatedAt: Date.now(),
-        status: "running",
-        totalDuration: currentRow.totalSeconds,
-      })
-      commitNextState(nextState)
-      onAction("start", { state: nextState })
-      return
-    }
-
-    if (currentRow.endBehavior === "advance") {
-      const nextIndex =
-        paramsRef.current.rows.length <= 1
-          ? activeRowSnapshot.activeIndex
-          : (activeRowSnapshot.activeIndex + 1) % paramsRef.current.rows.length
-      const nextRowSnapshot = getSequenceRowAt({
-        activeIndex: nextIndex,
-        params: paramsRef.current,
-      })
-      const next = {
-        params: { activeIndex: nextRowSnapshot.activeIndex },
-        state: createNextState({
-          anchorServerTimestamp: Date.now(),
-          currentRepeat: 1,
-          durationSeconds: nextRowSnapshot.row.totalSeconds,
-          elapsedSecondsAtAnchor: 0,
-          elapsedTime: 0,
-          isPaused: false,
-          isStarted: true,
-          lastUpdatedAt: Date.now(),
-          status: "running",
-          totalDuration: nextRowSnapshot.row.totalSeconds,
-        }),
-      }
-      commitNextState(next.state)
-      onAction("start", next)
-      return
-    }
-
-    const nextState = createNextState({
-      anchorServerTimestamp: 0,
-      currentRepeat: currentResolvedState.currentRepeat,
-      durationSeconds: currentResolvedState.totalDuration,
-      elapsedSecondsAtAnchor: currentResolvedState.totalDuration,
-      elapsedTime: currentResolvedState.totalDuration,
-      isPaused: true,
-      isStarted: true,
-      lastUpdatedAt: Date.now(),
-      status: "finished",
-      totalDuration: currentResolvedState.totalDuration,
-    })
-    commitNextState(nextState)
-    onAction("pause", { state: nextState })
+    const currentActiveIndex = activeIndex
+    commitSnapshot(resolvedSnapshot)
+    onAction(
+      resolvedState.status === "running" ? "start" : "pause",
+      buildActionPayload({
+        currentActiveIndex,
+        nextSnapshot: resolvedSnapshot,
+      }),
+    )
   }, [
-    commitNextState,
-    createNextState,
+    buildActionPayload,
+    commitSnapshot,
     onAction,
-    paramsRef,
+    activeIndex,
+    resolvedSnapshot,
     resolvedState,
     sequenceAuthority,
   ])
+
+  useEffect(() => {
+    const nextActiveIndex = getSequenceRowAt({
+      activeIndex: params.activeIndex,
+      params,
+    }).activeIndex
+
+    setActiveIndex((current) =>
+      current === nextActiveIndex ? current : nextActiveIndex,
+    )
+  }, [params, params.activeIndex])
 
   useGlobalKeyUp((event: KeyboardEvent) => {
     if (!shortcutsEnabled) {
@@ -522,6 +464,7 @@ export default function useTimer({
       setIsPaused(() => isPaused)
       setIsStarted(() => isStarted)
       setLastUpdatedAt(() => lastUpdatedAt)
+      setStatus(() => status)
       setTotalDuration(() => totalDuration)
     },
     [syncStateRef],

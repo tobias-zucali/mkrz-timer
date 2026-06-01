@@ -83,17 +83,23 @@ export default function TimerAnnouncements({
 
   useEffect(() => {
     const previous = previousTimerSnapshotRef.current
-    const shouldResetMilestones =
-      !currentSnapshot.isStarted ||
-      previous.activeIndex !== currentSnapshot.activeIndex ||
-      (!previous.isStarted &&
-        currentSnapshot.isStarted &&
-        !currentSnapshot.isPaused)
     const eventAnnouncement = getTimerEventAnnouncement({
       current: currentSnapshot,
       previous,
       t: tTimer,
     })
+    const didStartRunning =
+      (!previous.isStarted &&
+        currentSnapshot.isStarted &&
+        !currentSnapshot.isPaused) ||
+      (previous.isStarted &&
+        previous.isPaused &&
+        currentSnapshot.isStarted &&
+        !currentSnapshot.isPaused) ||
+      (previous.activeIndex !== currentSnapshot.activeIndex &&
+        currentSnapshot.isStarted &&
+        !currentSnapshot.isPaused)
+    const shouldResetMilestones = !currentSnapshot.isStarted || didStartRunning
 
     if (shouldResetMilestones) {
       announcedMilestonesRef.current = new Set()

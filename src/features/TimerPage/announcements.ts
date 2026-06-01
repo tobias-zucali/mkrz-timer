@@ -44,6 +44,12 @@ const buildStartedAnnouncement = ({
   })
 }
 
+const isRunning = (snapshot: TimerAnnouncementSnapshot) =>
+  snapshot.isStarted && !snapshot.isPaused
+
+const isPausedState = (snapshot: TimerAnnouncementSnapshot) =>
+  snapshot.isStarted && snapshot.isPaused
+
 export const getTimerEventAnnouncement = ({
   current,
   previous,
@@ -53,28 +59,27 @@ export const getTimerEventAnnouncement = ({
   previous: TimerAnnouncementSnapshot
   t: TimerTranslationFn
 }) => {
-  if (previous.activeIndex !== current.activeIndex) {
-    return buildStartedAnnouncement({
-      stepTitle: current.stepTitle,
-      t,
-      totalDuration: current.totalDuration,
-    })
-  }
-
-  if (!previous.isStarted && current.isStarted && !current.isPaused) {
-    return buildStartedAnnouncement({
-      stepTitle: current.stepTitle,
-      t,
-      totalDuration: current.totalDuration,
-    })
-  }
-
   if (
-    previous.isStarted &&
-    previous.isPaused &&
-    current.isStarted &&
-    !current.isPaused
+    previous.activeIndex !== current.activeIndex &&
+    isRunning(current) &&
+    !isRunning(previous)
   ) {
+    return buildStartedAnnouncement({
+      stepTitle: current.stepTitle,
+      t,
+      totalDuration: current.totalDuration,
+    })
+  }
+
+  if (!previous.isStarted && isRunning(current)) {
+    return buildStartedAnnouncement({
+      stepTitle: current.stepTitle,
+      t,
+      totalDuration: current.totalDuration,
+    })
+  }
+
+  if (isPausedState(previous) && isRunning(current)) {
     return t("announcementResumed", {
       time: formatDurationForAccessibility(current.remainingSeconds, t),
     })
@@ -90,12 +95,7 @@ export const getTimerEventAnnouncement = ({
     })
   }
 
-  if (
-    previous.isStarted &&
-    !previous.isPaused &&
-    current.isStarted &&
-    current.isPaused
-  ) {
+  if (isRunning(previous) && isPausedState(current)) {
     return t("announcementPaused")
   }
 

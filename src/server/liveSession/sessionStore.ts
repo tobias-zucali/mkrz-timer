@@ -15,11 +15,10 @@ import {
   normalizeSyncParamPatch,
   normalizeTimerState,
 } from "../../shared/security/input.ts"
-import { resolveSessionSnapshotAt } from "../../shared/timerState.ts"
 import {
-  clampTimerSequenceIndex,
-  getActiveTimerSequenceRow,
-} from "../../shared/timerSequence.ts"
+  applyTimerCommandToSnapshot,
+  resolveSessionSnapshotAt,
+} from "../../shared/timerState.ts"
 
 const DEFAULT_SESSION_TTL_MS = 5 * 60_000
 
@@ -50,37 +49,6 @@ const createAccessToken = () => crypto.randomUUID()
 
 const cloneSnapshot = (snapshot: SessionSnapshot) =>
   normalizeSessionSnapshot(structuredClone(snapshot))
-
-const buildStateForCurrentRow = ({
-  revision,
-  snapshot,
-  status,
-}: {
-  revision: number
-  snapshot: SessionSnapshot
-  status: SessionSnapshot["state"]["status"]
-}): SessionSnapshot["state"] => {
-  const rowSnapshot = getActiveTimerSequenceRow({
-    activeIndex: snapshot.params.activeIndex,
-    rows: snapshot.params.rows,
-  })
-  const durationSeconds = rowSnapshot.row.totalSeconds
-
-  return {
-    ...snapshot.state,
-    anchorServerTimestamp: 0,
-    currentRepeat: 1,
-    durationSeconds,
-    elapsedSecondsAtAnchor: status === "finished" ? durationSeconds : 0,
-    elapsedTime: status === "finished" ? durationSeconds : 0,
-    isPaused: status !== "running",
-    isStarted: status !== "idle",
-    lastUpdatedAt: 0,
-    revision,
-    status,
-    totalDuration: durationSeconds,
-  }
-}
 
 export class InMemorySessionStore {
   private readonly sessions = new Map<string, RelaySessionRecord>()
@@ -198,110 +166,10 @@ export class InMemorySessionStore {
     command: TimerCommand
     state: SessionSnapshot
   }): SessionSnapshot {
-    const resolvedSnapshot = resolveSessionSnapshotAt(state)
-    const nextRevision = resolvedSnapshot.state.revision + 1
-
-    switch (command.type) {
-      case "start":
-        if (resolvedSnapshot.state.status === "running") {
-          return resolvedSnapshot
-        }
-
-        return {
-          params: resolvedSnapshot.params,
-          state: {
-            ...resolvedSnapshot.state,
-            anchorServerTimestamp: Date.now(),
-            isPaused: false,
-            isStarted: true,
-            lastUpdatedAt: Date.now(),
-            revision: nextRevision,
-            status: "running",
-          },
-        }
-      case "pause": {
-        if (resolvedSnapshot.state.status !== "running") {
-          return resolvedSnapshot
-        }
-
-        const pausedSnapshot = resolveSessionSnapshotAt(resolvedSnapshot)
-        const isFinished =
-          pausedSnapshot.state.elapsedSecondsAtAnchor >=
-          pausedSnapshot.state.durationSeconds
-
-        return {
-          params: pausedSnapshot.params,
-          state: {
-            ...pausedSnapshot.state,
-            anchorServerTimestamp: 0,
-            isPaused: true,
-            isStarted: true,
-            lastUpdatedAt: Date.now(),
-            revision: nextRevision,
-            status: isFinished ? "finished" : "paused",
-          },
-        }
-      }
-      case "reset":
-        return {
-          params: resolvedSnapshot.params,
-          state: buildStateForCurrentRow({
-            revision: nextRevision,
-            snapshot: resolvedSnapshot,
-            status: "idle",
-          }),
-        }
-      case "next":
-      case "previous": {
-        const direction = command.type === "next" ? 1 : -1
-        const nextIndex = clampTimerSequenceIndex({
-          activeIndex: resolvedSnapshot.params.activeIndex + direction,
-          rows: resolvedSnapshot.params.rows,
-        })
-
-        return {
-          params: {
-            ...resolvedSnapshot.params,
-            activeIndex: nextIndex,
-          },
-          state: buildStateForCurrentRow({
-            revision: nextRevision,
-            snapshot: {
-              ...resolvedSnapshot,
-              params: {
-                ...resolvedSnapshot.params,
-                activeIndex: nextIndex,
-              },
-            },
-            status: "idle",
-          }),
-        }
-      }
-      case "activate": {
-        const nextIndex = clampTimerSequenceIndex({
-          activeIndex: command.activeIndex,
-          rows: resolvedSnapshot.params.rows,
-        })
-
-        return {
-          params: {
-            ...resolvedSnapshot.params,
-            activeIndex: nextIndex,
-          },
-          state: buildStateForCurrentRow({
-            revision: nextRevision,
-            snapshot: {
-              ...resolvedSnapshot,
-              params: {
-                ...resolvedSnapshot.params,
-                activeIndex: nextIndex,
-              },
-            },
-            status: "idle",
-          }),
-        }
-      }
-    }
+    return applyTimerCommandToSnapshot({
+      command,
+      snapshot: state,
+    })
   }
 
   create({

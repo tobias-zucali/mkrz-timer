@@ -106,12 +106,14 @@ function TimerApp() {
       setPendingTimerCommand(
         action === "restart"
           ? "reset"
-          : action === "pause" ||
-              action === "start" ||
-              action === "next" ||
-              action === "previous"
-            ? action
-            : null,
+          : action === "activate"
+            ? "activate"
+            : action === "pause" ||
+                action === "start" ||
+                action === "next" ||
+                action === "previous"
+              ? action
+              : null,
       )
     },
     params: syncParams,

@@ -4,6 +4,8 @@ import {
   expectScreenshotWithoutDebugInfo,
   getDisplayedSeconds,
   openTimer,
+  openSidebarPanel,
+  updateTimerSettings,
 } from "./live-session.helpers"
 
 const timerVisualFormFactors = [
@@ -627,6 +629,48 @@ test("announces timer state changes and uses semantic readout mode", async ({
 
   await page.getByRole("button", { name: "RESET" }).click()
   await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
+})
+
+test("keeps paused step switches silent and auto-advances running sequences", async ({
+  page,
+}) => {
+  test.slow()
+
+  await openTimer(page, 3)
+  await updateTimerSettings(page, {
+    ttsEnabled: true,
+  })
+
+  await openSidebarPanel(page, "Timer")
+  const timerPanel = page.getByTestId("sidebar-panel-timer")
+  await timerPanel.getByLabel("End Behavior").selectOption("advance")
+  await timerPanel.getByRole("button", { name: "Add step" }).click()
+  await timerPanel.getByLabel("Seconds").fill("05")
+
+  const liveRegion = page.getByRole("status", { name: "Timer announcements" })
+
+  await timerPanel.getByRole("button", { name: "Make active" }).click()
+  await expect(liveRegion).not.toContainText("started")
+
+  await page.getByRole("button", { name: "Close sidebar" }).last().click()
+
+  await page.getByRole("button", { name: "Previous step" }).click()
+  await expect(liveRegion).not.toContainText("started")
+
+  await page.getByRole("button", { name: "Next step" }).click()
+  await expect(liveRegion).not.toContainText("started")
+
+  await page.getByRole("button", { name: "Previous step" }).click()
+  await page.getByRole("button", { name: "START" }).click()
+
+  await expect(liveRegion).toContainText("3 seconds timer started.")
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "timer should continue running on the next step",
+      timeout: 8_000,
+    })
+    .toBeGreaterThan(0)
+  await expect(liveRegion).not.toContainText("5 seconds timer started.")
 })
 
 test("keeps timer chrome mounted on small screens and dims it after idle", async ({

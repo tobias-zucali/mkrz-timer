@@ -135,4 +135,177 @@ describe("useTimer finish sound", () => {
 
     expect(Audio).not.toHaveBeenCalled()
   })
+
+  it("auto-advances local running timers through sequence steps", async () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          activeIndex: 0,
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              endBehavior: "advance",
+              title: "Intro",
+              totalSeconds: 30,
+            },
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              title: "Discussion",
+              totalSeconds: 45,
+            },
+          ],
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: Date.now() - 30_000,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 0,
+        elapsedTime: 0,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now() - 30_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 30,
+      })
+    })
+
+    await act(async () => {
+      vi.advanceTimersByTime(20)
+    })
+
+    expect(onAction).toHaveBeenCalledWith(
+      "start",
+      expect.objectContaining({
+        params: { activeIndex: 1 },
+        state: expect.objectContaining({
+          currentRepeat: 1,
+          isPaused: false,
+          isStarted: true,
+          status: "running",
+          totalDuration: 45,
+        }),
+      }),
+    )
+
+    expect(result.current.isStarted).toBe(true)
+    expect(result.current.isPaused).toBe(false)
+    expect(result.current.totalDuration).toBe(45)
+  })
+
+  it("plays the configured finish sound when a step auto-advances", async () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          activeIndex: 0,
+          snd: "b",
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              endBehavior: "advance",
+              title: "Intro",
+              totalSeconds: 30,
+            },
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              title: "Discussion",
+              totalSeconds: 45,
+            },
+          ],
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: Date.now(),
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 30,
+        elapsedTime: 30,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now(),
+        revision: 1,
+        status: "running",
+        totalDuration: 30,
+      })
+    })
+
+    expect(audioInstances).toHaveLength(1)
+    expect(audioInstances[0]?.src).toBe("/sounds/Ringing_Bell.mp3")
+    expect(audioInstances[0]?.play).toHaveBeenCalledTimes(1)
+  })
+
+  it("resets activated steps to idle state", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          activeIndex: 0,
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              title: "Intro",
+              totalSeconds: 30,
+            },
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              title: "Discussion",
+              totalSeconds: 45,
+            },
+          ],
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: 0,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 12,
+        elapsedTime: 12,
+        isPaused: true,
+        isStarted: true,
+        lastUpdatedAt: Date.now(),
+        revision: 1,
+        status: "paused",
+        totalDuration: 30,
+      })
+    })
+
+    act(() => {
+      result.current.activateRow(1)
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "activate",
+      expect.objectContaining({
+        params: { activeIndex: 1 },
+        state: expect.objectContaining({
+          elapsedTime: 0,
+          isPaused: true,
+          isStarted: false,
+          status: "idle",
+          totalDuration: 45,
+        }),
+      }),
+    )
+  })
 })

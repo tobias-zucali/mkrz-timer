@@ -7,6 +7,7 @@ import {
 } from "../../shared/security/input.ts"
 import type { SessionSnapshot } from "../../shared/liveSession/types.ts"
 import {
+  applyTimerCommandToSnapshot,
   resolveSessionSnapshotAt,
   resolveTimerStateAt,
   sessionSnapshotsMatch,
@@ -263,4 +264,186 @@ test("sessionSnapshotsMatch rejects elapsed differences beyond tolerance", () =>
     }),
     false,
   )
+})
+
+test("resolveSessionSnapshotAt auto-advances running steps", () => {
+  const resolved = resolveSessionSnapshotAt(
+    {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        activeIndex: 0,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            endBehavior: "advance",
+            title: "Intro",
+            totalSeconds: 10,
+          },
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            title: "Discussion",
+            totalSeconds: 20,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 1_000,
+        currentRepeat: 1,
+        durationSeconds: 10,
+        elapsedSecondsAtAnchor: 0,
+        elapsedTime: 0,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 1_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 10,
+      },
+    },
+    11_000,
+  )
+
+  assert.equal(resolved.params.activeIndex, 1)
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.totalDuration, 20)
+})
+
+test("resolveSessionSnapshotAt advances repeats before moving to the next step", () => {
+  const resolved = resolveSessionSnapshotAt(
+    {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        activeIndex: 0,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            endBehavior: "advance",
+            repeatCount: 2,
+            title: "Intro",
+            totalSeconds: 10,
+          },
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            title: "Discussion",
+            totalSeconds: 20,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 1_000,
+        currentRepeat: 1,
+        durationSeconds: 10,
+        elapsedSecondsAtAnchor: 0,
+        elapsedTime: 0,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 1_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 10,
+      },
+    },
+    11_000,
+  )
+
+  assert.equal(resolved.params.activeIndex, 0)
+  assert.equal(resolved.state.currentRepeat, 2)
+  assert.equal(resolved.state.status, "running")
+})
+
+test("resolveSessionSnapshotAt finishes terminal stop steps", () => {
+  const resolved = resolveSessionSnapshotAt(
+    {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            endBehavior: "stop",
+            title: "Wrap",
+            totalSeconds: 10,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 1_000,
+        currentRepeat: 1,
+        durationSeconds: 10,
+        elapsedSecondsAtAnchor: 0,
+        elapsedTime: 0,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 1_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 10,
+      },
+    },
+    11_000,
+  )
+
+  assert.equal(resolved.params.activeIndex, 0)
+  assert.equal(resolved.state.status, "finished")
+  assert.equal(resolved.state.elapsedTime, 10)
+})
+
+test("resolveSessionSnapshotAt wraps auto-advance from the last step", () => {
+  const resolved = resolveSessionSnapshotAt(
+    {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        activeIndex: 1,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            title: "Intro",
+            totalSeconds: 10,
+          },
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            endBehavior: "advance",
+            title: "Outro",
+            totalSeconds: 20,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 1_000,
+        currentRepeat: 1,
+        durationSeconds: 20,
+        elapsedSecondsAtAnchor: 0,
+        elapsedTime: 0,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 1_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 20,
+      },
+    },
+    21_000,
+  )
+
+  assert.equal(resolved.params.activeIndex, 0)
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.totalDuration, 10)
+})
+
+test("applyTimerCommandToSnapshot ignores previous at the first step", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "previous" },
+    now: 5_000,
+    snapshot: {
+      params: DEFAULT_SYNC_PARAMS,
+      state: DEFAULT_TIMER_STATE,
+    },
+  })
+
+  assert.equal(resolved.params.activeIndex, 0)
+  assert.equal(resolved.state.status, "idle")
+  assert.equal(resolved.state.revision, 0)
 })

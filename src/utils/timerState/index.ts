@@ -1,7 +1,9 @@
 export {
+  applyTimerCommandToSnapshot,
   resolveSessionSnapshotAt,
   resolveTimerStateAt,
   sessionSnapshotsMatch,
+  buildStateForActiveRow,
   stampSessionSnapshotAt,
   stampTimerStateAt,
 } from "../../shared/timerState.ts"

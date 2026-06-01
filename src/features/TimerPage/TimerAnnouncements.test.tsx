@@ -192,6 +192,82 @@ describe("TimerAnnouncements", () => {
     ).toBe("1 minute timer started.")
   })
 
+  it("does not announce idle or paused step switches as timer starts", async () => {
+    const { rerender } = renderComponent(buildProps({ ttsEnabled: true }))
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            activeIndex: 1,
+            stepTitle: "Discussion",
+            totalDuration: 90,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("status", { name: "Timer announcements" }),
+      ).toHaveTextContent("")
+    })
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            activeIndex: 1,
+            isPaused: true,
+            isStarted: true,
+            minutes: "01",
+            seconds: "20",
+            stepTitle: "Discussion",
+            totalDuration: 90,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            activeIndex: 0,
+            isPaused: true,
+            isStarted: true,
+            minutes: "01",
+            seconds: "20",
+            stepTitle: "Intro",
+            totalDuration: 90,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            activeIndex: 1,
+            isPaused: true,
+            isStarted: true,
+            minutes: "01",
+            seconds: "20",
+            stepTitle: "Discussion",
+            totalDuration: 90,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    expect(speak).not.toHaveBeenCalled()
+  })
+
   it("cancels superseded utterances and speaks the latest shared announcement", async () => {
     const { rerender } = renderComponent(buildProps({ ttsEnabled: true }))
 
@@ -292,6 +368,57 @@ describe("TimerAnnouncements", () => {
     expect(
       (speak.mock.calls.at(-1)?.[0] as MockSpeechSynthesisUtterance).text,
     ).toBe("Time is up.")
+  })
+
+  it("does not announce auto-advanced running steps as timer starts", async () => {
+    const { rerender } = renderComponent(buildProps({ ttsEnabled: true }))
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            isPaused: false,
+            isStarted: true,
+            minutes: "00",
+            seconds: "12",
+            stepTitle: "Intro",
+            totalDuration: 12,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("status", { name: "Timer announcements" }),
+      ).toHaveTextContent("Intro. 12 seconds started.")
+    })
+
+    rerender(
+      <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+        <TimerAnnouncements
+          {...buildProps({
+            activeIndex: 1,
+            isPaused: false,
+            isStarted: true,
+            minutes: "00",
+            seconds: "30",
+            stepTitle: "Discussion",
+            totalDuration: 30,
+            ttsEnabled: true,
+          })}
+        />
+      </NextIntlClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("status", { name: "Timer announcements" }),
+      ).toHaveTextContent("Intro. 12 seconds started.")
+    })
+
+    expect(speak).toHaveBeenCalledTimes(1)
   })
 
   it("does not speak non-timer accessibility announcements", async () => {

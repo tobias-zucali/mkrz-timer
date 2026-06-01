@@ -36,6 +36,18 @@ const getRowDurationSeconds = ({
   state.durationSeconds ??
   state.totalDuration
 
+const getClampedActiveIndex = ({
+  activeIndex,
+  rows,
+}: {
+  activeIndex: number
+  rows: SyncParams["rows"]
+}) =>
+  getActiveTimerSequenceRow({
+    activeIndex,
+    rows,
+  }).activeIndex
+
 const buildTimerState = ({
   anchorServerTimestamp,
   currentRepeat,
@@ -67,6 +79,36 @@ const buildTimerState = ({
     status,
     totalDuration: durationSeconds,
   }
+}
+
+export const buildStateForActiveRow = ({
+  now,
+  revision,
+  snapshot,
+  status,
+}: {
+  now: number
+  revision: number
+  snapshot: SessionSnapshot
+  status: TimerStatus
+}): TimerState => {
+  const durationSeconds = Math.max(
+    0,
+    getRowDurationSeconds({
+      params: snapshot.params,
+      state: snapshot.state,
+    }),
+  )
+  const elapsedSecondsAtAnchor = status === "finished" ? durationSeconds : 0
+
+  return buildTimerState({
+    anchorServerTimestamp: now,
+    currentRepeat: 1,
+    durationSeconds,
+    elapsedSecondsAtAnchor,
+    revision,
+    status,
+  })
 }
 
 const getElapsedAt = (state: TimerState, now: number) => {
@@ -276,6 +318,125 @@ export const stampTimerStateAt = (
   state: TimerState,
   now = Date.now(),
 ): TimerState => resolveTimerStateAt(state, now)
+
+export const applyTimerCommandToSnapshot = ({
+  command,
+  now = Date.now(),
+  snapshot,
+}: {
+  command:
+    | { type: "activate"; activeIndex: number }
+    | { type: "next" | "pause" | "previous" | "reset" | "start" }
+  now?: number
+  snapshot: SessionSnapshot
+}): SessionSnapshot => {
+  const resolvedSnapshot = resolveSessionSnapshotAt(snapshot, now)
+  const nextRevision = resolvedSnapshot.state.revision + 1
+
+  switch (command.type) {
+    case "start":
+      if (resolvedSnapshot.state.status === "running") {
+        return resolvedSnapshot
+      }
+
+      return {
+        params: resolvedSnapshot.params,
+        state: buildTimerState({
+          anchorServerTimestamp: now,
+          currentRepeat: resolvedSnapshot.state.currentRepeat,
+          durationSeconds: resolvedSnapshot.state.durationSeconds,
+          elapsedSecondsAtAnchor: resolvedSnapshot.state.elapsedSecondsAtAnchor,
+          revision: nextRevision,
+          status: "running",
+        }),
+      }
+    case "pause": {
+      if (resolvedSnapshot.state.status !== "running") {
+        return resolvedSnapshot
+      }
+
+      const pausedSnapshot = resolveSessionSnapshotAt(resolvedSnapshot, now)
+      const status =
+        pausedSnapshot.state.elapsedSecondsAtAnchor >=
+        pausedSnapshot.state.durationSeconds
+          ? "finished"
+          : "paused"
+
+      return {
+        params: pausedSnapshot.params,
+        state: buildTimerState({
+          anchorServerTimestamp: now,
+          currentRepeat: pausedSnapshot.state.currentRepeat,
+          durationSeconds: pausedSnapshot.state.durationSeconds,
+          elapsedSecondsAtAnchor: pausedSnapshot.state.elapsedSecondsAtAnchor,
+          revision: nextRevision,
+          status,
+        }),
+      }
+    }
+    case "reset":
+      return {
+        params: resolvedSnapshot.params,
+        state: buildStateForActiveRow({
+          now,
+          revision: nextRevision,
+          snapshot: resolvedSnapshot,
+          status: "idle",
+        }),
+      }
+    case "next":
+    case "previous": {
+      const direction = command.type === "next" ? 1 : -1
+      const nextIndex = getClampedActiveIndex({
+        activeIndex: resolvedSnapshot.params.activeIndex + direction,
+        rows: resolvedSnapshot.params.rows,
+      })
+      if (nextIndex === resolvedSnapshot.params.activeIndex) {
+        return resolvedSnapshot
+      }
+      const nextSnapshot = {
+        ...resolvedSnapshot,
+        params: {
+          ...resolvedSnapshot.params,
+          activeIndex: nextIndex,
+        },
+      }
+
+      return {
+        params: nextSnapshot.params,
+        state: buildStateForActiveRow({
+          now,
+          revision: nextRevision,
+          snapshot: nextSnapshot,
+          status: "idle",
+        }),
+      }
+    }
+    case "activate": {
+      const nextIndex = getClampedActiveIndex({
+        activeIndex: command.activeIndex,
+        rows: resolvedSnapshot.params.rows,
+      })
+      const nextSnapshot = {
+        ...resolvedSnapshot,
+        params: {
+          ...resolvedSnapshot.params,
+          activeIndex: nextIndex,
+        },
+      }
+
+      return {
+        params: nextSnapshot.params,
+        state: buildStateForActiveRow({
+          now,
+          revision: nextRevision,
+          snapshot: nextSnapshot,
+          status: "idle",
+        }),
+      }
+    }
+  }
+}
 
 export const sessionSnapshotsMatch = ({
   currentSnapshot,

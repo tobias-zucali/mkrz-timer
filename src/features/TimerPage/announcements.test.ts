@@ -56,7 +56,7 @@ describe("announcement rules", () => {
     ).toBe("Discussion. 15 minutes started.")
   })
 
-  it("announces resume, pause, finish, reset, and step changes", () => {
+  it("announces resume, pause, finish, and reset", () => {
     expect(
       getTimerEventAnnouncement({
         current: buildSnapshot({
@@ -147,6 +147,28 @@ describe("announcement rules", () => {
         t,
       }),
     ).toBe("Timer reset to 30 seconds.")
+  })
+
+  it("does not announce step changes outside initial starts or resumes", () => {
+    expect(
+      getTimerEventAnnouncement({
+        current: buildSnapshot({
+          activeIndex: 1,
+          isPaused: true,
+          isStarted: false,
+          stepTitle: "Discussion",
+          totalDuration: 900,
+        }),
+        previous: buildSnapshot({
+          activeIndex: 0,
+          isPaused: true,
+          isStarted: false,
+          stepTitle: "Intro",
+          totalDuration: 300,
+        }),
+        t,
+      }),
+    ).toBeNull()
 
     expect(
       getTimerEventAnnouncement({
@@ -166,7 +188,29 @@ describe("announcement rules", () => {
         }),
         t,
       }),
-    ).toBe("Discussion. 15 minutes started.")
+    ).toBeNull()
+
+    expect(
+      getTimerEventAnnouncement({
+        current: buildSnapshot({
+          activeIndex: 1,
+          isPaused: true,
+          isStarted: true,
+          remainingSeconds: 900,
+          stepTitle: "Discussion",
+          totalDuration: 900,
+        }),
+        previous: buildSnapshot({
+          activeIndex: 0,
+          isPaused: true,
+          isStarted: true,
+          remainingSeconds: 120,
+          stepTitle: "Intro",
+          totalDuration: 300,
+        }),
+        t,
+      }),
+    ).toBeNull()
   })
 
   it("announces only the configured milestones for qualifying durations", () => {
