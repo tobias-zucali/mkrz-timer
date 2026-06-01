@@ -6,8 +6,9 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 - Use `pnpm`. Do not mix in `npm` or `yarn`.
 - Use Node.js `22.12.0` or newer.
+- `README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
 - When a repo provides dedicated `agent:*` validation lanes, use those instead of generic validation commands.
-- In this repo, do not run `pnpm test` or `pnpm test:full` for normal validation when an `agent:*` equivalent exists.
+- In this repo, do not use generic `pnpm test*` lanes for normal agent validation when an `agent:*` equivalent exists.
 - After edits, run `pnpm lint`, `pnpm agent:test` and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm agent:test:full` before considering the task done.
 - When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
@@ -44,6 +45,8 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ## Testing
 
+- Humans use the generic `pnpm test*` commands from `README.md`.
+- Agents use `pnpm agent:test*` wherever possible to avoid collisions with tracked ports, dist dirs, and process state.
 - `docs/development.md` is the source of truth for test lanes, Playwright tagging, agent-lane commands, and browser-test authoring rules.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 - Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.

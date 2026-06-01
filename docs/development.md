@@ -28,6 +28,11 @@ Environment variables:
 
 ## Test Lanes
 
+Audience split:
+
+- Humans should use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md).
+- Agents should use the tracked `pnpm agent:test*` lane wherever an equivalent exists, because it isolates ports, dist dirs, and process metadata from ordinary local development.
+
 Local validation lanes:
 
 - `pnpm lint`: ESLint and TypeScript validation
@@ -107,6 +112,11 @@ Attach mode uses these advanced commands:
 - `pnpm agent:serve:relay`
 
 The lane split is still useful because it isolates Playwright ports, dist dirs, and tracked process metadata from normal local development.
+
+Practical rule:
+
+- If you are a human running the app locally, default to the generic lanes.
+- If you are an agent or automation workflow choosing a validation lane, default to the `agent:*` lanes.
 
 ## Writing Stable Browser Tests
 
