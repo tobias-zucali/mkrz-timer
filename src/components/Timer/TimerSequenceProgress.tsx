@@ -1,8 +1,10 @@
 import type { SyncParams } from "@/shared/liveSession/types"
+import classNames from "classnames"
 
 type TimerSequenceProgressProps = {
   activeIndex: number
   currentRepeatLabel: string | null
+  isDimmed?: boolean
   isReadonly: boolean
   onSelectSequenceRow?: (rowIndex: number) => void
   rows: SyncParams["rows"]
@@ -12,6 +14,7 @@ type TimerSequenceProgressProps = {
 export default function TimerSequenceProgress({
   activeIndex,
   currentRepeatLabel,
+  isDimmed,
   isReadonly,
   onSelectSequenceRow,
   rows,
@@ -22,7 +25,12 @@ export default function TimerSequenceProgress({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[16%] flex justify-center px-6">
+    <div
+      className={classNames(
+        "pointer-events-none absolute inset-x-0 bottom-[16%] flex justify-center px-6 transition-opacity timer-chrome-transition",
+        isDimmed ? "timer-chrome-dimmed" : "opacity-100",
+      )}
+    >
       <div className="pointer-events-auto flex flex-col items-center gap-3">
         {currentRepeatLabel ? (
           <span className="text-xs font-medium text-foreground/52">

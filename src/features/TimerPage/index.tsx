@@ -28,6 +28,7 @@ import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
 import usePromoteHostControlRoute from "@/utils/timerPage/usePromoteHostControlRoute"
 import useLiveSessionDialogs from "@/utils/timerPage/useLiveSessionDialogs"
 import useSessionDiagnostics from "@/utils/timerPage/useSessionDiagnostics"
+import useTimerChromeVisibility from "@/utils/timerPage/useTimerChromeVisibility"
 import useTimerPageLiveSession from "@/utils/timerPage/useTimerPageLiveSession"
 import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
@@ -83,6 +84,7 @@ function TimerApp() {
   const [pendingTimerCommand, setPendingTimerCommand] = useState<
     "next" | "pause" | "previous" | "reset" | "start" | "activate" | null
   >(null)
+  const { isControlsActive } = useTimerChromeVisibility()
 
   const remoteRole = remoteRoute.isRemote ? remoteRoute.role : null
   const remoteToken = remoteRoute.isRemote ? remoteRoute.token : null
@@ -501,6 +503,7 @@ function TimerApp() {
           activeIndex={params.activeIndex}
           handleChange={handleChange}
           handleTimeBlur={normalizeTimerInputs}
+          isControlsDimmed={!isControlsActive}
           isReadonly={isReadonlyClient}
           onSelectSequenceRow={handleSelectSequenceRow}
           readonlyPlaceholder={readonlyPlaceholder}
@@ -510,6 +513,7 @@ function TimerApp() {
         />
         <TopRightControls
           floatingTimerData={sessionDiagnostics.floatingTimerData}
+          isDimmed={!isControlsActive}
           isReadonlyClient={isReadonlyClient}
           isSharePanelOpen={isSharePanelOpen}
           onOpenSharePanel={openStatusOrSharePanel}
@@ -543,6 +547,7 @@ function TimerApp() {
           remoteRole,
         }}
         shell={{
+          isDimmed: !isControlsActive,
           isPinnedOpen: isSidebarPinnedOpen,
           selectedEntryId: selectedSidebarEntryId,
           setIsPinnedOpen: setIsSidebarPinnedOpen,

@@ -9,6 +9,7 @@ import TimerControls from "@/components/Timer/TimerControls"
 import TimerReadonlyPlaceholder, {
   type ReadonlyPlaceholder,
 } from "@/components/Timer/TimerReadonlyPlaceholder"
+import TimerStepButton from "@/components/Timer/TimerStepButton"
 import TimerSequenceProgress from "@/components/Timer/TimerSequenceProgress"
 import TimerTitle from "@/components/TimerTitle"
 import type { SyncParams } from "@/shared/liveSession/types"
@@ -18,11 +19,11 @@ import {
   getTimerReadoutStateLabel,
   type TimerReadoutState,
 } from "@/utils/accessibility/timer"
-import { ChevronLeftIcon, ChevronRightIcon } from "@/utils/icons"
 import useTimer from "@/utils/useTimer"
 
 export default function Timer({
   activeIndex,
+  isControlsDimmed = false,
   isReadonly = false,
   onSelectSequenceRow,
   readonlyPlaceholder,
@@ -33,6 +34,7 @@ export default function Timer({
   timer,
 }: {
   activeIndex: number
+  isControlsDimmed?: boolean
   isReadonly?: boolean
   onSelectSequenceRow?: (rowIndex: number) => void
   readonlyPlaceholder?: ReadonlyPlaceholder
@@ -76,6 +78,7 @@ export default function Timer({
   const remainingSeconds =
     Number.parseInt(minutes || "0", 10) * 60 +
     Number.parseInt(seconds || "0", 10)
+  const hasElapsedTime = isTimedOut || remainingSeconds < timer.totalDuration
   const readoutSummary = buildTimerReadoutLabel({
     activeIndex,
     readoutState,
@@ -120,6 +123,7 @@ export default function Timer({
       </h1>
       <TimerTitle
         disabled={isReadonly}
+        isDimmed={isControlsDimmed}
         reserveSpace={shouldReserveTitleSpace}
         value={title}
         onChange={(value) => handleChange("title", value)}
@@ -134,51 +138,21 @@ export default function Timer({
         ) : (
           <div className="absolute inset-0 flex grow flex-col items-center justify-center">
             {hasPreviousRow && !isReadonly ? (
-              <button
-                aria-label={t("previousStep")}
-                className="
-                  absolute top-1/2 left-4 z-10 inline-flex size-12 -translate-y-1/2
-                  items-center justify-center rounded-full border
-                  border-foreground/12 bg-background/72 text-foreground
-                  shadow-lg shadow-background/16 backdrop-blur-sm transition
-                  hover:border-primary/40 hover:text-primary
-                  focus-visible:outline-2 focus-visible:outline-offset-2
-                  focus-visible:outline-primary
-                "
+              <TimerStepButton
+                ariaLabel={t("previousStep")}
+                direction="previous"
+                isDimmed={isControlsDimmed}
                 onClick={() => handleAction("previous")}
-                type="button"
-              >
-                <ChevronLeftIcon className="size-6" />
-              </button>
+              />
             ) : null}
             {hasNextRow && !isReadonly ? (
-              <button
-                aria-label={t("nextStep")}
-                className={
-                  highlightNextAction
-                    ? `
-                        absolute top-1/2 right-4 z-10 inline-flex size-12
-                        -translate-y-1/2 items-center justify-center rounded-full
-                        border border-primary bg-primary text-foreground
-                        shadow-lg shadow-background/16 backdrop-blur-sm transition
-                        hover:bg-primary/88 focus-visible:outline-2
-                        focus-visible:outline-offset-2 focus-visible:outline-primary
-                      `
-                    : `
-                        absolute top-1/2 right-4 z-10 inline-flex size-12
-                        -translate-y-1/2 items-center justify-center rounded-full
-                        border border-foreground/12 bg-background/72 text-foreground
-                        shadow-lg shadow-background/16 backdrop-blur-sm transition
-                        hover:border-primary/40 hover:text-primary
-                        focus-visible:outline-2 focus-visible:outline-offset-2
-                        focus-visible:outline-primary
-                      `
-                }
+              <TimerStepButton
+                ariaLabel={t("nextStep")}
+                direction="next"
+                isDimmed={isControlsDimmed}
+                isHighlighted={highlightNextAction}
                 onClick={() => handleAction("next")}
-                type="button"
-              >
-                <ChevronRightIcon className="size-6" />
-              </button>
+              />
             ) : null}
             <DigitalDisplay
               accessibleText={readoutSummary}
@@ -197,6 +171,7 @@ export default function Timer({
               {stepSummary ? ` ${stepSummary}.` : ""}
             </div>
             <TimerSequenceProgress
+              isDimmed={isControlsDimmed}
               activeIndex={activeIndex}
               currentRepeatLabel={currentRepeatLabel}
               isReadonly={isReadonly}
@@ -206,7 +181,9 @@ export default function Timer({
             />
             {!isReadonly && (
               <TimerControls
+                isDimmed={isControlsDimmed}
                 isPaused={isPaused}
+                isResetDisabled={!hasElapsedTime}
                 isTimedOut={isTimedOut}
                 pauseLabel={t("pause")}
                 resetLabel={t("reset")}

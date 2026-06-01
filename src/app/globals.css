@@ -19,3 +19,11 @@ body {
   color: rgb(var(--foreground));
   font-family: Geist, Arial, Helvetica, sans-serif;
 }
+
+@utility timer-chrome-transition {
+  transition-duration: 700ms;
+}
+
+@utility timer-chrome-dimmed {
+  opacity: 0.3;
+}

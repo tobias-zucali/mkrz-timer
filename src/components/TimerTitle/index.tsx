@@ -82,11 +82,13 @@ function buildPastedTitleValue({
 
 export default function TimerTitle({
   disabled = false,
+  isDimmed = false,
   onChange,
   reserveSpace = false,
   value,
 }: {
   disabled?: boolean
+  isDimmed?: boolean
   onChange: (value: string) => void
   reserveSpace?: boolean
   value: string
@@ -304,17 +306,18 @@ export default function TimerTitle({
       {showEmptyAction ? (
         <button
           aria-label={t("addTitle")}
-          className="
-            absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2
-            cursor-pointer items-center justify-center rounded-full
-            border border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5
-            text-sm font-semibold text-foreground/72 transition
-            hover:border-foreground/28 hover:bg-foreground/6
-            hover:text-foreground focus-visible:outline-2
-            focus-visible:outline-offset-2
-            focus-visible:outline-primary
-          "
+          className={classNames(
+            "absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2",
+            "cursor-pointer items-center justify-center rounded-full",
+            "border border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5",
+            "text-sm font-semibold text-foreground/72 hover:border-foreground/28",
+            "hover:bg-foreground/6 hover:text-foreground focus-visible:outline-2",
+            "focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "transition-opacity timer-chrome-transition",
+            isDimmed ? "timer-chrome-dimmed" : "opacity-100",
+          )}
           data-testid="timer-title-empty-action"
+          data-timer-chrome-focus-lock="true"
           onClick={() => setIsFocused(true)}
           type="button"
         >

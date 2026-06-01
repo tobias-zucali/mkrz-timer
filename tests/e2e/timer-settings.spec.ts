@@ -238,7 +238,7 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
   ).toBeVisible()
   await expect(
     page.getByTestId("timer-controls").getByRole("button", { name: "RESET" }),
-  ).toBeEnabled()
+  ).toBeDisabled()
 })
 
 test("limits titles to 64 characters in settings", async ({ page }) => {

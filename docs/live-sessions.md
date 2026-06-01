@@ -25,6 +25,7 @@ Live sessions are relay-backed. There is no dedicated browser host.
 - Control clients can publish timer and settings changes.
 - New clients receive the current shared snapshot when they join.
 - The relay remains the source of truth for shared state and recovery decisions.
+- Timer action chrome stays mounted on every viewport for local, viewer, and control clients; it dims after five seconds of inactivity and returns to full visibility on interaction or focused controls.
 - Invalid, malformed, or expired live-session links must fail closed with a recoverable error state.
 - Clients must always be able to leave a failed or conflicting live session and return to local mode.
 - Ending a live session from a control-capable client should warn when other clients are still connected.

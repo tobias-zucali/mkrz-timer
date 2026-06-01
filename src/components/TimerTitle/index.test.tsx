@@ -24,6 +24,15 @@ describe("TimerTitle", () => {
     expect(editor.tagName).toBe("TEXTAREA")
   })
 
+  it("dims the add-title action without removing it", () => {
+    renderWithIntl(<TimerTitle isDimmed onChange={() => undefined} value="" />)
+
+    const button = screen.getByRole("button", { name: "Add title" })
+    expect(button).toBeVisible()
+    expect(button.className).toContain("timer-chrome-dimmed")
+    expect(button.className).toContain("timer-chrome-transition")
+  })
+
   it("uses the short and long title class buckets in display mode", () => {
     const { unmount } = renderWithIntl(
       <TimerTitle onChange={() => undefined} value="Sprint review" />,
