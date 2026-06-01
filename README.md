@@ -133,3 +133,7 @@ Deployment files and the runbook live in:
 - [scripts/deploy-production.sh](./scripts/deploy-production.sh)
 - [.github/workflows/build-and-deploy.yml](./.github/workflows/build-and-deploy.yml)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
+
+## Maintainer Tools
+
+- [tools/project-export/README.md](./tools/project-export/README.md): maintainer-only GitHub Project export utility, separate from the app runtime and implementation
