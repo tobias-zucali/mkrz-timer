@@ -66,4 +66,5 @@ This file captures durable repo conventions for agents. For product/setup contex
 ## Maintenance
 
 - Keep this file agent-focused.
+- Documentation should describe contracts, invariants, and operating procedures. Code, tests, and workflow files should describe implementation.
 - Update it when repo-level workflow, testing, or deployment conventions change.
