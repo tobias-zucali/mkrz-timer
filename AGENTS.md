@@ -29,17 +29,17 @@ This file captures durable repo conventions for agents. For product/setup contex
 - New user-controlled fields require validation plus escaping review before merge.
 - Changes to synchronized or relay-persisted fields require an explicit security review.
 
-## Remote Mode
+## Live Sessions
 
-- Remote mode is relay-backed. There is no dedicated browser host anymore.
+- Live sessions are relay-backed. There is no dedicated browser host anymore.
 - The relay owns the canonical timer snapshot and participant roster.
 - Session links are role-specific opaque paths:
   - viewer: `/view/<readonlyToken>`
   - control: `/control/<controlToken>`
-- Remote session URLs may include the canonical timer-state params `v`, `t`, and `a`.
+- Live session URLs may include the canonical timer-state params `v`, `t`, and `a`.
 - Control URLs should continue to include the `title` query param.
-- Remote session URLs may include selected non-default settings params such as appearance or announcement preferences.
-- When remote-mode behavior changes, update both docs and Playwright coverage in the same change.
+- Live session URLs may include selected non-default settings params such as appearance or announcement preferences.
+- When live-session behavior changes, update both docs and Playwright coverage in the same change.
 - Future sharing or session features must preserve strict separation between readonly and control capabilities.
 
 ## Testing

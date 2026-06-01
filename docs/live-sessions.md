@@ -6,7 +6,6 @@ For the quick project overview, start with the [README](../README.md).
 
 - Use `Live session` in user-facing copy for synchronized sharing.
 - Use `local share` for independent snapshot sharing.
-- Avoid `Remote mode`, `remote session`, and similar wording in user-facing UI and docs.
 
 ## Model
 
@@ -14,7 +13,7 @@ Live sessions are relay-backed. There is no dedicated browser host.
 
 - `/view/<readonlyToken>` joins as a readonly viewer
 - `/control/<controlToken>` joins as a control-capable client
-- remote URLs carry opaque capability tokens, the canonical `v=1&t=...&a=...` timer state, and selected non-default settings params
+- live session URLs carry opaque capability tokens, the canonical `v=1&t=...&a=...` timer state, and selected non-default settings params
 - when the host starts a live session, it moves onto its `/control/<controlToken>` route without a full document reload
 - leaving a control route returns that client to the local timer URL
 - live timer state is stored in the relay session snapshot
@@ -115,10 +114,10 @@ The relay owns:
 
 ## Code Layout
 
-- shared protocol types: [src/shared/remoteSession/types.ts](../src/shared/remoteSession/types.ts)
-- client hook/config: [src/utils/remoteSession](../src/utils/remoteSession)
+- shared protocol types: [src/shared/liveSession/types.ts](../src/shared/liveSession/types.ts)
+- client hook/config: [src/utils/liveSession](../src/utils/liveSession)
 - relay implementation: [src/server/relay/index.ts](../src/server/relay/index.ts)
-- relay session store: [src/server/remoteSession/sessionStore.ts](../src/server/remoteSession/sessionStore.ts)
+- relay session store: [src/server/liveSession/sessionStore.ts](../src/server/liveSession/sessionStore.ts)
 
 ## Testing Strategy
 

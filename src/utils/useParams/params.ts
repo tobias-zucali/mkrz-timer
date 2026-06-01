@@ -4,7 +4,7 @@ import {
 } from "../../shared/security/input.ts"
 import { buildTimerUrlSearchParams } from "../../shared/urlState/index.ts"
 import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
-import type { SyncParams } from "../../shared/remoteSession/types.ts"
+import type { SyncParams } from "../../shared/liveSession/types.ts"
 
 export const PAGE_TITLE_QUERY_PARAM = "title"
 

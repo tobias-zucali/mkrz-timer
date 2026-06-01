@@ -4,7 +4,7 @@ import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import {
   buildDurationPartsFromTotalSeconds,

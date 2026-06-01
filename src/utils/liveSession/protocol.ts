@@ -5,7 +5,7 @@ import type {
   SessionSnapshot,
   SyncParams,
   TimerCommand,
-} from "../../shared/remoteSession/types.ts"
+} from "../../shared/liveSession/types.ts"
 import {
   normalizeRelayServerMessage,
   normalizeSessionSnapshot,

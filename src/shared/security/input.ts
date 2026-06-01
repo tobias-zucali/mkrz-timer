@@ -9,7 +9,7 @@ import type {
   TimerCommand,
   TimerEndBehavior,
   TimerSequenceRow,
-} from "../remoteSession/types.ts"
+} from "../liveSession/types.ts"
 import {
   DEFAULT_TIMER_FINISHED_SOUND_ID,
   normalizeTimerFinishedSoundId,

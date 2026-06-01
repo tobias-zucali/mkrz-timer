@@ -113,7 +113,7 @@ export async function expectScreenshotWithoutDebugInfo(
   }
 }
 
-export async function enableRemoteMode(page: Page) {
+export async function enableLiveSession(page: Page) {
   await page.goto(timerUrl)
 
   await openSidebarPanel(page, "Share")
@@ -123,7 +123,7 @@ export async function enableRemoteMode(page: Page) {
   const documentSentinel = await setDocumentSentinel(page)
   await page.getByRole("button", { name: "Start live session" }).click()
   await expectDocumentSentinel(page, documentSentinel)
-  await expectRemoteSessionOnlyUrl(page, { control: true })
+  await expectLiveSessionOnlyUrl(page, { control: true })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
     name: "Viewer link",
@@ -151,10 +151,10 @@ export async function enableRemoteMode(page: Page) {
   return controlClientUrlInput.inputValue()
 }
 
-export async function enableRemoteModeWithClientUrls(
+export async function enableLiveSessionWithClientUrls(
   page: Page,
 ): Promise<RemoteClientUrls> {
-  const controlClientUrl = await enableRemoteMode(page)
+  const controlClientUrl = await enableLiveSession(page)
   const readonlyClientUrl = await page
     .getByRole("textbox", { name: "Viewer link" })
     .inputValue()
@@ -452,7 +452,7 @@ export async function expectReadonlyTimerControls(page: Page) {
   await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(0)
 }
 
-export async function expectRemoteStatus(
+export async function expectLiveSessionStatus(
   page: Page,
   {
     activityLogIncludes,
@@ -872,7 +872,7 @@ export async function expectTimerUrlParams(
   }
 }
 
-export async function expectRemoteSessionOnlyUrl(
+export async function expectLiveSessionOnlyUrl(
   page: Page,
   { control = false }: { control?: boolean } = {},
 ) {
@@ -890,7 +890,7 @@ export async function expectControlClientUrlParams(
   settings: TimerSettings,
 ) {
   if (page.url().includes("/control/")) {
-    await expectRemoteSessionOnlyUrl(page, { control: true })
+    await expectLiveSessionOnlyUrl(page, { control: true })
     await expectTimerSettings(page, settings)
     return
   }

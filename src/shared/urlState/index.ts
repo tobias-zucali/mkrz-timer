@@ -2,7 +2,7 @@ import type {
   SyncParams,
   TimerEndBehavior,
   TimerSequenceRow,
-} from "../remoteSession/types.ts"
+} from "../liveSession/types.ts"
 import {
   DEFAULT_SYNC_PARAMS,
   MAX_TIMER_DURATION_SECONDS,

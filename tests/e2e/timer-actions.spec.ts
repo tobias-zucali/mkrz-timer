@@ -4,7 +4,7 @@ import {
   expectScreenshotWithoutDebugInfo,
   getDisplayedSeconds,
   openTimer,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 const timerVisualFormFactors = [
   {

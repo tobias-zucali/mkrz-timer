@@ -8,7 +8,7 @@ import {
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 function getFloatingTimerToggle(page: Page) {
   return page.getByRole("button", {

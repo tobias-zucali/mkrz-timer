@@ -3,7 +3,7 @@ import { WebSocket } from "ws"
 import type {
   RelayServerMessage,
   SessionParticipant,
-} from "../../shared/remoteSession/types.ts"
+} from "../../shared/liveSession/types.ts"
 
 export class RelayConnectionRegistry {
   private readonly socketsByClientId = new Map<string, WebSocket>()

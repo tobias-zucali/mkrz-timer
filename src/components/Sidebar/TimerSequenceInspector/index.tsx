@@ -5,7 +5,7 @@ import type { CSSProperties } from "react"
 import { useTranslations } from "next-intl"
 
 import InputField from "@/components/InputField"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
 import ColorSwatchField from "@/utils/ColorSwatchField"

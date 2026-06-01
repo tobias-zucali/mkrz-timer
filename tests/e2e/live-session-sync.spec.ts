@@ -2,9 +2,9 @@ import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
-  enableRemoteMode,
+  enableLiveSession,
   expectControlClientUrlParams,
-  expectRemoteSessionOnlyUrl,
+  expectLiveSessionOnlyUrl,
   expectTimerDisplayRunning,
   expectTimerControlsToMatch,
   expectTimerPaused,
@@ -20,7 +20,7 @@ import {
   relayUrl,
   updateTimerSettings,
   waitForRemoteCluster,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 async function openIsolatedClient(
   page: Page,
@@ -50,7 +50,7 @@ test(
   async ({ page }) => {
     test.setTimeout(60_000)
 
-    const clientUrl = await enableRemoteMode(page)
+    const clientUrl = await enableLiveSession(page)
     const controlClient = await openClientFromSettings(page, clientUrl)
 
     await closeSettingsOverlay(page)
@@ -80,7 +80,7 @@ test("keeps state consistent when multiple peers control the timer quickly", asy
 }) => {
   test.setTimeout(90_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const clients = await openClientsFromSettings(page, clientUrl, 3)
   const allPages = [page, ...clients]
 
@@ -129,7 +129,7 @@ test("syncs the current timer state to a client that rejoins during active contr
 }) => {
   test.setTimeout(90_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const clients = await openClientsFromSettings(page, clientUrl, 3)
 
   await closeSettingsOverlay(page)
@@ -205,7 +205,7 @@ test("silently republishes offline control changes when the relay stayed unchang
 }) => {
   test.setTimeout(90_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const { client: isolatedControlClient, context: isolatedControlContext } =
     await openIsolatedClient(page, clientUrl)
 
@@ -243,7 +243,7 @@ test("rejoins readonly clients after a controller restores an offline session", 
 }) => {
   test.setTimeout(90_000)
 
-  await enableRemoteMode(page)
+  await enableLiveSession(page)
   const readonlyClient = await openClientFromSettings(
     page,
     await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
@@ -284,7 +284,7 @@ test("silently accepts relay changes when an offline controller made no local ed
 }) => {
   test.setTimeout(90_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const { client: isolatedControlClient, context: isolatedControlContext } =
     await openIsolatedClient(page, clientUrl)
 
@@ -320,7 +320,7 @@ test("silently accepts relay changes when an offline controller made no local ed
 test("ignores malformed relay payload attempts without breaking active clients", async ({
   page,
 }) => {
-  await enableRemoteMode(page)
+  await enableLiveSession(page)
   const readonlyClient = await openClientFromSettings(
     page,
     await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
@@ -377,7 +377,7 @@ test("ignores malformed relay payload attempts without breaking active clients",
 test("syncs settings changes from main and clients", async ({ page }) => {
   test.setTimeout(120_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const clients = await openClientsFromSettings(page, clientUrl, 3)
   const allPages = [page, ...clients]
 
@@ -444,7 +444,7 @@ test("new clients inherit host settings without resetting the session", async ({
 }) => {
   test.setTimeout(120_000)
 
-  const clientUrl = await enableRemoteMode(page)
+  const clientUrl = await enableLiveSession(page)
   const viewerUrl = await page
     .getByRole("textbox", { name: "Viewer link" })
     .inputValue()
@@ -501,7 +501,7 @@ test("new clients inherit host settings without resetting the session", async ({
   )
   await expectControlClientUrlParams(page, mainSettings)
   await expectControlClientUrlParams(controlClient, mainSettings)
-  await expectRemoteSessionOnlyUrl(readonlyClient)
+  await expectLiveSessionOnlyUrl(readonlyClient)
 
   await Promise.all(
     allPages.map((remotePage) =>

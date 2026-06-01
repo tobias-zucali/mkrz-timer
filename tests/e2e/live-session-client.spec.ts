@@ -2,8 +2,8 @@ import { expect, Page, test } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
-  enableRemoteModeWithClientUrls,
-  expectRemoteStatus,
+  enableLiveSessionWithClientUrls,
+  expectLiveSessionStatus,
   expectScreenshotWithoutDebugInfo,
   expectReadonlyTimerControls,
   expectReadonlyPlaceholder,
@@ -21,7 +21,7 @@ import {
   resolveRecoveryDialogIfPresent,
   updateTimerSettings,
   waitForRemoteCluster,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 async function getRemoteTitleMetrics(page: Page) {
   const titleRoot = page.getByTestId("timer-title")
@@ -123,7 +123,7 @@ test(
   "opens settings, starts a live session, and opens a client timer",
   { tag: "@smoke" },
   async ({ page }) => {
-    const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const { controlClientUrl } = await enableLiveSessionWithClientUrls(page)
     const clientPage = await openClientFromSettings(page, controlClientUrl)
     await expect(clientPage.locator("body")).toMatchAriaSnapshot({
       name: "remote-control-client-screen.aria.yml",
@@ -174,7 +174,7 @@ test("includes selected settings in remote viewer and control links when enabled
 test("moves the host onto the control route and ends the live session cleanly", async ({
   page,
 }) => {
-  await enableRemoteModeWithClientUrls(page)
+  await enableLiveSessionWithClientUrls(page)
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
@@ -232,7 +232,7 @@ test("moves the host onto the control route and ends the live session cleanly", 
 test("confirms before ending a live session when other clients are connected", async ({
   page,
 }) => {
-  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
@@ -281,7 +281,7 @@ test("confirms before ending a live session when other clients are connected", a
 test("warns before closing a control client while other participants stay connected", async ({
   page,
 }) => {
-  const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const { controlClientUrl } = await enableLiveSessionWithClientUrls(page)
   const controlClient = await openClientFromSettings(page, controlClientUrl)
 
   await closeSettingsOverlay(page)
@@ -309,7 +309,7 @@ test(
   "opens readonly clients without controls or settings",
   { tag: "@smoke" },
   async ({ page }) => {
-    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
@@ -320,13 +320,13 @@ test(
 
     await closeSettingsOverlay(page)
 
-    await expectRemoteStatus(page, {
+    await expectLiveSessionStatus(page, {
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
       role: "Control access",
       state: /Connected|Disconnected|Reconnecting\.\.\./,
     })
-    await expectRemoteStatus(readonlyClient, {
+    await expectLiveSessionStatus(readonlyClient, {
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
       role: "Viewer access",
@@ -364,7 +364,7 @@ test(
 test("readonly clients expose fullscreen share and status overlays", async ({
   page,
 }) => {
-  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
@@ -417,7 +417,7 @@ test("viewer clients warn when the last controller leaves", async ({
   page,
 }) => {
   const { controlClientUrl, readonlyClientUrl } =
-    await enableRemoteModeWithClientUrls(page)
+    await enableLiveSessionWithClientUrls(page)
   const controlClient = await openClientFromSettings(page, controlClientUrl)
   const readonlyClient = await openClientFromSettings(
     page,
@@ -435,7 +435,7 @@ test("viewer clients warn when the last controller leaves", async ({
   await page.close()
   await controlClient.close()
 
-  await expectRemoteStatus(readonlyClient, {
+  await expectLiveSessionStatus(readonlyClient, {
     connectionSummary: /Waiting for controller|Reconnect in progress/,
     networkStatus: "Online",
     role: "Viewer access",
@@ -447,7 +447,7 @@ test("viewer clients warn when the last controller leaves", async ({
 
 test("syncs mixed readonly and control clients", async ({ page }) => {
   const { controlClientUrl, readonlyClientUrl } =
-    await enableRemoteModeWithClientUrls(page)
+    await enableLiveSessionWithClientUrls(page)
   const controlClients = await openClientsFromSettings(
     page,
     controlClientUrl,
@@ -468,19 +468,19 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     message: "mixed readonly and control clients should connect",
   })
 
-  await expectRemoteStatus(page, {
+  await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(controlClients[0], {
+  await expectLiveSessionStatus(controlClients[0], {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(readonlyClients[0], {
+  await expectLiveSessionStatus(readonlyClients[0], {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     role: "Viewer access",
@@ -513,7 +513,7 @@ test("summarizes participants relative to the current client and labels the raw 
   page,
 }) => {
   const { controlClientUrl, readonlyClientUrl } =
-    await enableRemoteModeWithClientUrls(page)
+    await enableLiveSessionWithClientUrls(page)
   const controlClient = await openClientFromSettings(page, controlClientUrl)
   const readonlyClient = await openClientFromSettings(
     page,
@@ -528,21 +528,21 @@ test("summarizes participants relative to the current client and labels the raw 
     message: "participant summaries should wait for the cluster to connect",
   })
 
-  await expectRemoteStatus(page, {
+  await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 1 control + 1 view",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(controlClient, {
+  await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 1 control + 1 view",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(readonlyClient, {
+  await expectLiveSessionStatus(readonlyClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 2 control",
@@ -556,14 +556,14 @@ test("summarizes participants relative to the current client and labels the raw 
 
   await readonlyClient.close()
 
-  await expectRemoteStatus(page, {
+  await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 1 control",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(controlClient, {
+  await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 1 control",
@@ -579,7 +579,7 @@ test("summarizes participants relative to the current client and labels the raw 
     mainConnectionCount: 2,
     message: "participant summaries should update after viewer reconnect",
   })
-  await expectRemoteStatus(rejoinedViewer, {
+  await expectLiveSessionStatus(rejoinedViewer, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     participantSummary: "You + 2 control",
@@ -591,7 +591,7 @@ test("summarizes participants relative to the current client and labels the raw 
 test("keeps long wrapped titles readable in readonly remote clients", async ({
   page,
 }) => {
-  const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
@@ -632,7 +632,7 @@ test(
   "shares hostile title payloads as inert plain text across clients",
   { tag: "@smoke" },
   async ({ page }) => {
-    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
@@ -682,11 +682,11 @@ test("shows offline network status when the browser loses connectivity", async (
 }) => {
   test.slow()
 
-  const { controlClientUrl } = await enableRemoteModeWithClientUrls(page)
+  const { controlClientUrl } = await enableLiveSessionWithClientUrls(page)
   const controlClient = await openClientFromSettings(page, controlClientUrl)
 
   await closeSettingsOverlay(page)
-  await expectRemoteStatus(controlClient, {
+  await expectLiveSessionStatus(controlClient, {
     connectionSummary: /Synchronized|Reconnect in progress/,
     networkStatus: "Online",
     role: "Control access",
@@ -700,7 +700,7 @@ test("shows offline network status when the browser loses connectivity", async (
   try {
     await controlClient.context().setOffline(true)
 
-    await expectRemoteStatus(controlClient, {
+    await expectLiveSessionStatus(controlClient, {
       connectionSummary:
         /Reconnect in progress|Restoring synchronization|Synchronized/,
       networkStatus: "Offline",
@@ -723,7 +723,7 @@ test("shows offline network status when the browser loses connectivity", async (
 
     await controlClient.waitForTimeout(20_000)
 
-    await expectRemoteStatus(controlClient, {
+    await expectLiveSessionStatus(controlClient, {
       connectionSummary:
         /Reconnect in progress|Restoring synchronization|Synchronized/,
       networkStatus: "Offline",
@@ -845,7 +845,7 @@ test("shows a recoverable error for malformed viewer links", async ({
   await expect(page.locator("body")).toMatchAriaSnapshot({
     name: "remote-malformed-viewer-link-screen.aria.yml",
   })
-  await expectRemoteStatus(page, {
+  await expectLiveSessionStatus(page, {
     connectionSummary: "Error",
     errorText: /Live session link is malformed\. Check the URL and try again\./,
     role: "Viewer access",
@@ -891,7 +891,7 @@ test("controller links can restore control and reused viewer links rejoin the se
   page,
 }) => {
   const { controlClientUrl, readonlyClientUrl } =
-    await enableRemoteModeWithClientUrls(page)
+    await enableLiveSessionWithClientUrls(page)
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
@@ -920,13 +920,13 @@ test("controller links can restore control and reused viewer links rejoin the se
     message: "restored control and reused viewer links should reconnect",
   })
   await expect(readonlyClient).toHaveURL(/\/view\//)
-  await expectRemoteStatus(controlClient, {
+  await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     role: "Control access",
     state: "Connected",
   })
-  await expectRemoteStatus(readonlyClient, {
+  await expectLiveSessionStatus(readonlyClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
     role: "Viewer access",
@@ -939,7 +939,7 @@ test(
   "matches the expired viewer-link error state",
   { tag: "@visual" },
   async ({ page }) => {
-    const { readonlyClientUrl } = await enableRemoteModeWithClientUrls(page)
+    const { readonlyClientUrl } = await enableLiveSessionWithClientUrls(page)
 
     await openSidebarPanel(page, "Share")
     await page.getByRole("button", { name: "End live session" }).click()

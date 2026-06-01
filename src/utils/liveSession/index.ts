@@ -13,7 +13,7 @@ import type {
   SessionParticipant,
   SyncParams,
   TimerCommand,
-} from "@/shared/remoteSession/types"
+} from "@/shared/liveSession/types"
 import debug from "@/utils/debug"
 import type { TimerState } from "@/utils/useTimer"
 import {
@@ -21,7 +21,7 @@ import {
   sessionSnapshotsMatch,
   stampSessionSnapshotAt,
 } from "@/utils/timerState"
-import { decideSnapshotRecovery } from "@/utils/remoteSession/recovery"
+import { decideSnapshotRecovery } from "@/utils/liveSession/recovery"
 
 import { getRemoteRelayWebSocketUrl } from "./config"
 import { selectLocalFallbackSnapshot } from "./fallback"
@@ -64,7 +64,7 @@ const getReconnectRetryType = ({
   return role === "control" ? "retry-join-session" : "join-session"
 }
 
-export default function useRemoteSession({
+export default function useLiveSession({
   getReconnectSnapshot,
   onIncomingSyncConflict,
   resolveIncomingSnapshot,

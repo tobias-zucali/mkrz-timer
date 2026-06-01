@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 
-import { buildRemotePath } from "@/utils/remoteSession/route"
+import { buildRemotePath } from "@/utils/liveSession/route"
 import {
   pauseUrlSyncDuringRemoteRouteTransition,
   setPromotedHostControlClient,

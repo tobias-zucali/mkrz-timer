@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { ParamStyleContext } from "@/components/ParamStyledBody"
 import { normalizeQueryParams, normalizeTitle } from "@/shared/security/input"
-import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
+import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
 import {
   parseTimerUrlState,
   projectTimerUrlStateToSyncParams,

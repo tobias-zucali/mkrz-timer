@@ -1,4 +1,4 @@
-import type { SessionParticipant } from "@/shared/remoteSession/types"
+import type { SessionParticipant } from "@/shared/liveSession/types"
 import type { AppTranslationFn } from "@/i18n/translator"
 
 function formatRoleCount(

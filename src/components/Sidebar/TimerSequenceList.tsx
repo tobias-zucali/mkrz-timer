@@ -1,7 +1,7 @@
 "use client"
 
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 
 const rowActionClassName =
   "rounded-md border border-foreground/12 px-2.5 py-1.5 text-xs font-semibold text-foreground/72 transition hover:border-primary/40 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"

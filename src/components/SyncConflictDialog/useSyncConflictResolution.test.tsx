@@ -5,7 +5,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
 } from "@/shared/security/input"
-import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
+import type { SessionSnapshot, SyncParams } from "@/shared/liveSession/types"
 import {
   parseTimerUrlState,
   projectFirstUrlTimerRowToSyncParams,

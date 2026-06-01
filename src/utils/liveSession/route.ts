@@ -1,4 +1,4 @@
-import type { RemoteAccessRole } from "../../shared/remoteSession/types.ts"
+import type { RemoteAccessRole } from "../../shared/liveSession/types.ts"
 import { normalizeRemoteAccessToken } from "../../shared/security/input.ts"
 
 export type RemoteRoute =

@@ -1,5 +1,5 @@
-import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
-import type { RemoteStatusModel } from "@/utils/remoteStatus"
+import type { RemoteRelayReachabilityState } from "@/utils/liveSession/useRemoteRelayReachability"
+import type { LiveSessionStatusModel } from "@/utils/liveSessionStatus"
 import type { AppTranslationFn } from "@/i18n/translator"
 
 export type SessionPresentationState =
@@ -43,7 +43,7 @@ export type SessionPresentationModel = {
 }
 
 function getRoleChipLabel(
-  remoteStatus: RemoteStatusModel | null,
+  remoteStatus: LiveSessionStatusModel | null,
   t: AppTranslationFn,
 ) {
   if (!remoteStatus) {
@@ -55,7 +55,7 @@ function getRoleChipLabel(
     : t("TimerPage.sessionPresentation.viewer")
 }
 
-function isWaitingForController(remoteStatus: RemoteStatusModel | null) {
+function isWaitingForController(remoteStatus: LiveSessionStatusModel | null) {
   return (
     remoteStatus?.role === "readonly" &&
     remoteStatus.state === "connected" &&
@@ -74,7 +74,7 @@ function getSessionState({
   hasRecentlyEndedSession: boolean
   isOnline: boolean | null
   relayReachability: RemoteRelayReachabilityState
-  remoteStatus: RemoteStatusModel | null
+  remoteStatus: LiveSessionStatusModel | null
 }): SessionPresentationState {
   if (hasPendingSyncConflict || remoteStatus?.state === "failed") {
     return "liveConflict"
@@ -314,7 +314,7 @@ export default function getSessionPresentation({
   hasRecentlyEndedSession: boolean
   isOnline: boolean | null
   relayReachability: RemoteRelayReachabilityState
-  remoteStatus: RemoteStatusModel | null
+  remoteStatus: LiveSessionStatusModel | null
   t: AppTranslationFn
 }): SessionPresentationModel {
   const state = getSessionState({

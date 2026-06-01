@@ -1,4 +1,4 @@
-import type { SessionSnapshot } from "../../shared/remoteSession/types.ts"
+import type { SessionSnapshot } from "../../shared/liveSession/types.ts"
 
 export const selectLocalFallbackSnapshot = ({
   currentLocalSnapshot,

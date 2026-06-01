@@ -19,16 +19,16 @@ import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
 import TimerAnnouncements from "@/features/TimerPage/TimerAnnouncements"
-import type { SyncParams } from "@/shared/remoteSession/types"
-import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
+import type { SyncParams } from "@/shared/liveSession/types"
+import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
 import { normalizeSyncParams } from "@/shared/security/input"
-import { parseRemoteRoute } from "@/utils/remoteSession/route"
+import { parseRemoteRoute } from "@/utils/liveSession/route"
 import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
 import usePromoteHostControlRoute from "@/utils/timerPage/usePromoteHostControlRoute"
-import useRemoteSessionDialogs from "@/utils/timerPage/useRemoteSessionDialogs"
+import useLiveSessionDialogs from "@/utils/timerPage/useLiveSessionDialogs"
 import useSessionDiagnostics from "@/utils/timerPage/useSessionDiagnostics"
-import useTimerPageRemoteSession from "@/utils/timerPage/useTimerPageRemoteSession"
+import useTimerPageLiveSession from "@/utils/timerPage/useTimerPageLiveSession"
 import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useParams from "@/utils/useParams"
@@ -120,7 +120,7 @@ function TimerApp() {
   })
   const { elapsedPercentage, isTimedOut, minutes, seconds, setState } = timer
 
-  const { remoteLinkError, remoteSession } = useTimerPageRemoteSession({
+  const { liveSession, remoteLinkError } = useTimerPageLiveSession({
     hasRecentlyEndedLiveSession,
     paramData,
     remoteRole,
@@ -152,7 +152,7 @@ function TimerApp() {
     retryConnection,
     sessionId,
     syncAll,
-  } = remoteSession
+  } = liveSession
 
   const applyParamPatch = useCallback(
     (newParams: Partial<SyncParams>) => {
@@ -300,7 +300,7 @@ function TimerApp() {
     exitConfirmationDialog,
     handleEndRemoteSession,
     recoveryDialog,
-  } = useRemoteSessionDialogs({
+  } = useLiveSessionDialogs({
     activateLocalFallback,
     disconnect,
     hasRecentlyEndedLiveSession,
@@ -449,31 +449,31 @@ function TimerApp() {
     omit: settingsOmitKeys,
   })
   const readonlyClientUrl =
-    remoteSession.accessTokens && typeof window !== "undefined"
+    liveSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
           omit: [
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/view/${remoteSession.accessTokens.readonly}`,
+              `/view/${liveSession.accessTokens.readonly}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/view/${remoteSession.accessTokens.readonly}`,
+          pathname: `/view/${liveSession.accessTokens.readonly}`,
         })
       : ""
   const controlClientUrl =
-    remoteSession.accessTokens && typeof window !== "undefined"
+    liveSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
           omit: [
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/control/${remoteSession.accessTokens.control}`,
+              `/control/${liveSession.accessTokens.control}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/control/${remoteSession.accessTokens.control}`,
+          pathname: `/control/${liveSession.accessTokens.control}`,
         })
       : ""
 
@@ -529,7 +529,7 @@ function TimerApp() {
         }}
         sharePanel={{
           panelProps: {
-            accessTokens: remoteSession.accessTokens,
+            accessTokens: liveSession.accessTokens,
             controlClientUrl,
             includeSettingsInLinks: includeSettingsInShareUrls,
             onEndRemoteSession: handleEndRemoteSession,

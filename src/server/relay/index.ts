@@ -2,7 +2,7 @@ import { createServer } from "node:http"
 
 import { WebSocket, WebSocketServer } from "ws"
 
-import { InMemorySessionStore } from "../remoteSession/sessionStore.ts"
+import { InMemorySessionStore } from "../liveSession/sessionStore.ts"
 import { RelayConnectionRegistry } from "./connectionRegistry.ts"
 import {
   createErrorMessage,

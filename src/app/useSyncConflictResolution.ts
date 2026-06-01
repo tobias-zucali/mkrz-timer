@@ -2,9 +2,9 @@
 
 import { useCallback, useRef, useState } from "react"
 
-import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
+import type { SessionSnapshot, SyncParams } from "@/shared/liveSession/types"
 import { projectTimerUrlStateToSyncParams } from "@/shared/urlState"
-import { decideSnapshotRecovery } from "@/utils/remoteSession/recovery"
+import { decideSnapshotRecovery } from "@/utils/liveSession/recovery"
 import { stampSessionSnapshotAt } from "@/utils/timerState"
 import type { TimerState } from "@/utils/useTimer"
 import type useParams from "@/utils/useParams"

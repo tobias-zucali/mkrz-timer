@@ -14,7 +14,7 @@ Technical details live in:
 
 - [docs/development.md](./docs/development.md)
 - [docs/i18n.md](./docs/i18n.md)
-- [docs/remote-mode.md](./docs/remote-mode.md)
+- [docs/live-sessions.md](./docs/live-sessions.md)
 - [docs/title-layout.md](./docs/title-layout.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
 
@@ -22,7 +22,7 @@ Technical details live in:
 
 - Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
 - Timer titles are plain text only, normalized to a single paragraph, and shared session snapshots are validated before use.
-- See [docs/remote-mode.md](./docs/remote-mode.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
+- See [docs/live-sessions.md](./docs/live-sessions.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
 
 ## Getting Started
 
@@ -97,7 +97,7 @@ pnpm build:docker
 
 ## Live Sessions
 
-See [docs/remote-mode.md](./docs/remote-mode.md) for the live-session model, client behavior, link permission model, code layout, and terminology guidance.
+See [docs/live-sessions.md](./docs/live-sessions.md) for the live-session model, client behavior, link permission model, code layout, and terminology guidance.
 
 ## Local Development
 

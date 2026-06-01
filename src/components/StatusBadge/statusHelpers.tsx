@@ -6,7 +6,7 @@ import {
   ExclamationTriangleIcon,
   XCircleIcon,
 } from "@/utils/icons"
-import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
+import type { RemoteRelayReachabilityState } from "@/utils/liveSession/useRemoteRelayReachability"
 import type { SessionPresentationState } from "@/utils/sessionPresentation"
 
 export function getNetworkLabel(isOnline: boolean | null, t: AppTranslationFn) {

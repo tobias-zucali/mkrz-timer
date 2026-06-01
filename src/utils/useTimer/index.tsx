@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import { getTimerFinishedSoundOption } from "@/shared/timerSettings"
 import { getActiveTimerSequenceRow } from "@/shared/timerSequence"
 import { prefixZeros, getMinutesSeconds } from "@/utils/timeInputHelpers"

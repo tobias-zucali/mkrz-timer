@@ -10,7 +10,7 @@ import {
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 const sidebarVisualScenarios = [
   {
