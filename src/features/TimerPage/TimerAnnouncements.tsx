@@ -1,9 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { useTranslations } from "next-intl"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
 
-import { formatDurationForAccessibility } from "@/utils/accessibility/timer"
+import {
+  getTimerEventAnnouncement,
+  getTimerMilestoneAnnouncement,
+  type TimerAnnouncementSnapshot,
+} from "@/features/TimerPage/announcements"
 
 type TimerAnnouncementsProps = {
   activeIndex: number
@@ -11,9 +15,11 @@ type TimerAnnouncementsProps = {
   isStarted: boolean
   isTimedOut: boolean
   minutes: string
-  rowsLength: number
   seconds: string
   sessionAccessibilityLabel: string
+  stepTitle: string
+  totalDuration: number
+  ttsEnabled: boolean
 }
 
 export default function TimerAnnouncements({
@@ -22,119 +28,130 @@ export default function TimerAnnouncements({
   isStarted,
   isTimedOut,
   minutes,
-  rowsLength,
   seconds,
   sessionAccessibilityLabel,
+  stepTitle,
+  totalDuration,
+  ttsEnabled,
 }: TimerAnnouncementsProps) {
   const tPage = useTranslations("TimerPage.page")
   const tTimer = useTranslations("Timer")
-  const [liveAnnouncement, setLiveAnnouncement] = useState("")
+  const locale = useLocale()
+  const [announcement, setAnnouncement] = useState("")
+  const [spokenAnnouncement, setSpokenAnnouncement] = useState("")
 
-  const announce = useCallback((message: string) => {
-    setLiveAnnouncement("")
-    window.requestAnimationFrame(() => {
-      setLiveAnnouncement(message)
-    })
-  }, [])
-
-  const previousTimerSnapshotRef = useRef({
-    activeIndex,
-    isPaused,
-    isStarted,
-    isTimedOut,
-  })
-  const previousRemoteAnnouncementRef = useRef(sessionAccessibilityLabel)
-  const announcedMilestonesRef = useRef<Set<number>>(new Set())
-
-  useEffect(() => {
-    const previous = previousTimerSnapshotRef.current
-    const currentStepLabel =
-      rowsLength > 1 ? `${activeIndex + 1} of ${rowsLength}` : "1 of 1"
-    const durationLabel = formatDurationForAccessibility(
-      Number.parseInt(minutes, 10) * 60 + Number.parseInt(seconds, 10),
-      tTimer,
-    )
-
-    if (!previous.isStarted && isStarted && !isPaused) {
-      announce(
-        tTimer("announcementStarted", {
-          time: durationLabel,
-        }),
-      )
-      announcedMilestonesRef.current = new Set()
-    } else if (previous.isStarted && !previous.isPaused && isPaused) {
-      announce(
-        isTimedOut
-          ? tTimer("announcementFinished")
-          : tTimer("announcementPaused", {
-              time: durationLabel,
-            }),
-      )
-    } else if (previous.isStarted && !isStarted) {
-      announce(
-        tTimer("announcementReset", {
-          time: durationLabel,
-        }),
-      )
-      announcedMilestonesRef.current = new Set()
-    } else if (previous.activeIndex !== activeIndex) {
-      announce(
-        tTimer("announcementStepChanged", {
-          step: currentStepLabel,
-          time: durationLabel,
-        }),
-      )
-      announcedMilestonesRef.current = new Set()
-    }
-
-    if (!isStarted || isPaused) {
-      announcedMilestonesRef.current = new Set()
-    } else {
-      const remainingSeconds =
-        Number.parseInt(minutes, 10) * 60 + Number.parseInt(seconds, 10)
-
-      if (remainingSeconds === 60 && !announcedMilestonesRef.current.has(60)) {
-        announce(tTimer("announcementOneMinuteRemaining"))
-        announcedMilestonesRef.current.add(60)
-      } else if (
-        remainingSeconds > 0 &&
-        remainingSeconds <= 10 &&
-        !announcedMilestonesRef.current.has(remainingSeconds)
-      ) {
-        announce(
-          tTimer("announcementSecondsRemaining", {
-            seconds: remainingSeconds,
-          }),
-        )
-        announcedMilestonesRef.current.add(remainingSeconds)
+  const announce = useCallback(
+    (message: string, { speak = true }: { speak?: boolean } = {}) => {
+      setAnnouncement("")
+      if (speak) {
+        setSpokenAnnouncement(message)
       }
-    }
+      window.requestAnimationFrame(() => {
+        setAnnouncement(message)
+      })
+    },
+    [],
+  )
 
-    previousTimerSnapshotRef.current = {
+  const remainingSeconds =
+    Number.parseInt(minutes, 10) * 60 + Number.parseInt(seconds, 10)
+  const currentSnapshot = useMemo<TimerAnnouncementSnapshot>(
+    () => ({
       activeIndex,
       isPaused,
       isStarted,
       isTimedOut,
-    }
-  }, [
-    activeIndex,
-    announce,
-    isPaused,
-    isStarted,
-    isTimedOut,
-    minutes,
-    rowsLength,
-    seconds,
-    tTimer,
-  ])
+      remainingSeconds,
+      stepTitle,
+      totalDuration,
+    }),
+    [
+      activeIndex,
+      isPaused,
+      isStarted,
+      isTimedOut,
+      remainingSeconds,
+      stepTitle,
+      totalDuration,
+    ],
+  )
+
+  const previousTimerSnapshotRef = useRef(currentSnapshot)
+  const previousRemoteAnnouncementRef = useRef(sessionAccessibilityLabel)
+  const previousTtsEnabledRef = useRef(ttsEnabled)
+  const announcedMilestonesRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    const currentAnnouncement = sessionAccessibilityLabel
-    if (currentAnnouncement !== previousRemoteAnnouncementRef.current) {
-      announce(currentAnnouncement)
-      previousRemoteAnnouncementRef.current = currentAnnouncement
+    const previous = previousTimerSnapshotRef.current
+    const shouldResetMilestones =
+      !currentSnapshot.isStarted ||
+      previous.activeIndex !== currentSnapshot.activeIndex ||
+      (!previous.isStarted &&
+        currentSnapshot.isStarted &&
+        !currentSnapshot.isPaused)
+    const eventAnnouncement = getTimerEventAnnouncement({
+      current: currentSnapshot,
+      previous,
+      t: tTimer,
+    })
+
+    if (shouldResetMilestones) {
+      announcedMilestonesRef.current = new Set()
+    }
+
+    if (eventAnnouncement) {
+      announce(eventAnnouncement)
+    } else if (currentSnapshot.isStarted && !currentSnapshot.isPaused) {
+      const milestone = getTimerMilestoneAnnouncement({
+        remainingSeconds: currentSnapshot.remainingSeconds,
+        t: tTimer,
+        totalDuration: currentSnapshot.totalDuration,
+      })
+
+      if (milestone && !announcedMilestonesRef.current.has(milestone.id)) {
+        announce(milestone.text)
+        announcedMilestonesRef.current.add(milestone.id)
+      }
+    }
+
+    previousTimerSnapshotRef.current = currentSnapshot
+  }, [announce, currentSnapshot, tTimer])
+
+  useEffect(() => {
+    const currentRemoteAnnouncement = sessionAccessibilityLabel
+
+    if (currentRemoteAnnouncement !== previousRemoteAnnouncementRef.current) {
+      announce(currentRemoteAnnouncement, { speak: false })
+      previousRemoteAnnouncementRef.current = currentRemoteAnnouncement
     }
   }, [announce, sessionAccessibilityLabel])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return
+    }
+
+    const wasTtsEnabled = previousTtsEnabledRef.current
+    previousTtsEnabledRef.current = ttsEnabled
+
+    if (!ttsEnabled || !spokenAnnouncement) {
+      window.speechSynthesis.cancel()
+      return
+    }
+
+    if (!wasTtsEnabled && ttsEnabled) {
+      return
+    }
+
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(spokenAnnouncement)
+    utterance.lang = locale
+    window.speechSynthesis.speak(utterance)
+
+    return () => {
+      window.speechSynthesis.cancel()
+    }
+  }, [locale, spokenAnnouncement, ttsEnabled])
 
   return (
     <div
@@ -145,7 +162,7 @@ export default function TimerAnnouncements({
       data-testid="timer-live-region"
       role="status"
     >
-      {liveAnnouncement}
+      {announcement}
     </div>
   )
 }

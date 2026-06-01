@@ -43,6 +43,8 @@ test("parseTimerUrlState reads valid multi-row timer params", () => {
         totalSeconds: 900,
       },
     ],
+    snd: DEFAULT_SYNC_PARAMS.snd,
+    tts: DEFAULT_SYNC_PARAMS.tts,
     version: "1",
   })
 })
@@ -62,6 +64,23 @@ test("parseTimerUrlState accepts legacy 4-part rows", () => {
       totalSeconds: 300,
     },
   ])
+})
+
+test("parseTimerUrlState reads compact settings params", () => {
+  const parsed = parseTimerUrlState({
+    searchParams: new URLSearchParams("ts=1&s=b&bg=123456&fg=abcdef"),
+  })
+
+  assert.deepEqual(parsed, {
+    activeIndex: 0,
+    bg: "#123456",
+    fg: "#abcdef",
+    hasTimerState: false,
+    rows: [],
+    snd: "b",
+    tts: true,
+    version: null,
+  })
 })
 
 test("parseTimerUrlState ignores malformed rows and rows beyond the max", () => {
@@ -88,10 +107,12 @@ test("parseTimerUrlState fails closed when timer state is disabled", () => {
     }),
     {
       activeIndex: 0,
-      bg: "#000000",
+      bg: "#111111",
       fg: "#ffffff",
       hasTimerState: false,
       rows: [],
+      snd: DEFAULT_SYNC_PARAMS.snd,
+      tts: DEFAULT_SYNC_PARAMS.tts,
       version: null,
     },
   )
@@ -120,6 +141,8 @@ test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
           totalSeconds: 45,
         }),
       ],
+      snd: DEFAULT_SYNC_PARAMS.snd,
+      tts: DEFAULT_SYNC_PARAMS.tts,
       version: TIMER_URL_VERSION,
     },
   })
@@ -147,6 +170,8 @@ test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
       },
     ],
     s: "45",
+    snd: DEFAULT_SYNC_PARAMS.snd,
+    tts: DEFAULT_SYNC_PARAMS.tts,
     title: "Selected",
   })
 })
@@ -176,6 +201,38 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t
     query,
     "v=1&t=75%21%21Line%25201%2520Line%25202%212%211&a=0&bg=123456&fg=abcdef&settings=1",
   )
+})
+
+test("buildTimerUrlSearchParams omits default settings and serializes selected ones compactly", () => {
+  const defaultsQuery = buildTimerUrlSearchParams({
+    activeIndex: 0,
+    bg: DEFAULT_SYNC_PARAMS.bg,
+    fg: DEFAULT_SYNC_PARAMS.fg,
+    rows: [
+      buildUrlTimerRow({
+        title: "",
+        totalSeconds: 60,
+      }),
+    ],
+    snd: DEFAULT_SYNC_PARAMS.snd,
+    tts: DEFAULT_SYNC_PARAMS.tts,
+  }).toString()
+
+  assert.equal(defaultsQuery, "v=1&t=60%21%21%211%210&a=0")
+
+  const selectedQuery = buildTimerUrlSearchParams({
+    activeIndex: 0,
+    rows: [
+      buildUrlTimerRow({
+        title: "",
+        totalSeconds: 60,
+      }),
+    ],
+    snd: "b",
+    tts: true,
+  }).toString()
+
+  assert.equal(selectedQuery, "v=1&t=60%21%21%211%210&a=0&s=b&ts=1")
 })
 
 test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", () => {
@@ -232,6 +289,8 @@ test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState brid
         bg: "#123456",
         fg: "#eeeeee",
         rows: [row],
+        snd: DEFAULT_SYNC_PARAMS.snd,
+        tts: DEFAULT_SYNC_PARAMS.tts,
       },
       state: {
         activeIndex: 0,
@@ -239,6 +298,8 @@ test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState brid
         fg: "#eeeeee",
         hasTimerState: true,
         rows: [row],
+        snd: DEFAULT_SYNC_PARAMS.snd,
+        tts: DEFAULT_SYNC_PARAMS.tts,
         version: TIMER_URL_VERSION,
       },
     }),

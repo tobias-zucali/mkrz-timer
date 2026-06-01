@@ -32,13 +32,17 @@ const baseProps = {
     params: {
       bg: DEFAULT_SYNC_PARAMS.bg,
       fg: DEFAULT_SYNC_PARAMS.fg,
+      snd: DEFAULT_SYNC_PARAMS.snd,
+      tts: DEFAULT_SYNC_PARAMS.tts,
     },
   },
   sharePanel: {
     panelProps: {
       accessTokens: undefined,
       controlClientUrl: "",
+      includeSettingsInLinks: true,
       onEndRemoteSession: vi.fn(async () => undefined),
+      onIncludeSettingsInLinksChange: vi.fn(),
       onStartRemoteSession: vi.fn(async () => undefined),
       readonlyClientUrl: "",
       timerUrl: "http://localhost:3000/",
@@ -118,5 +122,35 @@ describe("Sidebar", () => {
     renderWithIntl(<Sidebar {...baseProps} timerPanel={buildTimerPanel()} />)
 
     expect(screen.getByRole("button", { name: "Timer" })).toBeVisible()
+  })
+
+  it("renders the new settings controls", () => {
+    renderWithIntl(
+      <Sidebar
+        {...baseProps}
+        shell={{ ...baseProps.shell, selectedEntryId: "settings" }}
+      />,
+    )
+
+    expect(
+      screen.getByRole("checkbox", { name: /Voice announcements/ }),
+    ).toBeVisible()
+    expect(screen.getByLabelText("Sound when finished")).toBeVisible()
+    expect(screen.getByRole("button", { name: "Preview sound" })).toBeVisible()
+  })
+
+  it("renders the share settings toggle", () => {
+    renderWithIntl(
+      <Sidebar
+        {...baseProps}
+        shell={{ ...baseProps.shell, selectedEntryId: "share" }}
+      />,
+    )
+
+    expect(
+      screen.getByRole("checkbox", {
+        name: /Include Voice & Sound settings in links/,
+      }),
+    ).toBeVisible()
   })
 })

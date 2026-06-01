@@ -14,7 +14,7 @@ Live sessions are relay-backed. There is no dedicated browser host.
 
 - `/view/<readonlyToken>` joins as a readonly viewer
 - `/control/<controlToken>` joins as a control-capable client
-- remote URLs carry opaque capability tokens only
+- remote URLs carry opaque capability tokens, the canonical `v=1&t=...&a=...` timer state, and selected non-default settings params
 - when the host starts a live session, it moves onto its `/control/<controlToken>` route without a full document reload
 - leaving a control route returns that client to the local timer URL
 - live timer state is stored in the relay session snapshot
@@ -35,7 +35,8 @@ The relay owns:
 - clients derive live elapsed time from the received anchor state plus the local delta from `serverTimestamp`
 - controllers send timer commands such as start, pause, reset, and row changes instead of elapsed-time ticks
 - the relay does not increment elapsed time on an interval; it resolves canonical running state when handling commands, joins, reconnects, and broadcasts
-- local routes can carry timer setup in `v=1&t=...` URL state, while viewer and shared controller routes stay focused on opaque session tokens only
+- local routes can carry timer setup in `v=1&t=...` URL state, and viewer routes may also carry the same canonical timer params plus optional selected settings params
+- shared controller routes may also include the `title` query param alongside the session token, canonical timer params, and optional selected settings params
 - controller links can restore the latest relay snapshot without extra setup
 - in local development, when the configured relay URL points at loopback, clients opened from a LAN host rewrite that relay hostname to the current page hostname before connecting or probing relay health
 - clients auto-retry after relay disconnects

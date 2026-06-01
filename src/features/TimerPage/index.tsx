@@ -32,8 +32,13 @@ import useTimerPageRemoteSession from "@/utils/timerPage/useTimerPageRemoteSessi
 import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useParams from "@/utils/useParams"
-import { getRemoteSessionOnlyOmitKeys } from "@/utils/useParams/params"
+import {
+  getRemoteSessionOnlyOmitKeys,
+  getSettingsOnlyOmitKeys,
+} from "@/utils/useParams/params"
 import useTimer, { type TimerState } from "@/utils/useTimer"
+
+const SHARE_PANEL_SETTINGS_STORAGE_KEY = "timer.share.includeVoiceSoundSettings"
 
 export default function TimerPage() {
   return (
@@ -67,6 +72,12 @@ function TimerApp() {
   const [, setLocationVersion] = useState(0)
   const [hasRecentlyEndedLiveSession, setHasRecentlyEndedLiveSession] =
     useState(false)
+  const [includeSettingsInShareUrls, setIncludeSettingsInShareUrls] =
+    useState(true)
+  const [
+    hasLoadedShareSettingsPreference,
+    setHasLoadedShareSettingsPreference,
+  ] = useState(false)
   const [pendingTimerParamPatch, setPendingTimerParamPatch] =
     useState<Partial<SyncParams> | null>(null)
   const [pendingTimerCommand, setPendingTimerCommand] = useState<
@@ -174,8 +185,10 @@ function TimerApp() {
 
   const handleChange = useCallback(
     (key: string, value: string) => {
-      if (key === "bg" || key === "fg") {
-        applyParamPatch({ [key]: value })
+      if (key === "bg" || key === "fg" || key === "snd" || key === "tts") {
+        applyParamPatch({
+          [key]: key === "tts" ? value === "1" : value,
+        } as Partial<SyncParams>)
         return
       }
 
@@ -309,6 +322,33 @@ function TimerApp() {
   })
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const storedValue = window.localStorage.getItem(
+      SHARE_PANEL_SETTINGS_STORAGE_KEY,
+    )
+    if (storedValue === "0") {
+      setIncludeSettingsInShareUrls(false)
+    } else if (storedValue === "1") {
+      setIncludeSettingsInShareUrls(true)
+    }
+    setHasLoadedShareSettingsPreference(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasLoadedShareSettingsPreference) {
+      return
+    }
+
+    window.localStorage.setItem(
+      SHARE_PANEL_SETTINGS_STORAGE_KEY,
+      includeSettingsInShareUrls ? "1" : "0",
+    )
+  }, [hasLoadedShareSettingsPreference, includeSettingsInShareUrls])
+
+  useEffect(() => {
     document.title = buildDocumentTitle({
       appTitle: tAppShell("metadata.title"),
       pageTitle,
@@ -402,26 +442,37 @@ function TimerApp() {
     clearRecentlyEndedLiveSession()
   }
 
-  const timerUrl = paramData.getUrlWithParams()
+  const settingsOmitKeys = includeSettingsInShareUrls
+    ? []
+    : getSettingsOnlyOmitKeys()
+  const timerUrl = paramData.getUrlWithParams({
+    omit: settingsOmitKeys,
+  })
   const readonlyClientUrl =
     remoteSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/view/${remoteSession.accessTokens.readonly}`,
-          ),
+          omit: [
+            ...getRemoteSessionOnlyOmitKeys(
+              shareableParams,
+              [],
+              `/view/${remoteSession.accessTokens.readonly}`,
+            ),
+            ...settingsOmitKeys,
+          ],
           pathname: `/view/${remoteSession.accessTokens.readonly}`,
         })
       : ""
   const controlClientUrl =
     remoteSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/control/${remoteSession.accessTokens.control}`,
-          ),
+          omit: [
+            ...getRemoteSessionOnlyOmitKeys(
+              shareableParams,
+              [],
+              `/control/${remoteSession.accessTokens.control}`,
+            ),
+            ...settingsOmitKeys,
+          ],
           pathname: `/control/${remoteSession.accessTokens.control}`,
         })
       : ""
@@ -438,11 +489,13 @@ function TimerApp() {
           isStarted={timer.isStarted}
           isTimedOut={timer.isTimedOut}
           minutes={minutes}
-          rowsLength={params.rows.length}
           seconds={seconds}
           sessionAccessibilityLabel={
             sessionDiagnostics.sessionPresentation.accessibilityLabel
           }
+          stepTitle={params.title}
+          totalDuration={timer.totalDuration}
+          ttsEnabled={params.tts}
         />
         <Timer
           activeIndex={params.activeIndex}
@@ -470,13 +523,17 @@ function TimerApp() {
           params: {
             bg: params.bg,
             fg: params.fg,
+            snd: params.snd,
+            tts: params.tts,
           },
         }}
         sharePanel={{
           panelProps: {
             accessTokens: remoteSession.accessTokens,
             controlClientUrl,
+            includeSettingsInLinks: includeSettingsInShareUrls,
             onEndRemoteSession: handleEndRemoteSession,
+            onIncludeSettingsInLinksChange: setIncludeSettingsInShareUrls,
             onStartRemoteSession: async () => {
               await connectRemote()
             },

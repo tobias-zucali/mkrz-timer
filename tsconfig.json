@@ -34,7 +34,8 @@
     ".next-agent-e2e/types/**/*.ts",
     "**/*.mts",
     ".next-e2e/dev/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-agent-e2e/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

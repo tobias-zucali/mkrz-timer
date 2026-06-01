@@ -15,6 +15,7 @@ import {
   getDisplayedSeconds,
   openClientFromSettings,
   openSettingsOverlay,
+  openSidebarPanel,
   openClientsFromSettings,
   relayUrl,
   updateTimerSettings,
@@ -467,11 +468,21 @@ test("new clients inherit host settings without resetting the session", async ({
   await expectUrlQrCode(page, "Control link")
   await updateTimerSettings(page, mainSettings)
   await expectTimerSettings(page, mainSettings)
+  await openSidebarPanel(page, "Share")
+  const controlLinkField = page.getByRole("textbox", { name: "Control link" })
+  const viewerLinkField = page.getByRole("textbox", { name: "Viewer link" })
+  await expect(controlLinkField).toHaveValue(/\/control\//)
+  await expect(viewerLinkField).toHaveValue(/\/view\//)
+  const currentControlUrl = await controlLinkField.inputValue()
+  const currentViewerUrl = await viewerLinkField.inputValue()
 
-  const controlClient = await openClientFromSettings(page, clientUrl)
+  const controlClient = await openClientFromSettings(
+    page,
+    currentControlUrl || clientUrl,
+  )
   const readonlyClient = await openClientFromSettings(
     page,
-    viewerUrl,
+    currentViewerUrl || viewerUrl,
     "Viewer link",
   )
   const allPages = [page, controlClient, readonlyClient]

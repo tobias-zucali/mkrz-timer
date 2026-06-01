@@ -245,6 +245,18 @@ export function QrCodeIcon(props: IconProps) {
   )
 }
 
+export function PlayIcon(props: IconProps) {
+  return (
+    <BaseIcon strokeWidth={1.5} {...props}>
+      <path
+        d="M5.25 5.653c0-1.14 1.232-1.86 2.232-1.303l10.125 5.848c1 .577 1 2.029 0 2.606L7.482 18.65c-1 .558-2.232-.163-2.232-1.303V5.653Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </BaseIcon>
+  )
+}
+
 export function ShareIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

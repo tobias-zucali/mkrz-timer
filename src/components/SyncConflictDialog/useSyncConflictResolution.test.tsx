@@ -222,7 +222,9 @@ describe("useSyncConflictResolution", () => {
           },
         ],
         s: "30",
+        snd: DEFAULT_SYNC_PARAMS.snd,
         title: "Opening",
+        tts: DEFAULT_SYNC_PARAMS.tts,
       },
       state: {
         ...DEFAULT_TIMER_STATE,

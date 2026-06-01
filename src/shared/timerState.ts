@@ -258,6 +258,8 @@ export const resolveTimerStateAt = (
           },
         ],
         s: "00",
+        snd: "a",
+        tts: false,
         title: "",
       },
       state,

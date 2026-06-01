@@ -66,8 +66,9 @@ export default function useParams() {
     [searchParamsString],
   )
   const isSearchParamsEmpty = searchParams.size === 0
-  const allowTimerState = !pathname.startsWith("/view")
-  const allowPageTitle = !pathname.startsWith("/view")
+  const isReadonlyRemotePath = pathname.startsWith("/view")
+  const allowTimerState = !isReadonlyRemotePath
+  const allowPageTitle = !isReadonlyRemotePath
   const parsedTimerUrlState = useMemo(
     () =>
       parseTimerUrlState({
@@ -186,7 +187,10 @@ export default function useParams() {
           allowTimerState:
             typeof window === "undefined"
               ? allowTimerState
-              : !window.location.pathname.startsWith("/view"),
+              : !(
+                  window.location.pathname.startsWith("/view") ||
+                  window.location.pathname.startsWith("/control")
+                ),
           searchParams:
             typeof window === "undefined"
               ? new URLSearchParams(searchParamsString)

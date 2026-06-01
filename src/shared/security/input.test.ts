@@ -62,7 +62,9 @@ test("normalizeQueryParams falls back safely for malformed values", () => {
         },
       ],
       pid: "",
+      snd: DEFAULT_SYNC_PARAMS.snd,
       title: "  Hello<script>  ",
+      tts: DEFAULT_SYNC_PARAMS.tts,
     },
   )
 })
@@ -82,6 +84,30 @@ test("normalizeSyncParamPatch only returns supported sanitized fields", () => {
     {
       bg: "#ff00aa",
       title: '  <b onclick="boom()">Title</b>  ',
+    },
+  )
+})
+
+test("normalizeSyncParamPatch sanitizes tts and sound settings", () => {
+  assert.deepEqual(
+    normalizeSyncParamPatch({
+      snd: "b",
+      tts: "1",
+    }),
+    {
+      snd: "b",
+      tts: true,
+    },
+  )
+
+  assert.deepEqual(
+    normalizeSyncParamPatch({
+      snd: "nope",
+      tts: "maybe",
+    }),
+    {
+      snd: DEFAULT_SYNC_PARAMS.snd,
+      tts: DEFAULT_SYNC_PARAMS.tts,
     },
   )
 })
@@ -116,6 +142,8 @@ test("normalizeSyncParams uses caller fallback for duration fields", () => {
         },
       ],
       s: "20",
+      snd: DEFAULT_SYNC_PARAMS.snd,
+      tts: DEFAULT_SYNC_PARAMS.tts,
       title: "",
     },
   )

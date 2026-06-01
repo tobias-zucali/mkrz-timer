@@ -136,6 +136,41 @@ test(
   },
 )
 
+test("includes selected settings in remote viewer and control links when enabled", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await updateTimerSettings(page, {
+    backgroundColor: "#123456",
+    soundId: "b",
+    ttsEnabled: true,
+  })
+  await openSidebarPanel(page, "Share")
+  await page.getByRole("button", { name: "Start live session" }).click()
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toMatch(/^\/control\/.+/)
+
+  const viewerLink = page.getByRole("textbox", { name: "Viewer link" })
+  const controlLink = page.getByRole("textbox", { name: "Control link" })
+
+  await expect(viewerLink).toHaveValue(/\/view\/.+(?:\?|&)bg=123456(?:&|$)/)
+  await expect(viewerLink).toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(viewerLink).toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+  await expect(controlLink).toHaveValue(/\/control\/.+(?:\?|&)bg=123456(?:&|$)/)
+
+  await page
+    .getByRole("checkbox", {
+      name: "Include Voice & Sound settings in links",
+    })
+    .uncheck()
+
+  await expect(viewerLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+  await expect(viewerLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(viewerLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+  await expect(controlLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+})
+
 test("moves the host onto the control route and ends the live session cleanly", async ({
   page,
 }) => {

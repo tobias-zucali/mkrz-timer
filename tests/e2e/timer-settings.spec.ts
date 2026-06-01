@@ -108,6 +108,14 @@ test("matches sidebar panel aria structures", async ({ page }) => {
   await expect(page.getByTestId("sidebar-panel-share")).toMatchAriaSnapshot({
     name: "sidebar-share-panel.aria.yml",
   })
+  const localLink = new URL(
+    await page.getByRole("textbox", { name: "Local link" }).inputValue(),
+  )
+
+  expect(localLink.pathname).toBe("/")
+  expect(localLink.searchParams.get("v")).toBe("1")
+  expect(localLink.searchParams.get("t")).toBeTruthy()
+  expect(localLink.searchParams.get("a")).toBe("0")
 
   await openSidebarPanel(page, "Settings")
   await expect(page.getByTestId("sidebar-panel-settings")).toMatchAriaSnapshot({
@@ -139,6 +147,62 @@ test(
     await expectTimerUrlParams(page, settings)
   },
 )
+
+test("toggles shared settings in the local share link", async ({ page }) => {
+  await openTimer(page, 3)
+
+  await updateTimerSettings(page, {
+    backgroundColor: "#123456",
+    soundId: "b",
+    ttsEnabled: true,
+  })
+
+  await openSidebarPanel(page, "Share")
+  const localLink = page.getByRole("textbox", { name: "Local link" })
+
+  await expect(localLink).toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+  await expect(localLink).toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(localLink).toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+
+  await page
+    .getByRole("checkbox", {
+      name: "Include Voice & Sound settings in links",
+    })
+    .uncheck()
+
+  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+})
+
+test("persists the share settings toggle across reloads", async ({ page }) => {
+  await openTimer(page, 3)
+
+  await updateTimerSettings(page, {
+    backgroundColor: "#123456",
+    soundId: "b",
+    ttsEnabled: true,
+  })
+
+  await openSidebarPanel(page, "Share")
+  const includeSettingsToggle = page.getByRole("checkbox", {
+    name: "Include Voice & Sound settings in links",
+  })
+  const localLink = page.getByRole("textbox", { name: "Local link" })
+
+  await includeSettingsToggle.uncheck()
+  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+
+  await page.reload()
+  await openSidebarPanel(page, "Share")
+
+  await expect(includeSettingsToggle).not.toBeChecked()
+  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
+  await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+})
 
 test("keeps timer shortcuts predictable inside the sidebar", async ({
   page,

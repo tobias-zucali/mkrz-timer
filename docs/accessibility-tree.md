@@ -19,6 +19,7 @@ This app treats the accessibility tree as a first-class UI surface.
 ## Dynamic Announcements
 
 - Announce meaningful state changes through a dedicated live region.
+- Generate live-region text and optional browser voice announcements from the same shared announcement definitions.
 - Announce timer start, pause, reset, timeout, step changes, and important countdown milestones only.
 - Announce remote/session state transitions when the user would otherwise miss them.
 - Do not rely on a visible status badge alone to communicate state changes.

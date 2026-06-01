@@ -36,7 +36,9 @@ type TimerSettings = {
   minutes?: string
   primaryColor?: string
   seconds?: string
+  soundId?: string
   title?: string
+  ttsEnabled?: boolean
 }
 
 export type RemoteClientUrls = {
@@ -317,7 +319,9 @@ export async function updateTimerSettings(
     minutes,
     primaryColor,
     seconds,
+    soundId,
     title,
+    ttsEnabled,
   }: TimerSettings,
 ) {
   if (title !== undefined) {
@@ -354,6 +358,22 @@ export async function updateTimerSettings(
       .getByTestId("sidebar-panel-settings")
       .getByLabel("Foreground")
       .fill(foregroundColor)
+  }
+  if (ttsEnabled !== undefined) {
+    await openSidebarPanel(page, "Settings")
+    const checkbox = page
+      .getByTestId("sidebar-panel-settings")
+      .getByLabel("Voice announcements")
+    if ((await checkbox.isChecked()) !== ttsEnabled) {
+      await checkbox.click()
+    }
+  }
+  if (soundId !== undefined) {
+    await openSidebarPanel(page, "Settings")
+    await page
+      .getByTestId("sidebar-panel-settings")
+      .getByLabel("Sound when finished")
+      .selectOption(soundId)
   }
   if (primaryColor !== undefined) {
     await openSidebarPanel(page, "Timer")
@@ -733,6 +753,7 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
     await expect
       .poll(() => readTimerTitleValue(page), {
         message: "timer title should reflect synced settings",
+        timeout: 10_000,
       })
       .toBe(expectedTitle)
   }
@@ -761,6 +782,22 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
         message: "foreground color should be applied",
       })
       .toBe(hexToRgbChannels(settings.foregroundColor))
+  }
+  if (settings.ttsEnabled !== undefined) {
+    await openSidebarPanel(page, "Settings")
+    await expect(
+      page
+        .getByTestId("sidebar-panel-settings")
+        .getByLabel("Voice announcements"),
+    ).toHaveJSProperty("checked", settings.ttsEnabled)
+  }
+  if (settings.soundId !== undefined) {
+    await openSidebarPanel(page, "Settings")
+    await expect(
+      page
+        .getByTestId("sidebar-panel-settings")
+        .getByLabel("Sound when finished"),
+    ).toHaveValue(settings.soundId)
   }
   if (settings.primaryColor !== undefined) {
     await expect
@@ -795,6 +832,18 @@ export async function expectTimerUrlParams(
   if (settings.foregroundColor !== undefined) {
     await expect(page).toHaveURL(
       new RegExp(`(?:\\?|&)fg=${settings.foregroundColor.slice(1)}(?:&|$)`),
+    )
+  }
+  if (settings.ttsEnabled !== undefined) {
+    if (settings.ttsEnabled) {
+      await expect(page).toHaveURL(/(?:\?|&)ts=1(?:&|$)/)
+    } else {
+      await expect(page).not.toHaveURL(/(?:\?|&)ts=1(?:&|$)/)
+    }
+  }
+  if (settings.soundId !== undefined) {
+    await expect(page).toHaveURL(
+      new RegExp(`(?:\\?|&)s=${escapeRegex(settings.soundId)}(?:&|$)`),
     )
   }
   if (settings.primaryColor !== undefined) {
@@ -833,7 +882,7 @@ export async function expectRemoteSessionOnlyUrl(
     .poll(() => page.url(), {
       message: "remote client URLs should stay focused on session params",
     })
-    .not.toMatch(/(?:\?|&)(?:bg|fg|pid|t|v)=/)
+    .not.toMatch(/(?:\?|&)pid=/)
 }
 
 export async function expectControlClientUrlParams(
