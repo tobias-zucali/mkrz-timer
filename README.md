@@ -126,11 +126,10 @@ Detailed lane definitions and test-authoring rules live in [docs/development.md]
 
 Production is intended to run on a Hetzner CAX11 using Docker Compose and Caddy.
 
-The production deploy workflow uploads the checked-out revision, replaces the server worktree from that bundle so removed files do not linger, rebuilds `timer-web` and `timer-relay` with `docker compose build --pull`, force-recreates those two containers with orphan cleanup, and prints the deployed commit plus image/container diagnostics. The deployed build identifier is exposed in the UI footer and in the relay health response so the running commit can be verified after rollout.
-
 Deployment files and the runbook live in:
 
 - [docker-compose.yml](./docker-compose.yml)
 - [Caddyfile](./Caddyfile)
 - [scripts/deploy-production.sh](./scripts/deploy-production.sh)
+- [.github/workflows/build-and-deploy.yml](./.github/workflows/build-and-deploy.yml)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
