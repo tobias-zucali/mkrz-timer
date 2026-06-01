@@ -17,6 +17,7 @@ const timerStub = {
   minutes: "01",
   seconds: "00",
   setState: vi.fn(),
+  totalDuration: 60,
 } as ReturnType<typeof useTimer>
 
 const renderTimer = ({

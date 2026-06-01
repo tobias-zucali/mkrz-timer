@@ -19,21 +19,26 @@ import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
 import TimerAnnouncements from "@/features/TimerPage/TimerAnnouncements"
-import type { SyncParams } from "@/shared/remoteSession/types"
-import { mergeSyncParamsPatch } from "@/shared/remoteSession/mergeSyncParamsPatch"
+import type { SyncParams } from "@/shared/liveSession/types"
+import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
 import { normalizeSyncParams } from "@/shared/security/input"
-import { parseRemoteRoute } from "@/utils/remoteSession/route"
+import { parseRemoteRoute } from "@/utils/liveSession/route"
 import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
 import usePromoteHostControlRoute from "@/utils/timerPage/usePromoteHostControlRoute"
-import useRemoteSessionDialogs from "@/utils/timerPage/useRemoteSessionDialogs"
+import useLiveSessionDialogs from "@/utils/timerPage/useLiveSessionDialogs"
 import useSessionDiagnostics from "@/utils/timerPage/useSessionDiagnostics"
-import useTimerPageRemoteSession from "@/utils/timerPage/useTimerPageRemoteSession"
+import useTimerPageLiveSession from "@/utils/timerPage/useTimerPageLiveSession"
 import { buildDocumentTitle } from "@/utils/documentTitle"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 import useParams from "@/utils/useParams"
-import { getRemoteSessionOnlyOmitKeys } from "@/utils/useParams/params"
+import {
+  getRemoteSessionOnlyOmitKeys,
+  getSettingsOnlyOmitKeys,
+} from "@/utils/useParams/params"
 import useTimer, { type TimerState } from "@/utils/useTimer"
+
+const SHARE_PANEL_SETTINGS_STORAGE_KEY = "timer.share.includeVoiceSoundSettings"
 
 export default function TimerPage() {
   return (
@@ -67,6 +72,12 @@ function TimerApp() {
   const [, setLocationVersion] = useState(0)
   const [hasRecentlyEndedLiveSession, setHasRecentlyEndedLiveSession] =
     useState(false)
+  const [includeSettingsInShareUrls, setIncludeSettingsInShareUrls] =
+    useState(true)
+  const [
+    hasLoadedShareSettingsPreference,
+    setHasLoadedShareSettingsPreference,
+  ] = useState(false)
   const [pendingTimerParamPatch, setPendingTimerParamPatch] =
     useState<Partial<SyncParams> | null>(null)
   const [pendingTimerCommand, setPendingTimerCommand] = useState<
@@ -109,7 +120,7 @@ function TimerApp() {
   })
   const { elapsedPercentage, isTimedOut, minutes, seconds, setState } = timer
 
-  const { remoteLinkError, remoteSession } = useTimerPageRemoteSession({
+  const { liveSession, remoteLinkError } = useTimerPageLiveSession({
     hasRecentlyEndedLiveSession,
     paramData,
     remoteRole,
@@ -141,7 +152,7 @@ function TimerApp() {
     retryConnection,
     sessionId,
     syncAll,
-  } = remoteSession
+  } = liveSession
 
   const applyParamPatch = useCallback(
     (newParams: Partial<SyncParams>) => {
@@ -174,8 +185,10 @@ function TimerApp() {
 
   const handleChange = useCallback(
     (key: string, value: string) => {
-      if (key === "bg" || key === "fg") {
-        applyParamPatch({ [key]: value })
+      if (key === "bg" || key === "fg" || key === "snd" || key === "tts") {
+        applyParamPatch({
+          [key]: key === "tts" ? value === "1" : value,
+        } as Partial<SyncParams>)
         return
       }
 
@@ -287,7 +300,7 @@ function TimerApp() {
     exitConfirmationDialog,
     handleEndRemoteSession,
     recoveryDialog,
-  } = useRemoteSessionDialogs({
+  } = useLiveSessionDialogs({
     activateLocalFallback,
     disconnect,
     hasRecentlyEndedLiveSession,
@@ -307,6 +320,33 @@ function TimerApp() {
     setState,
     syncParamsRef,
   })
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const storedValue = window.localStorage.getItem(
+      SHARE_PANEL_SETTINGS_STORAGE_KEY,
+    )
+    if (storedValue === "0") {
+      setIncludeSettingsInShareUrls(false)
+    } else if (storedValue === "1") {
+      setIncludeSettingsInShareUrls(true)
+    }
+    setHasLoadedShareSettingsPreference(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasLoadedShareSettingsPreference) {
+      return
+    }
+
+    window.localStorage.setItem(
+      SHARE_PANEL_SETTINGS_STORAGE_KEY,
+      includeSettingsInShareUrls ? "1" : "0",
+    )
+  }, [hasLoadedShareSettingsPreference, includeSettingsInShareUrls])
 
   useEffect(() => {
     document.title = buildDocumentTitle({
@@ -402,27 +442,38 @@ function TimerApp() {
     clearRecentlyEndedLiveSession()
   }
 
-  const timerUrl = paramData.getUrlWithParams()
+  const settingsOmitKeys = includeSettingsInShareUrls
+    ? []
+    : getSettingsOnlyOmitKeys()
+  const timerUrl = paramData.getUrlWithParams({
+    omit: settingsOmitKeys,
+  })
   const readonlyClientUrl =
-    remoteSession.accessTokens && typeof window !== "undefined"
+    liveSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/view/${remoteSession.accessTokens.readonly}`,
-          ),
-          pathname: `/view/${remoteSession.accessTokens.readonly}`,
+          omit: [
+            ...getRemoteSessionOnlyOmitKeys(
+              shareableParams,
+              [],
+              `/view/${liveSession.accessTokens.readonly}`,
+            ),
+            ...settingsOmitKeys,
+          ],
+          pathname: `/view/${liveSession.accessTokens.readonly}`,
         })
       : ""
   const controlClientUrl =
-    remoteSession.accessTokens && typeof window !== "undefined"
+    liveSession.accessTokens && typeof window !== "undefined"
       ? paramData.getUrlWithParams({
-          omit: getRemoteSessionOnlyOmitKeys(
-            shareableParams,
-            [],
-            `/control/${remoteSession.accessTokens.control}`,
-          ),
-          pathname: `/control/${remoteSession.accessTokens.control}`,
+          omit: [
+            ...getRemoteSessionOnlyOmitKeys(
+              shareableParams,
+              [],
+              `/control/${liveSession.accessTokens.control}`,
+            ),
+            ...settingsOmitKeys,
+          ],
+          pathname: `/control/${liveSession.accessTokens.control}`,
         })
       : ""
 
@@ -438,11 +489,13 @@ function TimerApp() {
           isStarted={timer.isStarted}
           isTimedOut={timer.isTimedOut}
           minutes={minutes}
-          rowsLength={params.rows.length}
           seconds={seconds}
           sessionAccessibilityLabel={
             sessionDiagnostics.sessionPresentation.accessibilityLabel
           }
+          stepTitle={params.title}
+          totalDuration={timer.totalDuration}
+          ttsEnabled={params.tts}
         />
         <Timer
           activeIndex={params.activeIndex}
@@ -470,13 +523,17 @@ function TimerApp() {
           params: {
             bg: params.bg,
             fg: params.fg,
+            snd: params.snd,
+            tts: params.tts,
           },
         }}
         sharePanel={{
           panelProps: {
-            accessTokens: remoteSession.accessTokens,
+            accessTokens: liveSession.accessTokens,
             controlClientUrl,
+            includeSettingsInLinks: includeSettingsInShareUrls,
             onEndRemoteSession: handleEndRemoteSession,
+            onIncludeSettingsInLinksChange: setIncludeSettingsInShareUrls,
             onStartRemoteSession: async () => {
               await connectRemote()
             },

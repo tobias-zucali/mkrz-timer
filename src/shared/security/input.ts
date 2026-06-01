@@ -9,7 +9,12 @@ import type {
   TimerCommand,
   TimerEndBehavior,
   TimerSequenceRow,
-} from "../remoteSession/types.ts"
+} from "../liveSession/types.ts"
+import {
+  DEFAULT_TIMER_FINISHED_SOUND_ID,
+  normalizeTimerFinishedSoundId,
+  normalizeTimerTtsEnabled,
+} from "../timerSettings.ts"
 import {
   buildDefaultTimerSequenceRow,
   buildDurationPartsFromTotalSeconds,
@@ -27,6 +32,8 @@ export const DEFAULT_SYNC_PARAMS: SyncParams = {
   pc: DEFAULT_TIMER_PRIMARY_COLOR,
   rows: [buildDefaultTimerSequenceRow()],
   s: "00",
+  snd: DEFAULT_TIMER_FINISHED_SOUND_ID,
+  tts: false,
   title: "",
 }
 
@@ -298,11 +305,15 @@ const deriveSequenceSyncParams = ({
   bg,
   fg,
   rows,
+  snd,
+  tts,
 }: {
   activeIndex: number
   bg: string
   fg: string
   rows: TimerSequenceRow[]
+  snd: SyncParams["snd"]
+  tts: boolean
 }): SyncParams => {
   const normalizedActiveIndex = clampTimerSequenceIndex({ activeIndex, rows })
   const normalizedRows =
@@ -321,6 +332,8 @@ const deriveSequenceSyncParams = ({
     pc: activeRow.primaryColor || DEFAULT_TIMER_PRIMARY_COLOR,
     rows: normalizedRows,
     s: duration.s,
+    snd,
+    tts,
     title: activeRow.title,
   }
 }
@@ -381,6 +394,11 @@ export const normalizeSyncParams = (
     title: normalizeTitle(params.title),
   })
   const normalizedRows = normalizeSequenceRows(params.rows, [legacyRow])
+  const normalizedTts = normalizeTimerTtsEnabled(params.tts, fallback.tts)
+  const normalizedSound = normalizeTimerFinishedSoundId(
+    params.snd,
+    fallback.snd,
+  )
   const normalizedActiveIndex = normalizeFiniteNumber({
     fallback: fallback.activeIndex,
     floor: true,
@@ -411,6 +429,8 @@ export const normalizeSyncParams = (
     bg: normalizedBg,
     fg: normalizedFg,
     rows: sequenceRows,
+    snd: normalizedSound,
+    tts: normalizedTts,
   })
 }
 
@@ -458,6 +478,18 @@ export const normalizeSyncParamPatch = (value: unknown) => {
       max: MAX_TIMER_DURATION_SECONDS,
       value: value.s,
     })
+  }
+  if ("snd" in value) {
+    normalizedPatch.snd = normalizeTimerFinishedSoundId(
+      value.snd,
+      DEFAULT_SYNC_PARAMS.snd,
+    )
+  }
+  if ("tts" in value) {
+    normalizedPatch.tts = normalizeTimerTtsEnabled(
+      value.tts,
+      DEFAULT_SYNC_PARAMS.tts,
+    )
   }
   if ("title" in value) {
     normalizedPatch.title = normalizeTitle(value.title)

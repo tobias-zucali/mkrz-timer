@@ -5,7 +5,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
 } from "../../shared/security/input.ts"
-import type { SessionSnapshot } from "../../shared/remoteSession/types.ts"
+import type { SessionSnapshot } from "../../shared/liveSession/types.ts"
 
 import { decideSnapshotRecovery } from "./recovery.ts"
 

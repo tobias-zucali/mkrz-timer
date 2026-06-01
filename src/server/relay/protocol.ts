@@ -4,9 +4,9 @@ import type {
   RemoteAccessRole,
   RelayServerMessage,
   SessionSnapshot,
-} from "../../shared/remoteSession/types.ts"
+} from "../../shared/liveSession/types.ts"
 import { normalizeRelayClientMessage } from "../../shared/security/input.ts"
-import type { RelaySessionRecord } from "../remoteSession/sessionStore.ts"
+import type { RelaySessionRecord } from "../liveSession/sessionStore.ts"
 
 import type { RelayConnectionRegistry } from "./connectionRegistry.ts"
 

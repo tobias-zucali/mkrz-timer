@@ -14,7 +14,7 @@ Technical details live in:
 
 - [docs/development.md](./docs/development.md)
 - [docs/i18n.md](./docs/i18n.md)
-- [docs/remote-mode.md](./docs/remote-mode.md)
+- [docs/live-sessions.md](./docs/live-sessions.md)
 - [docs/title-layout.md](./docs/title-layout.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
 
@@ -22,7 +22,7 @@ Technical details live in:
 
 - Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
 - Timer titles are plain text only, normalized to a single paragraph, and shared session snapshots are validated before use.
-- See [docs/remote-mode.md](./docs/remote-mode.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
+- See [docs/live-sessions.md](./docs/live-sessions.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
 
 ## Getting Started
 
@@ -37,55 +37,21 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+This README is the human-facing command surface. Use the generic `pnpm test*` and `pnpm test:e2e:*` commands here. Agents should follow [AGENTS.md](./AGENTS.md) and use `agent:*` lanes instead so automated runs stay on the tracked ports and process model.
+
 ESLint includes `eslint-plugin-better-tailwindcss` in the shared flat config. For editor feedback, enable your editor's ESLint integration so Tailwind class issues surface inline; no separate Tailwind-specific editor plugin is required for linting.
 
 The config uses the plugin's recommended preset, with `better-tailwindcss/enforce-consistent-line-wrapping` disabled because Prettier rewrites multiline JSX class strings in a way that does not stay stable with that rule.
 
-## Useful Commands
+## Common Commands
 
 ```bash
 pnpm dev
-pnpm dev:relay
 pnpm test
-pnpm test:ci
-pnpm test:full
-pnpm test:e2e:remote
+pnpm test:full # including visual tests
 pnpm build
-pnpm build:full
-pnpm build:docker
 pnpm lint:fix
 pnpm format:fix
-```
-
-## Common Workflows
-
-```bash
-# local development
-pnpm dev
-
-# fix lint issues ESLint can rewrite automatically
-pnpm lint:fix
-
-# fix formatting only
-pnpm format:fix
-
-# local validation
-pnpm test
-
-# CI-safe validation
-pnpm test:ci
-
-# full validation
-pnpm test:full
-
-# app build only
-pnpm build
-
-# validation + app build
-pnpm build:full
-
-# validation + app build + docker images
-pnpm build:docker
 ```
 
 ## Prototype Mode
@@ -97,36 +63,20 @@ pnpm build:docker
 
 ## Live Sessions
 
-See [docs/remote-mode.md](./docs/remote-mode.md) for the live-session model, client behavior, link permission model, code layout, and terminology guidance.
+See [docs/live-sessions.md](./docs/live-sessions.md) for live-session terminology, capability boundaries, trust boundaries, and contributor rules.
 
 ## Local Development
 
-See [docs/development.md](./docs/development.md) for:
-
-- local app and relay defaults
-- Playwright and agent lane ports
-- relevant environment variables
-- when Docker makes sense locally
+See [docs/development.md](./docs/development.md) for local app and relay defaults, environment variables, test lanes, and when Docker makes sense locally.
 
 ## Testing
 
-- `pnpm test`: default validation, including smoke browser coverage only
-- `pnpm test:ci`: non-visual browser coverage across the local and remote Playwright lanes
-- `pnpm test:full`: full browser coverage across the local and remote Playwright lanes
-- `pnpm test:e2e:remote`: serial relay-backed browser coverage for multi-client, reconnect, offline, and PiP scenarios
-- `pnpm test:e2e:visual`: visual browser coverage
-
-Detailed lane definitions and test-authoring rules live in [docs/development.md](./docs/development.md).
+Humans should use the generic `pnpm test*` commands here. Detailed lane definitions, e2e variants, and agent-specific validation commands live in [docs/development.md](./docs/development.md) and [AGENTS.md](./AGENTS.md).
 
 ## Deployment
 
-Production is intended to run on a Hetzner CAX11 using Docker Compose and Caddy.
+Production deployment targets a Hetzner CAX11 with Docker Compose and Caddy. See [docs/deploy-hetzner.md](./docs/deploy-hetzner.md) for the runbook and the workflow/script files it points to for executable deployment behavior.
 
-The production deploy workflow uploads the checked-out revision, replaces the server worktree from that bundle so removed files do not linger, rebuilds `timer-web` and `timer-relay` with `docker compose build --pull`, force-recreates those two containers with orphan cleanup, and prints the deployed commit plus image/container diagnostics. The deployed build identifier is exposed in the UI footer and in the relay health response so the running commit can be verified after rollout.
+## Maintainer Tools
 
-Deployment files and the runbook live in:
-
-- [docker-compose.yml](./docker-compose.yml)
-- [Caddyfile](./Caddyfile)
-- [scripts/deploy-production.sh](./scripts/deploy-production.sh)
-- [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
+- [tools/project-export/README.md](./tools/project-export/README.md): maintainer-only GitHub Project export utility, separate from the app runtime and implementation

@@ -11,11 +11,11 @@ import {
 import type {
   RelayConnectionDetails,
   SyncParams,
-} from "@/shared/remoteSession/types"
+} from "@/shared/liveSession/types"
 import buildErrorReportBody from "@/utils/buildErrorReportBody"
-import getRemoteStatus from "@/utils/remoteStatus"
-import { getRemoteRelayLabel } from "@/utils/remoteSession/config"
-import useRemoteRelayReachability from "@/utils/remoteSession/useRemoteRelayReachability"
+import getLiveSessionStatus from "@/utils/liveSessionStatus"
+import { getRemoteRelayLabel } from "@/utils/liveSession/config"
+import useRemoteRelayReachability from "@/utils/liveSession/useRemoteRelayReachability"
 import getSessionPresentation from "@/utils/sessionPresentation"
 import { shouldDisplayRemoteError } from "@/utils/timerPage/remoteErrorVisibility"
 import useFloatingTimerPiP from "@/utils/useFloatingTimerPiP"
@@ -107,7 +107,7 @@ export default function useSessionDiagnostics({
           ),
         })
     : null
-  const remoteStatus = getRemoteStatus({
+  const remoteStatus = getLiveSessionStatus({
     canRetryManually,
     hasConnectedOnce,
     hasControllingParticipant: participants.some(

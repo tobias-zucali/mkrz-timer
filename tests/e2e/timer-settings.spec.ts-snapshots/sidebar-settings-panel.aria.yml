@@ -6,6 +6,16 @@
 - text: "/Background #\\d+/"
 - 'textbox "Foreground #ffffff"'
 - text: "Foreground #ffffff"
+- heading "Voice & Sound" [level=3]
+- paragraph: Configure spoken announcements and the sound that plays when the timer finishes.
+- text: Sound when finished
+- combobox "Sound when finished":
+    - option "Attention" [selected]
+    - option "Ringing Bell"
+    - option "Old Ring Ringing"
+    - option "No sound"
+- button "Preview sound"
+- checkbox "Voice announcements"
 - heading "Floating Timer" [level=3]
 - paragraph: Keep a compact timer visible above other windows.
 - button "Open floating timer"

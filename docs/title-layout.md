@@ -6,9 +6,7 @@ This note captures the current constraints for the timer title UI so future layo
 
 - Titles are plain text and limited to 64 characters after shared normalization.
 - Titles are single-paragraph only. Line breaks are flattened to spaces, tabs become spaces, and unsafe control characters are removed.
-- Main and floating titles use two deterministic responsive font-size buckets:
-  - short: `trim().length <= 32`
-  - long: `trim().length > 32`
+- Main and floating titles use two deterministic responsive font-size buckets for shorter and longer titles.
 - Non-editing titles stay wrapped as a single paragraph and must remain fully visible.
 - Empty readonly titles collapse to a minimal spacer instead of reserving a large blank title block.
 
@@ -31,5 +29,5 @@ This note captures the current constraints for the timer title UI so future layo
 ## Test Expectations
 
 - Component tests cover empty-state affordances, newline blocking/normalization, and short/long size bucket selection.
-- Unit tests cover title normalization and the bucket threshold.
+- Unit tests cover title normalization and bucket selection behavior.
 - Playwright covers empty, short-bucket, and long-bucket title layouts across form factors, including checks that long titles are fully visible from the initial render.

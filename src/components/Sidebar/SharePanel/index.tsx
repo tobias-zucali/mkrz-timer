@@ -16,7 +16,9 @@ const liveSessionToneClassNames = {
 export type SharePanelProps = {
   accessTokens: { control: string; readonly: string } | null | undefined
   controlClientUrl: string
+  includeSettingsInLinks: boolean
   onEndRemoteSession: () => Promise<void>
+  onIncludeSettingsInLinksChange: (nextValue: boolean) => void
   onRetry: () => void
   onStartRemoteSession: () => Promise<void>
   readonlyClientUrl: string
@@ -27,7 +29,9 @@ export type SharePanelProps = {
 export default function SharePanel({
   accessTokens,
   controlClientUrl,
+  includeSettingsInLinks,
   onEndRemoteSession,
+  onIncludeSettingsInLinksChange,
   onRetry,
   onStartRemoteSession,
   readonlyClientUrl,
@@ -150,6 +154,29 @@ export default function SharePanel({
             value={timerUrl}
           />
         </div>
+        <label
+          className="
+            flex cursor-pointer items-start gap-3 rounded-2xl border
+            border-foreground/10 bg-foreground/2 p-4
+          "
+        >
+          <input
+            checked={includeSettingsInLinks}
+            className="mt-1 size-4 accent-primary"
+            onChange={(event) =>
+              onIncludeSettingsInLinksChange(event.target.checked)
+            }
+            type="checkbox"
+          />
+          <span className="space-y-1">
+            <span className="block text-sm font-medium text-foreground">
+              {t("includeSettings")}
+            </span>
+            <span className="block text-sm/6 text-foreground/68">
+              {t("includeSettingsDescription")}
+            </span>
+          </span>
+        </label>
       </section>
     </div>
   )

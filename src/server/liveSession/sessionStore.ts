@@ -5,8 +5,8 @@ import type {
   SessionSnapshot,
   SyncParams,
   TimerCommand,
-} from "../../shared/remoteSession/types.ts"
-import { mergeSyncParamsPatch } from "../../shared/remoteSession/mergeSyncParamsPatch.ts"
+} from "../../shared/liveSession/types.ts"
+import { mergeSyncParamsPatch } from "../../shared/liveSession/mergeSyncParamsPatch.ts"
 import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,

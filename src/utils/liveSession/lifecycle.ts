@@ -1,4 +1,4 @@
-import type { RelaySessionState } from "@/shared/remoteSession/types"
+import type { RelaySessionState } from "@/shared/liveSession/types"
 
 export const AUTO_RECOVERY_TIMEOUT_MS = 18_000
 export const HEARTBEAT_INTERVAL_MS = 10_000

@@ -4,6 +4,8 @@ import { useId } from "react"
 import { useTranslations } from "next-intl"
 
 import HelpText from "@/components/HelpText"
+import SoundPreviewField from "@/components/SoundPreviewField"
+import { type TimerFinishedSoundId } from "@/shared/timerSettings"
 import ActionButton from "@/utils/ActionButton"
 import ColorSwatchField from "@/utils/ColorSwatchField"
 import { WindowIcon } from "@/utils/icons"
@@ -15,6 +17,8 @@ export type SettingsPanelProps = {
   params: {
     bg: string
     fg: string
+    snd: TimerFinishedSoundId
+    tts: boolean
   }
 }
 
@@ -26,6 +30,7 @@ export default function SettingsPanel({
   const t = useTranslations("Sidebar.settings")
   const backgroundId = useId()
   const foregroundId = useId()
+  const ttsId = useId()
 
   return (
     <div className="space-y-6">
@@ -51,6 +56,44 @@ export default function SettingsPanel({
             onChange={(event) => handleChange("fg", event.target.value)}
             value={params.fg}
           />
+        </div>
+      </section>
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">
+            {t("announcementsHeading")}
+          </h3>
+          <p className="mt-1 text-sm/6 text-foreground/68">
+            {t("announcementsDescription")}
+          </p>
+        </div>
+        <div className="space-y-4">
+          <SoundPreviewField
+            label={t("finishedSound")}
+            onChange={(value) => handleChange("snd", value)}
+            previewLabel={t("previewSound")}
+            value={params.snd}
+          />
+          <label
+            className="
+              flex cursor-pointer items-start gap-3 rounded-2xl border
+              border-foreground/10 bg-foreground/2 p-4
+            "
+            htmlFor={ttsId}
+          >
+            <input
+              checked={params.tts}
+              className="mt-1 size-4 accent-primary"
+              id={ttsId}
+              onChange={(event) =>
+                handleChange("tts", event.target.checked ? "1" : "0")
+              }
+              type="checkbox"
+            />
+            <span className="block text-sm font-medium text-foreground">
+              {t("speakAnnouncements")}
+            </span>
+          </label>
         </div>
       </section>
       <section className="space-y-4">

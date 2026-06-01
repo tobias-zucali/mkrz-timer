@@ -5,7 +5,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
 } from "@/shared/security/input"
-import type { SessionSnapshot, SyncParams } from "@/shared/remoteSession/types"
+import type { SessionSnapshot, SyncParams } from "@/shared/liveSession/types"
 import {
   parseTimerUrlState,
   projectFirstUrlTimerRowToSyncParams,
@@ -222,7 +222,9 @@ describe("useSyncConflictResolution", () => {
           },
         ],
         s: "30",
+        snd: DEFAULT_SYNC_PARAMS.snd,
         title: "Opening",
+        tts: DEFAULT_SYNC_PARAMS.tts,
       },
       state: {
         ...DEFAULT_TIMER_STATE,

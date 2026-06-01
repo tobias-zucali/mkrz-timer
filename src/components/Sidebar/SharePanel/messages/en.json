@@ -1,6 +1,8 @@
 {
   "heading": "Sharing",
   "liveSession": "Live session",
+  "includeSettings": "Include Voice & Sound settings in links",
+  "includeSettingsDescription": "Adds non-default appearance and announcement settings to the links.",
   "viewerLink": "Viewer link",
   "viewerLinkDescription": "Read-only display for audience screens.",
   "controlLink": "Control link",

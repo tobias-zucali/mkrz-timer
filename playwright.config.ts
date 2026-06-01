@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: ["**/remote-*.spec.ts"],
+  testIgnore: ["**/live-session-*.spec.ts"],
   fullyParallel: true,
   workers: 2,
   retries: process.env.CI ? 2 : 0,

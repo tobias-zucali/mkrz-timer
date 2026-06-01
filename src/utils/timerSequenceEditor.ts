@@ -1,4 +1,4 @@
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import {
   buildDefaultTimerSequenceRow,
   clampTimerSequenceIndex,

@@ -1,11 +1,14 @@
-import type { RemoteStatusRole, RemoteStatusState } from "@/utils/remoteStatus"
+import type {
+  LiveSessionStatusRole,
+  LiveSessionStatusState,
+} from "@/utils/liveSessionStatus"
 
-export const ROLE_LABELS: Record<RemoteStatusRole, string> = {
+export const ROLE_LABELS: Record<LiveSessionStatusRole, string> = {
   control: "Control session",
   readonly: "Readonly session",
 }
 
-export const STATE_LABELS: Record<RemoteStatusState, string> = {
+export const STATE_LABELS: Record<LiveSessionStatusState, string> = {
   connected: "Connected",
   connecting: "Connecting",
   failed: "Reconnect failed",
@@ -14,8 +17,8 @@ export const STATE_LABELS: Record<RemoteStatusState, string> = {
 }
 
 const DESCRIPTIONS: Record<
-  RemoteStatusRole,
-  Record<RemoteStatusState, string>
+  LiveSessionStatusRole,
+  Record<LiveSessionStatusState, string>
 > = {
   control: {
     connected: "Can control the shared timer and settings.",
@@ -47,8 +50,8 @@ export function getConnectionSummary({
   hasControllingParticipant: boolean
   hasReceivedInitialSync: boolean
   participantCount: number
-  role: RemoteStatusRole
-  state: RemoteStatusState
+  role: LiveSessionStatusRole
+  state: LiveSessionStatusState
 }) {
   if (state === "connecting" || state === "reconnecting") {
     if (!hasReceivedInitialSync) {
@@ -82,8 +85,8 @@ export function getConnectionSummary({
 }
 
 export function getDescription(
-  role: RemoteStatusRole,
-  state: RemoteStatusState,
+  role: LiveSessionStatusRole,
+  state: LiveSessionStatusState,
   hasControllingParticipant: boolean,
 ) {
   if (

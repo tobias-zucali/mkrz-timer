@@ -28,6 +28,11 @@ Environment variables:
 
 ## Test Lanes
 
+Audience split:
+
+- Humans should use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md).
+- Agents should use the tracked `pnpm agent:test*` lane wherever an equivalent exists, because it isolates ports, dist dirs, and process metadata from ordinary local development.
+
 Local validation lanes:
 
 - `pnpm lint`: ESLint and TypeScript validation
@@ -51,7 +56,7 @@ Authoring rules:
   - `@smoke` for the minimum must-pass browser checks
   - `@visual` for screenshot and layout-regression coverage
   - leave broader behavioral coverage untagged so it runs in the full lane only
-- keep relay-backed specs on the `remote-*.spec.ts` naming convention so the remote Playwright configs can select them by pattern instead of hardcoded file lists
+- keep relay-backed specs on the `live-session-*.spec.ts` naming convention so the isolated multi-client Playwright lane can select them by pattern instead of hardcoded file lists
 
 Local Playwright lane:
 
@@ -60,7 +65,7 @@ Local Playwright lane:
 - relay websocket: `ws://127.0.0.1:9100/ws`
 - app server command: `pnpm dev:test`
 - config: `playwright.config.ts`
-- file selection: everything in `tests/e2e` except `remote-*.spec.ts` and `pwa.spec.ts`
+- file selection: everything in `tests/e2e` except `live-session-*.spec.ts` and `pwa.spec.ts`
 - test scope: local-only specs that are safe to run in parallel
 
 Remote Playwright lane:
@@ -69,7 +74,7 @@ Remote Playwright lane:
 - relay health: `http://127.0.0.1:9100/health`
 - relay websocket: `ws://127.0.0.1:9100/ws`
 - config: `playwright.remote.config.ts`
-- file selection: `remote-*.spec.ts`
+- file selection: `live-session-*.spec.ts`
 - execution model: serial (`workers: 1`, `fullyParallel: false`)
 - test scope: relay-backed multi-client, reconnect, offline, and PiP scenarios
 
@@ -107,6 +112,11 @@ Attach mode uses these advanced commands:
 - `pnpm agent:serve:relay`
 
 The lane split is still useful because it isolates Playwright ports, dist dirs, and tracked process metadata from normal local development.
+
+Practical rule:
+
+- If you are a human running the app locally, default to the generic lanes.
+- If you are an agent or automation workflow choosing a validation lane, default to the `agent:*` lanes.
 
 ## Writing Stable Browser Tests
 

@@ -1,6 +1,6 @@
 import type { ActionDialogAction } from "@/components/ActionDialog"
 import type { AppTranslationFn } from "@/i18n/translator"
-import { getRemoteSessionErrorKey } from "@/utils/remoteSession/lifecycle"
+import { getRemoteSessionErrorKey } from "@/utils/liveSession/lifecycle"
 import getSessionPresentation, {
   type SessionPresentationModel,
 } from "@/utils/sessionPresentation"

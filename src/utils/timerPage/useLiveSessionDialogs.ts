@@ -11,10 +11,10 @@ import {
   pauseUrlSyncDuringRemoteRouteTransition,
   setPromotedHostControlClient,
 } from "@/utils/timerPage/routeTransition"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import type { TimerState } from "@/utils/useTimer"
 
-export default function useRemoteSessionDialogs({
+export default function useLiveSessionDialogs({
   activateLocalFallback,
   disconnect,
   hasRecentlyEndedLiveSession,

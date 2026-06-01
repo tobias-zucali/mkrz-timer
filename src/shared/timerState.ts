@@ -1,4 +1,4 @@
-import type { SessionSnapshot, TimerStatus } from "./remoteSession/types.ts"
+import type { SessionSnapshot, TimerStatus } from "./liveSession/types.ts"
 import { getActiveTimerSequenceRow } from "./timerSequence.ts"
 
 type TimerState = SessionSnapshot["state"]
@@ -258,6 +258,8 @@ export const resolveTimerStateAt = (
           },
         ],
         s: "00",
+        snd: "a",
+        tts: false,
         title: "",
       },
       state,

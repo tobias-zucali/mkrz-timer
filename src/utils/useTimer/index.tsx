@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
+import { getTimerFinishedSoundOption } from "@/shared/timerSettings"
 import { getActiveTimerSequenceRow } from "@/shared/timerSequence"
 import { prefixZeros, getMinutesSeconds } from "@/utils/timeInputHelpers"
 import useAnimationFrame from "@/utils/useAnimationFrame"
@@ -87,6 +88,9 @@ export default function useTimer({
     totalDuration,
   })
   const handleActionRef = useRef<(action: TimerActions) => void>(() => {})
+  const hasPlayedFinishedSoundRef = useRef(false)
+  const finishSoundAudioRef = useRef<HTMLAudioElement | null>(null)
+  const previousIsTimedOutRef = useRef(false)
 
   const resolvedState = resolveTimerStateAt({
     anchorServerTimestamp: lastUpdatedAt,
@@ -109,15 +113,41 @@ export default function useTimer({
   const isTimedOut = elapsedPercentage >= 1
 
   useEffect(() => {
-    if (isTimedOut) {
-      new Audio("/sounds/Attention.mp3").play().catch((error) => {
-        if (error instanceof DOMException && error.name === "NotAllowedError") {
-          debug.warn("Autoplay prevented")
-          return
-        }
-      })
+    const didJustTimeOut = !previousIsTimedOutRef.current && isTimedOut
+    previousIsTimedOutRef.current = isTimedOut
+
+    if (!isTimedOut) {
+      hasPlayedFinishedSoundRef.current = false
+      return
     }
-  }, [isTimedOut])
+
+    if (!didJustTimeOut || hasPlayedFinishedSoundRef.current) {
+      return
+    }
+
+    hasPlayedFinishedSoundRef.current = true
+    const sound = getTimerFinishedSoundOption(params.snd)
+    if (!sound.src) {
+      return
+    }
+
+    finishSoundAudioRef.current?.pause()
+    finishSoundAudioRef.current = new Audio(sound.src)
+    finishSoundAudioRef.current.currentTime = 0
+    void finishSoundAudioRef.current.play().catch((error) => {
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        debug.warn("Autoplay prevented")
+        return
+      }
+    })
+  }, [isTimedOut, params.snd])
+
+  useEffect(() => {
+    return () => {
+      finishSoundAudioRef.current?.pause()
+      finishSoundAudioRef.current = null
+    }
+  }, [])
 
   const [minutes = prefixZeros(params.m), seconds = prefixZeros(params.s)] =
     isStarted
@@ -514,5 +544,6 @@ export default function useTimer({
     minutes,
     seconds,
     setState,
+    totalDuration,
   }
 }

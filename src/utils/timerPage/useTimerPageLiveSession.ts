@@ -3,14 +3,14 @@
 import type { RefObject } from "react"
 
 import useSyncConflictResolution from "@/app/useSyncConflictResolution"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import debug from "@/utils/debug"
-import useRemoteSession from "@/utils/remoteSession"
-import { createRemoteSessionError } from "@/utils/remoteSession/lifecycle"
+import useLiveSession from "@/utils/liveSession"
+import { createRemoteSessionError } from "@/utils/liveSession/lifecycle"
 import useParams from "@/utils/useParams"
 import type { TimerState } from "@/utils/useTimer"
 
-export default function useTimerPageRemoteSession({
+export default function useTimerPageLiveSession({
   hasRecentlyEndedLiveSession,
   paramData,
   remoteRole,
@@ -47,7 +47,7 @@ export default function useTimerPageRemoteSession({
     syncStateRef,
   })
 
-  const remoteSession = useRemoteSession({
+  const liveSession = useLiveSession({
     getReconnectSnapshot,
     onHandleAction: (action) => {
       if (action.params) {
@@ -58,7 +58,7 @@ export default function useTimerPageRemoteSession({
         return
       }
 
-      debug.error("Missing timer state in remote session sync.")
+      debug.error("Missing timer state in live session sync.")
     },
     onIncomingSyncConflict: notifyIncomingSyncConflict,
     remoteRole:
@@ -72,6 +72,6 @@ export default function useTimerPageRemoteSession({
 
   return {
     remoteLinkError,
-    remoteSession,
+    liveSession,
   }
 }

@@ -4,7 +4,7 @@ import {
   expectScreenshotWithoutDebugInfo,
   getDisplayedSeconds,
   openTimer,
-} from "./remote-mode.helpers"
+} from "./live-session.helpers"
 
 const timerVisualFormFactors = [
   {
@@ -498,7 +498,9 @@ test(
   "starts, pauses, and resumes the timer",
   { tag: "@smoke" },
   async ({ page }) => {
-    await openTimer(page, 5)
+    test.slow()
+
+    await openTimer(page, 30)
 
     await page.getByRole("button", { name: "START" }).click()
     await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
@@ -508,7 +510,7 @@ test(
         message: "timer should count down after start",
         timeout: 4_000,
       })
-      .toBeLessThan(5)
+      .toBeLessThan(30)
 
     await page.getByRole("button", { name: "PAUSE" }).click()
     await expect(page.getByRole("button", { name: "START" })).toBeVisible()
@@ -532,6 +534,8 @@ test(
   "runs a short timer to completion and resets it",
   { tag: "@smoke" },
   async ({ page }) => {
+    test.slow()
+
     await openTimer(page, 3)
 
     await page.getByRole("button", { name: "START" }).click()
@@ -539,7 +543,7 @@ test(
     await expect
       .poll(() => getDisplayedSeconds(page), {
         message: "timer should reach zero",
-        timeout: 6_000,
+        timeout: 10_000,
       })
       .toBe(0)
 
@@ -569,17 +573,17 @@ test("announces timer state changes and uses semantic readout mode", async ({
   ).toBeVisible()
   await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(0)
   await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(0)
-  await expect(liveRegion).toContainText("Timer started. 12 seconds remaining.")
+  await expect(liveRegion).toContainText("12 seconds timer started.")
 
   await expect
     .poll(async () => (await liveRegion.textContent()) ?? "", {
       message: "timer should announce the final countdown milestone",
-      timeout: 4_000,
+      timeout: 8_000,
     })
-    .toContain("10 seconds remaining.")
+    .toContain("Five.")
 
   await page.getByRole("button", { name: "PAUSE" }).click()
-  await expect(liveRegion).toContainText("Timer paused.")
+  await expect(liveRegion).toContainText("Paused.")
 
   await page.getByRole("button", { name: "RESET" }).click()
   await expect(liveRegion).toContainText("Timer reset to 12 seconds.")

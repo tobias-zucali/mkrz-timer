@@ -11,7 +11,7 @@ import TimerReadonlyPlaceholder, {
 } from "@/components/Timer/TimerReadonlyPlaceholder"
 import TimerSequenceProgress from "@/components/Timer/TimerSequenceProgress"
 import TimerTitle from "@/components/TimerTitle"
-import type { SyncParams } from "@/shared/remoteSession/types"
+import type { SyncParams } from "@/shared/liveSession/types"
 import {
   buildTimerReadoutLabel,
   buildTimerStepLabel,

@@ -4,87 +4,53 @@ Project overview: [README.md](../README.md)
 
 ## Overview
 
-Target topology:
+Production is designed around:
 
 - `Caddy` as the public reverse proxy with TLS
 - `timer-web` serving the static frontend
 - `timer-relay` serving `/health` and `/ws`
-- optional additional apps on the same VM by hostname routing
+- a small Hetzner `CAX11` VM managed with Docker Compose
 
-## 1. Create The Server
+The executable deployment flow lives in:
 
-Create a Hetzner `CAX11` instance with Ubuntu or Debian. Attach your SSH key during provisioning.
+- [.github/workflows/build-and-deploy.yml](../.github/workflows/build-and-deploy.yml)
+- [scripts/deploy-production.sh](../scripts/deploy-production.sh)
 
-Recommended basics:
+Treat those files as the source of truth for exact deployment steps, bundle contents, and environment wiring.
 
-- hostname: `timer-prod`
-- firewall: allow `22`, `80`, `443`
-- swap: optional but reasonable on a small ARM box
+## Server Prerequisites
 
-## 2. Point DNS
+- Provision a Hetzner `CAX11` instance with Ubuntu or Debian.
+- Attach your SSH key during provisioning.
+- Allow `22`, `80`, and `443` through the firewall.
+- Install Docker and Docker Compose on the server.
+- Point DNS at the VM for the app domain, and for the relay domain if you keep the relay on a separate hostname.
 
-Create DNS records:
+If you use a single-domain setup, route `/ws` through Caddy instead of a dedicated relay hostname.
 
-- `A` or `AAAA`/`CNAME` for `timer.mkrz.at`
-- `A` or `AAAA`/`CNAME` for `ws.timer.mkrz.at` if you keep the relay on a dedicated subdomain
+## Repository Secrets And Env
 
-If you use a single-domain setup, route `/ws` through Caddy instead.
+The GitHub workflow expects SSH access details for the server plus the deployment env values consumed by the Compose stack and deploy script.
 
-## 3. Install Docker
+Current names and defaults live in:
 
-On the server:
+- [.github/workflows/build-and-deploy.yml](../.github/workflows/build-and-deploy.yml)
+- [scripts/deploy-production.sh](../scripts/deploy-production.sh)
+- [docker-compose.yml](../docker-compose.yml)
 
-```bash
-sudo apt update
-sudo apt install -y ca-certificates curl gnupg
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker "$USER"
-newgrp docker
-docker version
-docker compose version
-```
+Keep this document at the level of categories, not exact variable duplication, so changes to workflow wiring only need to be updated in one place.
 
-## 4. Configure GitHub Secrets
+## Verification
 
-Add the following secrets to your GitHub repository:
+After a deployment, verify:
 
-- `HETZNER_HOST`: The IP or hostname of your Hetzner server (e.g., `192.168.1.1`).
-- `HETZNER_USER`: The SSH username for the server (default: `root`).
-- `HETZNER_SSH_KEY`: The private SSH key for accessing the server.
-- `NEXT_PUBLIC_REMOTE_WS_URL`: The WebSocket URL for the relay (default: `wss://ws.timer.mkrz.at/ws`).
-- `RELAY_SESSION_TTL_MS`: The session TTL for the relay (default: `300000`).
-- `RELAY_PORT`: The port for the relay (default: `9100`).
-- `TIME_DOMAIN`: The domain for the app (e.g., `timer.mkrz.at`).
-- `TIME_RELAY_DOMAIN`: The domain for the relay (e.g., `ws.timer.mkrz.at`).
+- the app loads at the production domain
+- the relay health endpoint responds successfully
+- the app footer build identifier matches the deployed revision
+- the relay health response reports the same build identifier or commit
+- the `timer-web` and `timer-relay` containers were recreated from the new deployment
 
-## 5. Automated Deployment with GitHub Workflows
-
-The deployment process is automated using the GitHub Actions workflow defined in `.github/workflows/build-and-deploy.yml`.
-
-### Steps:
-
-1. **Trigger Deployment**:
-   - Push changes to the `main` branch or manually trigger the workflow via the GitHub Actions UI.
-
-2. **Workflow Actions**:
-   - Checkout the repository.
-   - Install dependencies using `pnpm`.
-   - Run `pnpm test:ci` and `pnpm build`.
-   - Create a deployment bundle excluding unnecessary files.
-   - Upload the bundle to the Hetzner server.
-   - Replace the server worktree from the checked-out bundle so removed files do not linger between deploys.
-   - Rebuild `timer-web` and `timer-relay`, and force-recreate those containers with orphan cleanup.
-   - Print the deployed git commit, image IDs before and after the rebuild, and the recreated container timestamps.
-
-3. **Verify Deployment**:
-   - Check the application at `https://timer.mkrz.at`.
-   - Verify the relay health at `https://ws.timer.mkrz.at/health`.
-   - Open the status popover and confirm the `Build` value matches the deployed commit.
-   - Confirm the health response `commit`/`buildId` matches the same deployed commit.
-
-## 6. Logs And Health Checks
-
-Useful commands on the server:
+Useful server commands:
 
 ```bash
 docker compose ps
@@ -94,50 +60,19 @@ docker compose logs -f timer-relay
 curl https://ws.timer.mkrz.at/health
 ```
 
-Manual verification after a deployment:
+## Rollback
 
-```bash
-docker compose build --pull timer-web timer-relay
-docker compose up -d --force-recreate --remove-orphans timer-web timer-relay
-docker compose ps
-docker ps --filter name=timer-web --filter name=timer-relay --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.CreatedAt}}'
-docker inspect --format 'timer-web image: {{.Image}} created: {{.Created}}' "$(docker compose ps -q timer-web)"
-docker inspect --format 'timer-relay image: {{.Image}} created: {{.Created}}' "$(docker compose ps -q timer-relay)"
-curl -fsSL https://ws.timer.mkrz.at/health
-```
+- Revert to a known-good revision in the repository.
+- Trigger the deployment workflow again.
 
-Expected verification signals:
+If rollback requirements become stricter, add image tagging or a registry-backed release flow rather than expanding this runbook with duplicated workflow logic.
 
-- `docker ps` shows fresh `timer-web` and `timer-relay` containers with recent `CreatedAt` timestamps.
-- `https://ws.timer.mkrz.at/health` returns JSON with `ok`, `commit`, and `buildId`.
-- The app footer shows the same commit-derived build identifier as the health response.
-- Old deleted source files are not retained on the server between deploys because the uploaded bundle replaces the previous worktree.
+## Hosting Notes
 
-## 7. Rollback
-
-To rollback to a previous version:
-
-1. Revert the repository to the previous working revision.
-2. Trigger the GitHub Actions workflow to redeploy.
-
-For safer rollbacks, consider introducing image tags and a registry-backed deploy flow.
-
-## 8. Hosting Other Apps On The Same VM
-
-This CAX11 can host other lightweight web apps if each app has:
+This VM can host other lightweight web apps if each app has:
 
 - its own Compose service
 - its own hostname in Caddy
-- sensible memory/CPU expectations
+- modest memory and CPU needs
 
-Good fit:
-
-- small static sites
-- lightweight Node services
-- simple admin tools
-
-Avoid on the same box:
-
-- heavy databases
-- CPU-heavy workers
-- build pipelines
+Avoid colocating heavy databases, CPU-heavy workers, or build infrastructure on the same box.

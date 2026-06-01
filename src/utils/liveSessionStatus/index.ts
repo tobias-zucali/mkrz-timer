@@ -5,26 +5,26 @@ import {
   STATE_LABELS,
 } from "./copy.ts"
 
-export type RemoteStatusRole = "control" | "readonly"
-export type RemoteStatusState =
+export type LiveSessionStatusRole = "control" | "readonly"
+export type LiveSessionStatusState =
   | "connecting"
   | "connected"
   | "failed"
   | "recovered"
   | "reconnecting"
 
-export type RemoteStatusModel = {
+export type LiveSessionStatusModel = {
   canRetryManually: boolean
   connectionSummary: string
   description: string
   hasControllingParticipant?: boolean
-  role: RemoteStatusRole
+  role: LiveSessionStatusRole
   roleLabel: string
-  state: RemoteStatusState
+  state: LiveSessionStatusState
   stateLabel: string
 }
 
-function getRemoteState({
+function getLiveSessionState({
   hasConnectedOnce,
   hasReceivedInitialSync,
   isRemoteEnabled,
@@ -33,7 +33,7 @@ function getRemoteState({
   hasConnectedOnce: boolean
   hasReceivedInitialSync: boolean
   isRemoteEnabled: boolean
-  lifecycleState: RemoteStatusState
+  lifecycleState: LiveSessionStatusState
 }) {
   if (lifecycleState === "failed" || lifecycleState === "recovered") {
     return lifecycleState
@@ -50,7 +50,7 @@ function getRemoteState({
   return "connected"
 }
 
-export default function getRemoteStatus({
+export default function getLiveSessionStatus({
   canRetryManually,
   hasConnectedOnce,
   hasReceivedInitialSync,
@@ -66,18 +66,18 @@ export default function getRemoteStatus({
   hasReceivedInitialSync: boolean
   hasControllingParticipant?: boolean
   isRemoteEnabled: boolean
-  lifecycleState: RemoteStatusState
+  lifecycleState: LiveSessionStatusState
   participantCount: number
-  role: RemoteStatusRole
+  role: LiveSessionStatusRole
   showPendingHostStatus?: boolean
-}): RemoteStatusModel | null {
+}): LiveSessionStatusModel | null {
   if (!isRemoteEnabled && !showPendingHostStatus) {
     return null
   }
 
   const roleLabel = ROLE_LABELS[role]
   const controllingParticipantPresent = hasControllingParticipant ?? false
-  const state = getRemoteState({
+  const state = getLiveSessionState({
     hasConnectedOnce,
     hasReceivedInitialSync,
     isRemoteEnabled: Boolean(isRemoteEnabled || showPendingHostStatus),

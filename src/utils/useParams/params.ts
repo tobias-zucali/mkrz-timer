@@ -4,7 +4,7 @@ import {
 } from "../../shared/security/input.ts"
 import { buildTimerUrlSearchParams } from "../../shared/urlState/index.ts"
 import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
-import type { SyncParams } from "../../shared/remoteSession/types.ts"
+import type { SyncParams } from "../../shared/liveSession/types.ts"
 
 export const PAGE_TITLE_QUERY_PARAM = "title"
 
@@ -20,7 +20,9 @@ export type ParamBuildOptions = {
 }
 
 const colorParamKeys = ["bg", "fg", "pc"] as const
-const remoteSessionOnlyOmitKeys = ["a", "bg", "pid", "fg", "t", "v"] as const
+const settingsOnlyOmitKeys = ["bg", "fg", "s", "ts"] as const
+const remoteSessionOnlyOmitKeys = ["a", "pid"] as const
+const controlRemoteOnlyOmitKeys = [...remoteSessionOnlyOmitKeys]
 const readonlyRemoteOnlyOmitKeys = [
   ...remoteSessionOnlyOmitKeys,
   PAGE_TITLE_QUERY_PARAM,
@@ -77,8 +79,10 @@ export const getRemoteSessionOnlyOmitKeys = (
     return [...readonlyRemoteOnlyOmitKeys]
   }
 
-  return [...remoteSessionOnlyOmitKeys]
+  return [...controlRemoteOnlyOmitKeys]
 }
+
+export const getSettingsOnlyOmitKeys = () => [...settingsOnlyOmitKeys]
 
 export const buildPathWithParams = (
   currentParams: TimerParams,
@@ -112,7 +116,7 @@ export const buildPathWithParams = (
       return
     }
 
-    if (["bg", "fg", "m", "pc", "s", "title"].includes(key)) {
+    if (["bg", "fg", "m", "pc", "s", "snd", "title", "tts"].includes(key)) {
       return
     }
 
@@ -142,6 +146,11 @@ export const buildPathWithParams = (
         : normalizeSerializableParam("fg", mergedParams.fg),
     rows:
       omittedParams.has("v") || omittedParams.has("t") ? [] : normalizedRows,
+    snd:
+      omittedParams.has("s") || !mergedParams.snd
+        ? undefined
+        : mergedParams.snd,
+    tts: omittedParams.has("ts") ? undefined : mergedParams.tts,
   })
 
   const search = newSearchParams.toString()

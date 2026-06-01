@@ -5,10 +5,10 @@ import { useLocale, useTranslations } from "next-intl"
 
 import DeveloperReportDialog from "@/components/DeveloperReportDialog"
 import type { AppTranslationFn } from "@/i18n/translator"
-import type { SessionParticipant } from "@/shared/remoteSession/types"
+import type { SessionParticipant } from "@/shared/liveSession/types"
 import { getPublicBuildInfo } from "@/shared/buildInfo"
 import ActionButton from "@/utils/ActionButton"
-import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
+import type { RemoteRelayReachabilityState } from "@/utils/liveSession/useRemoteRelayReachability"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 

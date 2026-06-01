@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import getRemoteStatus from "./index.ts"
+import getLiveSessionStatus from "./index.ts"
 
-test("returns null outside remote mode", () => {
+test("returns null outside live sessions", () => {
   assert.equal(
-    getRemoteStatus({
+    getLiveSessionStatus({
       canRetryManually: false,
       hasConnectedOnce: false,
       hasReceivedInitialSync: false,
@@ -19,7 +19,7 @@ test("returns null outside remote mode", () => {
 })
 
 test("describes pending control-session startup before the session id exists", () => {
-  const status = getRemoteStatus({
+  const status = getLiveSessionStatus({
     canRetryManually: false,
     hasConnectedOnce: false,
     hasReceivedInitialSync: false,
@@ -43,7 +43,7 @@ test("describes pending control-session startup before the session id exists", (
 })
 
 test("describes the connected control-session state", () => {
-  const status = getRemoteStatus({
+  const status = getLiveSessionStatus({
     canRetryManually: false,
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
@@ -67,7 +67,7 @@ test("describes the connected control-session state", () => {
 })
 
 test("describes a connected readonly session", () => {
-  const status = getRemoteStatus({
+  const status = getLiveSessionStatus({
     canRetryManually: false,
     hasConnectedOnce: true,
     hasReceivedInitialSync: true,
@@ -91,7 +91,7 @@ test("describes a connected readonly session", () => {
 })
 
 test("describes a failed readonly recovery with retry available", () => {
-  const status = getRemoteStatus({
+  const status = getLiveSessionStatus({
     canRetryManually: true,
     hasConnectedOnce: true,
     hasReceivedInitialSync: false,

@@ -19,11 +19,19 @@
   "start": "START",
   "pause": "PAUSE",
   "reset": "RESET",
-  "announcementStarted": "Timer started. {time} remaining.",
-  "announcementPaused": "Timer paused. {time} remaining.",
+  "announcementStartedWithoutTitle": "{time} timer started.",
+  "announcementStartedWithTitle": "{title}. {time} started.",
+  "announcementResumed": "Resumed. {time} remaining.",
+  "announcementPaused": "Paused.",
   "announcementReset": "Timer reset to {time}.",
   "announcementFinished": "Time is up.",
-  "announcementStepChanged": "Switched to {step}. {time} remaining.",
+  "announcementFiveMinutesRemaining": "5 minutes remaining.",
   "announcementOneMinuteRemaining": "1 minute remaining.",
-  "announcementSecondsRemaining": "{seconds, plural, one {# second remaining.} other {# seconds remaining.}}"
+  "announcementThirtySecondsRemaining": "30 seconds remaining.",
+  "announcementTenSecondsRemaining": "10 seconds remaining.",
+  "announcementCountdownFive": "Five.",
+  "announcementCountdownFour": "Four.",
+  "announcementCountdownThree": "Three.",
+  "announcementCountdownTwo": "Two.",
+  "announcementCountdownOne": "One."
 }

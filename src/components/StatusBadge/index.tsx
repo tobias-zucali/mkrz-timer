@@ -3,7 +3,7 @@
 import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
-import type { RemoteRelayReachabilityState } from "@/utils/remoteSession/useRemoteRelayReachability"
+import type { RemoteRelayReachabilityState } from "@/utils/liveSession/useRemoteRelayReachability"
 import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 
 import { getCompactStatusAppearance } from "./statusHelpers"

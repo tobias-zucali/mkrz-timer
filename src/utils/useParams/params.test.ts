@@ -90,7 +90,7 @@ test("buildPathWithParams can skip inheritance for client URLs", () => {
 test("buildPathWithParams can omit timer-state params on readonly remote routes", () => {
   assert.equal(
     buildPathWithParams(buildParams(), {
-      omit: ["a", "bg", "fg", "t", "title", "v"],
+      omit: ["a", "t", "title", "v"],
     }),
     "/",
   )
@@ -100,16 +100,16 @@ test("getRemoteSessionOnlyOmitKeys does not strip timer params on local routes",
   assert.deepEqual(getRemoteSessionOnlyOmitKeys(buildParams(), [], "/"), [])
 })
 
-test("getRemoteSessionOnlyOmitKeys strips timer params on control routes", () => {
+test("getRemoteSessionOnlyOmitKeys keeps timer params on control routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(buildParams(), [], "/control/control-token"),
-    ["a", "bg", "pid", "fg", "t", "v"],
+    ["a", "pid"],
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys strips timer params on readonly routes", () => {
+test("getRemoteSessionOnlyOmitKeys keeps timer params on readonly routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(buildParams(), [], "/view/viewer-token"),
-    ["a", "bg", "pid", "fg", "t", "v", "title"],
+    ["a", "pid", "title"],
   )
 })

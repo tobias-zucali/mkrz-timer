@@ -11,7 +11,9 @@
 - paragraph: Local share
 - paragraph: Open this timer setup independently. No live synchronization. Changes are independent after opening.
 - text: Local link
-- textbox "Local link": /http:\/\/\d+\.\d+\.0\.1:\d+\/\?v=1&t=3%21d61f69%\d+%\d+%\d+&a=0/
+- textbox "Local link"
 - button "Copy URL"
 - button "Show Local link"
 - paragraph: Snapshot of the current timer configuration with no live synchronization.
+- checkbox "Include Voice & Sound settings in links Adds non-default appearance and announcement settings to the links." [checked]
+- text: Include Voice & Sound settings in links Adds non-default appearance and announcement settings to the links.
