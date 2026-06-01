@@ -22,12 +22,14 @@ const timerStub = {
 
 const renderTimer = ({
   activeIndex = 0,
+  isControlsDimmed = false,
   isReadonly = false,
   onSelectSequenceRow,
   rows = [buildDefaultTimerSequenceRow()],
   timer = timerStub,
 }: {
   activeIndex?: number
+  isControlsDimmed?: boolean
   isReadonly?: boolean
   onSelectSequenceRow?: (rowIndex: number) => void
   rows?: ReturnType<typeof buildRows>
@@ -41,6 +43,7 @@ const renderTimer = ({
       activeIndex={activeIndex}
       handleChange={handleChange}
       handleTimeBlur={handleTimeBlur}
+      isControlsDimmed={isControlsDimmed}
       isReadonly={isReadonly}
       onSelectSequenceRow={onSelectSequenceRow}
       rows={rows}
@@ -96,6 +99,7 @@ describe("Timer", () => {
     expect(
       screen.queryByRole("button", { name: "Go to step 1" }),
     ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "RESET" })).toBeDisabled()
   })
 
   it("shows sequence navigation for multi-step timers", () => {
@@ -118,6 +122,32 @@ describe("Timer", () => {
     expect(onSelectSequenceRow).toHaveBeenCalledWith(1)
   })
 
+  it("dims sequence step buttons without dimming a highlighted next action", () => {
+    renderTimer({
+      activeIndex: 0,
+      isControlsDimmed: true,
+      rows: [
+        {
+          ...buildDefaultTimerSequenceRow(),
+          endBehavior: "stop",
+        },
+        {
+          ...buildDefaultTimerSequenceRow(),
+          title: "Q&A",
+          totalSeconds: 120,
+        },
+      ],
+      timer: {
+        ...timerStub,
+        isTimedOut: true,
+      } as ReturnType<typeof useTimer>,
+    })
+
+    expect(
+      screen.getByRole("button", { name: "Next step" }).className,
+    ).not.toContain("timer-chrome-dimmed")
+  })
+
   it("renders a semantic timer readout for readonly and started states", () => {
     renderTimer({
       isReadonly: true,
@@ -135,5 +165,20 @@ describe("Timer", () => {
     ).toBeInTheDocument()
     expect(screen.queryByRole("spinbutton", { name: "Minutes" })).toBeNull()
     expect(screen.queryByRole("spinbutton", { name: "Seconds" })).toBeNull()
+  })
+
+  it("enables reset after time has elapsed", () => {
+    renderTimer({
+      timer: {
+        ...timerStub,
+        isPaused: false,
+        isStarted: true,
+        minutes: "00",
+        seconds: "45",
+        totalDuration: 60,
+      } as ReturnType<typeof useTimer>,
+    })
+
+    expect(screen.getByRole("button", { name: "RESET" })).toBeEnabled()
   })
 })

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useId, useState } from "react"
+import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
 import QrCodeOverlay from "@/components/QrCodeOverlay"
@@ -57,6 +58,7 @@ function TopRightActionButton({
 
 export default function TopRightControls({
   floatingTimerData,
+  isDimmed,
   isSharePanelOpen,
   isReadonlyClient,
   onOpenSharePanel,
@@ -67,6 +69,7 @@ export default function TopRightControls({
     isSupported: boolean
     toggle: () => Promise<void>
   }
+  isDimmed: boolean
   isSharePanelOpen: boolean
   isReadonlyClient: boolean
   onOpenSharePanel: () => void
@@ -82,7 +85,17 @@ export default function TopRightControls({
 
   return (
     <>
-      <div className="absolute top-0 right-0 z-20 m-2 hidden items-center rounded-lg bg-background/58 backdrop-blur-xs hover:bg-background/74 sm:flex">
+      <div
+        className={classNames(
+          "absolute top-0 right-0 z-20 m-2 flex items-center rounded-lg",
+          "bg-background/58 backdrop-blur-xs transition-opacity timer-chrome-transition",
+          "hover:bg-background/74",
+          isDimmed ? "timer-chrome-dimmed" : "opacity-100",
+        )}
+        data-dimmed={String(isDimmed)}
+        data-testid="top-right-controls"
+        data-timer-chrome-focus-lock="true"
+      >
         <TopRightActionButton
           ariaLabel={isReadonlyClient ? t("shareViewerLink") : t("openSharing")}
           ariaControls={

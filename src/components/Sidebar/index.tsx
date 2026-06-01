@@ -49,6 +49,7 @@ type SidebarEntry = {
 }
 
 type SidebarShellProps = {
+  isDimmed?: boolean
   isPinnedOpen: boolean
   selectedEntryId: SidebarEntryId | null
   setIsPinnedOpen: Dispatch<SetStateAction<boolean>>
@@ -115,6 +116,7 @@ export default function Sidebar({
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
   const panelCloseButtonRef = useRef<HTMLButtonElement>(null)
   const {
+    isDimmed = false,
     isPinnedOpen,
     selectedEntryId,
     setIsPinnedOpen,
@@ -402,10 +404,12 @@ export default function Sidebar({
             "pointer-events-auto inline-flex items-center justify-center rounded-lg border",
             "border-foreground/16 bg-background/64 text-foreground/78 shadow-sm",
             "cursor-pointer bg-background/58 backdrop-blur-xs hover:bg-background/74 hover:text-primary",
-            "transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
+            "transition timer-chrome-transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
             "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
+            isDimmed && "timer-chrome-dimmed",
             isOpen && "border-primary/45 text-primary",
           )}
+          data-timer-chrome-focus-lock="true"
           onClick={toggleSidebar}
           {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
             dispatchShortcut: false,
@@ -419,9 +423,7 @@ export default function Sidebar({
         className={classNames(
           "absolute inset-y-0 left-0 pointer-events-auto flex max-w-full -translate-x-full transform overflow-hidden shadow-2xl transition-transform duration-300",
           isOpen && "translate-x-0",
-          selectedEntry
-            ? "right-0 w-full sm:w-[52rem]"
-            : "right-0 w-full sm:w-64",
+          selectedEntry ? "right-0 w-full sm:w-208" : "right-0 w-full sm:w-64",
         )}
         data-testid="sidebar-offcanvas"
         id={offcanvasId}

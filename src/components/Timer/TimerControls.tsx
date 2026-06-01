@@ -1,3 +1,5 @@
+import classNames from "classnames"
+
 import { getResponsiveClamp } from "@/utils/responsiveClamp"
 
 const timerButtonClassName =
@@ -10,7 +12,9 @@ const timerButtonClassName =
   "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground/80 touch-manipulation"
 
 type TimerControlsProps = {
+  isDimmed: boolean
   isPaused: boolean
+  isResetDisabled: boolean
   isTimedOut: boolean
   onPause: () => void
   onReset: () => void
@@ -22,7 +26,9 @@ type TimerControlsProps = {
 }
 
 export default function TimerControls({
+  isDimmed,
   isPaused,
+  isResetDisabled,
   isTimedOut,
   onPause,
   onReset,
@@ -58,7 +64,11 @@ export default function TimerControls({
   return (
     <div
       aria-label={stateLabel}
-      className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2"
+      className={classNames(
+        "flex flex-wrap items-center justify-center gap-1.5 transition-opacity timer-chrome-transition sm:gap-2",
+        isDimmed ? "timer-chrome-dimmed" : "opacity-100",
+      )}
+      data-dimmed={String(isDimmed)}
       data-testid="timer-controls"
     >
       <button
@@ -72,6 +82,7 @@ export default function TimerControls({
       </button>
       <button
         className={timerButtonClassName}
+        disabled={isResetDisabled}
         onClick={onReset}
         style={timerButtonStyle}
         type="button"

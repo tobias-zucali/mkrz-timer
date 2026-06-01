@@ -187,6 +187,46 @@ async function getTitlePositionMetrics(page: Page) {
   })
 }
 
+async function getControlChromeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const sidebarToggle = document.querySelector(
+      'button[aria-label="Toggle navigation"]',
+    ) as HTMLElement | null
+    const titleAction = document.querySelector(
+      '[data-testid="timer-title-empty-action"]',
+    ) as HTMLElement | null
+    const topRight = document.querySelector(
+      '[data-testid="top-right-controls"]',
+    ) as HTMLElement | null
+    const timerControls = document.querySelector(
+      '[data-testid="timer-controls"]',
+    ) as HTMLElement | null
+
+    const readMetrics = (element: HTMLElement | null) => {
+      if (!element) {
+        return null
+      }
+
+      const rect = element.getBoundingClientRect()
+      const style = window.getComputedStyle(element)
+
+      return {
+        display: style.display,
+        opacity: Number.parseFloat(style.opacity),
+        rectHeight: rect.height,
+        rectWidth: rect.width,
+      }
+    }
+
+    return {
+      sidebarToggle: readMetrics(sidebarToggle),
+      timerControls: readMetrics(timerControls),
+      titleAction: readMetrics(titleAction),
+      topRight: readMetrics(topRight),
+    }
+  })
+}
+
 async function expectMainTimerContentToFitViewport(page: Page) {
   const viewport = page.viewportSize()
   expect(viewport).not.toBeNull()
@@ -587,6 +627,144 @@ test("announces timer state changes and uses semantic readout mode", async ({
 
   await page.getByRole("button", { name: "RESET" }).click()
   await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
+})
+
+test("keeps timer chrome mounted on small screens and dims it after idle", async ({
+  page,
+}) => {
+  await page.setViewportSize(devices["iPhone SE"].viewport)
+  await openTimer(page, 12)
+
+  await expect(page.getByTestId("top-right-controls")).toBeVisible()
+  await expect(page.getByTestId("timer-controls")).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Toggle navigation" }),
+  ).toBeVisible()
+  await expect(page.getByRole("button", { name: "Add title" })).toBeVisible()
+
+  await expect
+    .poll(() => getControlChromeMetrics(page))
+    .toMatchObject({
+      sidebarToggle: {
+        display: "inline-flex",
+        opacity: 1,
+      },
+      timerControls: {
+        display: "flex",
+        opacity: 1,
+      },
+      titleAction: {
+        display: "flex",
+        opacity: 1,
+      },
+      topRight: {
+        display: "flex",
+        opacity: 1,
+      },
+    })
+
+  await page.waitForTimeout(5_200)
+
+  await expect
+    .poll(
+      () => {
+        return page.evaluate(() => {
+          const topRight = document.querySelector(
+            '[data-testid="top-right-controls"]',
+          ) as HTMLElement | null
+          const sidebarToggle = document.querySelector(
+            'button[aria-label="Toggle navigation"]',
+          ) as HTMLElement | null
+          const timerControls = document.querySelector(
+            '[data-testid="timer-controls"]',
+          ) as HTMLElement | null
+          const titleAction = document.querySelector(
+            '[data-testid="timer-title-empty-action"]',
+          ) as HTMLElement | null
+
+          if (!topRight || !timerControls || !sidebarToggle || !titleAction) {
+            return false
+          }
+
+          const topRightStyle = window.getComputedStyle(topRight)
+          const sidebarToggleStyle = window.getComputedStyle(sidebarToggle)
+          const timerControlsStyle = window.getComputedStyle(timerControls)
+          const titleActionStyle = window.getComputedStyle(titleAction)
+
+          return (
+            topRightStyle.display === "flex" &&
+            sidebarToggleStyle.display === "inline-flex" &&
+            timerControlsStyle.display === "flex" &&
+            titleActionStyle.display === "flex" &&
+            Number.parseFloat(topRightStyle.opacity) > 0 &&
+            Number.parseFloat(topRightStyle.opacity) < 1 &&
+            Number.parseFloat(sidebarToggleStyle.opacity) > 0 &&
+            Number.parseFloat(sidebarToggleStyle.opacity) < 1 &&
+            Number.parseFloat(timerControlsStyle.opacity) > 0 &&
+            Number.parseFloat(timerControlsStyle.opacity) < 1 &&
+            Number.parseFloat(titleActionStyle.opacity) > 0 &&
+            Number.parseFloat(titleActionStyle.opacity) < 1 &&
+            topRight.getBoundingClientRect().height > 0 &&
+            sidebarToggle.getBoundingClientRect().height > 0 &&
+            timerControls.getBoundingClientRect().height > 0 &&
+            titleAction.getBoundingClientRect().height > 0
+          )
+        })
+      },
+      {
+        message:
+          "timer chrome should dim instead of being removed after idling",
+      },
+    )
+    .toBe(true)
+})
+
+test("restores full timer chrome visibility after pointer and keyboard interaction", async ({
+  page,
+}) => {
+  await page.setViewportSize(devices["iPhone SE"].viewport)
+  await openTimer(page, 12)
+  await page.evaluate(() => {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  })
+
+  await page.waitForTimeout(5_200)
+
+  await expect
+    .poll(async () => (await getControlChromeMetrics(page)).topRight?.opacity)
+    .toBeLessThan(1)
+
+  await page.mouse.move(40, 40)
+
+  await expect
+    .poll(async () => (await getControlChromeMetrics(page)).topRight?.opacity)
+    .toBe(1)
+
+  await page.waitForTimeout(5_200)
+
+  await expect
+    .poll(
+      async () => (await getControlChromeMetrics(page)).timerControls?.opacity,
+    )
+    .toBeLessThan(1)
+
+  await page.keyboard.press("Tab")
+
+  await expect
+    .poll(() => getControlChromeMetrics(page), {
+      message: "keyboard interaction should restore full opacity",
+    })
+    .toMatchObject({
+      sidebarToggle: {
+        opacity: 1,
+      },
+      timerControls: {
+        opacity: 1,
+      },
+      topRight: {
+        opacity: 1,
+      },
+    })
 })
 
 test(
