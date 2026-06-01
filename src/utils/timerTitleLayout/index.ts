@@ -30,9 +30,9 @@ const TIMER_TITLE_BOX_SPACING = {
     min: 2.75,
   }),
   reservedHeight: getResponsiveClamp({
-    factor: 7,
-    max: 4.1,
-    min: 2.6,
+    factor: 8,
+    max: 5,
+    min: 2.4,
   }),
   horizontalPaddingEm: 0.6,
   verticalPaddingEm: 0.18,
