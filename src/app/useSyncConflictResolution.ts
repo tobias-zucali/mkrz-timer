@@ -41,19 +41,24 @@ export default function useSyncConflictResolution({
         fallback: syncParamsRef.current,
         state: effectiveTimerUrlState,
       })
+      const projectedDurationSeconds =
+        projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
+        syncStateRef.current.durationSeconds
+      const shouldPreserveRuntimeDuration =
+        syncStateRef.current.isStarted &&
+        syncStateRef.current.durationSeconds === projectedDurationSeconds
+      const totalDuration = shouldPreserveRuntimeDuration
+        ? syncStateRef.current.totalDuration
+        : projectedDurationSeconds
       const snapshot = {
         params: projectedParams,
         state: {
           ...syncStateRef.current,
           anchorServerTimestamp: 0,
           currentRepeat: 1,
-          durationSeconds:
-            projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
-            syncStateRef.current.totalDuration,
+          durationSeconds: projectedDurationSeconds,
           elapsedSecondsAtAnchor: syncStateRef.current.elapsedTime,
-          totalDuration:
-            projectedParams.rows[projectedParams.activeIndex]?.totalSeconds ??
-            syncStateRef.current.totalDuration,
+          totalDuration,
           status: syncStateRef.current.isStarted
             ? syncStateRef.current.isPaused
               ? "paused"

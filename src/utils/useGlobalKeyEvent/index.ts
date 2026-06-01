@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react"
 
-export default function useGlobalKeyUp(
+export default function useGlobalKeyEvent(
+  eventName: "keydown" | "keyup",
   callback: (event: KeyboardEvent) => void,
 ) {
   const callbackRef = useRef(callback)
@@ -12,13 +13,13 @@ export default function useGlobalKeyUp(
   }, [callback])
 
   useEffect(() => {
-    const onKeyUp = (event: KeyboardEvent) => {
-      // We must not call callback() directly as it would not update
+    const listener = (event: KeyboardEvent) => {
       callbackRef.current(event)
     }
-    window.addEventListener("keyup", onKeyUp, false)
+
+    window.addEventListener(eventName, listener, false)
     return () => {
-      window.removeEventListener("keyup", onKeyUp, false)
+      window.removeEventListener(eventName, listener, false)
     }
-  }, [])
+  }, [eventName])
 }

@@ -80,6 +80,7 @@ function DigitalDisplay({
       <input
         aria-label={t("minutes")}
         className={classNames(inputClassNames, "text-right")}
+        data-timer-duration-input="true"
         min="0"
         readOnly={isReadonly}
         ref={minuteInputRef}
@@ -97,6 +98,7 @@ function DigitalDisplay({
       <input
         aria-label={t("seconds")}
         className={classNames(inputClassNames, "text-left")}
+        data-timer-duration-input="true"
         max="60"
         min="0"
         onBlur={onBlur}

@@ -235,6 +235,24 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
   )
 })
 
+test("normalizeTimerState preserves configured and runtime durations separately", () => {
+  assert.deepEqual(
+    normalizeTimerState({
+      durationSeconds: 300,
+      elapsedSecondsAtAnchor: 5,
+      elapsedTime: 5,
+      totalDuration: 360,
+    }),
+    {
+      ...DEFAULT_TIMER_STATE,
+      durationSeconds: 300,
+      elapsedSecondsAtAnchor: 5,
+      elapsedTime: 5,
+      totalDuration: 360,
+    },
+  )
+})
+
 test("normalizeRelayClientMessage rejects malformed, oversized, and unexpected payloads", () => {
   assert.equal(normalizeRelayClientMessage("nope"), null)
 

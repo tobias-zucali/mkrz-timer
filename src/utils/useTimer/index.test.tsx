@@ -12,6 +12,23 @@ class MockAudio {
   constructor(public readonly src: string | null) {}
 }
 
+const dispatchKeyboardEvent = ({
+  key,
+  target = document.body,
+  type = "keydown",
+}: {
+  key: string
+  target?: EventTarget
+  type?: "keydown" | "keyup"
+}) => {
+  target.dispatchEvent(
+    new KeyboardEvent(type, {
+      bubbles: true,
+      key,
+    }),
+  )
+}
+
 describe("useTimer finish sound", () => {
   let audioInstances: MockAudio[] = []
   const onAction = vi.fn()
@@ -307,5 +324,450 @@ describe("useTimer finish sound", () => {
         }),
       }),
     )
+  })
+
+  it("pauses a running timer on space keydown", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          m: "00",
+          s: "30",
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: Date.now() - 5_000,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 5,
+        elapsedTime: 5,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now() - 5_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 30,
+      })
+    })
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "Space" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "pause",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isPaused: true,
+          isStarted: true,
+          status: "paused",
+        }),
+      }),
+    )
+  })
+
+  it("does not toggle twice when space keyup follows a handled space keydown", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          m: "00",
+          s: "30",
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: Date.now() - 5_000,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 5,
+        elapsedTime: 5,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now() - 5_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 30,
+      })
+    })
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "Space" })
+      dispatchKeyboardEvent({ key: "Space", type: "keyup" })
+    })
+
+    expect(onAction).toHaveBeenCalledTimes(1)
+    expect(onAction).toHaveBeenLastCalledWith(
+      "pause",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isPaused: true,
+          status: "paused",
+        }),
+      }),
+    )
+  })
+
+  it("handles Enter on keydown exactly once", () => {
+    const syncStateRef = buildSyncStateRef()
+    renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          m: "00",
+          s: "30",
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "Enter" })
+      dispatchKeyboardEvent({ key: "Enter", type: "keyup" })
+    })
+
+    expect(onAction).toHaveBeenCalledTimes(1)
+    expect(onAction).toHaveBeenLastCalledWith(
+      "start",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isPaused: false,
+          isStarted: true,
+          status: "running",
+        }),
+      }),
+    )
+  })
+
+  it("adjusts idle step duration with ArrowUp and ArrowDown", () => {
+    const syncStateRef = buildSyncStateRef()
+    renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          m: "00",
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              totalSeconds: 30,
+            },
+          ],
+          s: "30",
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowUp" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "increase-minute",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          rows: [
+            expect.objectContaining({
+              totalSeconds: 90,
+            }),
+          ],
+        }),
+        state: expect.objectContaining({
+          status: "idle",
+          totalDuration: 90,
+        }),
+      }),
+    )
+
+    onAction.mockClear()
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowDown" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "decrease-minute",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          rows: [
+            expect.objectContaining({
+              totalSeconds: 0,
+            }),
+          ],
+        }),
+        state: expect.objectContaining({
+          status: "idle",
+          totalDuration: 0,
+        }),
+      }),
+    )
+  })
+
+  it("adjusts paused remaining time with ArrowUp and ArrowDown", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              totalSeconds: 300,
+            },
+          ],
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: 0,
+        currentRepeat: 1,
+        durationSeconds: 300,
+        elapsedSecondsAtAnchor: 120,
+        elapsedTime: 120,
+        isPaused: true,
+        isStarted: true,
+        lastUpdatedAt: Date.now(),
+        revision: 1,
+        status: "paused",
+        totalDuration: 300,
+      })
+    })
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowUp" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "increase-minute",
+      expect.objectContaining({
+        params: undefined,
+        state: expect.objectContaining({
+          durationSeconds: 300,
+          elapsedTime: 120,
+          status: "paused",
+          totalDuration: 360,
+        }),
+      }),
+    )
+
+    onAction.mockClear()
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowDown" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "decrease-minute",
+      expect.objectContaining({
+        params: undefined,
+        state: expect.objectContaining({
+          durationSeconds: 300,
+          elapsedTime: 120,
+          status: "paused",
+          totalDuration: 300,
+        }),
+      }),
+    )
+  })
+
+  it("restores a finished stop step to one minute with ArrowUp and ignores ArrowDown", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              endBehavior: "stop",
+              totalSeconds: 30,
+            },
+          ],
+        },
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: 0,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 30,
+        elapsedTime: 30,
+        isPaused: true,
+        isStarted: true,
+        lastUpdatedAt: Date.now(),
+        revision: 1,
+        status: "finished",
+        totalDuration: 30,
+      })
+    })
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowDown" })
+    })
+
+    expect(onAction).not.toHaveBeenCalled()
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "ArrowUp" })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "increase-minute",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          rows: [
+            expect.objectContaining({
+              totalSeconds: 60,
+            }),
+          ],
+        }),
+        state: expect.objectContaining({
+          elapsedTime: 0,
+          status: "paused",
+          totalDuration: 60,
+        }),
+      }),
+    )
+  })
+
+  it("ignores timer shortcuts while focus is in editable fields", () => {
+    const syncStateRef = buildSyncStateRef()
+    renderHook(() =>
+      useTimer({
+        onAction,
+        params: DEFAULT_SYNC_PARAMS,
+        syncStateRef,
+      }),
+    )
+
+    const input = document.createElement("input")
+    document.body.appendChild(input)
+
+    act(() => {
+      dispatchKeyboardEvent({ key: " ", target: input })
+      dispatchKeyboardEvent({ key: "r", target: input })
+      dispatchKeyboardEvent({ key: "ArrowUp", target: input })
+    })
+
+    expect(onAction).not.toHaveBeenCalled()
+    input.remove()
+  })
+
+  it("still allows Space and Enter from the main timer duration inputs", () => {
+    const syncStateRef = buildSyncStateRef()
+    renderHook(() =>
+      useTimer({
+        onAction,
+        params: DEFAULT_SYNC_PARAMS,
+        syncStateRef,
+      }),
+    )
+
+    const timerInput = document.createElement("input")
+    timerInput.dataset.timerDurationInput = "true"
+    document.body.appendChild(timerInput)
+
+    act(() => {
+      dispatchKeyboardEvent({ key: " ", target: timerInput })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "start",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isPaused: false,
+          isStarted: true,
+          status: "running",
+        }),
+      }),
+    )
+
+    onAction.mockClear()
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "Enter", target: timerInput })
+    })
+
+    expect(onAction).toHaveBeenLastCalledWith(
+      "pause",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isPaused: true,
+          isStarted: true,
+          status: "paused",
+        }),
+      }),
+    )
+
+    timerInput.remove()
+  })
+
+  it("defers Space and Enter to focused native buttons", () => {
+    const syncStateRef = buildSyncStateRef()
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: DEFAULT_SYNC_PARAMS,
+        syncStateRef,
+      }),
+    )
+
+    act(() => {
+      result.current.setState({
+        anchorServerTimestamp: Date.now() - 5_000,
+        currentRepeat: 1,
+        durationSeconds: 60,
+        elapsedSecondsAtAnchor: 5,
+        elapsedTime: 5,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now() - 5_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 60,
+      })
+    })
+
+    const button = document.createElement("button")
+    document.body.appendChild(button)
+
+    act(() => {
+      dispatchKeyboardEvent({ key: " ", target: button })
+      dispatchKeyboardEvent({ key: "Enter", target: button })
+      dispatchKeyboardEvent({ key: "r", target: button })
+    })
+
+    expect(onAction).toHaveBeenCalledTimes(1)
+    expect(onAction).toHaveBeenLastCalledWith(
+      "restart",
+      expect.objectContaining({
+        state: expect.objectContaining({
+          isStarted: false,
+          status: "idle",
+        }),
+      }),
+    )
+    button.remove()
   })
 })

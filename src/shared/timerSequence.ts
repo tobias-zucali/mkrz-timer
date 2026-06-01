@@ -1,7 +1,7 @@
 import { getMinutesSeconds } from "../utils/timeInputHelpers/index.ts"
 
 export const DEFAULT_TIMER_PRIMARY_COLOR = "#d61f69"
-export const MAX_TIMER_DURATION_SECONDS = 999 * 60 + 59
+export const MAX_TIMER_DURATION_SECONDS = 365 * 24 * 60 * 60
 
 export type TimerEndBehavior = "advance" | "stop"
 

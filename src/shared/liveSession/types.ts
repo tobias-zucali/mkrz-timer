@@ -42,6 +42,12 @@ export type TimerCommand =
       type: "previous"
     }
   | {
+      type: "increase-minute"
+    }
+  | {
+      type: "decrease-minute"
+    }
+  | {
       activeIndex: number
       type: "activate"
     }

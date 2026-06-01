@@ -67,9 +67,7 @@ function DisclosureSection({
         "
         data-testid={`${testId}-toggle`}
         onClick={() => setIsOpen((current) => !current)}
-        {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-          dispatchShortcut: false,
-        })}
+        {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
         type="button"
       >
         <span className="text-sm font-semibold text-foreground">{title}</span>

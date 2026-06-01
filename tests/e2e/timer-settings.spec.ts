@@ -215,24 +215,15 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
 
   await timerPanel.getByLabel("Title").press(" ")
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+  await expect(timerPanel).toBeVisible()
 
   const sidebarBounds = await offcanvas.boundingBox()
   expect(sidebarBounds?.width).toBeLessThan(viewportSize?.width ?? Infinity)
   expect(sidebarBounds?.height).toBe(viewportSize?.height)
 
-  await page
-    .locator(
-      '[data-testid="sidebar-panel-timer"] button[title="Close sidebar"]',
-    )
-    .press(" ")
-  await expect(
-    page.getByTestId("timer-controls").getByRole("button", { name: "START" }),
-  ).toBeVisible()
-  await expect(timerPanel).toBeVisible()
-
   await openSidebarPanel(page, "Share")
-  await offcanvas.getByRole("button", { name: "Timer" }).press(" ")
-  await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
+  await offcanvas.getByRole("button", { name: "Timer" }).press("Enter")
+  await expect(page.getByTestId("sidebar-panel-timer")).toBeVisible()
   await expect(
     page.getByTestId("timer-controls").getByRole("button", { name: "START" }),
   ).toBeVisible()

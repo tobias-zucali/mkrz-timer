@@ -1,8 +1,18 @@
-import type { SessionSnapshot, TimerStatus } from "./liveSession/types.ts"
-import { getActiveTimerSequenceRow } from "./timerSequence.ts"
+import type {
+  SessionSnapshot,
+  TimerCommand,
+  TimerStatus,
+} from "./liveSession/types.ts"
+import {
+  buildDurationPartsFromTotalSeconds,
+  DEFAULT_TIMER_PRIMARY_COLOR,
+  getActiveTimerSequenceRow,
+  MAX_TIMER_DURATION_SECONDS,
+} from "./timerSequence.ts"
 
 type TimerState = SessionSnapshot["state"]
 type SyncParams = SessionSnapshot["params"]
+const MINUTE_SECONDS = 60
 
 const clampElapsedSeconds = ({
   durationSeconds,
@@ -21,6 +31,9 @@ const clampElapsedSeconds = ({
 
   return elapsedSeconds
 }
+
+const clampDurationSeconds = (durationSeconds: number) =>
+  Math.min(MAX_TIMER_DURATION_SECONDS, Math.max(0, durationSeconds))
 
 const getRowDurationSeconds = ({
   params,
@@ -48,6 +61,49 @@ const getClampedActiveIndex = ({
     rows,
   }).activeIndex
 
+const buildParamsWithRows = ({
+  activeIndex = 0,
+  params,
+  rows,
+}: {
+  activeIndex?: number
+  params: SyncParams
+  rows: SyncParams["rows"]
+}): SyncParams => {
+  const activeRowSnapshot = getActiveTimerSequenceRow({
+    activeIndex,
+    rows,
+  })
+  const duration = buildDurationPartsFromTotalSeconds(
+    activeRowSnapshot.row.totalSeconds,
+  )
+
+  return {
+    ...params,
+    activeIndex: activeRowSnapshot.activeIndex,
+    m: duration.m,
+    pc: activeRowSnapshot.row.primaryColor || DEFAULT_TIMER_PRIMARY_COLOR,
+    rows: activeRowSnapshot.rows,
+    s: duration.s,
+    title: activeRowSnapshot.row.title,
+  }
+}
+
+const updateActiveRow = ({
+  params,
+  update,
+}: {
+  params: SyncParams
+  update: (row: SyncParams["rows"][number]) => SyncParams["rows"][number]
+}) =>
+  buildParamsWithRows({
+    activeIndex: params.activeIndex,
+    params,
+    rows: params.rows.map((row, index) =>
+      index === params.activeIndex ? update(row) : row,
+    ),
+  })
+
 const buildTimerState = ({
   anchorServerTimestamp,
   currentRepeat,
@@ -55,6 +111,7 @@ const buildTimerState = ({
   elapsedSecondsAtAnchor,
   revision,
   status,
+  totalDuration = durationSeconds,
 }: {
   anchorServerTimestamp: number
   currentRepeat: number
@@ -62,9 +119,11 @@ const buildTimerState = ({
   elapsedSecondsAtAnchor: number
   revision: number
   status: TimerStatus
+  totalDuration?: number
 }): TimerState => {
   const isStarted = status !== "idle"
   const isPaused = status !== "running"
+  const clampedTotalDuration = clampDurationSeconds(totalDuration)
 
   return {
     anchorServerTimestamp: status === "running" ? anchorServerTimestamp : 0,
@@ -77,7 +136,7 @@ const buildTimerState = ({
     lastUpdatedAt: anchorServerTimestamp,
     revision,
     status,
-    totalDuration: durationSeconds,
+    totalDuration: clampedTotalDuration,
   }
 }
 
@@ -137,13 +196,11 @@ const continueSequenceAt = ({
     0,
     getRowDurationSeconds({ params, state }),
   )
+  let nextTotalDuration = clampDurationSeconds(state.totalDuration)
   let remainingElapsed = getElapsedAt(state, now)
 
-  while (
-    remainingElapsed >= nextDurationSeconds &&
-    state.status === "running"
-  ) {
-    if (nextDurationSeconds === 0) {
+  while (remainingElapsed >= nextTotalDuration && state.status === "running") {
+    if (nextTotalDuration === 0) {
       return {
         params: nextParams,
         state: buildTimerState({
@@ -153,6 +210,7 @@ const continueSequenceAt = ({
           elapsedSecondsAtAnchor: 0,
           revision: state.revision,
           status: "finished",
+          totalDuration: 0,
         }),
       }
     }
@@ -162,10 +220,11 @@ const continueSequenceAt = ({
       rows: nextParams.rows,
     })
     const activeRow = activeRowSnapshot.row
-    remainingElapsed -= nextDurationSeconds
+    remainingElapsed -= nextTotalDuration
 
     if (nextRepeat < activeRow.repeatCount) {
       nextRepeat += 1
+      nextTotalDuration = nextDurationSeconds
       continue
     }
 
@@ -183,6 +242,7 @@ const continueSequenceAt = ({
         activeIndex: nextIndex,
         rows: nextParams.rows,
       }).row.totalSeconds
+      nextTotalDuration = nextDurationSeconds
       continue
     }
 
@@ -192,9 +252,10 @@ const continueSequenceAt = ({
         anchorServerTimestamp: now,
         currentRepeat: nextRepeat,
         durationSeconds: nextDurationSeconds,
-        elapsedSecondsAtAnchor: nextDurationSeconds,
+        elapsedSecondsAtAnchor: nextTotalDuration,
         revision: state.revision,
         status: "finished",
+        totalDuration: nextTotalDuration,
       }),
     }
   }
@@ -206,11 +267,12 @@ const continueSequenceAt = ({
       currentRepeat: nextRepeat,
       durationSeconds: nextDurationSeconds,
       elapsedSecondsAtAnchor: clampElapsedSeconds({
-        durationSeconds: nextDurationSeconds,
+        durationSeconds: nextTotalDuration,
         elapsedSeconds: remainingElapsed,
       }),
       revision: state.revision,
       status: "running",
+      totalDuration: nextTotalDuration,
     }),
   }
 }
@@ -226,6 +288,10 @@ export const resolveSessionSnapshotAt = (
       state: snapshot.state,
     }),
   )
+  const totalDuration =
+    snapshot.state.status === "idle"
+      ? durationSeconds
+      : clampDurationSeconds(snapshot.state.totalDuration ?? durationSeconds)
   const normalizedState = buildTimerState({
     anchorServerTimestamp:
       snapshot.state.status === "running"
@@ -234,12 +300,13 @@ export const resolveSessionSnapshotAt = (
     currentRepeat: Math.max(1, snapshot.state.currentRepeat),
     durationSeconds,
     elapsedSecondsAtAnchor: clampElapsedSeconds({
-      durationSeconds,
+      durationSeconds: totalDuration,
       elapsedSeconds:
         snapshot.state.elapsedSecondsAtAnchor ?? snapshot.state.elapsedTime,
     }),
     revision: snapshot.state.revision,
     status: snapshot.state.status,
+    totalDuration,
   })
 
   if (normalizedState.status === "running") {
@@ -266,14 +333,15 @@ export const resolveSessionSnapshotAt = (
         pausedStatus === "idle"
           ? 0
           : clampElapsedSeconds({
-              durationSeconds,
+              durationSeconds: totalDuration,
               elapsedSeconds:
                 pausedStatus === "finished"
-                  ? durationSeconds
+                  ? totalDuration
                   : normalizedState.elapsedSecondsAtAnchor,
             }),
       revision: normalizedState.revision,
       status: pausedStatus,
+      totalDuration,
     }),
   }
 }
@@ -324,9 +392,7 @@ export const applyTimerCommandToSnapshot = ({
   now = Date.now(),
   snapshot,
 }: {
-  command:
-    | { type: "activate"; activeIndex: number }
-    | { type: "next" | "pause" | "previous" | "reset" | "start" }
+  command: TimerCommand
   now?: number
   snapshot: SessionSnapshot
 }): SessionSnapshot => {
@@ -348,6 +414,7 @@ export const applyTimerCommandToSnapshot = ({
           elapsedSecondsAtAnchor: resolvedSnapshot.state.elapsedSecondsAtAnchor,
           revision: nextRevision,
           status: "running",
+          totalDuration: resolvedSnapshot.state.totalDuration,
         }),
       }
     case "pause": {
@@ -358,7 +425,7 @@ export const applyTimerCommandToSnapshot = ({
       const pausedSnapshot = resolveSessionSnapshotAt(resolvedSnapshot, now)
       const status =
         pausedSnapshot.state.elapsedSecondsAtAnchor >=
-        pausedSnapshot.state.durationSeconds
+        pausedSnapshot.state.totalDuration
           ? "finished"
           : "paused"
 
@@ -371,6 +438,7 @@ export const applyTimerCommandToSnapshot = ({
           elapsedSecondsAtAnchor: pausedSnapshot.state.elapsedSecondsAtAnchor,
           revision: nextRevision,
           status,
+          totalDuration: pausedSnapshot.state.totalDuration,
         }),
       }
     }
@@ -409,6 +477,135 @@ export const applyTimerCommandToSnapshot = ({
           revision: nextRevision,
           snapshot: nextSnapshot,
           status: "idle",
+        }),
+      }
+    }
+    case "increase-minute":
+    case "decrease-minute": {
+      const shouldIncrease = command.type === "increase-minute"
+      const currentDuration = resolvedSnapshot.state.totalDuration
+      const currentElapsed = resolvedSnapshot.state.elapsedSecondsAtAnchor
+
+      if (resolvedSnapshot.state.status === "idle") {
+        const nextDuration = Math.min(
+          MAX_TIMER_DURATION_SECONDS,
+          Math.max(
+            0,
+            currentDuration +
+              (shouldIncrease ? MINUTE_SECONDS : -MINUTE_SECONDS),
+          ),
+        )
+        if (nextDuration === currentDuration) {
+          return resolvedSnapshot
+        }
+
+        const nextParams = updateActiveRow({
+          params: resolvedSnapshot.params,
+          update: (row) => ({
+            ...row,
+            totalSeconds: nextDuration,
+          }),
+        })
+
+        return {
+          params: nextParams,
+          state: buildStateForActiveRow({
+            now,
+            revision: nextRevision,
+            snapshot: {
+              ...resolvedSnapshot,
+              params: nextParams,
+            },
+            status: "idle",
+          }),
+        }
+      }
+
+      if (resolvedSnapshot.state.status === "running") {
+        const nextDuration = clampDurationSeconds(
+          currentDuration + (shouldIncrease ? MINUTE_SECONDS : -MINUTE_SECONDS),
+        )
+        const nextElapsedSecondsAtAnchor = clampElapsedSeconds({
+          durationSeconds: nextDuration,
+          elapsedSeconds: currentElapsed,
+        })
+
+        if (
+          nextDuration === currentDuration &&
+          nextElapsedSecondsAtAnchor === currentElapsed
+        ) {
+          return resolvedSnapshot
+        }
+
+        return {
+          params: resolvedSnapshot.params,
+          state: buildTimerState({
+            anchorServerTimestamp: now,
+            currentRepeat: resolvedSnapshot.state.currentRepeat,
+            durationSeconds: resolvedSnapshot.state.durationSeconds,
+            elapsedSecondsAtAnchor: nextElapsedSecondsAtAnchor,
+            revision: nextRevision,
+            status: "running",
+            totalDuration: nextDuration,
+          }),
+        }
+      }
+
+      if (resolvedSnapshot.state.status === "paused") {
+        const nextDuration = clampDurationSeconds(
+          currentDuration + (shouldIncrease ? MINUTE_SECONDS : -MINUTE_SECONDS),
+        )
+        const nextElapsedSecondsAtAnchor = clampElapsedSeconds({
+          durationSeconds: nextDuration,
+          elapsedSeconds: currentElapsed,
+        })
+
+        if (
+          nextDuration === currentDuration &&
+          nextElapsedSecondsAtAnchor === currentElapsed
+        ) {
+          return resolvedSnapshot
+        }
+
+        return {
+          params: resolvedSnapshot.params,
+          state: buildTimerState({
+            anchorServerTimestamp: now,
+            currentRepeat: resolvedSnapshot.state.currentRepeat,
+            durationSeconds: resolvedSnapshot.state.durationSeconds,
+            elapsedSecondsAtAnchor: nextElapsedSecondsAtAnchor,
+            revision: nextRevision,
+            status: "paused",
+            totalDuration: nextDuration,
+          }),
+        }
+      }
+
+      if (!shouldIncrease) {
+        return resolvedSnapshot
+      }
+
+      const nextDuration = Math.max(MINUTE_SECONDS, currentDuration)
+      const nextParams =
+        nextDuration === currentDuration
+          ? resolvedSnapshot.params
+          : updateActiveRow({
+              params: resolvedSnapshot.params,
+              update: (row) => ({
+                ...row,
+                totalSeconds: nextDuration,
+              }),
+            })
+
+      return {
+        params: nextParams,
+        state: buildTimerState({
+          anchorServerTimestamp: now,
+          currentRepeat: resolvedSnapshot.state.currentRepeat,
+          durationSeconds: nextDuration,
+          elapsedSecondsAtAnchor: Math.max(0, nextDuration - MINUTE_SECONDS),
+          revision: nextRevision,
+          status: "paused",
         }),
       }
     }
@@ -466,6 +663,8 @@ export const sessionSnapshotsMatch = ({
       resolvedIncomingSnapshot.state.status &&
     resolvedCurrentSnapshot.state.durationSeconds ===
       resolvedIncomingSnapshot.state.durationSeconds &&
+    resolvedCurrentSnapshot.state.totalDuration ===
+      resolvedIncomingSnapshot.state.totalDuration &&
     Math.abs(
       resolvedCurrentSnapshot.state.elapsedSecondsAtAnchor -
         resolvedIncomingSnapshot.state.elapsedSecondsAtAnchor,

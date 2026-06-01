@@ -14,5 +14,5 @@
   "floatingOpenState": "Floating timer open",
   "floatingUnsupported": "Floating timer is not available in this browser.",
   "shortcutsHeading": "Keyboard Shortcuts",
-  "shortcutsDescription": "Global timer shortcuts stay available when overlays are closed."
+  "shortcutsDescription": "Global timer shortcuts stay available unless focus is inside an editable field."
 }

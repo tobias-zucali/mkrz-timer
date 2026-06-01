@@ -355,9 +355,7 @@ export default function Sidebar({
                       hover:bg-white/7 hover:text-foreground
                     "
                     onClick={closeSidebar}
-                    {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-                      dispatchShortcut: false,
-                    })}
+                    {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     ref={panelCloseButtonRef}
                     title={t("closeSidebar")}
                   />
@@ -411,9 +409,7 @@ export default function Sidebar({
           )}
           data-timer-chrome-focus-lock="true"
           onClick={toggleSidebar}
-          {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-            dispatchShortcut: false,
-          })}
+          {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
           type="button"
         >
           <Bars3Icon className="size-4" />
@@ -471,9 +467,7 @@ export default function Sidebar({
                         isSelected && selectedSidebarItemClassName,
                       )}
                       onClick={() => openEntry(entry.id)}
-                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-                        dispatchShortcut: false,
-                      })}
+                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                       type="button"
                     >
                       <span className="shrink-0 text-foreground/82">
@@ -498,9 +492,7 @@ export default function Sidebar({
                   "
                   data-testid="sidebar-session-status-button"
                   onClick={openSharePanel}
-                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-                    dispatchShortcut: false,
-                  })}
+                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   type="button"
                 >
                   <span
@@ -527,9 +519,7 @@ export default function Sidebar({
                         isSelected && selectedSidebarItemClassName,
                       )}
                       onClick={() => openEntry(entry.id)}
-                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-                        dispatchShortcut: false,
-                      })}
+                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                       type="button"
                     >
                       <span className="shrink-0 text-foreground/82">
@@ -573,9 +563,7 @@ export default function Sidebar({
                     hover:bg-white/7 hover:text-foreground
                   "
                   onClick={isNarrowViewport ? returnToMenu : closeSidebar}
-                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>({
-                    dispatchShortcut: false,
-                  })}
+                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   ref={panelCloseButtonRef}
                   title={
                     isNarrowViewport

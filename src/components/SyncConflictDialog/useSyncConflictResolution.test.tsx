@@ -371,4 +371,66 @@ describe("useSyncConflictResolution", () => {
       resolution: "accept-server",
     })
   })
+
+  it("preserves runtime-extended duration when rebuilding URL snapshots for recovery", () => {
+    const matchingUrlState = parseTimerUrlState({
+      searchParams: new URLSearchParams(
+        "v=1&t=300!00aa88!Server%20state!0&bg=000000&fg=ffffff",
+      ),
+    })
+    const syncParamsRef = {
+      current: {
+        ...buildParams({
+          m: "05",
+          s: "00",
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              primaryColor: "#00aa88",
+              title: "Server state",
+              totalSeconds: 300,
+            },
+          ],
+        }),
+      },
+    } as RefObject<SyncParams>
+    const syncStateRef = {
+      current: {
+        ...buildState({
+          currentRepeat: 1,
+          durationSeconds: 300,
+          elapsedSecondsAtAnchor: 12,
+          elapsedTime: 12,
+          isPaused: false,
+          isStarted: true,
+          status: "running",
+          totalDuration: 360,
+          revision: 4,
+        }),
+      },
+    } as RefObject<TimerState>
+    const paramData = {
+      readTimerUrlState: () => matchingUrlState,
+      setParams: vi.fn(),
+    } as unknown as ReturnType<typeof useParams>
+
+    const { result } = renderHook(() =>
+      useSyncConflictResolution({
+        applyLocalSnapshot: vi.fn(),
+        paramData,
+        remoteRole: "control",
+        syncParamsRef,
+        syncStateRef,
+      }),
+    )
+
+    const reconnectSnapshot = result.current.getReconnectSnapshot()
+
+    expect(reconnectSnapshot.state).toMatchObject({
+      durationSeconds: 300,
+      elapsedSecondsAtAnchor: 12,
+      status: "running",
+      totalDuration: 360,
+    })
+  })
 })
