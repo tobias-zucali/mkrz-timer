@@ -670,7 +670,7 @@ test("keeps paused step switches silent and auto-advances running sequences", as
       timeout: 8_000,
     })
     .toBeGreaterThan(0)
-  await expect(liveRegion).not.toContainText("5 seconds timer started.")
+  await expect(liveRegion).toContainText("5 seconds timer started.")
 })
 
 test("keeps timer chrome mounted on small screens and dims it after idle", async ({

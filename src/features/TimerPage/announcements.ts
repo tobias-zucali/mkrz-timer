@@ -79,6 +79,14 @@ export const getTimerEventAnnouncement = ({
     })
   }
 
+  if (previous.activeIndex !== current.activeIndex && isRunning(current)) {
+    return buildStartedAnnouncement({
+      stepTitle: current.stepTitle,
+      t,
+      totalDuration: current.totalDuration,
+    })
+  }
+
   if (isPausedState(previous) && isRunning(current)) {
     return t("announcementResumed", {
       time: formatDurationForAccessibility(current.remainingSeconds, t),
@@ -125,14 +133,14 @@ export const getTimerMilestoneAnnouncement = ({
     }
   }
 
-  if (remainingSeconds === 30 && totalDuration >= 60) {
+  if (remainingSeconds === 30 && totalDuration >= 45) {
     return {
       id: "s30",
       text: t("announcementThirtySecondsRemaining"),
     }
   }
 
-  if (remainingSeconds === 10 && totalDuration >= 30) {
+  if (remainingSeconds === 10 && totalDuration >= 15) {
     return {
       id: "s10",
       text: t("announcementTenSecondsRemaining"),

@@ -149,7 +149,7 @@ describe("announcement rules", () => {
     ).toBe("Timer reset to 30 seconds.")
   })
 
-  it("does not announce step changes outside initial starts or resumes", () => {
+  it("keeps idle and paused step changes silent, but announces running step changes", () => {
     expect(
       getTimerEventAnnouncement({
         current: buildSnapshot({
@@ -188,7 +188,7 @@ describe("announcement rules", () => {
         }),
         t,
       }),
-    ).toBeNull()
+    ).toBe("Discussion. 15 minutes started.")
 
     expect(
       getTimerEventAnnouncement({

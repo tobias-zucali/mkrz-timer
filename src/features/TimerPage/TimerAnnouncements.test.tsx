@@ -370,7 +370,7 @@ describe("TimerAnnouncements", () => {
     ).toBe("Time is up.")
   })
 
-  it("does not announce auto-advanced running steps as timer starts", async () => {
+  it("announces auto-advanced running steps as new timer starts", async () => {
     const { rerender } = renderComponent(buildProps({ ttsEnabled: true }))
 
     rerender(
@@ -415,10 +415,10 @@ describe("TimerAnnouncements", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("status", { name: "Timer announcements" }),
-      ).toHaveTextContent("Intro. 12 seconds started.")
+      ).toHaveTextContent("Discussion. 30 seconds started.")
     })
 
-    expect(speak).toHaveBeenCalledTimes(1)
+    expect(speak).toHaveBeenCalledTimes(2)
   })
 
   it("does not speak non-timer accessibility announcements", async () => {
