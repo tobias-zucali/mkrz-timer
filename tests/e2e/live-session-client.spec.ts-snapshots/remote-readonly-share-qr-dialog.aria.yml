@@ -1,5 +1,5 @@
 - dialog "mkrz timer · Viewer link":
-    - button "Close"
-    - heading "mkrz timer · Viewer link" [level=1]
-    - img "Viewer link"
-    - text: /http:\/\/\d+\.\d+\.0\.1:\d+\/en\/view\/[0-9a-fA-F-]+/
+  - button "Close"
+  - heading "mkrz timer · Viewer link" [level=1]
+  - img "Viewer link"
+  - text: /http:\/\/\d+\.\d+\.0\.1:\d+\/en\/view\/[0-9a-fA-F-]+\?v=1&t=\d+%21d61f69%\d+%\d+%\d+&a=0/

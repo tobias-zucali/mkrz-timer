@@ -2,7 +2,7 @@
 - button "Close sidebar"
 - text: Page heading
 - textbox "Page heading":
-    - /placeholder: Timer
+  - /placeholder: Timer
 - heading "Sequence" [level=3]
 - text: Step 1 Active
 - button "Duplicate step 1"
@@ -14,19 +14,19 @@
 - spinbutton "Seconds"
 - text: Repetitions
 - combobox "Repetitions":
-    - option "1" [selected]
-    - option "2"
-    - option "3"
-    - option "4"
-    - option "5"
-    - option "6"
-    - option "7"
-    - option "8"
-    - option "9"
+  - option "1" [selected]
+  - option "2"
+  - option "3"
+  - option "4"
+  - option "5"
+  - option "6"
+  - option "7"
+  - option "8"
+  - option "9"
 - text: After this step
 - combobox "After this step":
-    - option "Stop timer" [selected]
-    - option "Start next step"
+  - option "Stop timer" [selected]
+  - option "Start next step"
 - 'textbox "Color #d61f69"'
 - text: "Color #d61f69"
 - button "Add step"

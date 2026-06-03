@@ -1,36 +1,36 @@
 - main "mkrz timer":
-    - status "Timer announcements"
-    - region "Timer":
-        - heading "Timer" [level=1]
-        - textbox "Title"
-        - button "Add title"
-        - group "Timer duration":
-            - spinbutton "Minutes"
-            - text: ""
-            - spinbutton "Seconds"
-        - text: Ready. Remaining time. 3 seconds
-        - button "START"
-        - button "RESET"
-    - button "Open sharing"
-    - button "Toggle floating window"
-    - button "Enter fullscreen"
+  - status "Timer announcements"
+  - region "Timer":
+    - heading "Timer" [level=1]
+    - textbox "Title"
+    - button "Add title"
+    - group "Timer duration":
+      - spinbutton "Minutes"
+      - text: ""
+      - spinbutton "Seconds"
+    - text: Ready. Remaining time. 3 seconds
+    - button "START"
+    - button "RESET" [disabled]
+  - button "Open sharing"
+  - button "Toggle floating window"
+  - button "Enter fullscreen"
 - button "Toggle navigation"
 - dialog:
-    - banner: mkrz timer
-    - navigation:
-        - list:
-            - listitem:
-                - button "Timer"
-            - listitem:
-                - button "Share"
-            - listitem:
-                - button "Settings"
-        - list:
-            - listitem:
-                - button "LOCAL Private session"
-            - listitem:
-                - button "Status"
+  - banner: mkrz timer
+  - navigation:
+    - list:
+      - listitem:
+        - button "Timer"
+      - listitem:
+        - button "Share"
+      - listitem:
+        - button "Settings"
+    - list:
+      - listitem:
+        - button "LOCAL Private session"
+      - listitem:
+        - button "Status"
 - button "Open session status. Private session, Private"
 - link "by mkrz":
-    - /url: https://www.mkrz.at/
+  - /url: https://www.mkrz.at/
 - alert
