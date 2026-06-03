@@ -490,7 +490,7 @@ export const applyTimerCommandToSnapshot = ({
         const nextDuration = Math.min(
           MAX_TIMER_DURATION_SECONDS,
           Math.max(
-            0,
+            MINUTE_SECONDS,
             currentDuration +
               (shouldIncrease ? MINUTE_SECONDS : -MINUTE_SECONDS),
           ),
@@ -605,7 +605,7 @@ export const applyTimerCommandToSnapshot = ({
           durationSeconds: nextDuration,
           elapsedSecondsAtAnchor: Math.max(0, nextDuration - MINUTE_SECONDS),
           revision: nextRevision,
-          status: "paused",
+          status: "running",
         }),
       }
     }

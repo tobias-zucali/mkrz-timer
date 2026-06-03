@@ -140,6 +140,7 @@ wss.on("connection", (socket: WebSocket) => {
       }
       case "retry-join-session": {
         const result = store.restore({
+          accessTokens: message.accessTokens,
           clientId: message.clientId,
           snapshot: message.snapshot,
           token: message.token,

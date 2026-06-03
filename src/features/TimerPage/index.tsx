@@ -316,31 +316,27 @@ function TimerApp() {
   const isSharePanelOpen =
     selectedSidebarEntryId === "share" && isSidebarPinnedOpen
 
-  const {
-    clearRecentlyEndedLiveSession,
-    exitConfirmationDialog,
-    handleEndRemoteSession,
-    recoveryDialog,
-  } = useLiveSessionDialogs({
-    activateLocalFallback,
-    disconnect,
-    hasRecentlyEndedLiveSession,
-    hasOtherConnectedClients,
-    hasPendingSyncConflict,
-    isControlCapableClient,
-    isPromotedHostControlRoute,
-    localFallbackReason,
-    onLocationReplaced: handleLocationReplaced,
-    otherParticipantCount,
-    paramData,
-    remoteRole,
-    resolvePendingSyncConflict,
-    retryConnection,
-    setHasRecentlyEndedLiveSession,
-    sessionId,
-    setState,
-    syncParamsRef,
-  })
+  const { exitConfirmationDialog, handleEndRemoteSession, recoveryDialog } =
+    useLiveSessionDialogs({
+      activateLocalFallback,
+      disconnect,
+      hasRecentlyEndedLiveSession,
+      hasOtherConnectedClients,
+      hasPendingSyncConflict,
+      isControlCapableClient,
+      isPromotedHostControlRoute,
+      localFallbackReason,
+      onLocationReplaced: handleLocationReplaced,
+      otherParticipantCount,
+      paramData,
+      remoteRole,
+      resolvePendingSyncConflict,
+      retryConnection,
+      setHasRecentlyEndedLiveSession,
+      sessionId,
+      setState,
+      syncParamsRef,
+    })
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -368,6 +364,14 @@ function TimerApp() {
       includeSettingsInShareUrls ? "1" : "0",
     )
   }, [hasLoadedShareSettingsPreference, includeSettingsInShareUrls])
+
+  useEffect(() => {
+    if (remoteRoute.isRemote || !hasRecentlyEndedLiveSession) {
+      return
+    }
+
+    setHasRecentlyEndedLiveSession(false)
+  }, [hasRecentlyEndedLiveSession, remoteRoute.isRemote])
 
   useEffect(() => {
     document.title = buildDocumentTitle({
@@ -458,10 +462,6 @@ function TimerApp() {
       title,
     },
   })
-
-  const clearEndedLiveSession = () => {
-    clearRecentlyEndedLiveSession()
-  }
 
   const settingsOmitKeys = includeSettingsInShareUrls
     ? []
@@ -623,20 +623,6 @@ function TimerApp() {
           description={recoveryDialog.description}
           getDeveloperReportBody={sessionDiagnostics.getErrorReportBody}
           title={recoveryDialog.title}
-        />
-      ) : null}
-      {hasRecentlyEndedLiveSession ? (
-        <ActionDialog
-          actions={[
-            {
-              label: t("dismiss"),
-              onClick: clearEndedLiveSession,
-              tone: "primary",
-            },
-          ]}
-          description={t("liveSessionEndedDescription")}
-          role="dialog"
-          title={t("liveSessionEndedTitle")}
         />
       ) : null}
     </>

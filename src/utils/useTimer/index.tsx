@@ -114,6 +114,9 @@ export default function useTimer({
   const [lastUpdatedAt, setLastUpdatedAt] = useState(0)
   const [revision, setRevision] = useState(0)
   const [status, setStatus] = useState<TimerState["status"]>("idle")
+  const [durationSeconds, setDurationSeconds] = useState<number>(
+    () => getActiveRowSnapshot().row.totalSeconds,
+  )
   const [totalDuration, setTotalDuration] = useState<number>(
     () => getActiveRowSnapshot().row.totalSeconds,
   )
@@ -121,7 +124,7 @@ export default function useTimer({
   const latestStateRef = useRef<TimerState>({
     anchorServerTimestamp: 0,
     currentRepeat,
-    durationSeconds: totalDuration,
+    durationSeconds,
     elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
@@ -137,7 +140,7 @@ export default function useTimer({
   const rawState: TimerState = {
     anchorServerTimestamp: lastUpdatedAt,
     currentRepeat,
-    durationSeconds: totalDuration,
+    durationSeconds,
     elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
@@ -229,6 +232,7 @@ export default function useTimer({
       setIsStarted(nextState.isStarted)
       setLastUpdatedAt(nextState.lastUpdatedAt)
       setStatus(nextState.status)
+      setDurationSeconds(nextState.durationSeconds)
       setTotalDuration(nextState.totalDuration)
       setRevision(nextState.revision)
       latestStateRef.current = nextState
@@ -489,6 +493,7 @@ export default function useTimer({
       setIsStarted(() => isStarted)
       setLastUpdatedAt(() => lastUpdatedAt)
       setStatus(() => status)
+      setDurationSeconds(() => durationSeconds)
       setTotalDuration(() => totalDuration)
     },
     [syncStateRef],

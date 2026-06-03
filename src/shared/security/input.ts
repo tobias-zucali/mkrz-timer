@@ -752,6 +752,7 @@ export const normalizeRelayClientMessage = (
     case "retry-join-session": {
       if (
         !hasOnlyKeys(parsedValue, [
+          "accessTokens",
           "clientId",
           "role",
           "snapshot",
@@ -765,11 +766,19 @@ export const normalizeRelayClientMessage = (
       const clientId = normalizeClientId(parsedValue.clientId)
       const role = normalizeRemoteAccessRole(parsedValue.role)
       const token = normalizeRemoteAccessToken(parsedValue.token)
+      const accessTokens =
+        parsedValue.accessTokens === undefined
+          ? undefined
+          : normalizeRemoteAccessTokenSet(parsedValue.accessTokens)
       if (clientId === null || role === null || token === null) {
+        return null
+      }
+      if (parsedValue.accessTokens !== undefined && accessTokens === null) {
         return null
       }
 
       return {
+        ...(accessTokens ? { accessTokens } : {}),
         clientId,
         role,
         token,

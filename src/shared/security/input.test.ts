@@ -335,6 +335,41 @@ test("normalizeRelayClientMessage accepts token-based join messages", () => {
   )
 })
 
+test("normalizeRelayClientMessage accepts control retry joins with access tokens", () => {
+  assert.deepEqual(
+    normalizeRelayClientMessage(
+      JSON.stringify({
+        accessTokens: {
+          control: "control-1",
+          readonly: "viewer-1",
+        },
+        clientId: "client-1",
+        role: "control",
+        snapshot: {
+          params: DEFAULT_SYNC_PARAMS,
+          state: DEFAULT_TIMER_STATE,
+        },
+        token: "control-1",
+        type: "retry-join-session",
+      }),
+    ),
+    {
+      accessTokens: {
+        control: "control-1",
+        readonly: "viewer-1",
+      },
+      clientId: "client-1",
+      role: "control",
+      snapshot: {
+        params: DEFAULT_SYNC_PARAMS,
+        state: DEFAULT_TIMER_STATE,
+      },
+      token: "control-1",
+      type: "retry-join-session",
+    },
+  )
+})
+
 test("normalizeRelayServerMessage rejects malformed session payloads", () => {
   assert.equal(
     normalizeRelayServerMessage(

@@ -509,6 +509,31 @@ test("applyTimerCommandToSnapshot increases idle step duration by one minute", (
   assert.equal(resolved.state.totalDuration, 90)
 })
 
+test("applyTimerCommandToSnapshot keeps idle step duration at one minute minimum", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "decrease-minute" },
+    now: 5_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 30,
+          },
+        ],
+      },
+      state: DEFAULT_TIMER_STATE,
+    },
+  })
+
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 60)
+  assert.equal(resolved.params.m, "01")
+  assert.equal(resolved.params.s, "00")
+  assert.equal(resolved.state.status, "idle")
+  assert.equal(resolved.state.totalDuration, 60)
+})
+
 test("applyTimerCommandToSnapshot adjusts running remaining time by one minute", () => {
   const resolved = applyTimerCommandToSnapshot({
     command: { type: "increase-minute" },
@@ -585,7 +610,7 @@ test("applyTimerCommandToSnapshot extends running time without mutating row dura
   assert.equal(resolved.params.rows[0]?.totalSeconds, 300)
 })
 
-test("applyTimerCommandToSnapshot restores a finished stop step to one minute", () => {
+test("applyTimerCommandToSnapshot restores a finished stop step to one minute and restarts it", () => {
   const resolved = applyTimerCommandToSnapshot({
     command: { type: "increase-minute" },
     now: 5_000,
@@ -617,7 +642,7 @@ test("applyTimerCommandToSnapshot restores a finished stop step to one minute", 
   })
 
   assert.equal(resolved.params.rows[0]?.totalSeconds, 60)
-  assert.equal(resolved.state.status, "paused")
+  assert.equal(resolved.state.status, "running")
   assert.equal(resolved.state.elapsedSecondsAtAnchor, 0)
   assert.equal(resolved.state.totalDuration, 60)
 })

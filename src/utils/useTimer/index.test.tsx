@@ -504,13 +504,13 @@ describe("useTimer finish sound", () => {
         params: expect.objectContaining({
           rows: [
             expect.objectContaining({
-              totalSeconds: 0,
+              totalSeconds: 60,
             }),
           ],
         }),
         state: expect.objectContaining({
           status: "idle",
-          totalDuration: 0,
+          totalDuration: 60,
         }),
       }),
     )
@@ -587,7 +587,7 @@ describe("useTimer finish sound", () => {
     )
   })
 
-  it("restores a finished stop step to one minute with ArrowUp and ignores ArrowDown", () => {
+  it("restores a finished stop step to one minute, restarts it with ArrowUp, and ignores ArrowDown", () => {
     const syncStateRef = buildSyncStateRef()
     const { result } = renderHook(() =>
       useTimer({
@@ -644,7 +644,9 @@ describe("useTimer finish sound", () => {
         }),
         state: expect.objectContaining({
           elapsedTime: 0,
-          status: "paused",
+          isPaused: false,
+          isStarted: true,
+          status: "running",
           totalDuration: 60,
         }),
       }),

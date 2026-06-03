@@ -101,6 +101,7 @@ export type RelayClientMessage =
     }
   | {
       type: "retry-join-session"
+      accessTokens?: RemoteAccessTokenSet
       clientId: string
       role: RemoteAccessRole
       snapshot?: SessionSnapshot

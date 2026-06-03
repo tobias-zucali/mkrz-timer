@@ -507,6 +507,10 @@ export default function useLiveSession({
             ? (getReconnectSnapshot?.() ?? buildCurrentLocalSnapshot())
             : null
         const joinMessage = buildJoinMessage({
+          accessTokens:
+            retryType === "retry-join-session" && nextRemoteRole === "control"
+              ? accessTokensRef.current
+              : undefined,
           clientId: localClientIdRef.current,
           remoteRole: nextRemoteRole,
           remoteToken: nextRemoteToken,

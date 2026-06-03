@@ -1,5 +1,6 @@
 import type { TimerState } from "../useTimer"
 import type {
+  RemoteAccessTokenSet,
   RemoteAccessRole,
   RelayClientMessage,
   SessionSnapshot,
@@ -41,6 +42,7 @@ const createSnapshot = ({
 })
 
 export const buildJoinMessage = ({
+  accessTokens,
   clientId,
   remoteRole,
   remoteToken,
@@ -48,6 +50,7 @@ export const buildJoinMessage = ({
   syncParams,
   syncState,
 }: {
+  accessTokens?: RemoteAccessTokenSet
   clientId: string
   remoteRole?: RemoteAccessRole | null
   remoteToken?: string | null
@@ -69,6 +72,7 @@ export const buildJoinMessage = ({
 
   if (retryType === "retry-join-session" && remoteRole === "control") {
     return {
+      ...(accessTokens ? { accessTokens } : {}),
       clientId,
       role: remoteRole,
       snapshot: createSnapshot({ syncParams, syncState }),

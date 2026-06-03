@@ -11,6 +11,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
   normalizeRemoteAccessToken,
+  normalizeRemoteAccessTokenSet,
   normalizeSessionSnapshot,
   normalizeSyncParamPatch,
   normalizeTimerState,
@@ -251,10 +252,12 @@ export class InMemorySessionStore {
   }
 
   restore({
+    accessTokens,
     clientId,
     snapshot,
     token,
   }: {
+    accessTokens?: RemoteAccessTokenSet
     clientId: string
     snapshot?: SessionSnapshot
     token: string
@@ -265,11 +268,31 @@ export class InMemorySessionStore {
     }
 
     const tokenRecord = this.sessionTokenRegistry.get(normalizedToken)
-    if (!tokenRecord || tokenRecord.role !== "control") {
+    const normalizedAccessTokens =
+      accessTokens &&
+      normalizeRemoteAccessToken(accessTokens.control) === normalizedToken
+        ? normalizeRemoteAccessTokenSet(accessTokens)
+        : null
+
+    if (!tokenRecord && !normalizedAccessTokens) {
       return null
     }
 
-    const existing = this.sessions.get(tokenRecord.sessionId)
+    if (tokenRecord && tokenRecord.role !== "control") {
+      return null
+    }
+
+    const existingSessionId =
+      tokenRecord?.sessionId ??
+      [...this.sessionMetadata.entries()].find(
+        ([, value]) => value.accessTokens.control === normalizedToken,
+      )?.[0] ??
+      [...this.sessions.entries()].find(
+        ([, value]) => value.accessTokens.control === normalizedToken,
+      )?.[0]
+    const existing = existingSessionId
+      ? this.sessions.get(existingSessionId)
+      : undefined
     if (existing) {
       this.upsertParticipant({
         canControl: true,
@@ -282,28 +305,30 @@ export class InMemorySessionStore {
       }
     }
 
-    const metadata = this.sessionMetadata.get(tokenRecord.sessionId)
+    const metadata = existingSessionId
+      ? this.sessionMetadata.get(existingSessionId)
+      : undefined
     const nextSnapshot = normalizeSessionSnapshot(
       snapshot ?? metadata?.snapshot ?? defaultSnapshot(),
     )
 
-    if (!snapshot && !metadata) {
+    if (!snapshot && !metadata && !normalizedAccessTokens) {
       return null
     }
 
     const restored = this.createSessionRecord({
-      accessTokens: {
+      accessTokens: normalizedAccessTokens ?? {
         control: normalizedToken,
         readonly:
           metadata?.accessTokens.readonly ??
           [...this.sessionTokenRegistry.entries()].find(
             ([, value]) =>
               value.role === "readonly" &&
-              value.sessionId === tokenRecord.sessionId,
+              value.sessionId === existingSessionId,
           )?.[0] ??
           createAccessToken(),
       },
-      sessionId: tokenRecord.sessionId,
+      sessionId: existingSessionId ?? crypto.randomUUID(),
       snapshot: nextSnapshot,
     })
     this.upsertParticipant({

@@ -712,7 +712,7 @@ test("applies shortcut focus rules and minute adjustments", async ({
   await expect.poll(() => getDisplayedSeconds(page)).toBe(90)
 
   await page.keyboard.press("ArrowDown")
-  await expect.poll(() => getDisplayedSeconds(page)).toBe(30)
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(60)
 
   await setTimer(page, "05", "00")
   await page.evaluate(() => {
@@ -752,7 +752,17 @@ test("applies shortcut focus rules and minute adjustments", async ({
   await expect.poll(() => getDisplayedSeconds(page)).toBe(timedOutSeconds)
 
   await page.keyboard.press("ArrowUp")
-  await expect.poll(() => getDisplayedSeconds(page)).toBe(60)
+  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "ArrowUp from timeout should restart the timer at one minute",
+    })
+    .toBeLessThanOrEqual(60)
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "restarted timed-out timer should be counting down",
+    })
+    .toBeLessThan(60)
 })
 
 test("keeps timer chrome mounted on small screens and dims it after idle", async ({

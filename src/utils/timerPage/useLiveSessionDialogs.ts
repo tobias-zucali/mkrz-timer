@@ -243,9 +243,6 @@ export default function useLiveSessionDialogs({
   ])
 
   return {
-    clearRecentlyEndedLiveSession: () => {
-      setHasRecentlyEndedLiveSession(false)
-    },
     exitConfirmationDialog,
     handleEndRemoteSession,
     recoveryDialog,

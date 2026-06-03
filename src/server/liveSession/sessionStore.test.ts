@@ -172,6 +172,69 @@ test("restore only allows controller tokens to recreate expired sessions", () =>
   assert.equal(restored.session.id, sessionId)
 })
 
+test("restore rebuilds the session in a fresh store when the control client provides both access tokens", () => {
+  const originalStore = new InMemorySessionStore()
+  const created = originalStore.create({
+    clientId: "host",
+    snapshot: buildSnapshot({
+      params: {
+        pc: "#00ff00",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            primaryColor: "#00ff00",
+            title: "Recovered after restart",
+            totalSeconds: 135,
+          },
+        ],
+        s: "15",
+        title: "Recovered after restart",
+      },
+      state: {
+        elapsedTime: 5,
+        isPaused: false,
+        isStarted: true,
+        revision: 3,
+        totalDuration: 135,
+      },
+    }),
+  })
+
+  const restartedStore = new InMemorySessionStore()
+  const restored = restartedStore.restore({
+    accessTokens: created.session.accessTokens,
+    clientId: "host",
+    snapshot: created.session.snapshot,
+    token: created.session.accessTokens.control,
+  })
+
+  assert.ok(restored)
+  assert.equal(restored.role, "control")
+  assert.equal(
+    restored.session.accessTokens.control,
+    created.session.accessTokens.control,
+  )
+  assert.equal(
+    restored.session.accessTokens.readonly,
+    created.session.accessTokens.readonly,
+  )
+  assert.equal(
+    restored.session.snapshot.params.title,
+    "Recovered after restart",
+  )
+
+  const readonlyJoin = restartedStore.join({
+    clientId: "viewer",
+    token: created.session.accessTokens.readonly,
+  })
+
+  assert.equal(readonlyJoin?.role, "readonly")
+  assert.equal(
+    readonlyJoin?.session.snapshot.params.title,
+    "Recovered after restart",
+  )
+})
+
 test("updateSnapshot only allows control participants to publish state", () => {
   const store = new InMemorySessionStore()
   const created = store.create({
@@ -277,7 +340,52 @@ test("create and updateSnapshot normalize hostile values safely", () => {
 
   assert.ok(updated)
   assert.equal(updated.snapshot.params.title, "Hello  world ")
-  assert.equal(updated.snapshot.state.totalDuration, 307)
+  assert.equal(updated.snapshot.state.totalDuration, 67)
+})
+
+test("updateSnapshot preserves runtime-extended duration for running command updates", () => {
+  const store = new InMemorySessionStore()
+  const created = store.create({
+    clientId: "host",
+    snapshot: buildSnapshot({
+      params: {
+        m: "05",
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 300,
+          },
+        ],
+        s: "00",
+      },
+      state: {
+        anchorServerTimestamp: Date.now() - 2_000,
+        currentRepeat: 1,
+        durationSeconds: 300,
+        elapsedSecondsAtAnchor: 10,
+        elapsedTime: 10,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: Date.now() - 2_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 300,
+      },
+    }),
+  })
+
+  const updated = store.updateSnapshot({
+    clientId: "host",
+    command: {
+      type: "increase-minute",
+    },
+    sessionId: created.session.id,
+  })
+
+  assert.ok(updated)
+  assert.equal(updated.snapshot.params.rows[0]?.totalSeconds, 300)
+  assert.equal(updated.snapshot.state.durationSeconds, 300)
+  assert.equal(updated.snapshot.state.totalDuration, 360)
 })
 
 test("leave removes participants and sweepExpired drops idle sessions without deleting token recovery", () => {
