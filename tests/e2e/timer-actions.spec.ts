@@ -1,4 +1,4 @@
-import { devices, expect, Page, test } from "@playwright/test"
+import { devices } from "@playwright/test"
 
 import {
   expectScreenshotWithoutDebugInfo,
@@ -7,6 +7,7 @@ import {
   openSidebarPanel,
   updateTimerSettings,
 } from "./live-session.helpers"
+import { expect, installE2eBrowserMocks, test, type Page } from "./test"
 
 const timerVisualFormFactors = [
   {
@@ -911,6 +912,7 @@ test(
 
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await openTimer(devicePage, 3, baseURL)
@@ -939,6 +941,7 @@ test(
     const title = "Sprint review"
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await devicePage.goto(
@@ -971,6 +974,7 @@ test(
     const title = "Quarterly planning retrospective and facilitator notes"
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await devicePage.goto(

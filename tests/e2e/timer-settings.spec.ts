@@ -1,4 +1,4 @@
-import { devices, expect, test } from "@playwright/test"
+import { devices } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
@@ -11,6 +11,7 @@ import {
   openTimer,
   updateTimerSettings,
 } from "./live-session.helpers"
+import { expect, installE2eBrowserMocks, test } from "./test"
 
 const sidebarVisualScenarios = [
   {
@@ -252,6 +253,7 @@ test(
 
     for (const { contextOptions, name } of sidebarVisualScenarios) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await openTimer(devicePage, 3, baseURL)

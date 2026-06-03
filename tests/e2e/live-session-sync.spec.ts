@@ -1,4 +1,4 @@
-import { expect, type BrowserContext, type Page, test } from "@playwright/test"
+import type { BrowserContext, Page } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
@@ -21,6 +21,7 @@ import {
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./live-session.helpers"
+import { expect, test } from "./test"
 
 async function openIsolatedClient(
   page: Page,

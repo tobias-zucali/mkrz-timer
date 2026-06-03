@@ -1,4 +1,4 @@
-import { expect, Page, test } from "@playwright/test"
+import type { Page } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
@@ -9,6 +9,7 @@ import {
   openTimer,
   updateTimerSettings,
 } from "./live-session.helpers"
+import { expect, test } from "./test"
 
 function getFloatingTimerToggle(page: Page) {
   return page.getByRole("button", {
