@@ -1,4 +1,4 @@
-import { devices, expect, Page, test } from "@playwright/test"
+import { devices } from "@playwright/test"
 
 import {
   expectScreenshotWithoutDebugInfo,
@@ -7,6 +7,7 @@ import {
   openSidebarPanel,
   updateTimerSettings,
 } from "./live-session.helpers"
+import { expect, installE2eBrowserMocks, test, type Page } from "./test"
 
 const timerVisualFormFactors = [
   {
@@ -673,6 +674,98 @@ test("keeps paused step switches silent and auto-advances running sequences", as
   await expect(liveRegion).toContainText("5 seconds timer started.")
 })
 
+test("applies shortcut focus rules and minute adjustments", async ({
+  page,
+}) => {
+  test.slow()
+
+  await openTimer(page, 30)
+  await openSidebarPanel(page, "Timer")
+
+  await page.keyboard.press("p")
+  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+
+  const timerPanel = page.getByTestId("sidebar-panel-timer")
+  const displayedBeforeBlockedKeys = await getDisplayedSeconds(page)
+
+  await timerPanel.getByLabel("Seconds").focus()
+  await page.keyboard.press("Space")
+  await page.keyboard.press("r")
+  await page.waitForTimeout(1_200)
+
+  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+  expect(await getDisplayedSeconds(page)).toBeLessThan(
+    displayedBeforeBlockedKeys,
+  )
+
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  })
+  await page.keyboard.press("p")
+  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+
+  await page.keyboard.press("r")
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(30)
+
+  await page.keyboard.press("ArrowUp")
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(90)
+
+  await page.keyboard.press("ArrowDown")
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(60)
+
+  await setTimer(page, "05", "00")
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  })
+  await page.keyboard.press(" ")
+  await page.waitForTimeout(1_200)
+
+  const displayedBeforeRuntimeExtension = await getDisplayedSeconds(page)
+
+  await page.keyboard.press("ArrowUp")
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message:
+        "ArrowUp while running should extend remaining time by one minute",
+    })
+    .toBe(displayedBeforeRuntimeExtension + 60)
+
+  await page.keyboard.press("r")
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(300)
+
+  await setTimer(page, "00", "03")
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  })
+  await page.keyboard.press(" ")
+  await page.waitForTimeout(3_500)
+
+  const timedOutSeconds = await getDisplayedSeconds(page)
+
+  await page.keyboard.press("ArrowDown")
+  await page.waitForTimeout(200)
+  await expect.poll(() => getDisplayedSeconds(page)).toBe(timedOutSeconds)
+
+  await page.keyboard.press("ArrowUp")
+  await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "ArrowUp from timeout should restart the timer at one minute",
+    })
+    .toBeLessThanOrEqual(60)
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message: "restarted timed-out timer should be counting down",
+    })
+    .toBeLessThan(60)
+})
+
 test("keeps timer chrome mounted on small screens and dims it after idle", async ({
   page,
 }) => {
@@ -819,6 +912,7 @@ test(
 
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await openTimer(devicePage, 3, baseURL)
@@ -847,6 +941,7 @@ test(
     const title = "Sprint review"
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await devicePage.goto(
@@ -879,6 +974,7 @@ test(
     const title = "Quarterly planning retrospective and facilitator notes"
     for (const { name, contextOptions } of timerVisualFormFactors) {
       const context = await browser.newContext(contextOptions)
+      await installE2eBrowserMocks(context)
       const devicePage = await context.newPage()
 
       await devicePage.goto(

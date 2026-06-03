@@ -9,13 +9,16 @@ import {
 import type { SyncParams } from "@/shared/liveSession/types"
 import { getTimerFinishedSoundOption } from "@/shared/timerSettings"
 import { getActiveTimerSequenceRow } from "@/shared/timerSequence"
+import { getTimerShortcutIntent } from "@/utils/timerShortcuts"
 import { prefixZeros, getMinutesSeconds } from "@/utils/timeInputHelpers"
 import useAnimationFrame from "@/utils/useAnimationFrame"
 import debug from "@/utils/debug"
-import useGlobalKeyUp from "@/utils/useGlobalKeyUp"
+import useGlobalKeyEvent from "@/utils/useGlobalKeyEvent"
 import type { TimerState } from "@/utils/timerState"
 
 export type TimerActions =
+  | "decrease-minute"
+  | "increase-minute"
   | "activate"
   | "next"
   | "pause"
@@ -30,6 +33,30 @@ type TimerActionPayload = {
   state: TimerState
 }
 
+const getCommandForAction = ({
+  action,
+  currentActiveIndex,
+}: {
+  action: TimerActions
+  currentActiveIndex: number
+}) => {
+  switch (action) {
+    case "restart":
+      return { type: "reset" } as const
+    case "increase-minute":
+      return { type: "increase-minute" } as const
+    case "decrease-minute":
+      return { type: "decrease-minute" } as const
+    case "activate":
+      return {
+        activeIndex: currentActiveIndex,
+        type: "activate",
+      } as const
+    default:
+      return { type: action } as const
+  }
+}
+
 const getSequenceRowAt = ({
   activeIndex,
   params,
@@ -37,9 +64,6 @@ const getSequenceRowAt = ({
   activeIndex: number
   params: SyncParams
 }) => getActiveTimerSequenceRow({ activeIndex, rows: params.rows })
-
-const isSpaceKey = (key: string) =>
-  key === " " || key === "Space" || key === "Spacebar"
 
 export default function useTimer({
   canMutate = true,
@@ -60,12 +84,20 @@ export default function useTimer({
 }) {
   void syncParamsRef
 
-  const [activeIndex, setActiveIndex] = useState(() => params.activeIndex)
+  const [localParams, setLocalParams] = useState(() => ({
+    activeIndex: params.activeIndex,
+    m: params.m,
+    pc: params.pc,
+    rows: params.rows,
+    s: params.s,
+    title: params.title,
+  }))
   const buildEffectiveParams = () => ({
     ...params,
-    activeIndex,
+    ...localParams,
   })
   const effectiveParams = buildEffectiveParams()
+  const activeIndex = effectiveParams.activeIndex
 
   const getActiveRowSnapshot = (
     nextActiveIndex = effectiveParams.activeIndex,
@@ -82,6 +114,9 @@ export default function useTimer({
   const [lastUpdatedAt, setLastUpdatedAt] = useState(0)
   const [revision, setRevision] = useState(0)
   const [status, setStatus] = useState<TimerState["status"]>("idle")
+  const [durationSeconds, setDurationSeconds] = useState<number>(
+    () => getActiveRowSnapshot().row.totalSeconds,
+  )
   const [totalDuration, setTotalDuration] = useState<number>(
     () => getActiveRowSnapshot().row.totalSeconds,
   )
@@ -89,7 +124,7 @@ export default function useTimer({
   const latestStateRef = useRef<TimerState>({
     anchorServerTimestamp: 0,
     currentRepeat,
-    durationSeconds: totalDuration,
+    durationSeconds,
     elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
@@ -99,14 +134,13 @@ export default function useTimer({
     status,
     totalDuration,
   })
-  const handleActionRef = useRef<(action: TimerActions) => void>(() => {})
   const finishSoundAudioRef = useRef<HTMLAudioElement | null>(null)
   const previousIsTimedOutRef = useRef(false)
   const previousCompletedStepKeyRef = useRef<string | null>(null)
   const rawState: TimerState = {
     anchorServerTimestamp: lastUpdatedAt,
     currentRepeat,
-    durationSeconds: totalDuration,
+    durationSeconds,
     elapsedSecondsAtAnchor: elapsedTime,
     elapsedTime,
     isPaused,
@@ -176,10 +210,12 @@ export default function useTimer({
     }
   }, [])
 
-  const [minutes = prefixZeros(params.m), seconds = prefixZeros(params.s)] =
-    isStarted
-      ? getMinutesSeconds(totalDuration * (1 - elapsedPercentage), 10)
-      : []
+  const [
+    minutes = prefixZeros(effectiveParams.m),
+    seconds = prefixZeros(effectiveParams.s),
+  ] = isStarted
+    ? getMinutesSeconds(totalDuration * (1 - elapsedPercentage), 10)
+    : []
 
   useAnimationFrame(
     () => {
@@ -196,6 +232,7 @@ export default function useTimer({
       setIsStarted(nextState.isStarted)
       setLastUpdatedAt(nextState.lastUpdatedAt)
       setStatus(nextState.status)
+      setDurationSeconds(nextState.durationSeconds)
       setTotalDuration(nextState.totalDuration)
       setRevision(nextState.revision)
       latestStateRef.current = nextState
@@ -206,7 +243,14 @@ export default function useTimer({
 
   const commitSnapshot = useCallback(
     (nextSnapshot: { params: SyncParams; state: TimerState }) => {
-      setActiveIndex(nextSnapshot.params.activeIndex)
+      setLocalParams({
+        activeIndex: nextSnapshot.params.activeIndex,
+        m: nextSnapshot.params.m,
+        pc: nextSnapshot.params.pc,
+        rows: nextSnapshot.params.rows,
+        s: nextSnapshot.params.s,
+        title: nextSnapshot.params.title,
+      })
       commitNextState(nextSnapshot.state)
     },
     [commitNextState],
@@ -215,14 +259,25 @@ export default function useTimer({
   const buildActionPayload = useCallback(
     ({
       currentActiveIndex,
+      currentRows,
       nextSnapshot,
     }: {
       currentActiveIndex: number
+      currentRows: SyncParams["rows"]
       nextSnapshot: { params: SyncParams; state: TimerState }
     }) => ({
       params:
-        nextSnapshot.params.activeIndex !== currentActiveIndex
-          ? { activeIndex: nextSnapshot.params.activeIndex }
+        nextSnapshot.params.activeIndex !== currentActiveIndex ||
+        JSON.stringify(nextSnapshot.params.rows) !== JSON.stringify(currentRows)
+          ? {
+              ...(nextSnapshot.params.activeIndex !== currentActiveIndex
+                ? { activeIndex: nextSnapshot.params.activeIndex }
+                : {}),
+              ...(JSON.stringify(nextSnapshot.params.rows) !==
+              JSON.stringify(currentRows)
+                ? { rows: nextSnapshot.params.rows }
+                : {}),
+            }
           : undefined,
       state: nextSnapshot.state,
     }),
@@ -239,17 +294,13 @@ export default function useTimer({
       state: latestStateRef.current,
     }
     const currentActiveIndex = currentSnapshot.params.activeIndex
+    const currentRows = currentSnapshot.params.rows
     const now = Date.now()
     const nextSnapshot = applyTimerCommandToSnapshot({
-      command:
-        action === "restart"
-          ? { type: "reset" }
-          : action === "activate"
-            ? {
-                activeIndex: currentActiveIndex,
-                type: "activate",
-              }
-            : { type: action },
+      command: getCommandForAction({
+        action,
+        currentActiveIndex,
+      }),
       now,
       snapshot: currentSnapshot,
     })
@@ -267,6 +318,7 @@ export default function useTimer({
       action,
       buildActionPayload({
         currentActiveIndex,
+        currentRows,
         nextSnapshot,
       }),
     )
@@ -286,6 +338,7 @@ export default function useTimer({
       state: latestStateRef.current,
     }
     const currentActiveIndex = currentSnapshot.params.activeIndex
+    const currentRows = currentSnapshot.params.rows
     const nextSnapshot = applyTimerCommandToSnapshot({
       command: {
         activeIndex,
@@ -300,13 +353,11 @@ export default function useTimer({
       "activate",
       buildActionPayload({
         currentActiveIndex,
+        currentRows,
         nextSnapshot,
       }),
     )
   }
-
-  handleActionRef.current = handleAction
-
   useEffect(() => {
     if (
       sequenceAuthority !== "client" ||
@@ -324,10 +375,12 @@ export default function useTimer({
       resolvedState.status === "running" ? "start" : "pause",
       buildActionPayload({
         currentActiveIndex,
+        currentRows: effectiveParams.rows,
         nextSnapshot: resolvedSnapshot,
       }),
     )
   }, [
+    effectiveParams.rows,
     buildActionPayload,
     commitSnapshot,
     onAction,
@@ -338,97 +391,72 @@ export default function useTimer({
   ])
 
   useEffect(() => {
-    const nextActiveIndex = getSequenceRowAt({
-      activeIndex: params.activeIndex,
-      params,
-    }).activeIndex
+    setLocalParams((current) => {
+      const nextActiveIndex = getSequenceRowAt({
+        activeIndex: params.activeIndex,
+        params,
+      }).activeIndex
+      const rowsChanged =
+        JSON.stringify(current.rows) !== JSON.stringify(params.rows)
 
-    setActiveIndex((current) =>
-      current === nextActiveIndex ? current : nextActiveIndex,
-    )
-  }, [params, params.activeIndex])
+      if (
+        current.activeIndex === nextActiveIndex &&
+        current.m === params.m &&
+        current.pc === params.pc &&
+        current.s === params.s &&
+        current.title === params.title &&
+        !rowsChanged
+      ) {
+        return current
+      }
 
-  useGlobalKeyUp((event: KeyboardEvent) => {
+      return {
+        activeIndex: nextActiveIndex,
+        m: params.m,
+        pc: params.pc,
+        rows: params.rows,
+        s: params.s,
+        title: params.title,
+      }
+    })
+  }, [params])
+
+  useGlobalKeyEvent("keydown", (event: KeyboardEvent) => {
     if (!shortcutsEnabled) {
       return
     }
 
-    const timerWindow =
-      typeof window === "undefined"
-        ? null
-        : (window as typeof window & {
-            __timerSpaceShortcutConsumed?: boolean
-          })
-
-    if (isSpaceKey(event.key) && timerWindow?.__timerSpaceShortcutConsumed) {
-      timerWindow.__timerSpaceShortcutConsumed = false
+    const intent = getTimerShortcutIntent(event)
+    if (intent === null) {
       return
     }
 
-    const target = event.target
-    const targetIsTimerShortcutButton =
-      target instanceof HTMLElement &&
-      target.dataset.timerSpaceShortcut === "true"
-
-    if (
-      target instanceof HTMLElement &&
-      target.tagName === "BUTTON" &&
-      (event.key === "Enter" || isSpaceKey(event.key))
-    ) {
-      if (targetIsTimerShortcutButton) {
-        handleAction(isTimedOut ? "restart" : isPaused ? "start" : "pause")
-      }
-
-      return
-    }
-    switch (event.key) {
-      case "r":
-      case "Escape":
-        handleAction("restart")
-        break
-      case "ArrowLeft":
-        handleAction("previous")
-        break
-      case "ArrowRight":
+    switch (intent) {
+      case "decrease-minute":
+        handleAction("decrease-minute")
+        return
+      case "increase-minute":
+        handleAction("increase-minute")
+        return
+      case "next":
         handleAction("next")
-        break
-      case "Enter":
-      case " ":
-      case "Space":
-      case "Spacebar":
-        handleAction(isTimedOut ? "restart" : isPaused ? "start" : "pause")
-        break
-      case "p":
+        return
+      case "pause":
         if (!isTimedOut) {
           handleAction(isPaused ? "start" : "pause")
         }
-        break
+        return
+      case "previous":
+        handleAction("previous")
+        return
+      case "reset":
+        handleAction("restart")
+        return
+      case "toggle":
+        handleAction(isTimedOut ? "restart" : isPaused ? "start" : "pause")
+        return
     }
   })
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-
-    const handleTimerSpaceShortcut = () => {
-      if (!shortcutsEnabled) {
-        return
-      }
-
-      handleActionRef.current(
-        isTimedOut ? "restart" : isPaused ? "start" : "pause",
-      )
-    }
-
-    window.addEventListener("timer-space-shortcut", handleTimerSpaceShortcut)
-    return () => {
-      window.removeEventListener(
-        "timer-space-shortcut",
-        handleTimerSpaceShortcut,
-      )
-    }
-  }, [isPaused, isTimedOut, shortcutsEnabled])
 
   const setState = useCallback(
     ({
@@ -465,6 +493,7 @@ export default function useTimer({
       setIsStarted(() => isStarted)
       setLastUpdatedAt(() => lastUpdatedAt)
       setStatus(() => status)
+      setDurationSeconds(() => durationSeconds)
       setTotalDuration(() => totalDuration)
     },
     [syncStateRef],

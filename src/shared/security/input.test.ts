@@ -235,6 +235,24 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
   )
 })
 
+test("normalizeTimerState preserves configured and runtime durations separately", () => {
+  assert.deepEqual(
+    normalizeTimerState({
+      durationSeconds: 300,
+      elapsedSecondsAtAnchor: 5,
+      elapsedTime: 5,
+      totalDuration: 360,
+    }),
+    {
+      ...DEFAULT_TIMER_STATE,
+      durationSeconds: 300,
+      elapsedSecondsAtAnchor: 5,
+      elapsedTime: 5,
+      totalDuration: 360,
+    },
+  )
+})
+
 test("normalizeRelayClientMessage rejects malformed, oversized, and unexpected payloads", () => {
   assert.equal(normalizeRelayClientMessage("nope"), null)
 
@@ -313,6 +331,41 @@ test("normalizeRelayClientMessage accepts token-based join messages", () => {
       role: "readonly",
       token: "viewer-1",
       type: "join-session",
+    },
+  )
+})
+
+test("normalizeRelayClientMessage accepts control retry joins with access tokens", () => {
+  assert.deepEqual(
+    normalizeRelayClientMessage(
+      JSON.stringify({
+        accessTokens: {
+          control: "control-1",
+          readonly: "viewer-1",
+        },
+        clientId: "client-1",
+        role: "control",
+        snapshot: {
+          params: DEFAULT_SYNC_PARAMS,
+          state: DEFAULT_TIMER_STATE,
+        },
+        token: "control-1",
+        type: "retry-join-session",
+      }),
+    ),
+    {
+      accessTokens: {
+        control: "control-1",
+        readonly: "viewer-1",
+      },
+      clientId: "client-1",
+      role: "control",
+      snapshot: {
+        params: DEFAULT_SYNC_PARAMS,
+        state: DEFAULT_TIMER_STATE,
+      },
+      token: "control-1",
+      type: "retry-join-session",
     },
   )
 })

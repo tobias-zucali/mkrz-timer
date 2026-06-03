@@ -57,6 +57,10 @@ test("buildJoinMessage downgrades readonly reconnects to a standard join", () =>
 
 test("buildJoinMessage only includes retry snapshots for control clients", () => {
   const controlRetryMessage = buildJoinMessage({
+    accessTokens: {
+      control: "control-token",
+      readonly: "readonly-token",
+    },
     clientId: "viewer",
     remoteRole: "control",
     remoteToken: "control-token",
@@ -69,6 +73,10 @@ test("buildJoinMessage only includes retry snapshots for control clients", () =>
   assert.equal(controlRetryMessage.clientId, "viewer")
   assert.equal(controlRetryMessage.role, "control")
   assert.equal(controlRetryMessage.token, "control-token")
+  assert.deepEqual(controlRetryMessage.accessTokens, {
+    control: "control-token",
+    readonly: "readonly-token",
+  })
   assert.deepEqual(controlRetryMessage.snapshot?.params, syncParams)
   assert.equal(
     controlRetryMessage.snapshot?.state.elapsedTime,

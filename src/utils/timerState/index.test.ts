@@ -69,6 +69,42 @@ test("resolveSessionSnapshotAt preserves paused timers without adding elapsed ti
   assert.equal(resolved.state.elapsedTime, 8)
 })
 
+test("resolveSessionSnapshotAt respects runtime-extended total duration while running", () => {
+  const resolved = resolveSessionSnapshotAt(
+    {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 300,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 1_000,
+        currentRepeat: 1,
+        durationSeconds: 300,
+        elapsedSecondsAtAnchor: 300,
+        elapsedTime: 300,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 1_000,
+        revision: 3,
+        status: "running",
+        totalDuration: 360,
+      },
+    },
+    1_000,
+  )
+
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.durationSeconds, 300)
+  assert.equal(resolved.state.totalDuration, 360)
+  assert.equal(resolved.state.elapsedTime, 300)
+})
+
 test("stampTimerStateAt refreshes the timestamp with the resolved current state", () => {
   const stamped = stampTimerStateAt(
     {
@@ -446,4 +482,194 @@ test("applyTimerCommandToSnapshot ignores previous at the first step", () => {
   assert.equal(resolved.params.activeIndex, 0)
   assert.equal(resolved.state.status, "idle")
   assert.equal(resolved.state.revision, 0)
+})
+
+test("applyTimerCommandToSnapshot increases idle step duration by one minute", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "increase-minute" },
+    now: 5_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 30,
+          },
+        ],
+      },
+      state: DEFAULT_TIMER_STATE,
+    },
+  })
+
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 90)
+  assert.equal(resolved.params.m, "01")
+  assert.equal(resolved.params.s, "30")
+  assert.equal(resolved.state.status, "idle")
+  assert.equal(resolved.state.totalDuration, 90)
+})
+
+test("applyTimerCommandToSnapshot keeps idle step duration at one minute minimum", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "decrease-minute" },
+    now: 5_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 30,
+          },
+        ],
+      },
+      state: DEFAULT_TIMER_STATE,
+    },
+  })
+
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 60)
+  assert.equal(resolved.params.m, "01")
+  assert.equal(resolved.params.s, "00")
+  assert.equal(resolved.state.status, "idle")
+  assert.equal(resolved.state.totalDuration, 60)
+})
+
+test("applyTimerCommandToSnapshot adjusts running remaining time by one minute", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "increase-minute" },
+    now: 10_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 300,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 4_000,
+        currentRepeat: 1,
+        durationSeconds: 300,
+        elapsedSecondsAtAnchor: 120,
+        elapsedTime: 120,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 4_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 300,
+      },
+    },
+  })
+
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.durationSeconds, 300)
+  assert.equal(resolved.state.elapsedSecondsAtAnchor, 126)
+  assert.equal(resolved.state.totalDuration, 360)
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 300)
+})
+
+test("applyTimerCommandToSnapshot extends running time without mutating row duration near the start", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "increase-minute" },
+    now: 10_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            totalSeconds: 300,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        anchorServerTimestamp: 4_000,
+        currentRepeat: 1,
+        durationSeconds: 300,
+        elapsedSecondsAtAnchor: 10,
+        elapsedTime: 10,
+        isPaused: false,
+        isStarted: true,
+        lastUpdatedAt: 4_000,
+        revision: 1,
+        status: "running",
+        totalDuration: 300,
+      },
+    },
+  })
+
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.durationSeconds, 300)
+  assert.equal(resolved.state.elapsedSecondsAtAnchor, 16)
+  assert.equal(resolved.state.totalDuration, 360)
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 300)
+})
+
+test("applyTimerCommandToSnapshot restores a finished stop step to one minute and restarts it", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "increase-minute" },
+    now: 5_000,
+    snapshot: {
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [
+          {
+            ...DEFAULT_SYNC_PARAMS.rows[0],
+            endBehavior: "stop",
+            totalSeconds: 30,
+          },
+        ],
+      },
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        currentRepeat: 1,
+        durationSeconds: 30,
+        elapsedSecondsAtAnchor: 30,
+        elapsedTime: 30,
+        isPaused: true,
+        isStarted: true,
+        lastUpdatedAt: 4_000,
+        revision: 2,
+        status: "finished",
+        totalDuration: 30,
+      },
+    },
+  })
+
+  assert.equal(resolved.params.rows[0]?.totalSeconds, 60)
+  assert.equal(resolved.state.status, "running")
+  assert.equal(resolved.state.elapsedSecondsAtAnchor, 0)
+  assert.equal(resolved.state.totalDuration, 60)
+})
+
+test("applyTimerCommandToSnapshot ignores decrease-minute on a finished stop step", () => {
+  const resolved = applyTimerCommandToSnapshot({
+    command: { type: "decrease-minute" },
+    now: 5_000,
+    snapshot: {
+      params: DEFAULT_SYNC_PARAMS,
+      state: {
+        ...DEFAULT_TIMER_STATE,
+        currentRepeat: 1,
+        durationSeconds: 60,
+        elapsedSecondsAtAnchor: 60,
+        elapsedTime: 60,
+        isPaused: true,
+        isStarted: true,
+        lastUpdatedAt: 4_000,
+        revision: 2,
+        status: "finished",
+        totalDuration: 60,
+      },
+    },
+  })
+
+  assert.equal(resolved.state.revision, 2)
+  assert.equal(resolved.state.status, "finished")
+  assert.equal(resolved.state.elapsedSecondsAtAnchor, 60)
 })

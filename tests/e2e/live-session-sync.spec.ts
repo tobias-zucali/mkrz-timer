@@ -1,4 +1,4 @@
-import { expect, type BrowserContext, type Page, test } from "@playwright/test"
+import type { BrowserContext, Page } from "@playwright/test"
 
 import {
   closeSettingsOverlay,
@@ -21,6 +21,7 @@ import {
   updateTimerSettings,
   waitForRemoteCluster,
 } from "./live-session.helpers"
+import { expect, test } from "./test"
 
 async function openIsolatedClient(
   page: Page,
@@ -74,6 +75,61 @@ test(
     await Promise.all([page, controlClient].map(expectTimerPaused))
   },
 )
+
+test("keeps runtime minute extensions stable across live-session sync", async ({
+  page,
+}) => {
+  test.setTimeout(60_000)
+
+  const clientUrl = await enableLiveSession(page)
+  const controlClient = await openClientFromSettings(page, clientUrl)
+
+  await closeSettingsOverlay(page)
+
+  await waitForRemoteCluster([page, controlClient], {
+    clientCount: 1,
+    mainConnectionCount: 1,
+    message:
+      "remote cluster should stabilize before asserting runtime extension sync",
+  })
+
+  await page.getByRole("button", { name: "START" }).click()
+  await Promise.all([page, controlClient].map(expectTimerRunning))
+
+  const secondsBeforeExtension = await getDisplayedSeconds(page)
+
+  await page.keyboard.press("ArrowUp")
+  await expect
+    .poll(() => getDisplayedSeconds(page), {
+      message:
+        "controller timer should keep the runtime +1 minute extension in live sessions",
+    })
+    .toBeGreaterThan(secondsBeforeExtension + 55)
+
+  await expect
+    .poll(async () => {
+      const [hostSeconds, clientSeconds] = await Promise.all([
+        getDisplayedSeconds(page),
+        getDisplayedSeconds(controlClient),
+      ])
+
+      return {
+        clientSeconds,
+        hostSeconds,
+      }
+    })
+    .toMatchObject({
+      hostSeconds: expect.any(Number),
+    })
+
+  await expectTimersToMatch([page, controlClient], undefined, 1)
+  await expect
+    .poll(() => getDisplayedSeconds(controlClient), {
+      message:
+        "connected control clients should keep the runtime +1 minute extension too",
+    })
+    .toBeGreaterThan(60)
+})
 
 test("keeps state consistent when multiple peers control the timer quickly", async ({
   page,

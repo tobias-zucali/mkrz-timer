@@ -42,6 +42,12 @@ export type TimerCommand =
       type: "previous"
     }
   | {
+      type: "increase-minute"
+    }
+  | {
+      type: "decrease-minute"
+    }
+  | {
       activeIndex: number
       type: "activate"
     }
@@ -95,6 +101,7 @@ export type RelayClientMessage =
     }
   | {
       type: "retry-join-session"
+      accessTokens?: RemoteAccessTokenSet
       clientId: string
       role: RemoteAccessRole
       snapshot?: SessionSnapshot

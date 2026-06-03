@@ -21,8 +21,11 @@ import {
   clampTimerSequenceIndex,
   DEFAULT_TIMER_PRIMARY_COLOR,
   getActiveTimerSequenceRow,
+  MAX_TIMER_DURATION_SECONDS,
   MAX_TIMER_SEQUENCE_REPEAT_COUNT,
 } from "../timerSequence.ts"
+
+export { MAX_TIMER_DURATION_SECONDS } from "../timerSequence.ts"
 
 export const DEFAULT_SYNC_PARAMS: SyncParams = {
   activeIndex: 0,
@@ -57,12 +60,10 @@ export const MAX_CLIENT_ID_LENGTH = 64
 export const MAX_SESSION_ID_LENGTH = 64
 export const MAX_REMOTE_ACCESS_TOKEN_LENGTH = 64
 export const MAX_TITLE_LENGTH = 64
-export const MAX_TIMER_MINUTES = 999
+export const MAX_TIMER_MINUTES = Math.floor(MAX_TIMER_DURATION_SECONDS / 60)
 export const MAX_TIMER_SECONDS = 59
-export const MAX_TIMER_DURATION_SECONDS =
-  MAX_TIMER_MINUTES * 60 + MAX_TIMER_SECONDS
 export const MAX_REVISION = 1_000_000_000
-export const MAX_ELAPSED_TIME_SECONDS = 7 * 24 * 60 * 60
+export const MAX_ELAPSED_TIME_SECONDS = MAX_TIMER_DURATION_SECONDS
 export const MAX_TIMER_TIMESTAMP_MS = 9_999_999_999_999
 
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
@@ -503,6 +504,13 @@ export const normalizeTimerState = (
   fallback: SessionSnapshot["state"] = DEFAULT_TIMER_STATE,
 ): SessionSnapshot["state"] => {
   const state = isObject(value) ? value : {}
+  const durationSeconds = normalizeFiniteNumber({
+    fallback: fallback.durationSeconds,
+    floor: true,
+    max: MAX_TIMER_DURATION_SECONDS,
+    min: 0,
+    value: state.durationSeconds ?? state.totalDuration,
+  })
   const totalDuration = normalizeFiniteNumber({
     fallback: fallback.totalDuration,
     floor: true,
@@ -526,16 +534,16 @@ export const normalizeTimerState = (
       min: 1,
       value: state.currentRepeat,
     }),
-    durationSeconds: totalDuration,
+    durationSeconds,
     elapsedSecondsAtAnchor: normalizeFiniteNumber({
       fallback: fallback.elapsedSecondsAtAnchor ?? fallback.elapsedTime ?? 0,
-      max: MAX_ELAPSED_TIME_SECONDS,
+      max: totalDuration,
       min: 0,
       value: state.elapsedSecondsAtAnchor ?? state.elapsedTime,
     }),
     elapsedTime: normalizeFiniteNumber({
       fallback: fallback.elapsedTime,
-      max: MAX_ELAPSED_TIME_SECONDS,
+      max: totalDuration,
       min: 0,
       value: state.elapsedTime ?? state.elapsedSecondsAtAnchor,
     }),
@@ -587,6 +595,8 @@ const normalizeTimerCommand = (value: unknown): TimerCommand | null => {
     case "reset":
     case "next":
     case "previous":
+    case "increase-minute":
+    case "decrease-minute":
       return { type: value.type }
     case "activate": {
       if (!hasOnlyKeys(value, ["activeIndex", "type"])) {
@@ -742,6 +752,7 @@ export const normalizeRelayClientMessage = (
     case "retry-join-session": {
       if (
         !hasOnlyKeys(parsedValue, [
+          "accessTokens",
           "clientId",
           "role",
           "snapshot",
@@ -755,11 +766,19 @@ export const normalizeRelayClientMessage = (
       const clientId = normalizeClientId(parsedValue.clientId)
       const role = normalizeRemoteAccessRole(parsedValue.role)
       const token = normalizeRemoteAccessToken(parsedValue.token)
+      const accessTokens =
+        parsedValue.accessTokens === undefined
+          ? undefined
+          : normalizeRemoteAccessTokenSet(parsedValue.accessTokens)
       if (clientId === null || role === null || token === null) {
+        return null
+      }
+      if (parsedValue.accessTokens !== undefined && accessTokens === null) {
         return null
       }
 
       return {
+        ...(accessTokens ? { accessTokens } : {}),
         clientId,
         role,
         token,
