@@ -14,7 +14,7 @@ function buildTimerPath({
   seconds: number
   title?: string
 }) {
-  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
+  return `/en?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
 }
 
 const timerUrl = buildTimerPath({ seconds: 60 })
@@ -48,6 +48,7 @@ export type RemoteClientUrls = {
 
 type ScreenshotMaskOptions = {
   fullPage?: boolean
+  maxDiffPixelRatio?: number
   message?: string
   name: string
 }
@@ -95,7 +96,12 @@ export async function openTimer(page: Page, seconds = 3, baseUrl?: string) {
 
 export async function expectScreenshotWithoutDebugInfo(
   page: Page,
-  { fullPage = false, message, name }: ScreenshotMaskOptions,
+  {
+    fullPage = false,
+    maxDiffPixelRatio = 0.01,
+    message,
+    name,
+  }: ScreenshotMaskOptions,
 ) {
   const styleTag = await page.addStyleTag({
     content: `${DEBUG_INFO_SELECTORS.join(", ")} { display: none !important; }`,
@@ -104,7 +110,7 @@ export async function expectScreenshotWithoutDebugInfo(
   try {
     await expect(page, message).toHaveScreenshot(name, {
       fullPage,
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio,
     })
   } finally {
     await styleTag.evaluate((node) => {

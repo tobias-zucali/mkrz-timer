@@ -28,6 +28,14 @@ const nextConfig: NextConfig = {
               destination: "/control",
               source: "/control/:token+",
             },
+            {
+              destination: "/:locale/view",
+              source: "/:locale(en|de)/view/:token+",
+            },
+            {
+              destination: "/:locale/control",
+              source: "/:locale(en|de)/control/:token+",
+            },
           ]
         },
       }

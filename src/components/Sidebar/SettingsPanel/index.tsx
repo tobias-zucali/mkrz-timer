@@ -4,6 +4,7 @@ import { useId } from "react"
 import { useTranslations } from "next-intl"
 
 import HelpText from "@/components/HelpText"
+import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
 import SoundPreviewField from "@/components/SoundPreviewField"
 import { type TimerFinishedSoundId } from "@/shared/timerSettings"
 import ActionButton from "@/utils/ActionButton"
@@ -34,6 +35,7 @@ export default function SettingsPanel({
 
   return (
     <div className="space-y-6">
+      <LocaleSwitcher />
       <section className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
@@ -67,7 +69,10 @@ export default function SettingsPanel({
             {t("announcementsDescription")}
           </p>
         </div>
-        <div className="space-y-4">
+        <div
+          className="space-y-4 rounded-2xl border
+              border-foreground/10 bg-foreground/2 p-4"
+        >
           <SoundPreviewField
             label={t("finishedSound")}
             onChange={(value) => handleChange("snd", value)}
@@ -76,8 +81,7 @@ export default function SettingsPanel({
           />
           <label
             className="
-              flex cursor-pointer items-start gap-3 rounded-2xl border
-              border-foreground/10 bg-foreground/2 p-4
+              flex cursor-pointer items-start gap-3
             "
             htmlFor={ttsId}
           >

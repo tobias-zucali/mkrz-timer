@@ -23,10 +23,10 @@
     - option "7"
     - option "8"
     - option "9"
-- text: End Behavior
-- combobox "End Behavior":
-    - option "Stop after this step" [selected]
-    - option "Continue to next step"
+- text: After this step
+- combobox "After this step":
+    - option "Stop timer" [selected]
+    - option "Start next step"
 - 'textbox "Color #d61f69"'
 - text: "Color #d61f69"
 - button "Add step"

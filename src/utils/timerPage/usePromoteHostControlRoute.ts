@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 
+import type { AppLocale } from "@/i18n/config"
 import { buildRemotePath } from "@/utils/liveSession/route"
 import {
   pauseUrlSyncDuringRemoteRouteTransition,
@@ -11,11 +12,13 @@ import {
 export default function usePromoteHostControlRoute({
   accessControlToken,
   hasRecentlyEndedLiveSession,
+  locale,
   onLocationReplaced,
   remoteRole,
 }: {
   accessControlToken?: string
   hasRecentlyEndedLiveSession: boolean
+  locale: AppLocale
   onLocationReplaced: () => void
   remoteRole: "control" | "readonly" | null
 }) {
@@ -30,6 +33,7 @@ export default function usePromoteHostControlRoute({
     }
 
     const controlPath = buildRemotePath({
+      locale,
       role: "control",
       token: accessControlToken,
     })
@@ -50,6 +54,7 @@ export default function usePromoteHostControlRoute({
   }, [
     accessControlToken,
     hasRecentlyEndedLiveSession,
+    locale,
     onLocationReplaced,
     remoteRole,
   ])

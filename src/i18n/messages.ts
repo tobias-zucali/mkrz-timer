@@ -10,6 +10,11 @@ export const messagesByLocale = {
     ...componentMessagesByLocale.en,
     ...utilityMessagesByLocale.en,
   },
+  de: {
+    ...featureMessagesByLocale.de,
+    ...componentMessagesByLocale.de,
+    ...utilityMessagesByLocale.de,
+  },
 } as const satisfies Record<AppLocale, object>
 
 export type AppMessages = (typeof messagesByLocale)[AppLocale]

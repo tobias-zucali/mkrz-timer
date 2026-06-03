@@ -97,6 +97,19 @@ test(
   },
 )
 
+test("redirects legacy non-localized routes to the English locale", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await expect(page).toHaveURL(/\/en$/)
+
+  await page.goto("/view/viewer-token")
+  await expect(page).toHaveURL(/\/en\/view\/viewer-token$/)
+
+  await page.goto("/control/controller-token")
+  await expect(page).toHaveURL(/\/en\/control\/controller-token$/)
+})
+
 test("matches sidebar panel aria structures", async ({ page }) => {
   await openTimer(page, 3)
 
@@ -113,7 +126,7 @@ test("matches sidebar panel aria structures", async ({ page }) => {
     await page.getByRole("textbox", { name: "Local link" }).inputValue(),
   )
 
-  expect(localLink.pathname).toBe("/")
+  expect(localLink.pathname).toBe("/en")
   expect(localLink.searchParams.get("v")).toBe("1")
   expect(localLink.searchParams.get("t")).toBeTruthy()
   expect(localLink.searchParams.get("a")).toBe("0")
@@ -203,6 +216,24 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
+})
+
+test("switches languages without losing the current route state", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await openSidebarPanel(page, "Settings")
+
+  await page.getByTestId("language-switcher").selectOption("de")
+  await expect(page).toHaveURL(/\/de\?v=1&t=/)
+
+  await page.getByRole("button", { name: "Teilen öffnen" }).click()
+  await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
+  const localLink = new URL(
+    await page.getByRole("textbox", { name: "Lokaler Link" }).inputValue(),
+  )
+
+  expect(localLink.pathname).toBe("/de")
 })
 
 test("keeps timer shortcuts predictable inside the sidebar", async ({

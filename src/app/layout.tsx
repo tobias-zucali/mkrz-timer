@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+import { getLocale } from "next-intl/server"
+
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
-import { defaultAppLocale } from "@/i18n/config"
+import { resolveAppLocale } from "@/i18n/locale"
 import { getMessagesForLocale } from "@/i18n/messages"
 
 const geistSans = Geist({
@@ -16,24 +18,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-const appShellMessages = getMessagesForLocale(defaultAppLocale).AppShell
-
-export const metadata: Metadata = {
-  title: appShellMessages.metadata.title,
-  description: appShellMessages.metadata.description,
-}
-
 export const viewport: Viewport = {
   themeColor: "#dddddd",
 }
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = resolveAppLocale(await getLocale())
+  const appShellMessages = getMessagesForLocale(locale).AppShell
+
+  return {
+    title: appShellMessages.metadata.title,
+    description: appShellMessages.metadata.description,
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = resolveAppLocale(await getLocale())
+  const appShellMessages = getMessagesForLocale(locale).AppShell
+
   return (
-    <html lang={defaultAppLocale} className="h-full" suppressHydrationWarning>
+    <html lang={locale} className="h-full" suppressHydrationWarning>
       <head>
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/first-paint-theme.js" />

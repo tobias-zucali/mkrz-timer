@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { defaultAppLocale } from "./config.ts"
+import { appLocales, defaultAppLocale } from "./config.ts"
 import { getMessagesForLocale, messagesByLocale } from "./messages.ts"
 import { createAppTranslator } from "./translator.ts"
 
@@ -20,7 +20,7 @@ test("loads the english app messages bundle", () => {
 })
 
 test("all configured locales have message bundles", () => {
-  assert.deepEqual(Object.keys(messagesByLocale), [defaultAppLocale])
+  assert.deepEqual(Object.keys(messagesByLocale), appLocales)
 })
 
 test("can load a narrowed message subset for the timer route", () => {
@@ -42,5 +42,17 @@ test("critical translation keys resolve from the english bundle", () => {
   assert.equal(
     t("TimerPage.dialogs.connectFailedDetail"),
     "Could not connect to the remote relay. Check the relay URL and try again.",
+  )
+})
+
+test("critical translation keys resolve from the german bundle", () => {
+  const t = createAppTranslator("de")
+
+  assert.equal(t("AppShell.footer.credit"), "by mkrz")
+  assert.equal(t("Sidebar.entries.share"), "Teilen")
+  assert.equal(t("Timer.stepTitleWithoutName", { step: 2 }), "Schritt 2")
+  assert.equal(
+    t("TimerPage.dialogs.connectFailedDetail"),
+    "Verbindung zum Remote-Relay konnte nicht hergestellt werden. Überprüfen Sie die Relay-URL und versuchen Sie es erneut.",
   )
 })

@@ -1,0 +1,10 @@
+{
+  "title": "Titel",
+  "minutes": "Minuten",
+  "seconds": "Sekunden",
+  "repetitions": "Wiederholungen",
+  "endBehavior": "Nach diesem Schritt",
+  "color": "Farbe",
+  "endBehaviorStop": "Timer stoppen",
+  "endBehaviorContinue": "Nächsten Schritt starten"
+}

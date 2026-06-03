@@ -11,8 +11,9 @@ For the quick project overview, start with the [README](../README.md).
 
 Live sessions are relay-backed. There is no dedicated browser host.
 
-- `/view/<readonlyToken>` is a readonly viewer link.
-- `/control/<controlToken>` is a control-capable link.
+- `/<locale>/view/<readonlyToken>` is a readonly viewer link.
+- `/<locale>/control/<controlToken>` is a control-capable link.
+- Legacy unprefixed `/view/<readonlyToken>` and `/control/<controlToken>` URLs redirect to the English-prefixed equivalent.
 - Viewer and control capabilities must remain strictly separated.
 - The relay owns the canonical timer snapshot and participant roster.
 - Live session URLs may include the canonical timer-state params `v`, `t`, and `a`.

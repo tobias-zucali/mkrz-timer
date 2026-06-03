@@ -1,6 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
+
 import { ParamStyleContext } from "@/components/ParamStyledBody"
+import { stripLocalePrefix } from "@/i18n/locale"
 import { normalizeQueryParams, normalizeTitle } from "@/shared/security/input"
 import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
 import {
@@ -66,7 +68,8 @@ export default function useParams() {
     [searchParamsString],
   )
   const isSearchParamsEmpty = searchParams.size === 0
-  const isReadonlyRemotePath = pathname.startsWith("/view")
+  const normalizedPathname = stripLocalePrefix(pathname)
+  const isReadonlyRemotePath = normalizedPathname.startsWith("/view")
   const allowTimerState = !isReadonlyRemotePath
   const allowPageTitle = !isReadonlyRemotePath
   const parsedTimerUrlState = useMemo(
@@ -188,8 +191,12 @@ export default function useParams() {
             typeof window === "undefined"
               ? allowTimerState
               : !(
-                  window.location.pathname.startsWith("/view") ||
-                  window.location.pathname.startsWith("/control")
+                  stripLocalePrefix(window.location.pathname).startsWith(
+                    "/view",
+                  ) ||
+                  stripLocalePrefix(window.location.pathname).startsWith(
+                    "/control",
+                  )
                 ),
           searchParams:
             typeof window === "undefined"

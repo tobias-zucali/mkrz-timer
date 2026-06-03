@@ -9,6 +9,14 @@ import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
 import Sidebar from "./index"
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en",
+  useRouter: () => ({
+    replace: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+}))
+
 function buildTimerPanel(pageTitle = "") {
   return {
     activeIndex: 0,

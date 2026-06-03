@@ -644,7 +644,7 @@ test("keeps paused step switches silent and auto-advances running sequences", as
 
   await openSidebarPanel(page, "Timer")
   const timerPanel = page.getByTestId("sidebar-panel-timer")
-  await timerPanel.getByLabel("End Behavior").selectOption("advance")
+  await timerPanel.getByLabel("After this step").selectOption("advance")
   await timerPanel.getByRole("button", { name: "Add step" }).click()
   await timerPanel.getByLabel("Seconds").fill("05")
 
