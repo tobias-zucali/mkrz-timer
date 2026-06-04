@@ -1,3 +1,4 @@
+- alert
 - main "mkrz timer":
   - status "Timer announcements"
   - region "Timer":
@@ -6,7 +7,6 @@
     - paragraph: Error
     - paragraph: Live session link is malformed. Check the URL and try again.
   - button "Share viewer link"
-- button "Open session status. Live session, Error, VIEWER access"
+- button "Open session status. Live session, Error, VIEWER access": Error VIEWER
 - link "by mkrz":
   - /url: https://www.mkrz.at/
-- alert

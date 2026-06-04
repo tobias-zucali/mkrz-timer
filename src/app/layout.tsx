@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { getLocale } from "next-intl/server"
 
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
-import { resolveAppLocale } from "@/i18n/locale"
-import { getMessagesForLocale } from "@/i18n/messages"
+import { defaultAppLocale } from "@/i18n/config"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,14 +20,9 @@ export const viewport: Viewport = {
   themeColor: "#dddddd",
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = resolveAppLocale(await getLocale())
-  const appShellMessages = getMessagesForLocale(locale).AppShell
-
-  return {
-    title: appShellMessages.metadata.title,
-    description: appShellMessages.metadata.description,
-  }
+export const metadata: Metadata = {
+  title: "mkrz timer",
+  description: "An accessible presentation timer with live sharing controls.",
 }
 
 export default async function RootLayout({
@@ -37,11 +30,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = resolveAppLocale(await getLocale())
-  const appShellMessages = getMessagesForLocale(locale).AppShell
-
   return (
-    <html lang={locale} className="h-full" suppressHydrationWarning>
+    <html lang={defaultAppLocale} className="h-full" suppressHydrationWarning>
       <head>
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/first-paint-theme.js" />
@@ -68,15 +58,6 @@ export default async function RootLayout({
       >
         <ServiceWorkerRegistration />
         {children}
-        <a
-          className="
-            absolute right-4 bottom-4 underline
-            hover:text-primary
-          "
-          href="https://www.mkrz.at/"
-        >
-          {appShellMessages.footer.credit}
-        </a>
       </ParamStyledBody>
     </html>
   )

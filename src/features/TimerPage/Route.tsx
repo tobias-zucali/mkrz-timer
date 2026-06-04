@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { NextIntlClientProvider } from "next-intl"
 
 import RedirectCurrentPathToLocale from "@/i18n/RedirectCurrentPathToLocale"
@@ -34,7 +35,9 @@ export default function TimerPageRoute({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       {!isAppLocale(requestedLocale) ? (
-        <RedirectCurrentPathToLocale locale={locale} />
+        <Suspense fallback={null}>
+          <RedirectCurrentPathToLocale locale={locale} />
+        </Suspense>
       ) : null}
       <TimerPage />
     </NextIntlClientProvider>
