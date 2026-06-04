@@ -1,1 +1,1 @@
-export { default } from "../LegacyRedirectPage"
+export { default } from "../BrowserLocaleRedirectPage"

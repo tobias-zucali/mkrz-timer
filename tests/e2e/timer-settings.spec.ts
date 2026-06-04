@@ -97,7 +97,7 @@ test(
   },
 )
 
-test("redirects legacy non-localized routes to the English locale", async ({
+test("redirects unprefixed routes to the browser locale with English fallback", async ({
   page,
 }) => {
   await page.goto("/")
