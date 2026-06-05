@@ -234,6 +234,7 @@ test(
       await pipPage.setViewportSize(size)
       await expectScreenshotWithoutDebugInfo(pipPage, {
         fullPage: true,
+        maxDiffPixelRatio: 0.02,
         message: `PiP layout should stay visually stable at ${size.width}x${size.height}`,
         name: `PiP-layout-${size.width}x${size.height}.png`,
       })

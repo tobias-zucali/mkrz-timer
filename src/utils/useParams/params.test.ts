@@ -38,7 +38,7 @@ test("serializeParamValue strips hashes only from color params", () => {
 test("buildPathWithParams serializes timer state with v=1&t rows", () => {
   assert.equal(
     buildPathWithParams(buildParams()),
-    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop%20timer",
+    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
   )
 })
 
@@ -64,7 +64,16 @@ test("buildPathWithParams preserves non-timer params alongside the new timer for
         pathname: "/control/token-1",
       },
     ),
-    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&title=Workshop%20timer&settings=1",
+    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&title=Workshop+timer&settings=1",
+  )
+})
+
+test("buildPathWithParams preserves localized route prefixes", () => {
+  assert.equal(
+    buildPathWithParams(buildParams(), {
+      pathname: "/de/control/token-1",
+    }),
+    "/de/control/token-1?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
   )
 })
 
@@ -105,11 +114,23 @@ test("getRemoteSessionOnlyOmitKeys keeps timer params on control routes", () => 
     getRemoteSessionOnlyOmitKeys(buildParams(), [], "/control/control-token"),
     ["a", "pid"],
   )
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(
+      buildParams(),
+      [],
+      "/de/control/control-token",
+    ),
+    ["a", "pid"],
+  )
 })
 
 test("getRemoteSessionOnlyOmitKeys keeps timer params on readonly routes", () => {
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(buildParams(), [], "/view/viewer-token"),
+    ["a", "pid", "title"],
+  )
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(buildParams(), [], "/de/view/viewer-token"),
     ["a", "pid", "title"],
   )
 })

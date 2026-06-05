@@ -2,8 +2,10 @@
 
 import type { RefObject } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 
+import type { AppLocale } from "@/i18n/config"
+import { localizePathname } from "@/i18n/locale"
 import type { AppTranslationFn } from "@/i18n/translator"
 import { getExitConfirmationDialog } from "@/utils/timerPage/dialogs"
 import useParams from "@/utils/useParams"
@@ -56,6 +58,7 @@ export default function useLiveSessionDialogs({
   setState: (state: TimerState) => void
   syncParamsRef: RefObject<SyncParams>
 }) {
+  const locale = useLocale() as AppLocale
   const t = useTranslations("TimerPage.dialogs")
   const [isSwitchingToLocalMode, setIsSwitchingToLocalMode] = useState(false)
   const [pendingExitConfirmation, setPendingExitConfirmation] = useState<
@@ -78,7 +81,7 @@ export default function useLiveSessionDialogs({
         paramData.getPathWithParams({
           inherit: false,
           params: syncParamsRef.current,
-          pathname: "/",
+          pathname: localizePathname("/", locale),
         }),
       )
       onLocationReplaced()
@@ -97,6 +100,7 @@ export default function useLiveSessionDialogs({
     setHasRecentlyEndedLiveSession,
     sessionId,
     syncParamsRef,
+    locale,
   ])
 
   useEffect(() => {
@@ -150,7 +154,7 @@ export default function useLiveSessionDialogs({
         paramData.getPathWithParams({
           inherit: false,
           params: snapshot.params,
-          pathname: "/",
+          pathname: localizePathname("/", locale),
         }),
       )
       onLocationReplaced()
@@ -164,6 +168,7 @@ export default function useLiveSessionDialogs({
     paramData,
     setState,
     setHasRecentlyEndedLiveSession,
+    locale,
   ])
 
   const recoveryDialog = useMemo(() => {

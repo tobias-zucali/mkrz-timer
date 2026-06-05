@@ -10,7 +10,7 @@ import {
   useState,
 } from "react"
 import { usePathname } from "next/navigation"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 
 import ActionDialog from "@/components/ActionDialog"
 import Sidebar from "@/components/Sidebar"
@@ -19,6 +19,7 @@ import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
 import TimerAnnouncements from "@/features/TimerPage/TimerAnnouncements"
+import type { AppLocale } from "@/i18n/config"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
 import { normalizeSyncParams } from "@/shared/security/input"
@@ -50,6 +51,7 @@ export default function TimerPage() {
 }
 
 function TimerApp() {
+  const locale = useLocale() as AppLocale
   const t = useTranslations("TimerPage.page")
   const tAppShell = useTranslations("AppShell")
   const sidebarOffcanvasId = useId()
@@ -410,6 +412,7 @@ function TimerApp() {
   usePromoteHostControlRoute({
     accessControlToken: accessTokens?.control,
     hasRecentlyEndedLiveSession,
+    locale,
     onLocationReplaced: handleLocationReplaced,
     remoteRole,
   })
@@ -468,6 +471,7 @@ function TimerApp() {
     : getSettingsOnlyOmitKeys()
   const timerUrl = paramData.getUrlWithParams({
     omit: settingsOmitKeys,
+    pathname: `/${locale}`,
   })
   const readonlyClientUrl =
     liveSession.accessTokens && typeof window !== "undefined"
@@ -476,11 +480,11 @@ function TimerApp() {
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/view/${liveSession.accessTokens.readonly}`,
+              `/${locale}/view/${liveSession.accessTokens.readonly}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/view/${liveSession.accessTokens.readonly}`,
+          pathname: `/${locale}/view/${liveSession.accessTokens.readonly}`,
         })
       : ""
   const controlClientUrl =
@@ -490,11 +494,11 @@ function TimerApp() {
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/control/${liveSession.accessTokens.control}`,
+              `/${locale}/control/${liveSession.accessTokens.control}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/control/${liveSession.accessTokens.control}`,
+          pathname: `/${locale}/control/${liveSession.accessTokens.control}`,
         })
       : ""
 

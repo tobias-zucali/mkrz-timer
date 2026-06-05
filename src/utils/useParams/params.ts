@@ -1,3 +1,4 @@
+import { stripLocalePrefix } from "../../i18n/locale.ts"
 import {
   normalizeSyncParamPatch,
   normalizeTitle,
@@ -70,12 +71,16 @@ export const getRemoteSessionOnlyOmitKeys = (
 ) => {
   void _unusedInitialParamKeys
   void currentParams
+  const normalizedPathname = pathname ? stripLocalePrefix(pathname) : pathname
 
-  if (!pathname || !/^\/(?:view|control)(?:\/|$)/.test(pathname)) {
+  if (
+    !normalizedPathname ||
+    !/^\/(?:view|control)(?:\/|$)/.test(normalizedPathname)
+  ) {
     return []
   }
 
-  if (pathname.startsWith("/view/")) {
+  if (normalizedPathname.startsWith("/view/")) {
     return [...readonlyRemoteOnlyOmitKeys]
   }
 

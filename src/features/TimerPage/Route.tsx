@@ -1,6 +1,8 @@
+import { Suspense } from "react"
 import { NextIntlClientProvider } from "next-intl"
 
-import { defaultAppLocale } from "@/i18n/config"
+import RedirectCurrentPathToLocale from "@/i18n/RedirectCurrentPathToLocale"
+import { isAppLocale, resolveAppLocale } from "@/i18n/locale"
 import { getMessagesForLocale } from "@/i18n/messages"
 
 import TimerPage from "./index"
@@ -22,11 +24,21 @@ const timerPageNamespaces = [
   "UrlCopyField",
 ] as const
 
-export default function TimerPageRoute() {
-  const messages = getMessagesForLocale(defaultAppLocale, timerPageNamespaces)
+export default function TimerPageRoute({
+  requestedLocale,
+}: {
+  requestedLocale: string
+}) {
+  const locale = resolveAppLocale(requestedLocale)
+  const messages = getMessagesForLocale(locale, timerPageNamespaces)
 
   return (
-    <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {!isAppLocale(requestedLocale) ? (
+        <Suspense fallback={null}>
+          <RedirectCurrentPathToLocale locale={locale} />
+        </Suspense>
+      ) : null}
       <TimerPage />
     </NextIntlClientProvider>
   )

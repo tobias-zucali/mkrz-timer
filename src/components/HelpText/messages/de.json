@@ -1,0 +1,12 @@
+{
+  "toggleShortcut": "Eingabe / Leertaste",
+  "toggleDescription": "Timer starten oder pausieren und nach Ablauf zurücksetzen.",
+  "pauseShortcut": "P",
+  "pauseDescription": "Timer starten oder pausieren, ohne einen beendeten Schritt zurückzusetzen.",
+  "resetShortcut": "R / Escape",
+  "resetDescription": "Den Timer zurücksetzen.",
+  "navigateShortcut": "Pfeil links / rechts",
+  "navigateDescription": "Zum vorherigen oder nächsten Schritt wechseln.",
+  "adjustShortcut": "Pfeil hoch / runter",
+  "adjustDescription": "Eine Minute hinzufügen oder entfernen."
+}

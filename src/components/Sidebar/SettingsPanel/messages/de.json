@@ -1,0 +1,21 @@
+{
+  "appearanceHeading": "Darstellung",
+  "appearanceDescription": "Passen Sie die Farben des Timers an, die die Uhr umrahmen.",
+  "background": "Hintergrund",
+  "foreground": "Vordergrund",
+  "languageHeading": "Sprache",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "announcementsHeading": "Sprache & Ton",
+  "announcementsDescription": "Konfigurieren Sie Sprachausgabe und den Ton, der abgespielt wird, wenn der Timer abgelaufen ist.",
+  "speakAnnouncements": "Sprachausgabe",
+  "finishedSound": "Timer-Signal",
+  "previewSound": "Ton abspielen",
+  "floatingHeading": "Floating Timer",
+  "floatingDescription": "Einen kompakten Timer über anderen Fenstern sichtbar halten.",
+  "floatingOpen": "Floating Timer öffnen",
+  "floatingOpenState": "Floating Timer geöffnet",
+  "floatingUnsupported": "Der Floating Timer ist in diesem Browser nicht verfügbar.",
+  "shortcutsHeading": "Tastaturkürzel",
+  "shortcutsDescription": "Globale Timer-Tastaturkürzel bleiben verfügbar, sofern der Fokus nicht auf einem bearbeitbaren Feld liegt."
+}

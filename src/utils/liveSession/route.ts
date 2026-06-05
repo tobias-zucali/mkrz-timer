@@ -1,4 +1,6 @@
+import type { AppLocale } from "../../i18n/config.ts"
 import type { RemoteAccessRole } from "../../shared/liveSession/types.ts"
+import { stripLocalePrefix } from "../../i18n/locale.ts"
 import { normalizeRemoteAccessToken } from "../../shared/security/input.ts"
 
 export type RemoteRoute =
@@ -41,17 +43,21 @@ export function getRemotePathPrefix(role: RemoteAccessRole) {
 }
 
 export function buildRemotePath({
+  locale,
   role,
   token,
 }: {
+  locale?: AppLocale
   role: RemoteAccessRole
   token: string
 }) {
-  return `${getRemotePathPrefix(role)}/${token}`
+  const path = `${getRemotePathPrefix(role)}/${token}`
+
+  return locale ? `/${locale}${path}` : path
 }
 
 export function parseRemoteRoute(pathname: string): RemoteRoute {
-  const role = getRoleForPath(pathname)
+  const role = getRoleForPath(stripLocalePrefix(pathname))
   if (role === null) {
     return {
       isRemote: false,
@@ -61,7 +67,9 @@ export function parseRemoteRoute(pathname: string): RemoteRoute {
   }
 
   const prefix = getRemotePathPrefix(role)
-  const suffix = pathname.slice(prefix.length).replace(/^\/+/, "")
+  const suffix = stripLocalePrefix(pathname)
+    .slice(prefix.length)
+    .replace(/^\/+/, "")
   const token = suffix.includes("/") ? null : normalizeRemoteAccessToken(suffix)
 
   return {

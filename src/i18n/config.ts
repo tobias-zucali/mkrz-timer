@@ -1,4 +1,4 @@
-export const appLocales = ["en"] as const
+export const appLocales = ["en", "de"] as const
 
 export type AppLocale = (typeof appLocales)[number]
 

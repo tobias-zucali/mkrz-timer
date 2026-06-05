@@ -16,6 +16,10 @@ test("buildRemotePath uses role-specific prefixes", () => {
     buildRemotePath({ role: "control", token: "controller-1" }),
     "/control/controller-1",
   )
+  assert.equal(
+    buildRemotePath({ locale: "de", role: "control", token: "controller-1" }),
+    "/de/control/controller-1",
+  )
 })
 
 test("getRemotePathPrefix returns stable remote route prefixes", () => {
@@ -41,6 +45,11 @@ test("parseRemoteRoute parses valid viewer and controller paths", () => {
     isRemote: true,
     role: "control",
     token: "controller-1",
+  })
+  assert.deepEqual(parseRemoteRoute("/de/view/viewer_1"), {
+    isRemote: true,
+    role: "readonly",
+    token: "viewer_1",
   })
 })
 

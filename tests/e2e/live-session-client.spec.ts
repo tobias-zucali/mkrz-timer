@@ -150,7 +150,7 @@ test("includes selected settings in remote viewer and control links when enabled
   await page.getByRole("button", { name: "Start live session" }).click()
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/control\/.+/)
+    .toMatch(/^\/en\/control\/.+/)
 
   const viewerLink = page.getByRole("textbox", { name: "Viewer link" })
   const controlLink = page.getByRole("textbox", { name: "Control link" })
@@ -179,7 +179,7 @@ test("moves the host onto the control route and ends the live session cleanly", 
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/control\/.+/)
+    .toMatch(/^\/en\/control\/.+/)
   await openSidebarPanel(page, "Share")
   await resolveRecoveryDialogIfPresent(page)
   await openSidebarPanel(page, "Share")
@@ -198,7 +198,7 @@ test("moves the host onto the control route and ends the live session cleanly", 
   await page.getByRole("button", { name: "End live session" }).click()
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toBe("/")
+    .toBe("/en")
   await expect
     .poll(() =>
       page
@@ -267,7 +267,7 @@ test("confirms before ending a live session when other clients are connected", a
     .getByRole("button", { name: "Keep live session open" })
     .click()
   await expect(confirmationDialog).not.toBeVisible()
-  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
   await expectReadonlyTimerControls(readonlyClient)
 
   await page.getByRole("button", { name: "End live session" }).click()
@@ -300,7 +300,7 @@ test("warns before closing a control client while other participants stay connec
   await dialog.dismiss()
   await closePromise
 
-  await expect(controlClient).toHaveURL(/\/control\//)
+  await expect(controlClient).toHaveURL(/\/en\/control\//)
   await expect(
     controlClient.getByRole("button", { name: "START" }),
   ).toBeVisible()
@@ -335,7 +335,7 @@ test(
     })
     await closeSettingsOverlay(page)
 
-    await expect(readonlyClient).not.toHaveURL(/\/control\//)
+    await expect(readonlyClient).not.toHaveURL(/\/en\/control\//)
     await expectReadonlyTimerControls(readonlyClient)
     await expect(readonlyClient.locator("body")).toMatchAriaSnapshot({
       name: "remote-readonly-client-screen.aria.yml",
@@ -442,7 +442,7 @@ test("viewer clients warn when the last controller leaves", async ({
     role: "Viewer access",
     state: /Waiting|Reconnecting\.\.\./,
   })
-  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
   await expectReadonlyTimerControls(readonlyClient)
 })
 
@@ -896,7 +896,7 @@ test("controller links can restore control and reused viewer links rejoin the se
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/control\/.+/)
+    .toMatch(/^\/en\/control\/.+/)
   await openSidebarPanel(page, "Share")
   await page.getByRole("button", { name: "End live session" }).click()
   await expect(
@@ -910,7 +910,7 @@ test("controller links can restore control and reused viewer links rejoin the se
   ).toBeVisible({
     timeout: 30_000,
   })
-  await expect(controlClient).toHaveURL(/\/control\//)
+  await expect(controlClient).toHaveURL(/\/en\/control\//)
 
   const readonlyClient = await page.context().newPage()
   await readonlyClient.goto(readonlyClientUrl)
@@ -920,7 +920,7 @@ test("controller links can restore control and reused viewer links rejoin the se
     mainConnectionCount: 1,
     message: "restored control and reused viewer links should reconnect",
   })
-  await expect(readonlyClient).toHaveURL(/\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
   await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",

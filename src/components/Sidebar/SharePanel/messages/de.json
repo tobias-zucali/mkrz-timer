@@ -1,0 +1,15 @@
+{
+  "heading": "Teilen",
+  "liveSession": "Live-Sitzung",
+  "includeSettings": "Sprach- und Toneinstellungen teilen",
+  "includeSettingsDescription": "Übernimmt Anzeige- und Ansageeinstellungen in geteilte Links.",
+  "viewerLink": "Zuschauer-Link",
+  "viewerLinkDescription": "Präsentationsansicht für Zuschauer.",
+  "controlLink": "Steuerungs-Link",
+  "controlLinkDescription": "Voller Zugriff auf Timer und Einstellungen.",
+  "waitingForLinks": "Warten auf die Verfügbarkeit von Zuschauer- und Steuerungs-Links.",
+  "retryNow": "Jetzt erneut versuchen",
+  "localShare": "Lokale Freigabe",
+  "localLink": "Lokaler Link",
+  "localLinkDescription": "Momentaufnahme der aktuellen Timer-Konfiguration ohne Synchronisierung."
+}

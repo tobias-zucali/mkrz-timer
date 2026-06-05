@@ -1,11 +1,11 @@
 - main "mkrz timer":
-    - status "Timer announcements": Live session, Connected, VIEWER access
-    - region "Timer":
-        - heading "Timer" [level=1]
-        - timer "View only. Remaining time. 1 minute"
-        - text: View only. Remaining time. 1 minute
-    - button "Share viewer link"
+  - status "Timer announcements": Live session, Connected, VIEWER access
+  - region "Timer":
+    - heading "Timer" [level=1]
+    - timer "View only. Remaining time. 1 minute"
+    - text: View only. Remaining time. 1 minute
+  - button "Share viewer link"
 - button "Open session status. Live session, Connected, VIEWER access"
 - link "by mkrz":
-    - /url: https://www.mkrz.at/
+  - /url: https://www.mkrz.at/
 - alert

@@ -1,0 +1,13 @@
+{
+  "entries": {
+    "timer": "Timer",
+    "share": "Teilen",
+    "settings": "Einstellungen",
+    "status": "Status"
+  },
+  "readonlyUnsupported": "Ansichtsmodus wird nicht unterstützt.",
+  "closeSidebar": "Seitenleiste schließen",
+  "closeSidebarMenu": "Seitenleistenmenü schließen",
+  "toggleNavigation": "Navigation umschalten",
+  "backToSidebarMenu": "Zurück zum Seitenleistenmenü"
+}

@@ -1,3 +1,1 @@
-import TimerPageRoute from "@/features/TimerPage/Route"
-
-export default TimerPageRoute
+export { default } from "./BrowserLocaleRedirectPage"

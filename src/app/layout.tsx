@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import { defaultAppLocale } from "@/i18n/config"
-import { getMessagesForLocale } from "@/i18n/messages"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,18 +16,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-const appShellMessages = getMessagesForLocale(defaultAppLocale).AppShell
-
-export const metadata: Metadata = {
-  title: appShellMessages.metadata.title,
-  description: appShellMessages.metadata.description,
-}
-
 export const viewport: Viewport = {
   themeColor: "#dddddd",
 }
 
-export default function RootLayout({
+export const metadata: Metadata = {
+  title: "mkrz timer",
+  description: "An accessible presentation timer with live sharing controls.",
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
@@ -60,15 +58,6 @@ export default function RootLayout({
       >
         <ServiceWorkerRegistration />
         {children}
-        <a
-          className="
-            absolute right-4 bottom-4 underline
-            hover:text-primary
-          "
-          href="https://www.mkrz.at/"
-        >
-          {appShellMessages.footer.credit}
-        </a>
       </ParamStyledBody>
     </html>
   )

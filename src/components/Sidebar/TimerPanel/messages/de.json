@@ -1,0 +1,15 @@
+{
+  "pageTitleLabel": "Titel",
+  "pageTitlePlaceholder": "Timer",
+  "heading": "Ablauf",
+  "step": "Schritt {step}",
+  "active": "Aktiv",
+  "makeActive": "Aktivieren",
+  "moveStepUp": "Schritt {step} nach oben verschieben",
+  "moveStepDown": "Schritt {step} nach unten verschieben",
+  "duplicateStep": "Schritt {step} duplizieren",
+  "deleteStep": "Schritt {step} löschen",
+  "addStep": "Schritt hinzufügen",
+  "autoAdvance": "Automatisch weiter",
+  "repeatSummary": "x{count}"
+}

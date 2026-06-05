@@ -3,8 +3,8 @@
   "minutes": "Minutes",
   "seconds": "Seconds",
   "repetitions": "Repetitions",
-  "endBehavior": "End Behavior",
+  "endBehavior": "After this step",
   "color": "Color",
-  "endBehaviorStop": "Stop after this step",
-  "endBehaviorContinue": "Continue to next step"
+  "endBehaviorStop": "Stop timer",
+  "endBehaviorContinue": "Start next step"
 }
