@@ -19,6 +19,7 @@ import SyncConflictDialog from "@/components/SyncConflictDialog"
 import Timer from "@/components/Timer"
 import TopRightControls from "@/components/TimerPageTopRightControls"
 import ManualSaveDialog from "@/features/TimerPage/ManualSaveDialog"
+import RecentTimersDialog from "@/features/TimerPage/RecentTimersDialog"
 import TimerAnnouncements from "@/features/TimerPage/TimerAnnouncements"
 import type { AppLocale } from "@/i18n/config"
 import type { SyncParams } from "@/shared/liveSession/types"
@@ -119,6 +120,8 @@ function TimerApp() {
     hasInitializedStoredTimerLibrary,
     setHasInitializedStoredTimerLibrary,
   ] = useState(false)
+  const [isRecentTimersDialogOpen, setIsRecentTimersDialogOpen] =
+    useState(false)
   const [isManualSaveDialogOpen, setIsManualSaveDialogOpen] = useState(false)
   const { isControlsActive } = useTimerChromeVisibility()
 
@@ -159,6 +162,15 @@ function TimerApp() {
         params,
       }) satisfies StoredTimerSnapshot,
     [pageTitle, params],
+  )
+  const hasTimerChanges = useMemo(
+    () =>
+      buildStoredTimerFingerprint(storedTimerSnapshot) !==
+      buildStoredTimerFingerprint({
+        pageTitle: "",
+        params: DEFAULT_SYNC_PARAMS,
+      }),
+    [storedTimerSnapshot],
   )
 
   const timer = useTimer({
@@ -603,6 +615,7 @@ function TimerApp() {
         writeStoredTimerLibrary(nextLibrary, window.localStorage)
         return nextLibrary
       })
+      setIsRecentTimersDialogOpen(false)
     },
     [paramData, storedTimerSnapshot],
   )
@@ -656,7 +669,7 @@ function TimerApp() {
     const trimmedPageTitle = pageTitle.trim()
     const duplicatePageTitle = trimmedPageTitle
       ? `${trimmedPageTitle} ${tTimerPanel("copySuffix")}`
-      : tTimerPanel("untitledCopyTitle")
+      : tTimerPanel("pageTitlePlaceholder")
 
     handleCreateStoredTimerEntry({
       pageTitle: duplicatePageTitle,
@@ -764,18 +777,18 @@ function TimerApp() {
         }}
         timerPanel={{
           activeIndex: params.activeIndex,
+          canCreateAlternativeTimer: hasTimerChanges,
           onActivateSequenceRow: handleActivateSequenceRow,
-          onDeleteStoredTimer: handleDeleteStoredTimer,
           onDuplicateCurrentTimer: handleDuplicateCurrentTimer,
+          onOpenLoadRecentDialog: () => setIsRecentTimersDialogOpen(true),
           onNewTimer: handleNewTimer,
           onPageTitleChange: paramData.setPageTitle,
           onOpenSaveDialog: () => setIsManualSaveDialogOpen(true),
           onSequenceChange: handleSequenceChange,
-          onSelectStoredTimer: handleSelectStoredTimer,
           pageTitle,
           params,
           currentEntryId: storedTimerLibrary.currentEntryId,
-          storedTimers: storedTimerLibrary.entries,
+          storedTimerCount: storedTimerLibrary.entries.length,
         }}
       />
       <StatusBadge
@@ -812,6 +825,15 @@ function TimerApp() {
           pageTitle={pageTitle || title}
           readonlyClientUrl={readonlyClientUrl}
           timerUrl={timerUrl}
+        />
+      ) : null}
+      {isRecentTimersDialogOpen ? (
+        <RecentTimersDialog
+          currentEntryId={storedTimerLibrary.currentEntryId}
+          entries={storedTimerLibrary.entries}
+          onClose={() => setIsRecentTimersDialogOpen(false)}
+          onDelete={handleDeleteStoredTimer}
+          onSelect={handleSelectStoredTimer}
         />
       ) : null}
     </>

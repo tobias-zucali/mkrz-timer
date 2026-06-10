@@ -3,7 +3,6 @@ import { useState } from "react"
 
 import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
 import { renderWithIntl } from "@/test/renderWithIntl"
-import type { StoredTimerEntry } from "@/utils/timerLibrary"
 
 import TimerPanel from "./index"
 
@@ -30,15 +29,21 @@ function buildRow({
 }
 
 function TimerPanelHarness({
-  initialParams,
+  canCreateAlternativeTimer = true,
+  currentEntryId = null,
   initialPageTitle = "",
+  initialParams,
   onActivateSequenceRow,
-  storedTimers,
+  onOpenLoadRecentDialog,
+  storedTimerCount = 0,
 }: {
+  canCreateAlternativeTimer?: boolean
+  currentEntryId?: string | null
   initialParams?: typeof DEFAULT_SYNC_PARAMS
   initialPageTitle?: string
   onActivateSequenceRow?: (rowIndex: number) => void
-  storedTimers?: StoredTimerEntry[]
+  onOpenLoadRecentDialog?: () => void
+  storedTimerCount?: number
 }) {
   const [params, setParams] = useState(
     initialParams ?? {
@@ -51,33 +56,33 @@ function TimerPanelHarness({
   return (
     <TimerPanel
       activeIndex={params.activeIndex}
+      canCreateAlternativeTimer={canCreateAlternativeTimer}
+      currentEntryId={currentEntryId}
       onActivateSequenceRow={onActivateSequenceRow ?? vi.fn()}
-      onDeleteStoredTimer={vi.fn()}
       onDuplicateCurrentTimer={vi.fn()}
       onNewTimer={vi.fn()}
-      onPageTitleChange={setPageTitle}
+      onOpenLoadRecentDialog={onOpenLoadRecentDialog ?? vi.fn()}
       onOpenSaveDialog={vi.fn()}
+      onPageTitleChange={setPageTitle}
       onSequenceChange={(nextChange) =>
         setParams((currentParams) => ({
           ...currentParams,
           ...nextChange,
         }))
       }
-      onSelectStoredTimer={vi.fn()}
       pageTitle={pageTitle}
       params={params}
-      currentEntryId={storedTimers?.[0]?.id ?? null}
-      storedTimers={storedTimers ?? []}
+      storedTimerCount={storedTimerCount}
     />
   )
 }
 
 describe("TimerPanel", () => {
-  it("renders and updates the optional page title", () => {
+  it("renders and updates the timer name field", () => {
     renderWithIntl(<TimerPanelHarness initialPageTitle="Workshop timer" />)
 
     const pageTitleField = screen.getByRole("textbox", {
-      name: "Page heading",
+      name: "Timer name",
     })
     pageTitleField.focus()
 
@@ -87,9 +92,10 @@ describe("TimerPanel", () => {
 
     expect(pageTitleField).toHaveValue("Workshop notes")
     expect(pageTitleField).toHaveFocus()
+    expect(pageTitleField).toHaveAttribute("title", "Timer name")
   })
 
-  it("keeps the title field focused while typing", () => {
+  it("keeps the selected step title field focused while typing", () => {
     renderWithIntl(<TimerPanelHarness />)
 
     const titleField = screen.getByRole("textbox", { name: "Title" })
@@ -138,39 +144,36 @@ describe("TimerPanel", () => {
     )
   })
 
-  it("renders timer panel actions in the header", () => {
-    renderWithIntl(<TimerPanelHarness />)
+  it("renders the timer-level action row", () => {
+    renderWithIntl(<TimerPanelHarness canCreateAlternativeTimer={false} />)
 
-    expect(
-      screen.getByRole("button", { name: "Save timer URLs" }),
-    ).toBeVisible()
-    expect(
-      screen.getByRole("button", { name: "Duplicate timer" }),
-    ).toBeVisible()
-    expect(screen.getByRole("button", { name: "New timer" })).toBeVisible()
+    expect(screen.getByRole("button", { name: "Load recent" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "New" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Duplicate" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
+      "title",
+      "Save this timer",
+    )
+    expect(screen.getByRole("button", { name: "Load recent" })).toHaveAttribute(
+      "title",
+      "Load a recent timer",
+    )
   })
 
-  it("shows recent timers when entries exist", () => {
+  it("enables loading recent timers when another stored timer exists", () => {
+    const onOpenLoadRecentDialog = vi.fn()
+
     renderWithIntl(
       <TimerPanelHarness
-        storedTimers={[
-          {
-            createdAt: 100,
-            id: "entry-1",
-            pageTitle: "Workshop timer",
-            params: {
-              ...DEFAULT_SYNC_PARAMS,
-              title: "Opening",
-            },
-            updatedAt: 200,
-          },
-        ]}
+        canCreateAlternativeTimer={true}
+        currentEntryId="entry-1"
+        onOpenLoadRecentDialog={onOpenLoadRecentDialog}
+        storedTimerCount={2}
       />,
     )
 
-    expect(screen.getByText("Recent timers")).toBeVisible()
-    expect(screen.getByRole("button", { pressed: true })).toHaveTextContent(
-      "Workshop timer",
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Load recent" }))
+
+    expect(onOpenLoadRecentDialog).toHaveBeenCalledTimes(1)
   })
 })

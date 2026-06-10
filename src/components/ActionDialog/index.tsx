@@ -44,47 +44,53 @@ export default function ActionDialog({
       aria-labelledby={titleId}
       aria-modal="true"
       className="
-        fixed inset-0 z-50 flex items-center justify-center bg-background/72 p-6
-        backdrop-blur-sm
+        fixed inset-0 z-50 flex items-stretch justify-center bg-background/72
+        p-0 backdrop-blur-sm sm-height:items-center sm-height:p-6
       "
       role={role}
     >
       <div
         className="
-          w-full max-w-lg rounded-3xl border border-foreground/12 bg-background
-          p-6 shadow-2xl shadow-background/45
+          flex size-full flex-col bg-background p-6
+          sm-height:h-auto sm-height:max-h-[calc(100vh-3rem)]
+          lg-width:w-full lg-width:max-w-lg lg-width:rounded-3xl
+          lg-width:border lg-width:border-foreground/12
+          lg-width:shadow-2xl lg-width:shadow-background/45
         "
         ref={dialogRef}
         tabIndex={-1}
       >
-        {eyebrow ? (
-          <p
-            className="
-            text-xs font-semibold tracking-[0.18em] text-primary/80 uppercase
-          "
+        <div className="flex-1 overflow-y-auto">
+          {eyebrow ? (
+            <p
+              className="
+                text-xs font-semibold tracking-[0.18em] text-primary/80 uppercase
+              "
+            >
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2
+            className={
+              eyebrow
+                ? "mt-2 text-2xl font-semibold text-foreground"
+                : "text-2xl font-semibold text-foreground"
+            }
+            id={titleId}
           >
-            {eyebrow}
+            {title}
+          </h2>
+          <p className="mt-3 text-sm/6 text-foreground/68" id={descriptionId}>
+            {description}
           </p>
-        ) : null}
-        <h2
-          className={
-            eyebrow
-              ? "mt-2 text-2xl font-semibold text-foreground"
-              : "text-2xl font-semibold text-foreground"
-          }
-          id={titleId}
-        >
-          {title}
-        </h2>
-        <p className="mt-3 text-sm/6 text-foreground/68" id={descriptionId}>
-          {description}
-        </p>
-        {children}
+          {children}
+        </div>
         <div
           className="
-          mt-6 flex flex-col gap-3
-          sm:flex-row sm:justify-end
-        "
+            mt-6 flex flex-col gap-3 border-t border-foreground/8 pt-4
+            lg-width:flex-row lg-width:justify-end lg-width:border-t-0
+            lg-width:pt-0
+          "
         >
           {actions.map((action, index) => (
             <button

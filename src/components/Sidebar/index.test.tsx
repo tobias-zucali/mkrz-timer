@@ -20,18 +20,18 @@ vi.mock("next/navigation", () => ({
 function buildTimerPanel(pageTitle = "") {
   return {
     activeIndex: 0,
+    canCreateAlternativeTimer: false,
+    currentEntryId: null,
     onActivateSequenceRow: vi.fn(),
-    onDeleteStoredTimer: vi.fn(),
     onDuplicateCurrentTimer: vi.fn(),
     onNewTimer: vi.fn(),
+    onOpenLoadRecentDialog: vi.fn(),
     onPageTitleChange: vi.fn(),
     onOpenSaveDialog: vi.fn(),
     onSequenceChange: vi.fn(),
-    onSelectStoredTimer: vi.fn(),
     pageTitle,
     params: normalizeQueryParams(DEFAULT_SYNC_PARAMS),
-    currentEntryId: null,
-    storedTimers: [],
+    storedTimerCount: 0,
   }
 }
 

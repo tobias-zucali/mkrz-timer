@@ -1,11 +1,7 @@
 - heading "Timer" [level=2]
 - button "Close sidebar"
-- button "Save timer URLs"
-- button "Duplicate timer"
-- button "New timer"
-- text: Page heading
-- textbox "Page heading":
-  - /placeholder: Timer
+- textbox "Timer name":
+  - /placeholder: Untitled timer
 - heading "Sequence" [level=3]
 - text: Step 1 Active
 - button "Duplicate step 1"
@@ -33,10 +29,7 @@
 - 'textbox "Color #d61f69"'
 - text: "Color #d61f69"
 - button "Add step"
-- heading "Recent" [level=3]
-- button /Timer Current 1 step Updated Jun \d+, \d+, 2:\d+ PM/ [pressed]:
-  - paragraph: Timer
-  - text: ""
-  - paragraph: 1 step
-  - paragraph: /Updated Jun \d+, \d+, 2:\d+ PM/
-- button "Delete recent timer Timer"
+- button "New"
+- button "Duplicate"
+- button "Save"
+- button "Load recent" [disabled]

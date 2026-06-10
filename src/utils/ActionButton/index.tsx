@@ -9,20 +9,28 @@ import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 type ActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean
   children: ReactNode
+  tone?: "primary" | "secondary"
+  compact?: boolean
 }
 
 export default function ActionButton({
   children,
   className,
+  compact = false,
   fullWidth = false,
   onClick,
+  tone = "primary",
   type = "button",
   ...otherProps
 }: ActionButtonProps) {
   return (
     <button
       className={classNames(
-        "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-primary/90 focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex enabled:cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-semibold transition focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:opacity-50",
+        compact ? "min-h-9 px-3 py-2" : "min-h-11 px-4 py-2.5",
+        tone === "primary" && "bg-primary text-foreground hover:bg-primary/90",
+        tone === "secondary" &&
+          "border border-foreground/12 text-foreground hover:bg-foreground/6",
         fullWidth && "w-full",
         className,
       )}

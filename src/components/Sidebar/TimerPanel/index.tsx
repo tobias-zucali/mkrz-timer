@@ -3,8 +3,8 @@
 import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
+import ActionButton from "@/utils/ActionButton"
 import IconButton from "@/components/IconButton"
-import RecentTimersList from "@/components/Sidebar/TimerPanel/RecentTimersList"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
@@ -13,14 +13,11 @@ import {
   getEffectiveTimerSequenceRows,
 } from "@/shared/timerSequence"
 import {
-  ArrowDownTrayIcon,
   ArrowDownIcon,
   ArrowUpIcon,
   DocumentDuplicateIcon,
-  PlusIcon,
   TrashIcon,
 } from "@/utils/icons"
-import type { StoredTimerEntry } from "@/utils/timerLibrary"
 import {
   addTimerSequenceRow,
   buildTimerSequenceChange,
@@ -29,10 +26,6 @@ import {
   moveTimerSequenceRow,
   replaceTimerSequenceRow,
 } from "@/utils/timerSequenceEditor"
-
-const primaryButtonClassName =
-  "cursor-pointer rounded-md bg-primary px-3 py-2 text-sm font-semibold text-foreground " +
-  "transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 const stateBadgeClassName =
   "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold"
@@ -72,9 +65,10 @@ const getCardAccentStyle = ({
 
 export type TimerPanelProps = {
   activeIndex: number
+  canCreateAlternativeTimer: boolean
   onActivateSequenceRow: (rowIndex: number) => void
-  onDeleteStoredTimer: (entryId: string) => void
   onDuplicateCurrentTimer: () => void
+  onOpenLoadRecentDialog: () => void
   onNewTimer: () => void
   onPageTitleChange: (title: string) => void
   onOpenSaveDialog: () => void
@@ -82,31 +76,32 @@ export type TimerPanelProps = {
     activeIndex: number
     rows: SyncParams["rows"]
   }) => void
-  onSelectStoredTimer: (entryId: string) => void
   pageTitle: string
   params: SyncParams
   currentEntryId: string | null
-  storedTimers: StoredTimerEntry[]
+  storedTimerCount: number
 }
 
 export default function TimerPanel({
   activeIndex,
+  canCreateAlternativeTimer,
   onActivateSequenceRow,
-  onDeleteStoredTimer,
   onDuplicateCurrentTimer,
+  onOpenLoadRecentDialog,
   onNewTimer,
   onPageTitleChange,
   onOpenSaveDialog,
   onSequenceChange,
-  onSelectStoredTimer,
   pageTitle,
   params,
   currentEntryId,
-  storedTimers,
+  storedTimerCount,
 }: TimerPanelProps) {
   const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
+  const hasRecentAlternatives =
+    storedTimerCount > 0 && (currentEntryId === null || storedTimerCount > 1)
 
   useEffect(() => {
     if (params.rows.length === 0) {
@@ -218,40 +213,9 @@ export default function TimerPanel({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <div className="flex items-center justify-end gap-2">
-          <IconButton
-            aria-label={t("save")}
-            onClick={onOpenSaveDialog}
-            shape="round"
-            size="sm"
-            title={t("save")}
-          >
-            <ArrowDownTrayIcon className="size-4" />
-          </IconButton>
-          <IconButton
-            aria-label={t("duplicate")}
-            onClick={onDuplicateCurrentTimer}
-            shape="round"
-            size="sm"
-            title={t("duplicate")}
-          >
-            <DocumentDuplicateIcon className="size-4" />
-          </IconButton>
-          <IconButton
-            aria-label={t("newTimer")}
-            onClick={onNewTimer}
-            shape="round"
-            size="sm"
-            title={t("newTimer")}
-          >
-            <PlusIcon className="size-4" />
-          </IconButton>
-        </div>
-        <label className="sr-only" htmlFor={pageTitleInputId}>
-          {t("pageTitleLabel")}
-        </label>
+      <section className="space-y-3">
         <input
+          aria-label={t("pageTitleLabel")}
           autoComplete="off"
           className="
             block w-full border-none bg-transparent px-0 text-2xl font-semibold
@@ -267,6 +231,7 @@ export default function TimerPanel({
           onKeyUp={(event) => event.stopPropagation()}
           placeholder={t("pageTitlePlaceholder")}
           spellCheck={false}
+          title={t("pageTitleLabel")}
           type="text"
           value={pageTitle}
         />
@@ -437,20 +402,56 @@ export default function TimerPanel({
           })}
 
           <button
-            className={`${primaryButtonClassName} w-full`}
+            className="
+              inline-flex min-h-11 w-full cursor-pointer items-center justify-center
+              rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-foreground
+              transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2
+              focus:outline-primary
+            "
             onClick={handleAddRow}
             type="button"
           >
             {t("addStep")}
           </button>
         </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          <ActionButton
+            compact={true}
+            disabled={!canCreateAlternativeTimer}
+            onClick={onNewTimer}
+            tone="secondary"
+            title={t("newTimerTitle")}
+          >
+            {t("newTimer")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            disabled={!canCreateAlternativeTimer}
+            onClick={onDuplicateCurrentTimer}
+            tone="secondary"
+            title={t("duplicateTitle")}
+          >
+            {t("duplicate")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            onClick={onOpenSaveDialog}
+            tone="secondary"
+            title={t("saveTitle")}
+          >
+            {t("save")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            disabled={!hasRecentAlternatives}
+            onClick={onOpenLoadRecentDialog}
+            tone="secondary"
+            title={t("loadRecentTitle")}
+          >
+            {t("loadRecent")}
+          </ActionButton>
+        </div>
       </section>
-      <RecentTimersList
-        currentEntryId={currentEntryId}
-        entries={storedTimers}
-        onDelete={onDeleteStoredTimer}
-        onSelect={onSelectStoredTimer}
-      />
     </div>
   )
 }
