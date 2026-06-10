@@ -118,6 +118,17 @@ Practical rule:
 - If you are a human running the app locally, default to the generic lanes.
 - If you are an agent or automation workflow choosing a validation lane, default to the `agent:*` lanes.
 
+## Prototype Workflow Skill
+
+This repo includes a repo-local Codex skill at [`.agents/skills/prototype`](../.agents/skills/prototype/SKILL.md).
+
+Use `$prototype` when the user explicitly asks for prototype mode and you need a persistent ledger for:
+
+- deferred docs and tests
+- the standard `AGENTS.md` validation lane that must be backfilled at closeout
+- whether `pnpm agent:test:full` is required
+- whether the prototype should be finished or reverted
+
 ## Writing Stable Browser Tests
 
 - Assert one eventual user-visible truth at a time: open a route, wait for one stable affordance, perform one action, then verify one synchronized outcome.

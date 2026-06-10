@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prototype Mode"
+  short_description: "Run fast prototype loops with tracked closeout"
+  default_prompt: "Use $prototype to work in prototype mode for this repo and track the required closeout steps."

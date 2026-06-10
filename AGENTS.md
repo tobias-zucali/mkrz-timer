@@ -11,6 +11,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 - When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
 - While prototype mode is active, defer documentation updates, test updates, and the full validation lane until the user explicitly asks to end prototype mode or finish the work.
 - As soon as prototype mode ends, add or adapt the relevant documentation and tests, then run the full required validation lane before considering the work complete.
+- The repo-local prototype workflow skill lives at `.agents/skills/prototype`; use `$prototype` when you need the tracked ledger and closeout/revert flow for prototype mode.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 - Prefer `@/` imports over relative `../..` imports.
 - Exception: keep relative imports in files executed directly by the plain Node test/runtime path until alias resolution is configured there too.
