@@ -150,6 +150,18 @@ export function ArrowDownIcon(props: IconProps) {
   )
 }
 
+export function ArrowDownTrayIcon(props: IconProps) {
+  return (
+    <BaseIcon strokeWidth={1.5} {...props}>
+      <path
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-4.5-6L12 15m0 0-4.5-4.5M12 15V3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </BaseIcon>
+  )
+}
+
 export function ArrowUpIcon(props: IconProps) {
   return (
     <BaseIcon strokeWidth={1.5} {...props}>
@@ -250,6 +262,18 @@ export function PlayIcon(props: IconProps) {
     <BaseIcon strokeWidth={1.5} {...props}>
       <path
         d="M5.25 5.653c0-1.14 1.232-1.86 2.232-1.303l10.125 5.848c1 .577 1 2.029 0 2.606L7.482 18.65c-1 .558-2.232-.163-2.232-1.303V5.653Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </BaseIcon>
+  )
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <BaseIcon strokeWidth={1.5} {...props}>
+      <path
+        d="M12 4.5v15m7.5-7.5h-15"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

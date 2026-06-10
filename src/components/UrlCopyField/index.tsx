@@ -3,6 +3,7 @@ import { ComponentProps, useId, useState } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 
+import IconButton, { getIconButtonClassName } from "@/components/IconButton"
 import QrCodeOverlay from "@/components/QrCodeOverlay"
 import {
   ArrowTopRightOnSquareIcon,
@@ -14,9 +15,6 @@ import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 
 import InputField from "../InputField"
-
-const iconButtonClassName =
-  "ml-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.06] text-foreground/80 transition hover:bg-foreground/[0.12] hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 export default function UrlCopyField({
   description,
@@ -46,11 +44,13 @@ export default function UrlCopyField({
         {...otherProps}
       >
         {canCopy && (
-          <button
-            className={iconButtonClassName}
+          <IconButton
+            appearance="surface"
+            className="ml-2"
             onClick={() => void copyText(value)}
             {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
-            type="button"
+            shape="square"
+            size="field"
             title={isCopied ? t("copied") : t("copyUrl")}
             aria-label={isCopied ? t("copied") : t("copyUrl")}
           >
@@ -59,11 +59,16 @@ export default function UrlCopyField({
             ) : (
               <ClipboardDocumentIcon className="size-5" />
             )}
-          </button>
+          </IconButton>
         )}
         {showOpenButton && (
           <Link
-            className={iconButtonClassName}
+            className={getIconButtonClassName({
+              appearance: "surface",
+              className: "ml-2",
+              shape: "square",
+              size: "field",
+            })}
             href={isClient ? value : ""}
             target="_blank"
             title={t("openUrl")}
@@ -73,16 +78,18 @@ export default function UrlCopyField({
           </Link>
         )}
         {isClient && value && (
-          <button
-            className={iconButtonClassName}
+          <IconButton
+            appearance="surface"
+            className="ml-2"
             onClick={() => setIsQrCodeOpen(true)}
             {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
+            shape="square"
+            size="field"
             title={t("showLabel", { label })}
             aria-label={t("showLabel", { label })}
-            type="button"
           >
             <QrCodeIcon className="size-5" />
-          </button>
+          </IconButton>
         )}
       </InputField>
       {isQrCodeOpen && (

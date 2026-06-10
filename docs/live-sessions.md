@@ -64,7 +64,17 @@ Live sessions are relay-backed. There is no dedicated browser host.
 - relay implementation: [src/server/relay/index.ts](../src/server/relay/index.ts)
 - relay session store: [src/server/liveSession/sessionStore.ts](../src/server/liveSession/sessionStore.ts)
 
+## Transport Decision
+
+Keep the current relay model and `ws` transport. Improve internal relay and client abstractions inside that model instead of migrating to a new realtime framework.
+
+Rationale:
+
+- the protocol is small and app-specific
+- controller and viewer permission boundaries stay clearer when session mutation remains explicit in the in-memory store
+- reconnect and recovery behavior remain easier to reason about when the relay owns the canonical snapshot lifecycle
+- a framework migration would add runtime and operational change without clear product benefit on the current Node/Docker target
+
 ## Design Notes
 
 - Test-lane guidance lives in [docs/development.md](./development.md).
-- The transport/framework rationale lives in [docs/live-session-transport-adr.md](./live-session-transport-adr.md).

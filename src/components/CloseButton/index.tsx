@@ -1,14 +1,11 @@
 "use client"
 
-import classNames from "classnames"
 import { forwardRef } from "react"
 import type { ButtonHTMLAttributes } from "react"
 import { useTranslations } from "next-intl"
 
+import IconButton from "@/components/IconButton"
 import { XMarkIcon } from "@/utils/icons"
-
-const closeButtonClassName =
-  "inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-foreground/12 bg-foreground/4 text-foreground/72 transition hover:bg-foreground/8 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 const CloseButton = forwardRef<
   HTMLButtonElement,
@@ -22,16 +19,18 @@ const CloseButton = forwardRef<
     const resolvedTitle = title ?? t("close")
 
     return (
-      <button
+      <IconButton
         aria-label={ariaLabel ?? resolvedTitle}
-        className={classNames(closeButtonClassName, className)}
+        appearance="surface"
+        className={className}
         ref={ref}
+        shape="round"
+        size="field"
         title={resolvedTitle}
-        type="button"
         {...otherProps}
       >
         {children ?? <XMarkIcon className="size-5" />}
-      </button>
+      </IconButton>
     )
   },
 )

@@ -5,6 +5,7 @@ import { useId, useState } from "react"
 import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
+import IconButton from "@/components/IconButton"
 import QrCodeOverlay from "@/components/QrCodeOverlay"
 import {
   ArrowsPointingOutIcon,
@@ -36,23 +37,21 @@ function TopRightActionButton({
   title: string
 }) {
   return (
-    <button
+    <IconButton
       aria-label={ariaLabel}
       aria-controls={ariaControls}
       aria-expanded={ariaExpanded}
       aria-haspopup={ariaHaspopup}
       aria-pressed={ariaPressed}
-      className={[
-        "inline-flex size-9 cursor-pointer items-center justify-center rounded-lg transition",
-        "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
-        isActive ? "text-primary" : "text-foreground/78 hover:text-primary",
-      ].join(" ")}
+      appearance="ghost"
+      isActive={isActive}
       onClick={onClick}
+      shape="soft"
+      size="nav"
       title={title}
-      type="button"
     >
       {children}
-    </button>
+    </IconButton>
   )
 }
 

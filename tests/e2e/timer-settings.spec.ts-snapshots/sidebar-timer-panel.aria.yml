@@ -1,8 +1,7 @@
 - heading "Timer" [level=2]
 - button "Close sidebar"
-- text: Page heading
-- textbox "Page heading":
-  - /placeholder: Timer
+- textbox "Timer name":
+  - /placeholder: Untitled timer
 - heading "Sequence" [level=3]
 - text: Step 1 Active
 - button "Duplicate step 1"
@@ -30,3 +29,7 @@
 - 'textbox "Color #d61f69"'
 - text: "Color #d61f69"
 - button "Add step"
+- button "New"
+- button "Duplicate"
+- button "Save"
+- button "Load recent" [disabled]

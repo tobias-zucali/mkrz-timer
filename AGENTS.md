@@ -4,11 +4,8 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ## Baseline
 
-- Use `pnpm`. Do not mix in `npm` or `yarn`.
-- Use Node.js `22.12.0` or newer.
 - `README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
 - When a repo provides dedicated `agent:*` validation lanes, use those instead of generic validation commands.
-- In this repo, do not use generic `pnpm test*` lanes for normal agent validation when an `agent:*` equivalent exists.
 - After edits, run `pnpm lint`, `pnpm agent:test` and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm agent:test:full` before considering the task done.
 - When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
@@ -32,36 +29,17 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ## Live Sessions
 
-- Live sessions are relay-backed. There is no dedicated browser host anymore.
-- The relay owns the canonical timer snapshot and participant roster.
-- Session links are role-specific opaque paths:
-  - viewer: `/view/<readonlyToken>`
-  - control: `/control/<controlToken>`
-- Live session URLs may include the canonical timer-state params `v`, `t`, and `a`.
-- Control URLs should continue to include the `title` query param.
-- Live session URLs may include selected non-default settings params such as appearance or announcement preferences.
+- `docs/live-sessions.md` is the source of truth for live-session contracts, trust boundaries, and synchronized-field rules.
 - When live-session behavior changes, update both docs and Playwright coverage in the same change.
 - Future sharing or session features must preserve strict separation between readonly and control capabilities.
 
 ## Testing
 
-- Humans use the generic `pnpm test*` commands from `README.md`.
-- Agents use `pnpm agent:test*` wherever possible to avoid collisions with tracked ports, dist dirs, and process state.
 - `docs/development.md` is the source of truth for test lanes, Playwright tagging, agent-lane commands, and browser-test authoring rules.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 - Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.
 - Multi-client relay coverage belongs in the isolated remote Playwright lane, not the default local lane.
 - If a browser test must be skipped for instability, keep the skip narrow, document the specific reason inline, and treat it as temporary containment.
-
-## Deployment
-
-- Production target is a Hetzner CAX11 with Docker Compose and Caddy.
-- Deployment/runbook details live in [docs/deploy-hetzner.md](./docs/deploy-hetzner.md).
-- The repo includes baseline deployment assets:
-  - `docker-compose.yml`
-  - `Caddyfile`
-  - `Dockerfile.web`
-  - `Dockerfile.relay`
 
 ## Maintenance
 

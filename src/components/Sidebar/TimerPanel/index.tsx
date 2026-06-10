@@ -3,6 +3,8 @@
 import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
+import ActionButton from "@/utils/ActionButton"
+import IconButton from "@/components/IconButton"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
@@ -24,15 +26,6 @@ import {
   moveTimerSequenceRow,
   replaceTimerSequenceRow,
 } from "@/utils/timerSequenceEditor"
-
-const iconButtonClassName =
-  "inline-flex size-8 cursor-pointer items-center justify-center rounded-full border " +
-  "border-foreground/12 text-foreground/72 transition hover:border-primary/40 " +
-  "hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
-
-const primaryButtonClassName =
-  "cursor-pointer rounded-md bg-primary px-3 py-2 text-sm font-semibold text-foreground " +
-  "transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 const stateBadgeClassName =
   "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold"
@@ -72,27 +65,43 @@ const getCardAccentStyle = ({
 
 export type TimerPanelProps = {
   activeIndex: number
+  hasTimerChanges: boolean
   onActivateSequenceRow: (rowIndex: number) => void
+  onDuplicateCurrentTimer: () => void
+  onOpenLoadRecentDialog: () => void
+  onNewTimer: () => void
   onPageTitleChange: (title: string) => void
+  onOpenSaveDialog: () => void
   onSequenceChange: (nextChange: {
     activeIndex: number
     rows: SyncParams["rows"]
   }) => void
   pageTitle: string
   params: SyncParams
+  currentEntryId: string | null
+  storedTimerCount: number
 }
 
 export default function TimerPanel({
   activeIndex,
+  hasTimerChanges,
   onActivateSequenceRow,
+  onDuplicateCurrentTimer,
+  onOpenLoadRecentDialog,
+  onNewTimer,
   onPageTitleChange,
+  onOpenSaveDialog,
   onSequenceChange,
   pageTitle,
   params,
+  currentEntryId,
+  storedTimerCount,
 }: TimerPanelProps) {
   const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
+  const hasRecentAlternatives =
+    storedTimerCount > 0 && (currentEntryId === null || storedTimerCount > 1)
 
   useEffect(() => {
     if (params.rows.length === 0) {
@@ -204,11 +213,9 @@ export default function TimerPanel({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <label className="sr-only" htmlFor={pageTitleInputId}>
-          {t("pageTitleLabel")}
-        </label>
+      <section className="space-y-3">
         <input
+          aria-label={t("pageTitleLabel")}
           autoComplete="off"
           className="
             block w-full border-none bg-transparent px-0 text-2xl font-semibold
@@ -224,6 +231,7 @@ export default function TimerPanel({
           onKeyUp={(event) => event.stopPropagation()}
           placeholder={t("pageTitlePlaceholder")}
           spellCheck={false}
+          title={t("pageTitleLabel")}
           type="text"
           value={pageTitle}
         />
@@ -310,62 +318,74 @@ export default function TimerPanel({
 
                   <div className="-mt-1 -mr-1 flex shrink-0 flex-wrap justify-end gap-1 self-start">
                     {canMoveUp ? (
-                      <button
+                      <IconButton
                         aria-label={t("moveStepUp", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, -1)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("moveStepUp", {
+                          step: index + 1,
+                        })}
                       >
                         <ArrowUpIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
                     {canMoveDown ? (
-                      <button
+                      <IconButton
                         aria-label={t("moveStepDown", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, 1)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("moveStepDown", {
+                          step: index + 1,
+                        })}
                       >
                         <ArrowDownIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
-                    <button
+                    <IconButton
                       aria-label={t("duplicateStep", {
                         step: index + 1,
                       })}
-                      className={iconButtonClassName}
                       onClick={(event) => {
                         event.stopPropagation()
                         handleDuplicateRow(index)
                       }}
-                      type="button"
+                      shape="round"
+                      size="sm"
+                      title={t("duplicateStep", {
+                        step: index + 1,
+                      })}
                     >
                       <DocumentDuplicateIcon className="size-4" />
-                    </button>
+                    </IconButton>
                     {canDeleteRow ? (
-                      <button
+                      <IconButton
                         aria-label={t("deleteStep", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleDeleteRow(index)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("deleteStep", {
+                          step: index + 1,
+                        })}
                       >
                         <TrashIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
                   </div>
                 </div>
@@ -382,12 +402,55 @@ export default function TimerPanel({
           })}
 
           <button
-            className={`${primaryButtonClassName} w-full`}
+            className="
+              inline-flex min-h-11 w-full cursor-pointer items-center justify-center
+              rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-foreground
+              transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2
+              focus:outline-primary
+            "
             onClick={handleAddRow}
             type="button"
           >
             {t("addStep")}
           </button>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          <ActionButton
+            compact={true}
+            disabled={!hasTimerChanges}
+            onClick={onNewTimer}
+            tone="secondary"
+            title={t("newTimerTitle")}
+          >
+            {t("newTimer")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            disabled={!hasTimerChanges}
+            onClick={onDuplicateCurrentTimer}
+            tone="secondary"
+            title={t("duplicateTitle")}
+          >
+            {t("duplicate")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            disabled={!hasTimerChanges}
+            onClick={onOpenSaveDialog}
+            tone="secondary"
+            title={t("saveTitle")}
+          >
+            {t("save")}
+          </ActionButton>
+          <ActionButton
+            compact={true}
+            disabled={!hasRecentAlternatives}
+            onClick={onOpenLoadRecentDialog}
+            tone="secondary"
+            title={t("loadRecentTitle")}
+          >
+            {t("loadRecent")}
+          </ActionButton>
         </div>
       </section>
     </div>
