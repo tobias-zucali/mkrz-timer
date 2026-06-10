@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 function buildTimerPanel(pageTitle = "") {
   return {
     activeIndex: 0,
-    canCreateAlternativeTimer: false,
+    hasTimerChanges: false,
     currentEntryId: null,
     onActivateSequenceRow: vi.fn(),
     onDuplicateCurrentTimer: vi.fn(),

@@ -777,7 +777,7 @@ function TimerApp() {
         }}
         timerPanel={{
           activeIndex: params.activeIndex,
-          canCreateAlternativeTimer: hasTimerChanges,
+          hasTimerChanges,
           onActivateSequenceRow: handleActivateSequenceRow,
           onDuplicateCurrentTimer: handleDuplicateCurrentTimer,
           onOpenLoadRecentDialog: () => setIsRecentTimersDialogOpen(true),

@@ -29,7 +29,7 @@ function buildRow({
 }
 
 function TimerPanelHarness({
-  canCreateAlternativeTimer = true,
+  hasTimerChanges = true,
   currentEntryId = null,
   initialPageTitle = "",
   initialParams,
@@ -37,7 +37,7 @@ function TimerPanelHarness({
   onOpenLoadRecentDialog,
   storedTimerCount = 0,
 }: {
-  canCreateAlternativeTimer?: boolean
+  hasTimerChanges?: boolean
   currentEntryId?: string | null
   initialParams?: typeof DEFAULT_SYNC_PARAMS
   initialPageTitle?: string
@@ -56,7 +56,7 @@ function TimerPanelHarness({
   return (
     <TimerPanel
       activeIndex={params.activeIndex}
-      canCreateAlternativeTimer={canCreateAlternativeTimer}
+      hasTimerChanges={hasTimerChanges}
       currentEntryId={currentEntryId}
       onActivateSequenceRow={onActivateSequenceRow ?? vi.fn()}
       onDuplicateCurrentTimer={vi.fn()}
@@ -145,7 +145,7 @@ describe("TimerPanel", () => {
   })
 
   it("renders the timer-level action row", () => {
-    renderWithIntl(<TimerPanelHarness canCreateAlternativeTimer={false} />)
+    renderWithIntl(<TimerPanelHarness hasTimerChanges={false} />)
 
     expect(screen.getByRole("button", { name: "Load recent" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "New" })).toBeDisabled()
@@ -165,7 +165,7 @@ describe("TimerPanel", () => {
 
     renderWithIntl(
       <TimerPanelHarness
-        canCreateAlternativeTimer={true}
+        hasTimerChanges={true}
         currentEntryId="entry-1"
         onOpenLoadRecentDialog={onOpenLoadRecentDialog}
         storedTimerCount={2}

@@ -52,10 +52,10 @@ export default function ActionDialog({
       <div
         className="
           flex size-full flex-col bg-background p-6
+          lg:w-full lg:max-w-lg
+          lg:rounded-3xl lg:border lg:border-foreground/12
+          lg:shadow-2xl lg:shadow-background/45
           sm-height:h-auto sm-height:max-h-[calc(100vh-3rem)]
-          lg-width:w-full lg-width:max-w-lg lg-width:rounded-3xl
-          lg-width:border lg-width:border-foreground/12
-          lg-width:shadow-2xl lg-width:shadow-background/45
         "
         ref={dialogRef}
         tabIndex={-1}
@@ -88,8 +88,8 @@ export default function ActionDialog({
         <div
           className="
             mt-6 flex flex-col gap-3 border-t border-foreground/8 pt-4
-            lg-width:flex-row lg-width:justify-end lg-width:border-t-0
-            lg-width:pt-0
+            lg:flex-row lg:justify-end lg:border-t-0
+            lg:pt-0
           "
         >
           {actions.map((action, index) => (

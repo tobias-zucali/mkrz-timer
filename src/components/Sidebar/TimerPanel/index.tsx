@@ -65,7 +65,7 @@ const getCardAccentStyle = ({
 
 export type TimerPanelProps = {
   activeIndex: number
-  canCreateAlternativeTimer: boolean
+  hasTimerChanges: boolean
   onActivateSequenceRow: (rowIndex: number) => void
   onDuplicateCurrentTimer: () => void
   onOpenLoadRecentDialog: () => void
@@ -84,7 +84,7 @@ export type TimerPanelProps = {
 
 export default function TimerPanel({
   activeIndex,
-  canCreateAlternativeTimer,
+  hasTimerChanges,
   onActivateSequenceRow,
   onDuplicateCurrentTimer,
   onOpenLoadRecentDialog,
@@ -417,7 +417,7 @@ export default function TimerPanel({
         <div className="flex flex-wrap justify-end gap-2">
           <ActionButton
             compact={true}
-            disabled={!canCreateAlternativeTimer}
+            disabled={!hasTimerChanges}
             onClick={onNewTimer}
             tone="secondary"
             title={t("newTimerTitle")}
@@ -426,15 +426,16 @@ export default function TimerPanel({
           </ActionButton>
           <ActionButton
             compact={true}
-            disabled={!canCreateAlternativeTimer}
+            disabled={!hasTimerChanges}
             onClick={onDuplicateCurrentTimer}
             tone="secondary"
             title={t("duplicateTitle")}
-          >
+            >
             {t("duplicate")}
           </ActionButton>
           <ActionButton
             compact={true}
+            disabled={!hasTimerChanges}
             onClick={onOpenSaveDialog}
             tone="secondary"
             title={t("saveTitle")}
