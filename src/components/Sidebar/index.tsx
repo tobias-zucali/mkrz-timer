@@ -16,6 +16,7 @@ import classNames from "classnames"
 import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
+import IconButton from "@/components/IconButton"
 import SettingsPanel, {
   type SettingsPanelProps,
 } from "@/components/Sidebar/SettingsPanel"
@@ -392,28 +393,28 @@ export default function Sidebar({
         md:top-4 md:left-4
       "
       >
-        <button
+        <IconButton
+          appearance="ghost"
           aria-controls={offcanvasId}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           aria-label={t("toggleNavigation")}
           className={classNames(
-            "size-9",
-            "pointer-events-auto inline-flex items-center justify-center rounded-lg border",
-            "border-foreground/16 bg-background/64 text-foreground/78 shadow-sm",
-            "cursor-pointer bg-background/58 backdrop-blur-xs hover:bg-background/74 hover:text-primary",
-            "transition timer-chrome-transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
-            "focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
+            "pointer-events-auto border border-foreground/16 bg-background/58 backdrop-blur-xs shadow-sm",
+            "timer-chrome-transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
             isDimmed && "timer-chrome-dimmed",
-            isOpen && "border-primary/45 text-primary",
+            isOpen && "border-primary/45",
           )}
           data-timer-chrome-focus-lock="true"
+          isActive={isOpen}
           onClick={toggleSidebar}
+          shape="soft"
+          size="nav"
           {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
-          type="button"
+          title={t("toggleNavigation")}
         >
           <Bars3Icon className="size-4" />
-        </button>
+        </IconButton>
       </div>
       <div
         className={classNames(

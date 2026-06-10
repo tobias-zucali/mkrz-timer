@@ -21,10 +21,17 @@ function buildTimerPanel(pageTitle = "") {
   return {
     activeIndex: 0,
     onActivateSequenceRow: vi.fn(),
+    onDeleteStoredTimer: vi.fn(),
+    onDuplicateCurrentTimer: vi.fn(),
+    onNewTimer: vi.fn(),
     onPageTitleChange: vi.fn(),
+    onOpenSaveDialog: vi.fn(),
     onSequenceChange: vi.fn(),
+    onSelectStoredTimer: vi.fn(),
     pageTitle,
     params: normalizeQueryParams(DEFAULT_SYNC_PARAMS),
+    currentEntryId: null,
+    storedTimers: [],
   }
 }
 

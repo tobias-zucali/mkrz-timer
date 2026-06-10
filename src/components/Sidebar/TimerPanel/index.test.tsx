@@ -3,6 +3,7 @@ import { useState } from "react"
 
 import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
 import { renderWithIntl } from "@/test/renderWithIntl"
+import type { StoredTimerEntry } from "@/utils/timerLibrary"
 
 import TimerPanel from "./index"
 
@@ -32,10 +33,12 @@ function TimerPanelHarness({
   initialParams,
   initialPageTitle = "",
   onActivateSequenceRow,
+  storedTimers,
 }: {
   initialParams?: typeof DEFAULT_SYNC_PARAMS
   initialPageTitle?: string
   onActivateSequenceRow?: (rowIndex: number) => void
+  storedTimers?: StoredTimerEntry[]
 }) {
   const [params, setParams] = useState(
     initialParams ?? {
@@ -49,15 +52,22 @@ function TimerPanelHarness({
     <TimerPanel
       activeIndex={params.activeIndex}
       onActivateSequenceRow={onActivateSequenceRow ?? vi.fn()}
+      onDeleteStoredTimer={vi.fn()}
+      onDuplicateCurrentTimer={vi.fn()}
+      onNewTimer={vi.fn()}
       onPageTitleChange={setPageTitle}
+      onOpenSaveDialog={vi.fn()}
       onSequenceChange={(nextChange) =>
         setParams((currentParams) => ({
           ...currentParams,
           ...nextChange,
         }))
       }
+      onSelectStoredTimer={vi.fn()}
       pageTitle={pageTitle}
       params={params}
+      currentEntryId={storedTimers?.[0]?.id ?? null}
+      storedTimers={storedTimers ?? []}
     />
   )
 }
@@ -125,6 +135,42 @@ describe("TimerPanel", () => {
     expect(onActivateSequenceRow).toHaveBeenCalledWith(1)
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue(
       "Opening",
+    )
+  })
+
+  it("renders timer panel actions in the header", () => {
+    renderWithIntl(<TimerPanelHarness />)
+
+    expect(
+      screen.getByRole("button", { name: "Save timer URLs" }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole("button", { name: "Duplicate timer" }),
+    ).toBeVisible()
+    expect(screen.getByRole("button", { name: "New timer" })).toBeVisible()
+  })
+
+  it("shows recent timers when entries exist", () => {
+    renderWithIntl(
+      <TimerPanelHarness
+        storedTimers={[
+          {
+            createdAt: 100,
+            id: "entry-1",
+            pageTitle: "Workshop timer",
+            params: {
+              ...DEFAULT_SYNC_PARAMS,
+              title: "Opening",
+            },
+            updatedAt: 200,
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("Recent timers")).toBeVisible()
+    expect(screen.getByRole("button", { pressed: true })).toHaveTextContent(
+      "Workshop timer",
     )
   })
 })

@@ -3,6 +3,8 @@
 import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
+import IconButton from "@/components/IconButton"
+import RecentTimersList from "@/components/Sidebar/TimerPanel/RecentTimersList"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
@@ -11,11 +13,14 @@ import {
   getEffectiveTimerSequenceRows,
 } from "@/shared/timerSequence"
 import {
+  ArrowDownTrayIcon,
   ArrowDownIcon,
   ArrowUpIcon,
   DocumentDuplicateIcon,
+  PlusIcon,
   TrashIcon,
 } from "@/utils/icons"
+import type { StoredTimerEntry } from "@/utils/timerLibrary"
 import {
   addTimerSequenceRow,
   buildTimerSequenceChange,
@@ -24,11 +29,6 @@ import {
   moveTimerSequenceRow,
   replaceTimerSequenceRow,
 } from "@/utils/timerSequenceEditor"
-
-const iconButtonClassName =
-  "inline-flex size-8 cursor-pointer items-center justify-center rounded-full border " +
-  "border-foreground/12 text-foreground/72 transition hover:border-primary/40 " +
-  "hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 const primaryButtonClassName =
   "cursor-pointer rounded-md bg-primary px-3 py-2 text-sm font-semibold text-foreground " +
@@ -73,22 +73,36 @@ const getCardAccentStyle = ({
 export type TimerPanelProps = {
   activeIndex: number
   onActivateSequenceRow: (rowIndex: number) => void
+  onDeleteStoredTimer: (entryId: string) => void
+  onDuplicateCurrentTimer: () => void
+  onNewTimer: () => void
   onPageTitleChange: (title: string) => void
+  onOpenSaveDialog: () => void
   onSequenceChange: (nextChange: {
     activeIndex: number
     rows: SyncParams["rows"]
   }) => void
+  onSelectStoredTimer: (entryId: string) => void
   pageTitle: string
   params: SyncParams
+  currentEntryId: string | null
+  storedTimers: StoredTimerEntry[]
 }
 
 export default function TimerPanel({
   activeIndex,
   onActivateSequenceRow,
+  onDeleteStoredTimer,
+  onDuplicateCurrentTimer,
+  onNewTimer,
   onPageTitleChange,
+  onOpenSaveDialog,
   onSequenceChange,
+  onSelectStoredTimer,
   pageTitle,
   params,
+  currentEntryId,
+  storedTimers,
 }: TimerPanelProps) {
   const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
@@ -205,6 +219,35 @@ export default function TimerPanel({
   return (
     <div className="space-y-6">
       <section className="space-y-2">
+        <div className="flex items-center justify-end gap-2">
+          <IconButton
+            aria-label={t("save")}
+            onClick={onOpenSaveDialog}
+            shape="round"
+            size="sm"
+            title={t("save")}
+          >
+            <ArrowDownTrayIcon className="size-4" />
+          </IconButton>
+          <IconButton
+            aria-label={t("duplicate")}
+            onClick={onDuplicateCurrentTimer}
+            shape="round"
+            size="sm"
+            title={t("duplicate")}
+          >
+            <DocumentDuplicateIcon className="size-4" />
+          </IconButton>
+          <IconButton
+            aria-label={t("newTimer")}
+            onClick={onNewTimer}
+            shape="round"
+            size="sm"
+            title={t("newTimer")}
+          >
+            <PlusIcon className="size-4" />
+          </IconButton>
+        </div>
         <label className="sr-only" htmlFor={pageTitleInputId}>
           {t("pageTitleLabel")}
         </label>
@@ -310,62 +353,74 @@ export default function TimerPanel({
 
                   <div className="-mt-1 -mr-1 flex shrink-0 flex-wrap justify-end gap-1 self-start">
                     {canMoveUp ? (
-                      <button
+                      <IconButton
                         aria-label={t("moveStepUp", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, -1)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("moveStepUp", {
+                          step: index + 1,
+                        })}
                       >
                         <ArrowUpIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
                     {canMoveDown ? (
-                      <button
+                      <IconButton
                         aria-label={t("moveStepDown", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, 1)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("moveStepDown", {
+                          step: index + 1,
+                        })}
                       >
                         <ArrowDownIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
-                    <button
+                    <IconButton
                       aria-label={t("duplicateStep", {
                         step: index + 1,
                       })}
-                      className={iconButtonClassName}
                       onClick={(event) => {
                         event.stopPropagation()
                         handleDuplicateRow(index)
                       }}
-                      type="button"
+                      shape="round"
+                      size="sm"
+                      title={t("duplicateStep", {
+                        step: index + 1,
+                      })}
                     >
                       <DocumentDuplicateIcon className="size-4" />
-                    </button>
+                    </IconButton>
                     {canDeleteRow ? (
-                      <button
+                      <IconButton
                         aria-label={t("deleteStep", {
                           step: index + 1,
                         })}
-                        className={iconButtonClassName}
                         onClick={(event) => {
                           event.stopPropagation()
                           handleDeleteRow(index)
                         }}
-                        type="button"
+                        shape="round"
+                        size="sm"
+                        title={t("deleteStep", {
+                          step: index + 1,
+                        })}
                       >
                         <TrashIcon className="size-4" />
-                      </button>
+                      </IconButton>
                     ) : null}
                   </div>
                 </div>
@@ -390,6 +445,12 @@ export default function TimerPanel({
           </button>
         </div>
       </section>
+      <RecentTimersList
+        currentEntryId={currentEntryId}
+        entries={storedTimers}
+        onDelete={onDeleteStoredTimer}
+        onSelect={onSelectStoredTimer}
+      />
     </div>
   )
 }
