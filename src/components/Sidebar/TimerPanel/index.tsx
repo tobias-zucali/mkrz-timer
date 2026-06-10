@@ -430,7 +430,7 @@ export default function TimerPanel({
             onClick={onDuplicateCurrentTimer}
             tone="secondary"
             title={t("duplicateTitle")}
-            >
+          >
             {t("duplicate")}
           </ActionButton>
           <ActionButton
