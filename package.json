@@ -46,8 +46,7 @@
     "test:e2e:visual": "run-s test:e2e:local:visual test:e2e:remote:visual",
     "test:e2e:report": "node scripts/runtime-lane.mjs report",
     "scope": "node scripts/agent-scope.mjs",
-    "scope:audit": "node scripts/agent-scope.mjs --audit",
-    "review:workflows": "node scripts/review-workflows.mjs"
+    "scope:audit": "node scripts/agent-scope.mjs --audit"
   },
   "dependencies": {
     "classnames": "^2.5.1",

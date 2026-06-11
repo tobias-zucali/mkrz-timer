@@ -12,8 +12,6 @@ Use this skill when the user explicitly wants prototype mode. Follow the prototy
 1. Finish the work by backfilling docs, tests, and validation.
 2. Revert the prototype-only changes if the result is not worth keeping.
 
-Read [references/prototype-closeout.md](references/prototype-closeout.md) before starting if the task touches sessions, synchronization, persistence, shared state, or any live-session behavior.
-
 ## Start Prototype Mode
 
 When the user enters prototype mode:
@@ -29,9 +27,7 @@ scripts/prototype_session.mjs start --repo "$PWD" --goal "<short goal>"
 
 ## During Prototype Mode
 
-### Illustrative Ledger Updates
-
-After each meaningful change set, or whenever the prototype direction changes, update the ledger:
+Update the ledger when the retained scope or closeout obligations change:
 
 ```bash
 scripts/prototype_session.mjs update --repo "$PWD" --note "<what changed>"
@@ -42,17 +38,15 @@ Add flags when they become relevant:
 ```bash
 scripts/prototype_session.mjs update --repo "$PWD" --note "Touched shared session sync" --needs-full-validation --needs-security-review
 scripts/prototype_session.mjs update --repo "$PWD" --note "Changed live-session contract" --doc docs/live-sessions.md --test tests/e2e/remote-sync.spec.ts --needs-full-validation
-scripts/prototype_session.mjs update --repo "$PWD" --note "Changed developer workflow docs" --doc docs/development.md
 ```
 
-These examples are illustrative. Record the docs, tests, validation requirements, and review obligations that are relevant to the specific prototype.
+Record only the docs, tests, validation requirements, and security-review obligations that matter for closeout.
 
 ## Prototype Guardrails
 
 - Treat `AGENTS.md` as the execution policy even in prototype mode.
 - Treat the ledger as the source of truth for deferred prototype obligations.
-- Update the ledger notes whenever the prototype direction, retained scope, or closeout requirements change.
-- Record deferred work and review obligations in the ledger so closeout can follow `AGENTS.md` correctly.
+- Record deferred work clearly enough that closeout can return to the normal `AGENTS.md` requirements.
 
 ## Finish Prototype Mode
 
@@ -71,15 +65,18 @@ scripts/prototype_session.mjs status --repo "$PWD"
 scripts/prototype_session.mjs finish-plan --repo "$PWD"
 ```
 
-4. Resolve all deferred work recorded in the ledger and return to the standard requirements defined in [AGENTS.md](../../../AGENTS.md).
+4. Resolve all deferred work recorded in the ledger and return to the standard requirements defined in [AGENTS.md](../../../AGENTS.md):
+   - update affected docs
+   - add or adapt affected tests
+   - run the validation lane required by the affected scope
+   - perform a security review when synchronized or relay-persisted fields changed
+   - if live-session behavior changed, update `docs/live-sessions.md` and matching Playwright coverage
 
 5. After successful closeout, archive the session:
 
 ```bash
 scripts/prototype_session.mjs finish --repo "$PWD"
 ```
-
-Do not skip the backfill just because the prototype already "works."
 
 ## Revert Unsatisfying Prototypes
 
@@ -100,12 +97,3 @@ scripts/prototype_session.mjs abandon --repo "$PWD"
 ```
 
 Do not run destructive revert commands without the required approval.
-
-## Decision Rule
-
-Prototype mode must end in exactly one of these states:
-
-1. `finish`: deferred docs, tests, validation, and required reviews are all completed.
-2. `abandon`: the prototype-only changes are reverted.
-
-Do not leave prototype mode with an unresolved partial closeout.
