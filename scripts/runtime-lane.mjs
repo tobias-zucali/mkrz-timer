@@ -9,6 +9,10 @@ import {
 import path from "node:path"
 import process from "node:process"
 import { fileURLToPath } from "node:url"
+import {
+  acquireManagedE2eLock,
+  shouldAcquireManagedE2eLock,
+} from "./lib/e2e-runtime-lock.mjs"
 
 const scriptPath = fileURLToPath(import.meta.url)
 const scriptsDir = path.dirname(scriptPath)
@@ -65,6 +69,10 @@ const buildArtifactsRoot = (runId) => `.playwright-runs/${runId}`
 const buildReportDir = (runId) =>
   `${buildArtifactsRoot(runId)}/playwright-report`
 const buildOutputDir = (runId) => `${buildArtifactsRoot(runId)}/test-results`
+const buildManagedE2eCommand = ({ remote = false, passthroughArgs = [] }) => {
+  const baseCommand = remote ? "pnpm test:e2e:remote" : "pnpm test:e2e:local"
+  return [baseCommand, ...passthroughArgs].join(" ").trim()
+}
 const latestReportManifestPath = path.join(
   repoRoot,
   ".playwright-runs",
@@ -431,48 +439,62 @@ const runPlaywright = async ({
   passthroughArgs = [],
 }) => {
   resolveLane(laneId)
+  const lock = shouldAcquireManagedE2eLock(passthroughArgs)
+    ? acquireManagedE2eLock({
+        command: buildManagedE2eCommand({ remote, passthroughArgs }),
+        laneId,
+        mode: remote ? "remote" : "local",
+        repoRoot,
+      })
+    : null
   const configPath = remote
     ? "playwright.remote.config.ts"
     : "playwright.config.ts"
-  const managedRuntime = await startManagedRuntime(laneId)
-  const runtime = managedRuntime.runtime
+  let managedRuntime = null
 
-  process.stdout.write(
-    `Playwright runtime: ${runtime.appUrl} with relay ${runtime.relayWebSocketUrl}\n`,
-  )
+  try {
+    managedRuntime = await startManagedRuntime(laneId)
+    const runtime = managedRuntime.runtime
 
-  const child = spawn(
-    nodeExec,
-    [playwrightCliPath, "test", "--config", configPath, ...passthroughArgs],
-    {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        NEXT_PUBLIC_REMOTE_WS_URL: runtime.relayWebSocketUrl,
-        PLAYWRIGHT_BASE_URL: runtime.appUrl,
-        PLAYWRIGHT_MANAGED_RUNTIME: "1",
-        PLAYWRIGHT_OUTPUT_DIR: runtime.outputDir,
-        PLAYWRIGHT_NODE: nodeExec,
-        PLAYWRIGHT_RELAY_URL: `http://${APP_HOST}:${runtime.relayPort}`,
-        PLAYWRIGHT_REPORT_DIR: runtime.reportDir,
+    process.stdout.write(
+      `Playwright runtime: ${runtime.appUrl} with relay ${runtime.relayWebSocketUrl}\n`,
+    )
+
+    const child = spawn(
+      nodeExec,
+      [playwrightCliPath, "test", "--config", configPath, ...passthroughArgs],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          NEXT_PUBLIC_REMOTE_WS_URL: runtime.relayWebSocketUrl,
+          PLAYWRIGHT_BASE_URL: runtime.appUrl,
+          PLAYWRIGHT_MANAGED_RUNTIME: "1",
+          PLAYWRIGHT_OUTPUT_DIR: runtime.outputDir,
+          PLAYWRIGHT_NODE: nodeExec,
+          PLAYWRIGHT_RELAY_URL: `http://${APP_HOST}:${runtime.relayPort}`,
+          PLAYWRIGHT_REPORT_DIR: runtime.reportDir,
+        },
+        stdio: "inherit",
       },
-      stdio: "inherit",
-    },
-  )
+    )
 
-  const exitCode = await new Promise((resolve) => {
-    child.on("exit", (code, signal) => {
-      if (signal) {
-        process.kill(process.pid, signal)
-        return
-      }
-
-      resolve(code ?? 1)
+    const result = await new Promise((resolve) => {
+      child.on("exit", (code, signal) => {
+        resolve({ code: code ?? 1, signal })
+      })
     })
-  })
 
-  await managedRuntime.stop()
-  process.exit(exitCode)
+    if (result.signal) {
+      process.kill(process.pid, result.signal)
+      return
+    }
+
+    process.exitCode = result.code
+  } finally {
+    await managedRuntime?.stop()
+    lock?.release()
+  }
 }
 
 const showLatestReport = async () => {
@@ -571,4 +593,8 @@ const main = async () => {
   }
 }
 
-await main()
+try {
+  await main()
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error))
+}

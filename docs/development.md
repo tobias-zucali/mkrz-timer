@@ -115,6 +115,7 @@ Shared Playwright notes:
 - preferred app port: `3300`
 - preferred relay port: `9200`
 - each Playwright run writes its test artifacts and HTML report to a matching `.playwright-runs/<lane>-<appPort>-<relayPort>/...` directory so concurrent runs do not share report or trace output
+- managed `pnpm test:e2e:local*` and `pnpm test:e2e:remote*` commands take a repo-local exclusive lock before starting the Playwright app/relay runtime, so a second managed E2E run fails fast instead of racing another stack; `pnpm test:e2e:ui` is exempt and may run in parallel
 
 Relevant commands:
 
@@ -136,6 +137,7 @@ Smallest-first workflow:
 - `pnpm scope:audit` validates every `scope.yaml` and prints structural warnings for rule-heavy or exception-only boundaries.
 - `pnpm scope` discovers the nearest ancestor `scope.yaml` for each changed file, so moving a feature usually means moving its `scope.yaml` with it instead of editing a central mapping table.
 - Do not run overlapping Playwright lanes in parallel when they share ports.
+- Managed local and remote E2E commands intentionally block parallel startup even when free ports exist; wait for the running command to finish before retrying, or use `pnpm test:e2e:ui` when you need a parallel interactive session.
 - If a UI change is intentional and snapshots fail, update the affected aria or visual snapshots before broad reruns.
 
 Practical rule:
