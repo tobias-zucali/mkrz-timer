@@ -72,7 +72,7 @@ Depending on the features used, the application may rely on:
 
 - browser capabilities
 - local browser storage
-- shared session services for remote synchronization
+- the relay service for live synchronization
 - network connectivity
 
 Some features may behave differently depending on browser support, device capabilities, or network conditions.

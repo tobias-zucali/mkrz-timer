@@ -62,7 +62,10 @@ function sessionRoot(repo) {
 }
 
 function sessionPath(repo) {
-  return path.join(sessionRoot(repo), `${path.basename(repo)}-${repoKey(repo)}.json`)
+  return path.join(
+    sessionRoot(repo),
+    `${path.basename(repo)}-${repoKey(repo)}.json`,
+  )
 }
 
 function loadSession(repo) {

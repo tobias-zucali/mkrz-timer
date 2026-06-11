@@ -53,7 +53,17 @@ type ScreenshotMaskOptions = {
   name: string
 }
 
-type SidebarPanelName = "Settings" | "Share" | "Status" | "Timer"
+type SidebarPanelName =
+  | "About"
+  | "Accessibility"
+  | "Contact"
+  | "Impressum"
+  | "Privacy"
+  | "Settings"
+  | "Share"
+  | "Status"
+  | "Terms"
+  | "Timer"
 
 const DEBUG_INFO_SELECTORS = [
   "nextjs-portal",
@@ -89,7 +99,14 @@ async function expectDocumentSentinel(page: Page, expectedSentinel: string) {
     .toBe(expectedSentinel)
 }
 
+async function suppressWelcomeBanner(page: Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("timer.welcomeBanner.v1.dismissed", "1")
+  })
+}
+
 export async function openTimer(page: Page, seconds = 3, baseUrl?: string) {
+  await suppressWelcomeBanner(page)
   const path = buildTimerPath({ seconds })
   await page.goto(baseUrl ? new URL(path, baseUrl).toString() : path)
 }
@@ -113,13 +130,16 @@ export async function expectScreenshotWithoutDebugInfo(
       maxDiffPixelRatio,
     })
   } finally {
-    await styleTag.evaluate((node) => {
-      node.parentNode?.removeChild(node)
-    })
+    await styleTag
+      .evaluate((node) => {
+        node.parentNode?.removeChild(node)
+      })
+      .catch(() => {})
   }
 }
 
 export async function enableLiveSession(page: Page) {
+  await suppressWelcomeBanner(page)
   await page.goto(timerUrl)
 
   await openSidebarPanel(page, "Share")

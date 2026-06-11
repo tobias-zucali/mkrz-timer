@@ -49,6 +49,7 @@ Authoring rules:
 - use `.test.ts` for pure logic tests that should run under `node:test`, even when the file sits near a component
 - use `.test.tsx` for React/jsdom tests that should run under Vitest
 - keep browser tests focused on visible product guarantees such as route behavior, control permissions, readonly behavior, synchronized timer state, recovery UX, and first-load rendering
+- add `toMatchAriaSnapshot()` coverage for new standalone screens, dialogs, or panels when they introduce meaningful accessibility-tree surface that should remain stable
 - prefer accessibility queries such as `getByRole`, `getByLabel`, and `getByText` when the element is user-perceivable
 - move protocol/state-machine edge cases, merge branches, malformed payload handling, and other non-visual logic into unit or server-safe tests where possible
 - avoid making remote debug attributes or exact participant-count convergence the main acceptance criteria for multi-client coverage
@@ -139,6 +140,7 @@ Smallest-first workflow:
 - Do not run overlapping Playwright lanes in parallel when they share ports.
 - Managed local and remote E2E commands intentionally block parallel startup even when free ports exist; wait for the running command to finish before retrying, or use `pnpm test:e2e:ui` when you need a parallel interactive session.
 - If a UI change is intentional and snapshots fail, update the affected aria or visual snapshots before broad reruns.
+- Public informational pages and the first-use welcome flow are covered by dedicated Playwright specs. When their structure changes, update the corresponding ARIA snapshots before running the final broad lane.
 
 Practical rule:
 

@@ -7,7 +7,7 @@ description: Privacy information and data handling for mkrz timer.
 
 mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
 
-This page explains how local-only and synchronized remote usage work, which information may be stored locally in the browser, and how remote sessions are handled.
+This page explains how local-only usage and live sessions work in the current implementation, which information may be stored in your browser, and how the relay currently handles synchronized sessions.
 
 We aim to keep the project privacy-conscious, transparent, and understandable.
 
@@ -17,36 +17,64 @@ mkrz timer can be used directly in the browser without creating an account.
 
 In local-only mode:
 
-- timer state remains on your device
-- no timer information is synchronized with the shared session service
+- timer state remains in your browser unless you share a link
+- no timer information is synchronized with the live-session relay
 - no account is required
 - no remote session is created
 
-Depending on the features used, the application may store information locally in the browser to restore sessions, preferences, or interface state.
+Depending on the features you use, the application may store a small amount of information in `localStorage`.
 
-This may include:
+In the current implementation, this includes:
 
-- local browser storage
-- session storage
-- local preferences or timer configuration
-- dismissed onboarding or welcome states
+- recent and current local timer snapshots in `timer.localLibrary`
+- the share-panel preference in `timer.share.includeVoiceSoundSettings`
+- the welcome-banner dismissal flag in `timer.welcomeBanner.v1.dismissed`
 
-In local-only mode, this information remains on your device unless you intentionally share it.
+We do not currently use browser cookies for the timer itself, and we do not currently use `sessionStorage` for the timer state described on this page.
 
-## Remote synchronized sessions
+In local-only mode, this information remains on your device unless you intentionally share a URL.
 
-mkrz timer also supports synchronized remote sessions that allow multiple devices or participants to stay in sync.
+## Live synchronized sessions
 
-When remote synchronization is used:
+mkrz timer also supports synchronized live sessions that allow multiple devices or participants to stay in sync.
 
-- timer state is synchronized through the shared session service
-- synchronized session information may temporarily exist within the synchronization infrastructure
-- remote session identifiers may be shared through URLs or session links
+When live synchronization is used:
+
+- timer state is synchronized through the relay service
+- separate control and readonly access links are created
+- the access tokens are part of the shared URLs
 - participants opening the same session can see synchronized timer changes
 
-Remote sessions use the verified email address as the session key.
+The current implementation does **not** use a verified email address as the session key.
 
-The synchronized state is intended only to provide the collaborative timer functionality.
+Instead, the live-session system uses:
+
+- a generated session id
+- a generated control token
+- a generated readonly token
+
+These values are treated as access credentials. They may appear in browser history, copied links, chat messages, emails, or other places where you intentionally share the URL.
+
+The client currently keeps live-session state in memory while the page is open. The application does not currently store live-session access tokens in browser `localStorage`.
+
+## Server-side live-session handling
+
+The current relay implementation keeps live-session data in server memory.
+
+This currently includes:
+
+- the canonical synchronized timer snapshot
+- the participant list for connected clients
+- the generated access tokens
+- in-memory recovery metadata used to rebuild control sessions after disconnects or relay restarts
+
+Active sessions are removed from the active-session map after an inactivity timeout.
+
+The current implementation does not write the live-session snapshot to a dedicated database in normal operation.
+
+The relay health endpoint and server process may still expose or create ordinary operational data such as logs, error output, and connection diagnostics needed to run and debug the service.
+
+Because the current recovery metadata also lives in server memory, some live-session metadata may remain in memory until the relay process restarts, even after an active session has ended.
 
 ## Infrastructure and hosting
 
@@ -56,23 +84,9 @@ The server infrastructure is currently operated in Frankfurt, Germany.
 
 Applicable Austrian and European Union privacy regulations, including GDPR/DSGVO requirements, are intended to apply where relevant.
 
-## Server-side handling
-
-Depending on the features used, technical server-side information may temporarily exist for operational purposes.
-
-This can include:
-
-- active synchronized timer state
-- temporary session identifiers
-- connection-related technical information
-- synchronization infrastructure state
-- infrastructure logs required for stability, security, or debugging
-
-We aim to minimize stored information wherever practical.
-
 ## Third-party services
 
-The hosted application may depend on infrastructure providers or technical services required to operate the synchronization infrastructure.
+The hosted application may depend on infrastructure providers or technical services required to operate the relay and hosting setup.
 
 At the time of writing, this includes hosting infrastructure provided through Hetzner.
 
@@ -94,7 +108,7 @@ The open-source nature of the project is intended to make technical behavior mor
 
 You can:
 
-- use the application locally without remote synchronization
+- use the application locally without starting a live session
 - avoid creating or joining synchronized sessions
 - clear browser storage locally through your browser settings
 - stop using the hosted service at any time

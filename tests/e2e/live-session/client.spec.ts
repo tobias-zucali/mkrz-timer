@@ -867,24 +867,11 @@ test(
   async ({ page }) => {
     await page.goto("/view")
 
-    const styleTag = await page.addStyleTag({
-      content: `
-        [data-testid="remote-status-activity-log"] { display: none !important; }
-      `,
+    await expectScreenshotWithoutDebugInfo(page, {
+      fullPage: true,
+      message: "malformed viewer-link error state should stay visually stable",
+      name: "remote-malformed-viewer-link-error.png",
     })
-
-    try {
-      await expectScreenshotWithoutDebugInfo(page, {
-        fullPage: true,
-        message:
-          "malformed viewer-link error state should stay visually stable",
-        name: "remote-malformed-viewer-link-error.png",
-      })
-    } finally {
-      await styleTag.evaluate((node) => {
-        node.parentNode?.removeChild(node)
-      })
-    }
   },
 )
 
@@ -955,22 +942,10 @@ test(
       name: "remote-expired-viewer-link-screen.aria.yml",
     })
 
-    const styleTag = await expiredViewerPage.addStyleTag({
-      content: `
-        [data-testid="remote-status-activity-log"] { display: none !important; }
-      `,
+    await expectScreenshotWithoutDebugInfo(expiredViewerPage, {
+      fullPage: true,
+      message: "expired viewer-link error state should stay visually stable",
+      name: "remote-expired-viewer-link-error.png",
     })
-
-    try {
-      await expectScreenshotWithoutDebugInfo(expiredViewerPage, {
-        fullPage: true,
-        message: "expired viewer-link error state should stay visually stable",
-        name: "remote-expired-viewer-link-error.png",
-      })
-    } finally {
-      await styleTag.evaluate((node) => {
-        node.parentNode?.removeChild(node)
-      })
-    }
   },
 )

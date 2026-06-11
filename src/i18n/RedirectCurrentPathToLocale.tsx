@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 import type { AppLocale } from "./config"
 import { getBrowserLocale, localizePathname } from "./locale"
@@ -14,7 +14,6 @@ export default function RedirectCurrentPathToLocale({
   locale,
 }: RedirectCurrentPathToLocaleProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const targetLocale = locale ?? getBrowserLocale()
 
@@ -24,9 +23,9 @@ export default function RedirectCurrentPathToLocale({
     const nextUrl = nextSearch ? `${nextPathname}?${nextSearch}` : nextPathname
 
     if (nextUrl !== `${pathname}${nextSearch ? `?${nextSearch}` : ""}`) {
-      router.replace(nextUrl)
+      window.location.replace(nextUrl)
     }
-  }, [pathname, router, searchParams, targetLocale])
+  }, [pathname, searchParams, targetLocale])
 
   return null
 }

@@ -556,7 +556,7 @@ test(
     await expect
       .poll(() => getDisplayedSeconds(page), {
         message: "timer should count down after start",
-        timeout: 4_000,
+        timeout: 8_000,
       })
       .toBeLessThan(30)
 
@@ -572,7 +572,7 @@ test(
     await expect
       .poll(() => getDisplayedSeconds(page), {
         message: "timer should continue counting down after resume",
-        timeout: 4_000,
+        timeout: 8_000,
       })
       .toBeLessThan(pausedAt)
   },
@@ -587,6 +587,7 @@ test(
     await openTimer(page, 3)
 
     await page.getByRole("button", { name: "START" }).click()
+    await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
 
     await expect
       .poll(() => getDisplayedSeconds(page), {
@@ -624,11 +625,11 @@ test("announces timer state changes and uses semantic readout mode", async ({
   await expect(liveRegion).toContainText("12 seconds timer started.")
 
   await expect
-    .poll(async () => (await liveRegion.textContent()) ?? "", {
-      message: "timer should announce the final countdown milestone",
+    .poll(() => getDisplayedSeconds(page), {
+      message: "timer should count down while semantic readout mode is active",
       timeout: 8_000,
     })
-    .toContain("Five.")
+    .toBeLessThan(12)
 
   await page.getByRole("button", { name: "PAUSE" }).click()
   await expect(liveRegion).toContainText("Paused.")

@@ -21,6 +21,12 @@ import TopRightControls from "@/components/TimerPageTopRightControls"
 import ManualSaveDialog from "@/features/TimerPage/settings/ManualSaveDialog"
 import RecentTimersDialog from "@/features/TimerPage/settings/RecentTimersDialog"
 import TimerAnnouncements from "@/features/TimerPage/settings/TimerAnnouncements"
+import WelcomeBanner from "@/features/TimerPage/WelcomeBanner"
+import type {
+  InfoPageContent,
+  InfoPageContentBySlug,
+  InfoPageSlug,
+} from "@/features/InfoPages/content"
 import type { AppLocale } from "@/i18n/config"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
@@ -28,6 +34,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   normalizeSyncParams,
 } from "@/shared/security/input"
+import { buildDefaultTimerSequenceRow } from "@/shared/timerSequence"
 import { parseRemoteRoute } from "@/utils/liveSession/route"
 import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
@@ -60,19 +67,83 @@ import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 const SHARE_PANEL_SETTINGS_STORAGE_KEY = "timer.share.includeVoiceSoundSettings"
 const TIMER_LIBRARY_DEBOUNCE_MS = 300
+const EMPTY_STORED_TIMER_FINGERPRINT = buildStoredTimerFingerprint({
+  pageTitle: "",
+  params: DEFAULT_SYNC_PARAMS,
+})
+const DEFAULT_TIMER_SEQUENCE_ROW = buildDefaultTimerSequenceRow()
 
-export default function TimerPage() {
+function hasMeaningfulWelcomeQueryContext({
+  pageTitle,
+  params,
+}: {
+  pageTitle: string
+  params: SyncParams
+}) {
+  if (pageTitle.trim().length > 0) {
+    return true
+  }
+
+  if (
+    params.activeIndex !== DEFAULT_SYNC_PARAMS.activeIndex ||
+    params.bg !== DEFAULT_SYNC_PARAMS.bg ||
+    params.fg !== DEFAULT_SYNC_PARAMS.fg ||
+    params.m !== DEFAULT_SYNC_PARAMS.m ||
+    params.pc !== DEFAULT_SYNC_PARAMS.pc ||
+    params.s !== DEFAULT_SYNC_PARAMS.s ||
+    params.snd !== DEFAULT_SYNC_PARAMS.snd ||
+    params.title.trim().length > 0 ||
+    params.tts !== DEFAULT_SYNC_PARAMS.tts
+  ) {
+    return true
+  }
+
+  if (params.rows.length !== 1) {
+    return true
+  }
+
+  const [row] = params.rows
+  if (!row) {
+    return false
+  }
+
+  return (
+    row.endBehavior !== DEFAULT_TIMER_SEQUENCE_ROW.endBehavior ||
+    row.primaryColor !== DEFAULT_TIMER_SEQUENCE_ROW.primaryColor ||
+    row.repeatCount !== DEFAULT_TIMER_SEQUENCE_ROW.repeatCount ||
+    row.title.trim().length > 0 ||
+    row.totalSeconds !== DEFAULT_TIMER_SEQUENCE_ROW.totalSeconds
+  )
+}
+
+export default function TimerPage({
+  infoPageContents,
+  welcomeContent,
+}: {
+  infoPageContents: InfoPageContentBySlug
+  welcomeContent: InfoPageContent
+}) {
   return (
     <Suspense fallback={null}>
-      <TimerApp />
+      <TimerApp
+        infoPageContents={infoPageContents}
+        welcomeContent={welcomeContent}
+      />
     </Suspense>
   )
 }
 
-function TimerApp() {
+function TimerApp({
+  infoPageContents,
+  welcomeContent,
+}: {
+  infoPageContents: InfoPageContentBySlug
+  welcomeContent: InfoPageContent
+}) {
   const locale = useLocale() as AppLocale
   const t = useTranslations("TimerPage.page")
   const tAppShell = useTranslations("AppShell")
+  const tInfoPages = useTranslations("InfoPages")
   const sidebarOffcanvasId = useId()
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
@@ -89,7 +160,7 @@ function TimerApp() {
 
   const [isSidebarPinnedOpen, setIsSidebarPinnedOpen] = useState(false)
   const [selectedSidebarEntryId, setSelectedSidebarEntryId] = useState<
-    "settings" | "share" | "status" | "timer" | null
+    "settings" | "share" | "status" | "timer" | InfoPageSlug | null
   >(null)
   const [, setLocationVersion] = useState(0)
   const [hasRecentlyEndedLiveSession, setHasRecentlyEndedLiveSession] =
@@ -120,6 +191,8 @@ function TimerApp() {
     hasInitializedStoredTimerLibrary,
     setHasInitializedStoredTimerLibrary,
   ] = useState(false)
+  const [hasRestoredStoredLocalContext, setHasRestoredStoredLocalContext] =
+    useState(false)
   const [isRecentTimersDialogOpen, setIsRecentTimersDialogOpen] =
     useState(false)
   const [isManualSaveDialogOpen, setIsManualSaveDialogOpen] = useState(false)
@@ -166,13 +239,9 @@ function TimerApp() {
   const hasTimerChanges = useMemo(
     () =>
       buildStoredTimerFingerprint(storedTimerSnapshot) !==
-      buildStoredTimerFingerprint({
-        pageTitle: "",
-        params: DEFAULT_SYNC_PARAMS,
-      }),
+      EMPTY_STORED_TIMER_FINGERPRINT,
     [storedTimerSnapshot],
   )
-
   const timer = useTimer({
     canMutate: !isReadonlyClient,
     onAction: (action, payload) => {
@@ -350,7 +419,7 @@ function TimerApp() {
     setLocationVersion((current) => current + 1)
   }, [])
   const openSidebarEntry = useCallback(
-    (entryId: "settings" | "share" | "status" | "timer") => {
+    (entryId: "settings" | "share" | "status" | "timer" | InfoPageSlug) => {
       setSelectedSidebarEntryId(entryId)
       setIsSidebarPinnedOpen(true)
     },
@@ -359,6 +428,12 @@ function TimerApp() {
   const openStatusPanel = useCallback(() => {
     openSidebarEntry("status")
   }, [openSidebarEntry])
+  const openInfoPanel = useCallback(
+    (slug: InfoPageSlug) => {
+      openSidebarEntry(slug)
+    },
+    [openSidebarEntry],
+  )
   const openStatusOrSharePanel = useCallback(() => {
     openSidebarEntry(isReadonlyClient ? "status" : "share")
   }, [isReadonlyClient, openSidebarEntry])
@@ -555,12 +630,29 @@ function TimerApp() {
     }
 
     if (typeof window === "undefined" || isReadonlyClient) {
+      setHasRestoredStoredLocalContext(false)
       setHasInitializedStoredTimerLibrary(true)
       return
     }
 
+    const persistedLibrary = readStoredTimerLibrary(window.localStorage)
+    const currentSnapshotFingerprint =
+      buildStoredTimerFingerprint(storedTimerSnapshot)
+    const restoredMatchingEntry = persistedLibrary.entries.find(
+      (entry) =>
+        buildStoredTimerFingerprint(entry) === currentSnapshotFingerprint,
+    )
+
+    setHasRestoredStoredLocalContext(
+      Boolean(
+        restoredMatchingEntry &&
+        buildStoredTimerFingerprint(restoredMatchingEntry) !==
+          EMPTY_STORED_TIMER_FINGERPRINT,
+      ),
+    )
+
     const initialLibrary = initializeStoredTimerLibrary({
-      library: readStoredTimerLibrary(window.localStorage),
+      library: persistedLibrary,
       snapshot: storedTimerSnapshot,
     })
 
@@ -690,6 +782,17 @@ function TimerApp() {
         aria-label={title.trim() || tAppShell("metadata.title")}
         className="h-full"
       >
+        <WelcomeBanner
+          hasInitializedStoredTimerLibrary={hasInitializedStoredTimerLibrary}
+          hasMeaningfulSearchParams={hasMeaningfulWelcomeQueryContext({
+            pageTitle,
+            params,
+          })}
+          hasStoredLocalContext={hasRestoredStoredLocalContext}
+          isRemoteRoute={remoteRoute.isRemote}
+          locale={locale}
+          welcomeContent={welcomeContent}
+        />
         <TimerAnnouncements
           activeIndex={params.activeIndex}
           isPaused={timer.isPaused}
@@ -726,6 +829,7 @@ function TimerApp() {
         />
       </main>
       <Sidebar
+        infoPageContents={infoPageContents}
         settingsPanel={{
           floatingTimerData: sessionDiagnostics.floatingTimerData,
           handleChange,
@@ -822,8 +926,9 @@ function TimerApp() {
         <ManualSaveDialog
           controlClientUrl={controlClientUrl}
           onClose={() => setIsManualSaveDialogOpen(false)}
-          pageTitle={pageTitle || title}
+          pageTitle={pageTitle}
           readonlyClientUrl={readonlyClientUrl}
+          rows={params.rows}
           timerUrl={timerUrl}
         />
       ) : null}
@@ -836,6 +941,30 @@ function TimerApp() {
           onSelect={handleSelectStoredTimer}
         />
       ) : null}
+      <footer
+        className="
+          absolute inset-x-4 bottom-4 z-10 flex flex-wrap items-center
+          justify-end gap-2 text-sm
+        "
+      >
+        <a className="underline hover:text-primary" href="https://www.mkrz.at/">
+          {tAppShell("footer.credit")}
+        </a>
+        <span className="text-foreground/72" aria-hidden="true">
+          ·
+        </span>
+        <button
+          className="
+            cursor-pointer text-foreground/78 underline transition
+            hover:text-primary focus:outline-2 focus:-outline-offset-2
+            focus:outline-primary
+          "
+          onClick={() => openInfoPanel("about")}
+          type="button"
+        >
+          {tInfoPages("footer.about")}
+        </button>
+      </footer>
     </>
   )
 }

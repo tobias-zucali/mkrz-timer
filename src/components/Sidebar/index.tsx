@@ -17,6 +17,8 @@ import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
 import IconButton from "@/components/IconButton"
+import OverlayBackdrop from "@/components/OverlayBackdrop"
+import InfoPanel from "@/components/Sidebar/InfoPanel"
 import SettingsPanel, {
   type SettingsPanelProps,
 } from "@/components/Sidebar/SettingsPanel"
@@ -29,8 +31,13 @@ import StatusPanel, {
 import TimerPanel, {
   type TimerPanelProps,
 } from "@/components/Sidebar/TimerPanel"
+import type {
+  InfoPageContentBySlug,
+  InfoPageSlug,
+} from "@/features/InfoPages/content"
 import { getCompactStatusAppearance } from "@/components/StatusBadge/statusHelpers"
 import {
+  DocumentDuplicateIcon,
   Bars3Icon,
   ChevronLeftIcon,
   ClockIcon,
@@ -41,7 +48,7 @@ import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
 import useIsNarrowViewport from "@/utils/useIsNarrowViewport"
 
-type SidebarEntryId = "settings" | "share" | "status" | "timer"
+type SidebarEntryId = "settings" | "share" | "status" | "timer" | InfoPageSlug
 
 type SidebarEntry = {
   icon: ReactElement
@@ -96,13 +103,28 @@ function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
   )
 }
 
+function isInfoPageEntryId(
+  entryId: SidebarEntryId | null,
+): entryId is InfoPageSlug {
+  return (
+    entryId === "about" ||
+    entryId === "privacy" ||
+    entryId === "impressum" ||
+    entryId === "terms" ||
+    entryId === "accessibility" ||
+    entryId === "contact"
+  )
+}
+
 export default function Sidebar({
+  infoPageContents,
   shell,
   settingsPanel,
   statusPanelData,
   sharePanel,
   timerPanel,
 }: {
+  infoPageContents: InfoPageContentBySlug
   shell: SidebarShellProps
   settingsPanel: SettingsPanelProps
   sharePanel: SidebarSharePanelProps
@@ -112,6 +134,7 @@ export default function Sidebar({
   const generatedOffcanvasId = useId()
   const t = useTranslations("Sidebar")
   const tAppShell = useTranslations("AppShell")
+  const tInfoPagesFooter = useTranslations("InfoPages.footer")
   const isNarrowViewport = useIsNarrowViewport()
   const offcanvasRef = useRef<HTMLDivElement>(null)
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null)
@@ -142,6 +165,38 @@ export default function Sidebar({
       icon: <CogIcon className="size-4" />,
       id: "settings",
       label: t("entries.settings"),
+    },
+  ]
+  const infoEntries: SidebarEntry[] = [
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "about",
+      label: tInfoPagesFooter("about"),
+    },
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "privacy",
+      label: tInfoPagesFooter("privacy"),
+    },
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "impressum",
+      label: tInfoPagesFooter("impressum"),
+    },
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "terms",
+      label: tInfoPagesFooter("terms"),
+    },
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "accessibility",
+      label: tInfoPagesFooter("accessibility"),
+    },
+    {
+      icon: <DocumentDuplicateIcon className="size-4" />,
+      id: "contact",
+      label: tInfoPagesFooter("contact"),
     },
   ]
 
@@ -202,9 +257,16 @@ export default function Sidebar({
           return t("entries.settings")
         case "status":
           return t("entries.status")
+        case "about":
+        case "privacy":
+        case "impressum":
+        case "terms":
+        case "accessibility":
+        case "contact":
+          return tInfoPagesFooter(entry)
       }
     },
-    [t, timerEntryLabel],
+    [t, tInfoPagesFooter, timerEntryLabel],
   )
 
   useDialogFocusTrap({
@@ -280,6 +342,13 @@ export default function Sidebar({
         )
       case "status":
         return <StatusPanel {...statusPanelData} />
+      case "about":
+      case "privacy":
+      case "impressum":
+      case "terms":
+      case "accessibility":
+      case "contact":
+        return <InfoPanel content={infoPageContents[selectedEntry]} />
       case null:
         return null
     }
@@ -293,10 +362,16 @@ export default function Sidebar({
           ? t("entries.share")
           : selectedEntry === "settings"
             ? t("entries.settings")
-            : t("entries.status")
+            : selectedEntry === "status"
+              ? t("entries.status")
+              : selectedEntry
+                ? tInfoPagesFooter(selectedEntry)
+                : t("entries.status")
     const readonlyPanelContent =
       selectedEntry === "status" ? (
         <StatusPanel {...statusPanelData} />
+      ) : isInfoPageEntryId(selectedEntry) ? (
+        <InfoPanel content={infoPageContents[selectedEntry]} />
       ) : (
         <ReadonlyUnsupportedPlaceholder title={readonlyPanelTitle} />
       )
@@ -304,16 +379,13 @@ export default function Sidebar({
     return (
       <div className="pointer-events-none fixed inset-0 z-30">
         {isOverlayActive && (
-          <button
-            aria-label={t("closeSidebar")}
-            className="
-              pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
-              backdrop-blur-[2px] transition-opacity duration-300
+          <OverlayBackdrop
+            ariaLabel={t("closeSidebar")}
+            className={`
+              pointer-events-auto opacity-100 transition-opacity duration-300
               motion-reduce:transition-none
-            "
+            `}
             onClick={closeSidebar}
-            tabIndex={-1}
-            type="button"
           />
         )}
         <div
@@ -375,16 +447,13 @@ export default function Sidebar({
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
       {isOverlayActive && (
-        <button
-          aria-label={t("closeSidebar")}
-          className="
-            pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
-            backdrop-blur-[2px] transition-opacity duration-300
+        <OverlayBackdrop
+          ariaLabel={t("closeSidebar")}
+          className={`
+            pointer-events-auto opacity-100 transition-opacity duration-300
             motion-reduce:transition-none
-          "
+          `}
           onClick={closeSidebar}
-          tabIndex={-1}
-          type="button"
         />
       )}
       <div
@@ -458,6 +527,30 @@ export default function Sidebar({
           >
             <ul className="space-y-1">
               {mainEntries.map((entry) => {
+                const isSelected = selectedEntryId === entry.id
+
+                return (
+                  <li key={entry.id}>
+                    <button
+                      className={classNames(
+                        sidebarBaseItemClassName,
+                        isSelected && selectedSidebarItemClassName,
+                      )}
+                      onClick={() => openEntry(entry.id)}
+                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
+                      type="button"
+                    >
+                      <span className="shrink-0 text-foreground/82">
+                        {entry.icon}
+                      </span>
+                      <span>{entry.label}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            <ul className="mt-3 space-y-1 border-t border-foreground/10 pt-3">
+              {infoEntries.map((entry) => {
                 const isSelected = selectedEntryId === entry.id
 
                 return (

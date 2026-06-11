@@ -6,6 +6,8 @@
     - text: View only. Remaining time. 1 minute
   - button "Share viewer link"
 - button "Open session status. Live session, Connected, VIEWER access"
-- link "by mkrz":
-  - /url: https://www.mkrz.at/
+- contentinfo:
+  - link "by mkrz":
+    - /url: https://www.mkrz.at/
+  - button "About"
 - alert

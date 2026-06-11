@@ -6,7 +6,7 @@
     - paragraph: Error
     - paragraph: Live session link is invalid or expired. Ask for a fresh link an
   - button "Share viewer link"
-- button "Open session status. Live session, Error, VIEWER access"
+- button "Open session status. Live session, Error, VIEWER access": Error VIEWER
 - alertdialog "Live session recovery needs your decision.":
   - paragraph: Live session recovery
   - heading "Live session recovery needs your decision." [level=2]
@@ -14,6 +14,8 @@
   - button "Send debug info"
   - button "Retry connection"
   - button "Use local mode"
-- link "by mkrz":
-  - /url: https://www.mkrz.at/
+- contentinfo:
+  - link "by mkrz":
+    - /url: https://www.mkrz.at/
+  - button "About"
 - alert

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
+import OverlayBackdrop from "@/components/OverlayBackdrop"
 import ActionButton from "@/utils/ActionButton"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 import useDialogFocusTrap from "@/utils/useDialogFocusTrap"
@@ -21,6 +22,7 @@ export default function DeveloperReportDialog({
   subject?: string
 }) {
   const t = useTranslations("DeveloperReportDialog")
+  const tCloseButton = useTranslations("CloseButton")
   const [reportComment, setReportComment] = useState("")
   const reportDialogRef = useRef<HTMLDivElement>(null)
   const reportCommentRef = useRef<HTMLTextAreaElement>(null)
@@ -59,16 +61,16 @@ export default function DeveloperReportDialog({
     <div
       aria-modal="true"
       className="
-        fixed inset-0 z-60 flex items-center justify-center bg-background/70
-        px-4 py-6 backdrop-blur-sm
+        fixed inset-0 isolate z-60 flex items-center justify-center px-4 py-6
       "
       ref={reportDialogRef}
       role="dialog"
       tabIndex={-1}
     >
+      <OverlayBackdrop ariaLabel={tCloseButton("close")} onClick={onClose} />
       <div
         className="
-          w-full max-w-xl rounded-3xl border border-foreground/12 bg-background
+          relative z-10 w-full max-w-xl rounded-3xl border border-foreground/12 bg-background
           p-6 shadow-2xl shadow-background/35
         "
       >

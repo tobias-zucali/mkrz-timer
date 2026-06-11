@@ -1,0 +1,78 @@
+- heading "Accessibility" [level=2]
+- button "Close sidebar"
+- article:
+  - heading "Accessibility" [level=1]
+  - paragraph:
+    - text: mkrz timer is a personal side project by Tobias Zucali, Co-Founder of
+    - link "mkrz lab":
+      - /url: https://www.mkrz.at/
+    - text: .
+  - paragraph: The project is intended to support collaborative, educational, and facilitation contexts through a simple and accessible timer interface.
+  - paragraph: Accessibility is considered an important part of the project.
+  - heading "Accessibility goals" [level=2]
+  - paragraph: "The project aims to support:"
+  - list:
+    - listitem: keyboard-friendly interaction
+    - listitem: readable and distraction-free layouts
+    - listitem: responsive and mobile-friendly usage
+    - listitem: clear interaction patterns
+    - listitem: accessible usage across collaborative and presentation contexts
+  - paragraph: The intention is to create an experience that works well across different environments, devices, and participation settings.
+  - heading "Collaborative and physical spaces" [level=2]
+  - paragraph: mkrz timer is often used in collaborative and facilitation contexts where digital and physical interaction overlap.
+  - paragraph: "This influences many design decisions, including:"
+  - list:
+    - listitem: readability in shared spaces
+    - listitem: low-distraction presentation modes
+    - listitem: compatibility across different devices and display situations
+    - listitem: support for hybrid and collaborative participation
+  - heading "Current status" [level=2]
+  - paragraph: Accessibility is an ongoing process.
+  - paragraph: While we aim to improve usability and accessibility continuously, the project may still contain limitations, inconsistencies, or areas that can be improved.
+  - paragraph: We especially welcome accessibility-related feedback from people using assistive technologies or participating in collaborative workshop settings.
+  - heading "Current limitations" [level=2]
+  - paragraph: While accessibility is considered throughout the project, some areas may still present challenges.
+  - paragraph: "Possible limitations can include:"
+  - list:
+    - listitem: incomplete accessibility optimization in some interface areas
+    - listitem: differences in behavior across browsers, devices, or network conditions
+    - listitem: reduced accessibility in experimental or newly introduced features
+  - paragraph: Because the project is actively evolving, some accessibility issues may not yet be identified.
+  - heading "Planned improvements" [level=2]
+  - paragraph: "We aim to continue improving:"
+  - list:
+    - listitem: keyboard and screen reader accessibility
+    - listitem: responsive and mobile-friendly layouts
+    - listitem: readability and usability in collaborative and presentation contexts
+    - listitem: accessibility testing across devices and browsers
+    - listitem: accessibility considerations for collaborative and hybrid participation
+  - paragraph: Feedback from users, facilitators, and participants directly helps prioritize future improvements.
+  - heading "Technical considerations" [level=2]
+  - paragraph: "Depending on the features used, the application may rely on:"
+  - list:
+    - listitem: browser capabilities
+    - listitem: local browser storage
+    - listitem: the relay service for live synchronization
+    - listitem: network connectivity
+  - paragraph: Some features may behave differently depending on browser support, device capabilities, or network conditions.
+  - heading "Open source and feedback" [level=2]
+  - paragraph:
+    - text: The source code of the project is publicly available on
+    - link "GitHub":
+      - /url: https://github.com/tobias-zucali/mkrz-timer
+    - text: .
+  - paragraph: Feedback, accessibility suggestions, bug reports, and contributions are welcome.
+  - paragraph:
+    - text: You can also learn more about the background of the project and the work of mkrz lab on the
+    - link "About":
+      - /url: /en/about
+    - text: and
+    - link "Contact":
+      - /url: /en/contact
+    - text: pages.
+  - heading "Contact" [level=2]
+  - paragraph: "For accessibility feedback, workshop collaboration, usability suggestions, or technical questions:"
+  - paragraph:
+    - text: /mkrz lab OG – Tobias Zucali Peter-Behrens-Platz 3 \d+ Linz Austria/
+    - link "timer@mkrz.at":
+      - /url: mailto:timer@mkrz.at

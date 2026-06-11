@@ -29,11 +29,11 @@ Please refer to the LICENSE file and repository documentation for details.
 
 ## Local and remote usage
 
-mkrz timer supports both local-only and synchronized remote usage.
+mkrz timer supports both local-only usage and synchronized live sessions.
 
 In local-only mode, timer data remains on your device.
 
-Remote sessions depend on shared session services and synchronization infrastructure. Availability, performance, or long-term persistence of remote sessions cannot be guaranteed.
+Live sessions depend on the relay service and synchronization infrastructure. Availability, performance, or long-term persistence of live sessions cannot be guaranteed.
 
 ## Responsible usage
 

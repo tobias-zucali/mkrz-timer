@@ -9,8 +9,6 @@ A collaborative timer focused on simple sharing, synchronization, and distractio
 
 mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/), created to support workshops, facilitation, and collaborative group processes.
 
-On the [About](/about) page, you can learn more about the background of the project, the facilitation context it emerged from, and how mkrz lab approaches collaborative and co-creative processes.
-
 ## Quick start
 
 - Start a timer directly in your browser
@@ -28,22 +26,8 @@ In local-only mode:
 
 ## Remote sessions
 
-Remote mode allows multiple devices and participants to stay synchronized through a shared session service.
-
-Remote sessions use the verified email address as the session key.
-
-If you want to understand how synchronization and local-only usage work, the [Privacy](/privacy) page provides additional details about browser storage, remote sessions, and session handling.
+Live-session mode allows multiple devices and participants to stay synchronized through the relay service. The current implementation uses generated control and readonly access links rather than a verified email address.
 
 ## Open source and free usage
 
-mkrz timer is free to use and open for contributions.
-
-If you find the project useful, consider following the work of [mkrz lab](https://www.mkrz.at/) through our public channels.
-
-Our approach to keyboard navigation, mobile-friendly usage, and inclusive interaction patterns is outlined on the [Accessibility](/accessibility) page.
-
-## Contact
-
-For feedback, collaboration, contributions, or commercial inquiries, you can find public project channels and contact options on the [Contact](/contact) page.
-
-<timer@mkrz.at>
+mkrz timer is free to use and open for contributions. If you find the project useful, consider following the work of [mkrz lab](https://www.mkrz.at/) through our public channels.

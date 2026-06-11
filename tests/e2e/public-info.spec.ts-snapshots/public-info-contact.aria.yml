@@ -1,0 +1,73 @@
+- main:
+  - link "mkrz timer":
+    - /url: /en
+  - article:
+    - heading "Contact" [level=1]
+    - paragraph:
+      - text: mkrz timer is a personal side project by Tobias Zucali, Co-Founder of
+      - link "mkrz lab":
+        - /url: https://www.mkrz.at/
+      - text: .
+    - paragraph: We are always happy to hear from people using the timer in workshops, facilitation sessions, educational contexts, collaborative processes, or creative projects.
+    - heading "Questions, feedback, and support" [level=2]
+    - paragraph: "For questions about the timer, bug reports, feature ideas, accessibility feedback, or general support, please contact:"
+    - list:
+      - listitem:
+        - link "timer@mkrz.at":
+          - /url: mailto:timer@mkrz.at
+    - paragraph: "You are also welcome to contribute or report issues through the public GitHub repository:"
+    - list:
+      - listitem:
+        - link "github.com/tobias-zucali/mkrz-timer":
+          - /url: https://github.com/tobias-zucali/mkrz-timer
+      - listitem:
+        - link "GitHub issues":
+          - /url: https://github.com/tobias-zucali/mkrz-timer/issues
+    - heading "Collaboration and commercial inquiries" [level=2]
+    - paragraph: We are happy to collaborate on projects, workshops, interactive formats, facilitation processes, creative technology projects, installations, and future-oriented learning environments.
+    - paragraph: /Since \d+, mkrz lab has also been operating the Alternative Lab for Future Skills at Haus FALK in the Tabakfabrik Linz, Austria — a collaborative workshop and experimentation space for organizations, education, and innovation processes\./
+    - paragraph: The space is used for workshops, vision processes, prototyping, facilitation, team development, and collaborative future-oriented formats. We always enjoy welcoming guests, collaborators, and project partners to the space.
+    - paragraph:
+      - text: "/Contact: mkrz lab OG Peter-Behrens-Platz 3 \\d+ Linz/"
+      - link "timer@mkrz.at":
+        - /url: mailto:timer@mkrz.at
+    - heading "Public channels" [level=2]
+    - paragraph: "You can follow the work of mkrz lab and stay updated through our public channels:"
+    - list:
+      - listitem:
+        - link "mkrz website":
+          - /url: https://www.mkrz.at/
+      - listitem:
+        - link "mkrz on LinkedIn":
+          - /url: https://www.linkedin.com/company/mkrz
+      - listitem:
+        - link "mkrz on Instagram":
+          - /url: https://www.instagram.com/mkrz.at/
+    - paragraph: "You can also connect directly with Tobias Zucali:"
+    - list:
+      - listitem:
+        - link "Tobias Zucali on Linkedin":
+          - /url: https://www.linkedin.com/in/tobias-zucali/
+  - navigation "Information pages":
+    - list:
+      - listitem:
+        - link "About":
+          - /url: /en/about
+      - listitem:
+        - link "Privacy":
+          - /url: /en/privacy
+      - listitem:
+        - link "Impressum":
+          - /url: /en/impressum
+      - listitem:
+        - link "Terms":
+          - /url: /en/terms
+      - listitem:
+        - link "Accessibility":
+          - /url: /en/accessibility
+      - listitem:
+        - link "Contact":
+          - /url: /en/contact
+      - listitem:
+        - link "GitHub":
+          - /url: https://github.com/tobias-zucali/mkrz-timer

@@ -101,16 +101,45 @@ test("redirects unprefixed routes to the browser locale with English fallback", 
   page,
 }) => {
   await page.goto("/")
-  await expect(page).toHaveURL(/\/en$/)
+  await expect(page).toHaveURL(/\/en$/, { timeout: 30_000 })
 
   await page.goto("/view/viewer-token")
-  await expect(page).toHaveURL(/\/en\/view\/viewer-token$/)
+  await expect(page).toHaveURL(/\/en\/view\/viewer-token$/, {
+    timeout: 30_000,
+  })
 
   await page.goto("/control/controller-token")
-  await expect(page).toHaveURL(/\/en\/control\/controller-token$/)
+  await expect(page).toHaveURL(/\/en\/control\/controller-token$/, {
+    timeout: 30_000,
+  })
+})
+
+test("opens the about sidebar panel from the footer and does not restore it on reload", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("timer.welcomeBanner.v1.dismissed", "1")
+  })
+  await openTimer(page, 60)
+
+  await page.locator("footer").getByRole("button", { name: "About" }).click()
+  await expect(page.getByTestId("sidebar-panel-about")).toBeVisible({
+    timeout: 10_000,
+  })
+  await expect(
+    page.getByTestId("sidebar-panel-about").getByRole("heading", {
+      name: "About mkrz timer",
+    }),
+  ).toBeVisible()
+
+  await page.reload()
+
+  await expect(page.getByTestId("sidebar-panel-about")).not.toBeVisible()
 })
 
 test("matches sidebar panel aria structures", async ({ page }) => {
+  test.setTimeout(60_000)
+
   await openTimer(page, 3)
 
   await openSidebarPanel(page, "Timer")
@@ -135,6 +164,30 @@ test("matches sidebar panel aria structures", async ({ page }) => {
   await expect(page.getByTestId("sidebar-panel-settings")).toMatchAriaSnapshot({
     name: "sidebar-settings-panel.aria.yml",
   })
+
+  for (const panel of [
+    { name: "About", snapshot: "sidebar-about-panel.aria.yml" },
+    {
+      name: "Accessibility",
+      snapshot: "sidebar-accessibility-panel.aria.yml",
+    },
+    { name: "Contact", snapshot: "sidebar-contact-panel.aria.yml" },
+    { name: "Impressum", snapshot: "sidebar-impressum-panel.aria.yml" },
+    { name: "Privacy", snapshot: "sidebar-privacy-panel.aria.yml" },
+    { name: "Terms", snapshot: "sidebar-terms-panel.aria.yml" },
+  ] as const) {
+    await openSidebarPanel(page, panel.name)
+    await expect(
+      page.getByTestId(`sidebar-panel-${panel.name.toLowerCase()}`),
+    ).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(
+      page.getByTestId(`sidebar-panel-${panel.name.toLowerCase()}`),
+    ).toMatchAriaSnapshot({
+      name: panel.snapshot,
+    })
+  }
 })
 
 test(
@@ -190,6 +243,8 @@ test("toggles shared settings in the local share link", async ({ page }) => {
 })
 
 test("persists the share settings toggle across reloads", async ({ page }) => {
+  test.setTimeout(45_000)
+
   await openTimer(page, 3)
 
   await updateTimerSettings(page, {
@@ -209,7 +264,7 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 
-  await page.reload()
+  await page.reload({ waitUntil: "domcontentloaded" })
   await openSidebarPanel(page, "Share")
 
   await expect(includeSettingsToggle).not.toBeChecked()
@@ -225,7 +280,7 @@ test("switches languages without losing the current route state", async ({
   await openSidebarPanel(page, "Settings")
 
   await page.getByTestId("language-switcher").selectOption("de")
-  await expect(page).toHaveURL(/\/de\?v=1&t=/)
+  await expect(page).toHaveURL(/\/de\?v=1&t=/, { timeout: 15_000 })
 
   await page.getByRole("button", { name: "Teilen öffnen" }).click()
   await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()

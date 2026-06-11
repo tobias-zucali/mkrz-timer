@@ -1,0 +1,84 @@
+- main:
+  - link "mkrz timer":
+    - /url: /en
+  - article:
+    - heading "Impressum" [level=1]
+    - paragraph: /Information according to § 5 ECG, § \d+ Mediengesetz, and disclosure requirements for websites operated in Austria\./
+    - heading "Responsible for the content" [level=2]
+    - paragraph: /Tobias Zucali Peter-Behrens-Platz 3 \d+ Linz Austria/
+    - paragraph:
+      - text: "Email:"
+      - link "timer@mkrz.at":
+        - /url: mailto:timer@mkrz.at
+    - heading "Project information" [level=2]
+    - paragraph:
+      - text: mkrz timer is a personal side project by Tobias Zucali, Co-Founder of
+      - link "mkrz lab":
+        - /url: https://www.mkrz.at/
+      - text: .
+    - paragraph: "Associated organization:"
+    - paragraph: "/mkrz lab OG Firmenbuchnummer: FN \\d+ k UID: ATU79693235/"
+    - paragraph: The project supports workshops, facilitation, collaborative processes, educational contexts, and synchronized group interactions through a simple and accessible timer application.
+    - heading "Website and project owner" [level=2]
+    - paragraph: "Responsible for the website and project content:"
+    - paragraph: Tobias Zucali
+    - heading "Public channels" [level=2]
+    - list:
+      - listitem:
+        - link "mkrz website":
+          - /url: https://www.mkrz.at/
+      - listitem:
+        - link "mkrz on LinkedIn":
+          - /url: https://www.linkedin.com/company/mkrz
+      - listitem:
+        - link "mkrz on Instagram":
+          - /url: https://www.instagram.com/mkrz.at/
+      - listitem:
+        - link "Tobias Zucali on LinkedIn":
+          - /url: https://www.linkedin.com/in/tobias-zucali/
+      - listitem:
+        - link "GitHub repository":
+          - /url: https://github.com/tobias-zucali/mkrz-timer
+    - heading "Liability for content" [level=2]
+    - paragraph: The contents of this website were created with great care. However, no guarantee can be given for the accuracy, completeness, or timeliness of the provided information.
+    - paragraph: Unless otherwise stated, this website is operated from Austria.
+    - paragraph: The hosted infrastructure is currently operated within the European Union. The server infrastructure is hosted in Frankfurt, Germany.
+    - heading "Applicable law" [level=2]
+    - paragraph: The project and hosted service are intended to operate under applicable Austrian and European Union law, including GDPR/DSGVO requirements where applicable.
+    - heading "Liability for links" [level=2]
+    - paragraph: This website may contain links to external websites operated by third parties. No responsibility is taken for the contents of linked external pages.
+    - heading "Copyright and licensing" [level=2]
+    - paragraph: Unless stated otherwise, the contents and source code of this project are subject to the applicable copyright and license terms defined in the repository and LICENSE file.
+    - heading "Contact and collaboration" [level=2]
+    - paragraph: We are always happy to hear from people using the timer in workshops, facilitation settings, collaborative processes, educational environments, and creative projects.
+    - paragraph: For feedback, collaboration inquiries, or commercial requests, feel free to get in touch.
+    - heading "Template and legal orientation" [level=2]
+    - paragraph: "This page was created with reference to publicly available Austrian Impressum requirements and explanatory resources, including:"
+    - list:
+      - listitem:
+        - 'link "Wikipedia: Impressum"':
+          - /url: https://de.wikipedia.org/wiki/Impressum
+      - listitem: https://www.ris.bka.gv.at/
+  - navigation "Information pages":
+    - list:
+      - listitem:
+        - link "About":
+          - /url: /en/about
+      - listitem:
+        - link "Privacy":
+          - /url: /en/privacy
+      - listitem:
+        - link "Impressum":
+          - /url: /en/impressum
+      - listitem:
+        - link "Terms":
+          - /url: /en/terms
+      - listitem:
+        - link "Accessibility":
+          - /url: /en/accessibility
+      - listitem:
+        - link "Contact":
+          - /url: /en/contact
+      - listitem:
+        - link "GitHub":
+          - /url: https://github.com/tobias-zucali/mkrz-timer

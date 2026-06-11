@@ -5,7 +5,7 @@ description: Background, goals, and philosophy of the project.
 
 # About mkrz timer
 
-mkrz timer is a collaborative web-based timer focused on simplicity, accessibility, and reliable synchronization across devices.
+mkrz timer is a workshop timer focused on simplicity, accessibility, and reliable live synchronization across devices.
 
 The project is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
 
@@ -23,22 +23,23 @@ mkrz timer was created to provide:
 - accessible interaction patterns
 - a tool that works well in workshops, classrooms, and collaborative environments
 
-## Local-first approach
+## Local-only use
 
 The timer is designed so it can be used directly in the browser without creating an account.
 
-In local-only mode:
+In local-only use:
 
 - timer data stays on your device
-- no timer state is sent to any server
+- no live session is created
+- no timer state is synchronized through the relay
 - no account is required
 - the application can be used as a standalone local timer
 
-## Remote synchronization
+## Live sessions
 
-The application also supports synchronized remote sessions.
+The application also supports synchronized live sessions.
 
-In remote mode, timer state is synchronized through a shared session service so multiple devices and participants can stay in sync.
+In live-session mode, timer state is synchronized through a relay service so multiple devices and participants can stay in sync.
 
 The goal is to make collaborative timing simple during workshops, presentations, hybrid sessions, and distributed facilitation.
 

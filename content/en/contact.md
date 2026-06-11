@@ -18,6 +18,7 @@ For questions about the timer, bug reports, feature ideas, accessibility feedbac
 You are also welcome to contribute or report issues through the public GitHub repository:
 
 - [github.com/tobias-zucali/mkrz-timer](https://github.com/tobias-zucali/mkrz-timer)
+- [GitHub issues](https://github.com/tobias-zucali/mkrz-timer/issues)
 
 ## Collaboration and commercial inquiries
 
@@ -27,11 +28,11 @@ Since 2023, mkrz lab has also been operating the Alternative Lab for Future Skil
 
 The space is used for workshops, vision processes, prototyping, facilitation, team development, and collaborative future-oriented formats. We always enjoy welcoming guests, collaborators, and project partners to the space.
 
-Contact:
-  mkrz lab OG
-  Peter-Behrens-Platz 3  
-  4020 Linz
-  <timer@mkrz.at>
+Contact:  
+mkrz lab OG  
+Peter-Behrens-Platz 3  
+4020 Linz  
+<timer@mkrz.at>
 
 ## Public channels
 
