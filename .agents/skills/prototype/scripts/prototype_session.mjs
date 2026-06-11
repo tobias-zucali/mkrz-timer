@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const TMP_ROOT = path.resolve(SCRIPT_DIR, "..", "tmp")
-const DEFAULT_COMMANDS = ["pnpm lint", "pnpm agent:test", "pnpm format:fix"]
+const DEFAULT_COMMANDS = ["pnpm lint", "pnpm test", "pnpm format:fix"]
 
 function nowIso() {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
@@ -167,7 +167,7 @@ function finishPlan(repo) {
     console.log(`- Run \`${command}\``)
   }
   if (session.needs_full_validation) {
-    console.log("- Run `pnpm agent:test:full`")
+    console.log("- Run `pnpm test:full`")
   }
   if (session.needs_security_review) {
     console.log(

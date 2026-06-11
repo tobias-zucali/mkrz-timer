@@ -7,7 +7,7 @@ description: Run fast prototype loops in this repository while intentionally def
 
 ## Overview
 
-Use this skill when the user explicitly wants prototype mode. Move quickly, skip the normal validation lane while the design is still changing, and keep a persistent closeout ledger so prototype mode always ends with one of two outcomes:
+Use this skill when the user explicitly wants prototype mode. Follow the prototype-mode rules defined in `AGENTS.md` and keep a persistent closeout ledger so prototype mode always ends with one of two outcomes:
 
 1. Finish the work by backfilling docs, tests, and validation.
 2. Revert the prototype-only changes if the result is not worth keeping.
@@ -25,10 +25,11 @@ When the user enters prototype mode:
 scripts/prototype_session.mjs start --repo "$PWD" --goal "<short goal>"
 ```
 
-3. Do not run `pnpm lint`, `pnpm agent:test`, `pnpm format:fix`, or `pnpm agent:test:full` while the behavior is still moving quickly.
-4. Defer documentation and test updates until the user asks to finish the work or exit prototype mode.
+3. Follow the prototype-mode override rules defined in `AGENTS.md`.
 
 ## During Prototype Mode
+
+### Example Ledger Updates
 
 After each meaningful change set, update the ledger:
 
@@ -44,16 +45,14 @@ scripts/prototype_session.mjs update --repo "$PWD" --note "Changed live-session 
 scripts/prototype_session.mjs update --repo "$PWD" --note "Changed developer workflow docs" --doc docs/development.md
 ```
 
-Use the ledger as the source of truth for deferred work. If the prototype direction changes, keep updating the notes instead of trying to remember the obligations from chat history.
+These examples are illustrative. Record the docs, tests, validation requirements, and review obligations that are relevant to the specific prototype.
 
 ## Prototype Guardrails
 
 - Treat `AGENTS.md` as the execution policy even in prototype mode.
 - Keep files short and focused; prototype mode does not permit sloppy structure.
 - Treat external and user-controlled values as untrusted.
-- If synchronized or relay-persisted fields change, record `--needs-security-review`.
-- If routes, sessions, synchronization, persistence, or shared state change, record `--needs-full-validation`.
-- If live-session behavior changes, plan to update `docs/live-sessions.md` and the relevant Playwright coverage before calling the work finished.
+- Record deferred work and review obligations in the ledger so closeout can follow `AGENTS.md` correctly.
 
 ## Finish Prototype Mode
 
@@ -72,11 +71,8 @@ scripts/prototype_session.mjs status --repo "$PWD"
 scripts/prototype_session.mjs finish-plan --repo "$PWD"
 ```
 
-4. Backfill all deferred work before claiming completion:
-   - Update the relevant docs.
-   - Add or adapt the relevant tests.
-   - Follow the validation lane in [AGENTS.md](../../../../AGENTS.md).
-   - Perform the explicit security review if the ledger says one is required.
+4. Resolve all deferred work recorded in the ledger and return to the standard requirements defined in [AGENTS.md](../../../AGENTS.md).
+
 5. After successful closeout, archive the session:
 
 ```bash

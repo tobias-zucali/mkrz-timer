@@ -2,12 +2,9 @@
 
 ## Repository Rules
 
-These rules come from the repository's `AGENTS.md`:
-
-- Skip validation commands while prototype mode is active.
-- Defer documentation updates, test updates, and the full validation lane until the user asks to end prototype mode or finish the work.
-- As soon as prototype mode ends, add or adapt the relevant documentation and tests, then run the full required validation lane before considering the work complete.
-- Use `AGENTS.md` as the source of truth for the standard post-edit validation commands and for when `pnpm agent:test:full` is required.
+- `AGENTS.md` is the source of truth for standard validation, documentation, testing, and security requirements.
+- Prototype mode temporarily defers those requirements while behavior is still exploratory.
+- When prototype mode ends, return to `AGENTS.md` defaults and resolve deferred work before considering the task complete.
 
 ## Closeout Checklist
 
@@ -17,9 +14,8 @@ Use this checklist when `scripts/prototype_session.mjs finish-plan --repo "$PWD"
 2. Review the prototype-introduced changes with the current diff and decide what stays.
 3. Update docs affected by the prototype.
 4. Add or adapt tests affected by the prototype.
-5. Run the standard validation commands required by `AGENTS.md`.
-6. Run `pnpm agent:test:full` when `AGENTS.md` says full validation is required for the affected scope.
-7. Perform a security review when synchronized or relay-persisted fields changed.
+5. Run the validation lane required by `AGENTS.md` for the affected scope.
+6. Perform a security review when synchronized or relay-persisted fields changed.
 
 ## Live Session Reminder
 

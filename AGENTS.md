@@ -2,16 +2,35 @@
 
 This file captures durable repo conventions for agents. For product/setup context, start with [README.md](./README.md).
 
-## Baseline
+`README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
 
-- `README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
-- After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke` and `pnpm format:fix` before considering the task done.
+## Agent Workflow
+
+### Start Checklist
+
+- Read `README.md` for product and setup context.
+- Review the task scope and inspect the affected files before making changes.
+- Before implementation, review the current architecture and existing functionality to verify that the planned approach is still appropriate, does not duplicate newer functionality, integrates cleanly with the current repository state, and still fulfills the purpose of the requested change.
+- Run `pnpm scope -- <paths...>` (or `pnpm scope` for the current diff) to determine the smallest recommended validation lane.
+- Prefer the smallest validation lane that covers the affected area before broader validation.
+- Check for existing helpers, abstractions, and feature boundaries before introducing new patterns or duplicate functionality.
+
+### Validation Defaults
+
+- After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke`, and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
-- When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
-- While prototype mode is active, defer documentation updates, test updates, and the full validation lane until the user explicitly asks to end prototype mode or finish the work.
-- As soon as prototype mode ends, add or adapt the relevant documentation and tests, then run the full required validation lane before considering the work complete.
-- The repo-local prototype workflow skill lives at `.agents/skills/prototype`; use `$prototype` when you need the tracked ledger and closeout/revert flow for prototype mode.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
+
+### Prototype Mode
+
+- Prototype mode is only active when the user explicitly asks for it.
+- While prototype mode is active, follow the repo-local prototype workflow at `.agents/skills/prototype`.
+- Use `$prototype` when the tracked ledger and closeout/revert flow are needed.
+- Prototype mode overrides the validation defaults in this file until prototype mode ends.
+- When prototype mode ends, return to the validation defaults and complete required documentation and test updates before considering the work done.
+
+## Code Conventions
+
 - Prefer `@/` imports over relative `../..` imports.
 - Exception: keep relative imports in files executed directly by the plain Node test/runtime path until alias resolution is configured there too.
 - Keep files short and focused. Do not wait for a large cleanup later:
@@ -23,6 +42,9 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
+
+## Security Defaults
+
 - Treat every external or user-controlled value as untrusted by default.
 - New user-controlled fields require validation plus escaping review before merge.
 - Changes to synchronized or relay-persisted fields require an explicit security review.
