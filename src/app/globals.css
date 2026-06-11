@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+@custom-variant sm-height {
+  @media (height >= 24rem) {
+    @slot;
+  }
+}
+
+@custom-variant md-height {
+  @media (height >= 32rem) {
+    @slot;
+  }
+}
+
+@custom-variant lg-height {
+  @media (height >= 40rem) {
+    @slot;
+  }
+}
+
+@custom-variant xl-height {
+  @media (height >= 48rem) {
+    @slot;
+  }
+}
+
 :root {
   --background: 0 0 0;
   --foreground: 221 221 221;
@@ -18,4 +42,12 @@ body {
   background: rgb(var(--background));
   color: rgb(var(--foreground));
   font-family: Geist, Arial, Helvetica, sans-serif;
+}
+
+@utility timer-chrome-transition {
+  transition-duration: 700ms;
+}
+
+@utility timer-chrome-dimmed {
+  opacity: 0.3;
 }

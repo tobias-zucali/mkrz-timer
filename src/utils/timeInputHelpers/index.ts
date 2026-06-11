@@ -41,3 +41,23 @@ export const getMinutesSeconds = (
     prefixZeros(seconds),
   ]
 }
+
+export const normalizeTimeParts = ({
+  minutes,
+  seconds,
+}: {
+  minutes: string
+  seconds: string
+}) => {
+  const totalSeconds = Math.min(
+    Math.max(getSecondsDuration(minutes, seconds), 0),
+    999 * 60 + 59,
+  )
+  const [normalizedMinutes, normalizedSeconds] = getMinutesSeconds(totalSeconds)
+
+  return {
+    minutes: normalizedMinutes,
+    seconds: normalizedSeconds,
+    totalSeconds,
+  }
+}

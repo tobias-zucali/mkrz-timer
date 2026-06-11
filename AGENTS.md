@@ -2,64 +2,80 @@
 
 This file captures durable repo conventions for agents. For product/setup context, start with [README.md](./README.md).
 
-## Baseline
+`README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
 
-- Use `pnpm`. Do not mix in `npm` or `yarn`.
-- Use Node.js `22.6.0` or newer.
-- After edits, run `pnpm check`, `pnpm test` and `pnpm format:fix` before considering the task done.
-- Add follow-up work introduced during implementation to [TODOS.md](./TODOS.md).
+## Agent Workflow
+
+### Start Checklist
+
+- Read `README.md` for product and setup context.
+- Review the task scope and inspect the affected files before making changes.
+- Run `pnpm scope -- <paths...>` (or `pnpm scope` for the current diff) to determine the smallest recommended validation lane.
+- Prefer extending existing helpers, abstractions, and feature boundaries before introducing new patterns or parallel implementations.
+
+### Validation Defaults
+
+- After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke`, and `pnpm format:fix` before considering the task done.
+- After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
+- Treat `pnpm scope` recommendations as advisory. Agents remain responsible for choosing validation that is sufficient for the actual risk of the change.
+- Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
+
+### Prototype Mode
+
+- Prototype mode is only active when the user explicitly asks for it.
+- While prototype mode is active, follow the repo-local prototype workflow at `.agents/skills/prototype`.
+- Use `$prototype` when the tracked ledger and closeout/revert flow are needed.
+- Prototype mode overrides the validation defaults in this file until prototype mode ends.
+- When prototype mode ends, return to the validation defaults and complete required documentation and test updates before considering the work done.
+
+## Code Conventions
+
+- Prefer `@/` imports over relative `../..` imports.
+- Exception: keep relative imports in files executed directly by the plain Node test/runtime path until alias resolution is configured there too.
+- Keep files short and focused. Do not wait for a large cleanup later:
+  - if a file is likely to grow past roughly 200 lines, look for natural extraction points before adding more logic
+  - if a component mostly passes state, callbacks, or derived values through to children, move that state/logic down or extract a helper closer to the consumer
+  - if a file starts mixing route orchestration, UI rendering, dialog state, and feature-specific side effects, split those concerns immediately into components, hooks, or utilities
+  - prefer small, purpose-built props and hook arguments over broad “bag of state” interfaces when the narrower shape is clear
+- Do not use nested inline conditionals or nested ternaries.
 - Spread `...otherProps` last on rendered elements.
 - Prefer Tailwind utilities for standard layout and control styling.
 - Prefer inline Heroicons-style SVGs driven by `currentColor`.
 
-## Remote Mode
+## Security Defaults
 
-- Remote mode is relay-backed. There is no dedicated browser host anymore.
-- The relay owns the canonical timer snapshot and participant roster.
-- Session links currently stay query-based:
-  - viewer: `?rid=<sessionId>`
-  - control: `?rid=<sessionId>&control=42`
-- Remote session URLs should not include timer-state params like `m`, `s`, `title`, `bg`, `fg`, or `pc`.
-- When remote-mode behavior changes, update both docs and Playwright coverage in the same change.
+- Treat every external or user-controlled value as untrusted by default.
+- New user-controlled fields require validation plus escaping review before merge.
+- Changes to synchronized or relay-persisted fields require an explicit security review.
+- If the repo is already dirty and it is unclear whether a change belongs to the current task, stop and ask before modifying or reverting it.
 
-## Local Dev / Test Lanes
+## Architectural Hot Spots
 
-- Default Playwright lane:
-  - app: `http://127.0.0.1:3100`
-  - relay health: `http://127.0.0.1:9100/health`
-  - relay websocket: `ws://127.0.0.1:9100/ws`
-- Agent lane:
-  - app: `http://127.0.0.1:3300`
-  - relay health: `http://127.0.0.1:9200/health`
-  - relay websocket: `ws://127.0.0.1:9200/ws`
-- Use `pnpm dev:relay` when you need the relay outside Playwright.
-- Use `pnpm dev:relay:agent` for the tracked agent relay.
-- `pnpm lane:agent` is the canonical agent Playwright entrypoint.
-- `pnpm lane:agent:attach` is the attach-mode Playwright entrypoint.
-- `pnpm lane:agent:full` runs the full tracked agent lane.
-- Use `pnpm lane:agent:status` to inspect tracked processes and port ownership.
-- Use `pnpm lane:agent:stop` to stop only tracked lane services.
+- Live sessions: treat `docs/live-sessions.md` as the contract; preserve relay/client ownership and readonly vs control separation.
+- Synchronization: keep schema validation, normalization, merge rules, and shared-field ownership centralized.
+- URL state: treat query params and route shapes as a compatibility surface; reuse existing parse and normalize helpers.
+- Persistence: preserve the current boundaries between local state, URL state, and relay snapshots.
+- Timer progression semantics: keep one canonical elapsed-time and pause/resume model.
 
-## Commands
+## Live Sessions
 
-- `pnpm test`: lint, unit tests, smoke e2e
-- `pnpm test:ci`: lint, unit tests, CI-safe e2e
-- `pnpm test:full`: lint, unit tests, full e2e
-- `pnpm build`: `pnpm test:full` plus production build
-- `pnpm build:docker`: `pnpm build` plus `docker compose build`
-- `pnpm check`: lint plus unit tests
+- `docs/live-sessions.md` is the source of truth for live-session contracts, trust boundaries, and synchronized-field rules.
+- When live-session behavior changes, update both docs and Playwright coverage in the same change.
 
-## Deployment
+## Testing
 
-- Production target is a Hetzner CAX11 with Docker Compose and Caddy.
-- Deployment/runbook details live in [docs/deploy-hetzner.md](./docs/deploy-hetzner.md).
-- The repo includes baseline deployment assets:
-  - `docker-compose.yml`
-  - `Caddyfile`
-  - `Dockerfile.web`
-  - `Dockerfile.relay`
+- `docs/development.md` is the source of truth for test lanes, `pnpm scope` commands, and browser-test authoring rules.
+- Feature and subsystem folders may define a local `scope.yaml` YAML file for validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
+- When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm scope -- <changed paths...>`.
+- Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
+- Use `pnpm scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
+- Escalate beyond the smallest suggested lane when the change affects live sessions, synchronization, URL state, persistence, timer progression semantics, or any shared contract/invariant.
+- Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 
 ## Maintenance
 
 - Keep this file agent-focused.
+- Documentation should describe goals, contracts, invariants, and operating procedures before implementation choices.
+- Follow [docs/documentation.md](./docs/documentation.md) when adding or revising repo documentation.
+- Code, tests, and workflow files should describe implementation.
 - Update it when repo-level workflow, testing, or deployment conventions change.

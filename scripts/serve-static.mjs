@@ -49,6 +49,18 @@ function buildCandidates(urlPathname) {
   ]
 }
 
+function getRemoteFallbackPath(urlPathname) {
+  if (urlPathname.startsWith("/view/") || urlPathname === "/view") {
+    return "/view"
+  }
+
+  if (urlPathname.startsWith("/control/") || urlPathname === "/control") {
+    return "/control"
+  }
+
+  return null
+}
+
 async function resolveFilePath(urlPathname) {
   for (const candidate of buildCandidates(urlPathname)) {
     const absoluteCandidate = path.resolve(rootDir, `.${candidate}`)
@@ -64,6 +76,26 @@ async function resolveFilePath(urlPathname) {
         return absoluteCandidate
       }
     } catch {}
+  }
+
+  const remoteFallbackPath = getRemoteFallbackPath(urlPathname)
+
+  if (remoteFallbackPath) {
+    for (const candidate of buildCandidates(remoteFallbackPath)) {
+      const absoluteCandidate = path.resolve(rootDir, `.${candidate}`)
+
+      if (!absoluteCandidate.startsWith(rootDir)) {
+        continue
+      }
+
+      try {
+        const fileStat = await stat(absoluteCandidate)
+
+        if (fileStat.isFile()) {
+          return absoluteCandidate
+        }
+      } catch {}
+    }
   }
 
   return null

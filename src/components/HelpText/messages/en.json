@@ -1,0 +1,12 @@
+{
+  "toggleShortcut": "Enter / Space",
+  "toggleDescription": "Start or pause the timer, and reset when time has run out.",
+  "pauseShortcut": "P",
+  "pauseDescription": "Start or pause the timer without resetting a finished step.",
+  "resetShortcut": "R / Escape",
+  "resetDescription": "Reset the timer.",
+  "navigateShortcut": "Arrow Left / Right",
+  "navigateDescription": "Move to the previous or next step.",
+  "adjustShortcut": "Arrow Up / Down",
+  "adjustDescription": "Add or remove one minute."
+}

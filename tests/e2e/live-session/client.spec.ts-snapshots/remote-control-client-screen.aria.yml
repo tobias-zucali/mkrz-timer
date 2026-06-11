@@ -1,0 +1,36 @@
+- main "mkrz timer":
+  - status "Timer announcements": Live session, Connected, CONTROL access
+  - region "Timer":
+    - heading "Timer" [level=1]
+    - textbox "Title"
+    - button "Add title"
+    - group "Timer duration":
+      - spinbutton "Minutes"
+      - text: ""
+      - spinbutton "Seconds"
+    - text: Ready. Remaining time. 1 minute
+    - button "START"
+    - button "RESET" [disabled]
+  - button "Open sharing"
+  - button "Toggle floating window"
+  - button "Enter fullscreen"
+- button "Toggle navigation"
+- dialog:
+  - banner: mkrz timer
+  - navigation:
+    - list:
+      - listitem:
+        - button "Timer"
+      - listitem:
+        - button "Share"
+      - listitem:
+        - button "Settings"
+    - list:
+      - listitem:
+        - button "LIVE SESSION Synchronized"
+      - listitem:
+        - button "Status"
+- button "Open session status. Live session, Connected, CONTROL access"
+- link "by mkrz":
+  - /url: https://www.mkrz.at/
+- alert

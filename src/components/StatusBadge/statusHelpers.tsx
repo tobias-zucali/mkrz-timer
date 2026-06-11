@@ -1,0 +1,141 @@
+"use client"
+
+import type { AppTranslationFn } from "@/i18n/translator"
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+} from "@/utils/icons"
+import type { RemoteRelayReachabilityState } from "@/utils/liveSession/useRemoteRelayReachability"
+import type { SessionPresentationState } from "@/utils/sessionPresentation"
+
+export function getNetworkLabel(isOnline: boolean | null, t: AppTranslationFn) {
+  if (isOnline === null) {
+    return t("networkChecking")
+  }
+  return isOnline ? t("networkOnline") : t("networkOffline")
+}
+
+export function getRelayReachabilityLabel(
+  relayReachability: RemoteRelayReachabilityState,
+  t: AppTranslationFn,
+) {
+  switch (relayReachability) {
+    case "reachable":
+      return t("relayReachable")
+    case "unreachable":
+      return t("relayUnreachable")
+    case "checking":
+      return t("networkChecking")
+  }
+}
+
+export function getCompactStatusAppearance({
+  errorText,
+  isOnline,
+  isWaitingForController,
+  relayReachability,
+  state,
+}: {
+  errorText: string | null
+  isOnline: boolean | null
+  isWaitingForController: boolean
+  relayReachability: RemoteRelayReachabilityState
+  state: SessionPresentationState
+}) {
+  if (state === "local" && !errorText) {
+    return {
+      icon: CheckCircleIcon,
+      iconClassName: "text-emerald-400/90",
+    }
+  }
+
+  if (errorText || isOnline === false) {
+    return {
+      icon: XCircleIcon,
+      iconClassName: "text-red-300/90",
+    }
+  }
+
+  if (isWaitingForController) {
+    return {
+      icon: ExclamationTriangleIcon,
+      iconClassName: "text-amber-300/90",
+    }
+  }
+
+  if (state === "local" || state === "liveConnected" || state === "liveEnded") {
+    return {
+      icon: CheckCircleIcon,
+      iconClassName: "text-emerald-400/90",
+    }
+  }
+
+  if (
+    state === "liveConflict" ||
+    state === "liveConnecting" ||
+    state === "liveOffline" ||
+    state === "liveReconnecting" ||
+    relayReachability === "unreachable" ||
+    relayReachability === "checking"
+  ) {
+    return {
+      icon: ExclamationTriangleIcon,
+      iconClassName: "text-amber-300/90",
+    }
+  }
+
+  return {
+    icon: CheckCircleIcon,
+    iconClassName: "text-emerald-400/90",
+  }
+}
+
+export function splitTimelineEntry(entry: string) {
+  const separatorIndex = entry.indexOf(" ")
+  if (separatorIndex < 0) {
+    return {
+      detail: entry,
+      timestamp: "",
+    }
+  }
+
+  return {
+    detail: entry.slice(separatorIndex + 1),
+    timestamp: entry.slice(0, separatorIndex),
+  }
+}
+
+export function formatRelativeTimestamp(
+  timestamp: string,
+  now: number,
+  locale: string,
+) {
+  const parsedTime = Date.parse(timestamp)
+  if (Number.isNaN(parsedTime)) {
+    return timestamp
+  }
+
+  const diffSeconds = Math.round((parsedTime - now) / 1000)
+  const absoluteDiffSeconds = Math.abs(diffSeconds)
+  const relativeTimeFormatter = new Intl.RelativeTimeFormat(locale, {
+    numeric: "auto",
+  })
+
+  if (absoluteDiffSeconds < 45) {
+    return relativeTimeFormatter.format(0, "second")
+  }
+
+  if (absoluteDiffSeconds < 60 * 45) {
+    return relativeTimeFormatter.format(Math.round(diffSeconds / 60), "minute")
+  }
+
+  if (absoluteDiffSeconds < 60 * 60 * 22) {
+    return relativeTimeFormatter.format(Math.round(diffSeconds / 3600), "hour")
+  }
+
+  return relativeTimeFormatter.format(
+    Math.round(diffSeconds / (3600 * 24)),
+    "day",
+  )
+}

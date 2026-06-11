@@ -1,27 +1,52 @@
 import classNames from "classnames"
 import { HTMLAttributes } from "react"
+import { useTranslations } from "next-intl"
 
 export default function HelpText({
   className,
   ...otherProps
 }: HTMLAttributes<HTMLDivElement>) {
+  const t = useTranslations("HelpText")
+  const entries = [
+    {
+      description: t("toggleDescription"),
+      shortcut: t("toggleShortcut"),
+    },
+    {
+      description: t("pauseDescription"),
+      shortcut: t("pauseShortcut"),
+    },
+    {
+      description: t("resetDescription"),
+      shortcut: t("resetShortcut"),
+    },
+    {
+      description: t("navigateDescription"),
+      shortcut: t("navigateShortcut"),
+    },
+    {
+      description: t("adjustDescription"),
+      shortcut: t("adjustShortcut"),
+    },
+  ]
+
   return (
     <div
       className={classNames("grid gap-3 text-sm text-foreground/78", className)}
       {...otherProps}
     >
-      <div className="grid gap-2 rounded-xl border border-foreground/10 bg-foreground/4 px-4 py-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <p className="font-semibold text-foreground">R / Escape</p>
-        <p>Reset the timer.</p>
-      </div>
-      <div className="grid gap-2 rounded-xl border border-foreground/10 bg-foreground/4 px-4 py-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <p className="font-semibold text-foreground">P</p>
-        <p>Start or pause the timer.</p>
-      </div>
-      <div className="grid gap-2 rounded-xl border border-foreground/10 bg-foreground/4 px-4 py-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <p className="font-semibold text-foreground">Enter / Space</p>
-        <p>Start or pause the timer, and reset when time has run out.</p>
-      </div>
+      {entries.map((entry) => (
+        <div
+          className="
+            grid gap-2 rounded-xl border border-foreground/10 bg-foreground/4
+            p-4 sm:grid-cols-[8rem_minmax(0,1fr)]
+          "
+          key={entry.shortcut}
+        >
+          <p className="font-semibold text-foreground">{entry.shortcut}</p>
+          <p>{entry.description}</p>
+        </div>
+      ))}
     </div>
   )
 }

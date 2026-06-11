@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
@@ -30,18 +30,33 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next-e2e/types/**/*.ts",
-    ".next-agent/types/**/*.ts",
-    ".next-agent-e2e/types/**/*.ts",
     "**/*.mts",
     ".next-e2e/dev/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-runs/*/types/**/*.ts",
+    ".next-runs/*/dev/types/**/*.ts",
+    ".next-runs/dev-3000-9100/types/**/*.ts",
+    ".next-runs/dev-3000-9100/dev/types/**/*.ts",
+    ".next-runs/dev-3001-9101/types/**/*.ts",
+    ".next-runs/dev-3001-9101/dev/types/**/*.ts",
+    ".next-runs/dev-3002-9102/types/**/*.ts",
+    ".next-runs/dev-3002-9102/dev/types/**/*.ts",
+    ".next-runs/dev-3003-9103/types/**/*.ts",
+    ".next-runs/dev-3003-9103/dev/types/**/*.ts",
+    ".next-runs/test-3300-9200/types/**/*.ts",
+    ".next-runs/test-3300-9200/dev/types/**/*.ts",
+    ".next-runs/test-3301-9201/types/**/*.ts",
+    ".next-runs/test-3301-9201/dev/types/**/*.ts",
+    ".next-runs/test-3302-9202/types/**/*.ts",
+    ".next-runs/test-3302-9202/dev/types/**/*.ts",
+    ".next-runs/test-3303-9203/types/**/*.ts",
+    ".next-runs/test-3303-9203/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "src/setupTests.ts",
     ".next/dev/types/validator.ts",
     ".next-e2e/dev/types/validator.ts",
-    ".next-agent/dev/types/validator.ts",
-    ".next-agent-e2e/dev/types/validator.ts"
+    ".playwright-runs/**"
   ]
 }

@@ -8,7 +8,7 @@ type BuildErrorReportBodyParams = {
   connectionDetails: ConnectionDetail[]
   errorText: string | null
   floatingTimerErrorText?: string | null
-  remoteIdParam?: string
+  remotePath?: string
   sessionId?: string
   participantRole: "control" | "readonly"
   participantStatus: "connected" | "disconnected"
@@ -22,7 +22,7 @@ type BuildErrorReportBodyParams = {
   relayReachabilityLabel?: string
   relayLabel: string
   error?: Error | null
-  params: Record<string, string | null | undefined>
+  params: Record<string, unknown>
   isOnline: boolean | "unavailable"
   visibilityState: DocumentVisibilityState | "unavailable"
   hasFocus: boolean | "unavailable"
@@ -34,7 +34,7 @@ export default function buildErrorReportBody({
   connectionDetails,
   errorText,
   floatingTimerErrorText,
-  remoteIdParam,
+  remotePath,
   sessionId,
   participantRole,
   participantStatus,
@@ -76,7 +76,7 @@ export default function buildErrorReportBody({
     "Status snapshot:",
     `- Mode: ${statusModeLabel}`,
     `- State: ${statusStateLabel}`,
-    `- Remote mode: ${statusRemoteModeLabel}`,
+    `- Live session: ${statusRemoteModeLabel}`,
     `- Description: ${statusDescription}`,
     `- Network: ${statusNetworkLabel}`,
     `- Session: ${statusSessionLabel ?? "inactive"}`,
@@ -87,8 +87,8 @@ export default function buildErrorReportBody({
     "Debug info:",
     `- Timestamp: ${now}`,
     `- URL: ${location}`,
-    `- Remote id param: ${remoteIdParam ?? "none"}`,
-    `- Session id: ${sessionId ?? "none"}`,
+    `- Remote path: ${remotePath ?? "none"}`,
+    `- Session ID: ${sessionId ?? "none"}`,
     `- Participant role: ${participantRole}`,
     `- Participant status: ${participantStatus}`,
     `- Readonly client: ${isReadonlyClient ? "yes" : "no"}`,

@@ -1,12 +1,27 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
+import { DEFAULT_SYNC_PARAMS } from "../../shared/security/input.ts"
+import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
+
 import {
   buildPathWithParams,
   getRemoteSessionOnlyOmitKeys,
   serializeParamValue,
   withColorHash,
 } from "./params.ts"
+
+const buildParams = () => ({
+  ...DEFAULT_SYNC_PARAMS,
+  pageTitle: "Workshop timer",
+  rows: [
+    {
+      ...buildDefaultTimerSequenceRow(),
+      title: "Shared timer",
+    },
+  ],
+  title: "Shared timer",
+})
 
 test("withColorHash keeps existing hashes and adds missing hashes", () => {
   assert.equal(withColorHash("#d61f69"), "#d61f69")
@@ -20,103 +35,102 @@ test("serializeParamValue strips hashes only from color params", () => {
   assert.equal(serializeParamValue("title", "#retro"), "#retro")
 })
 
-test("buildPathWithParams serializes inherited params without color hashes", () => {
+test("buildPathWithParams serializes timer state with v=1&t rows", () => {
   assert.equal(
-    buildPathWithParams({
-      bg: "#000000",
-      fg: "#ffffff",
-      m: "01",
-      pc: "#d61f69",
-      s: "00",
+    buildPathWithParams(buildParams()),
+    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+  )
+})
+
+test("buildPathWithParams preserves non-timer params alongside the new timer format", () => {
+  assert.equal(
+    buildPathWithParams(
+      {
+        ...buildParams(),
+        bg: "#123456",
+        fg: "#abcdef",
+        rows: [
+          {
+            ...buildDefaultTimerSequenceRow(),
+            endBehavior: "advance",
+            primaryColor: "#00aa88",
+            title: "Workshop",
+            totalSeconds: 135,
+          },
+        ],
+        settings: "1",
+      },
+      {
+        pathname: "/control/token-1",
+      },
+    ),
+    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&title=Workshop+timer&settings=1",
+  )
+})
+
+test("buildPathWithParams preserves localized route prefixes", () => {
+  assert.equal(
+    buildPathWithParams(buildParams(), {
+      pathname: "/de/control/token-1",
     }),
-    "/?bg=000000&fg=ffffff&m=01&pc=d61f69&s=00",
+    "/de/control/token-1?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
   )
 })
 
 test("buildPathWithParams can skip inheritance for client URLs", () => {
   assert.equal(
-    buildPathWithParams(
-      {
-        m: "01",
-        rid: "old-main",
+    buildPathWithParams(buildParams(), {
+      inherit: false,
+      params: {
+        activeIndex: 0,
+        rows: [
+          {
+            ...buildDefaultTimerSequenceRow(),
+            title: "",
+            totalSeconds: 120,
+          },
+        ],
       },
-      {
-        inherit: false,
-        params: {
-          rid: "new-main",
-        },
-      },
-    ),
-    "/?rid=new-main",
+    }),
+    "/?v=1&t=120%21d61f69%21%211%210&a=0",
   )
 })
 
-test("buildPathWithParams serializes control client URLs", () => {
+test("buildPathWithParams can omit timer-state params on readonly remote routes", () => {
   assert.equal(
-    buildPathWithParams(
-      {
-        rid: "old-main",
-      },
-      {
-        inherit: false,
-        params: {
-          rid: "new-main",
-          control: "42",
-        },
-      },
-    ),
-    "/?rid=new-main&control=42",
+    buildPathWithParams(buildParams(), {
+      omit: ["a", "t", "title", "v"],
+    }),
+    "/",
   )
 })
 
-test("buildPathWithParams can use a custom pathname", () => {
-  assert.equal(
-    buildPathWithParams(
-      {
-        m: "01",
-      },
-      {
-        pathname: "/timer",
-      },
-    ),
-    "/timer?m=01",
-  )
+test("getRemoteSessionOnlyOmitKeys does not strip timer params on local routes", () => {
+  assert.deepEqual(getRemoteSessionOnlyOmitKeys(buildParams(), [], "/"), [])
 })
 
-test("getRemoteSessionOnlyOmitKeys keeps readonly client URLs free of timer params", () => {
+test("getRemoteSessionOnlyOmitKeys keeps timer params on control routes", () => {
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(buildParams(), [], "/control/control-token"),
+    ["a", "pid"],
+  )
   assert.deepEqual(
     getRemoteSessionOnlyOmitKeys(
-      {
-        bg: "#000000",
-        control: null,
-        fg: "#ffffff",
-        m: "01",
-        pc: "#d61f69",
-        rid: "remote-main",
-        s: "00",
-        title: "Shared timer",
-      },
-      ["rid"],
+      buildParams(),
+      [],
+      "/de/control/control-token",
     ),
-    ["bg", "fg", "m", "pc", "pid", "s", "title"],
+    ["a", "pid"],
   )
 })
 
-test("getRemoteSessionOnlyOmitKeys keeps control session URLs free of timer params", () => {
+test("getRemoteSessionOnlyOmitKeys keeps timer params on readonly routes", () => {
   assert.deepEqual(
-    getRemoteSessionOnlyOmitKeys(
-      {
-        bg: "#000000",
-        control: "42",
-        fg: "#ffffff",
-        m: "01",
-        pc: "#d61f69",
-        rid: "remote-main",
-        s: "00",
-        title: "Shared timer",
-      },
-      ["rid", "control"],
-    ),
-    ["bg", "fg", "m", "pc", "pid", "s", "title"],
+    getRemoteSessionOnlyOmitKeys(buildParams(), [], "/view/viewer-token"),
+    ["a", "pid", "title"],
+  )
+  assert.deepEqual(
+    getRemoteSessionOnlyOmitKeys(buildParams(), [], "/de/view/viewer-token"),
+    ["a", "pid", "title"],
   )
 })

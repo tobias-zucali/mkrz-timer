@@ -39,7 +39,7 @@ jobs:
         run: pnpm test:ci
 
       - name: Build
-        run: pnpm exec next build
+        run: pnpm build
 
       - name: Create deployment bundle
         run: |
@@ -73,17 +73,19 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
+          envs: DEPLOY_BUNDLE_PATH,DEPLOY_COMMIT,NEXT_PUBLIC_REMOTE_WS_URL,RELAY_SESSION_TTL_MS,RELAY_PORT,TIME_DOMAIN,TIME_RELAY_DOMAIN
           script: |
             cd /srv/mkrz-timer
-            tar -xzf deploy.tar.gz
-            rm deploy.tar.gz
-            cat > .env <<EOF
-            NEXT_PUBLIC_REMOTE_WS_URL=${{ secrets.NEXT_PUBLIC_REMOTE_WS_URL || 'wss://ws.timer.mkrz.at/ws' }}
-            RELAY_SESSION_TTL_MS=${{ secrets.RELAY_SESSION_TTL_MS || '300000' }}
-            RELAY_PORT=${{ secrets.RELAY_PORT || '9100' }}
-            TIME_DOMAIN=${{ secrets.TIME_DOMAIN || 'timer.mkrz.at' }}
-            TIME_RELAY_DOMAIN=${{ secrets.TIME_RELAY_DOMAIN || 'ws.timer.mkrz.at' }}
-            EOF
-            docker compose build
-            docker compose up -d
-            docker compose ps
+            deploy_extract_dir="$(mktemp -d)"
+            trap 'rm -rf "$deploy_extract_dir"' EXIT
+            tar -xzf deploy.tar.gz -C "$deploy_extract_dir"
+            chmod +x "$deploy_extract_dir/scripts/deploy-production.sh"
+            "$deploy_extract_dir/scripts/deploy-production.sh"
+        env:
+          DEPLOY_BUNDLE_PATH: /srv/mkrz-timer/deploy.tar.gz
+          DEPLOY_COMMIT: ${{ github.sha }}
+          NEXT_PUBLIC_REMOTE_WS_URL: ${{ secrets.NEXT_PUBLIC_REMOTE_WS_URL || 'wss://ws.timer.mkrz.at/ws' }}
+          RELAY_SESSION_TTL_MS: ${{ secrets.RELAY_SESSION_TTL_MS || '300000' }}
+          RELAY_PORT: ${{ secrets.RELAY_PORT || '9100' }}
+          TIME_DOMAIN: ${{ secrets.TIME_DOMAIN || 'timer.mkrz.at' }}
+          TIME_RELAY_DOMAIN: ${{ secrets.TIME_RELAY_DOMAIN || 'ws.timer.mkrz.at' }}

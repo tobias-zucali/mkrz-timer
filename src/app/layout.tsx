@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
@@ -15,23 +16,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-export const metadata: Metadata = {
-  title: "mkrz timer",
-  description: "simple time keeping",
-}
-
 export const viewport: Viewport = {
   themeColor: "#dddddd",
 }
 
-export default function RootLayout({
+export const metadata: Metadata = {
+  title: "mkrz timer",
+  description: "An accessible presentation timer with live sharing controls.",
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang={defaultAppLocale} className="h-full">
+    <html lang={defaultAppLocale} className="h-full" suppressHydrationWarning>
       <head>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/first-paint-theme.js" />
         {/* Favicon for general browsers */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -47,16 +50,14 @@ export default function RootLayout({
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
       </head>
       <ParamStyledBody
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          h-full antialiased
+        `}
       >
         <ServiceWorkerRegistration />
         {children}
-        <a
-          className="absolute bottom-4 right-4 underline hover:text-primary"
-          href="https://www.mkrz.at/"
-        >
-          by mkrz
-        </a>
       </ParamStyledBody>
     </html>
   )

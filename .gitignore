@@ -14,12 +14,18 @@
 /coverage
 /playwright-report
 /playwright-report-agent
+/playwright-report-agent-remote
+/playwright-report-remote
+/.playwright-runs/
 /test-results
 /test-results-agent
+/test-results-agent-remote
+/test-results-remote
 
 # next.js
 /.next/
 /.next-e2e/
+/.next-runs/
 /.next-agent/
 /.next-agent-e2e/
 /out/
@@ -30,6 +36,7 @@
 # misc
 .DS_Store
 .agent-lane/
+.agents/skills/prototype/tmp/
 *.pem
 
 # debug
@@ -49,5 +56,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-pnpm-lock.yaml
 pnpm-lock.yaml

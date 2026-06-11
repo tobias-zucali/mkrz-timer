@@ -1,0 +1,19 @@
+- heading "Status" [level=2]
+- button "Close sidebar"
+- heading "Status" [level=3]
+- term: Session
+- definition: Live session
+- term: State
+- definition: Connected
+- term: Access
+- definition: Viewer access
+- term: Live session
+- definition: Synchronized
+- term: Participants
+- definition: You + 1 control
+- term: Build
+- definition: dev
+- paragraph: This timer is synchronized through a live session.
+- button "Send to developer"
+- button "Connection details Show"
+- button "Recent activity Show"

@@ -1,7 +1,9 @@
 import os from "node:os"
 import type { NextConfig } from "next"
+import createNextIntlPlugin from "next-intl/plugin"
 
 const distDir = process.env.NEXT_DIST_DIR
+const isStaticExport = process.env.NODE_ENV === "production"
 
 function getLocalIPv4Addresses() {
   return Object.values(os.networkInterfaces()).flatMap((networks) =>
@@ -13,7 +15,31 @@ function getLocalIPv4Addresses() {
 
 const nextConfig: NextConfig = {
   ...(distDir ? { distDir } : {}),
-  output: "export",
+  ...(isStaticExport ? { output: "export" as const } : {}),
+  ...(!isStaticExport
+    ? {
+        async rewrites() {
+          return [
+            {
+              destination: "/view",
+              source: "/view/:token+",
+            },
+            {
+              destination: "/control",
+              source: "/control/:token+",
+            },
+            {
+              destination: "/:locale/view",
+              source: "/:locale(en|de)/view/:token+",
+            },
+            {
+              destination: "/:locale/control",
+              source: "/:locale(en|de)/control/:token+",
+            },
+          ]
+        },
+      }
+    : {}),
   turbopack: {
     root: process.cwd(),
     rules: {
@@ -26,4 +52,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["localhost", "127.0.0.1", ...getLocalIPv4Addresses()],
 }
 
-export default nextConfig
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
+
+export default withNextIntl(nextConfig)

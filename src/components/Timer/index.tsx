@@ -1,154 +1,202 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useId } from "react"
+import { useTranslations } from "next-intl"
 
-import EditableHtml from "@/components/EditableHtml"
-import Pie from "@/components/Pie"
 import DigitalDisplay from "@/components/DigitalDisplay"
+import Pie from "@/components/Pie"
+import TimerControls from "@/components/Timer/TimerControls"
+import TimerReadonlyPlaceholder, {
+  type ReadonlyPlaceholder,
+} from "@/components/Timer/TimerReadonlyPlaceholder"
+import TimerStepButton from "@/components/Timer/TimerStepButton"
+import TimerSequenceProgress from "@/components/Timer/TimerSequenceProgress"
+import TimerTitle from "@/components/TimerTitle"
+import type { SyncParams } from "@/shared/liveSession/types"
+import {
+  buildTimerReadoutLabel,
+  buildTimerStepLabel,
+  getTimerReadoutStateLabel,
+  type TimerReadoutState,
+} from "@/utils/accessibility/timer"
 import useTimer from "@/utils/useTimer"
 
-const timerButtonClassName =
-  "inline-flex min-h-11 min-w-24 appearance-none items-center justify-center " +
-  "rounded-md bg-foreground px-3.5 py-2.5 text-base font-bold text-background " +
-  "shadow-sm transition-colors hover:bg-foreground/90 " +
-  "focus-visible:outline-secondary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground touch-manipulation"
-
-const FAILED_PLACEHOLDER_COPY_DELAY_MS = 2500
-
 export default function Timer({
+  activeIndex,
+  isControlsDimmed = false,
   isReadonly = false,
-  readonlyPlaceholderState,
+  onSelectSequenceRow,
+  readonlyPlaceholder,
+  rows,
   title,
   handleChange,
+  handleTimeBlur,
   timer,
 }: {
+  activeIndex: number
+  isControlsDimmed?: boolean
   isReadonly?: boolean
-  readonlyPlaceholderState?: "connecting" | "failed" | "reconnecting"
+  onSelectSequenceRow?: (rowIndex: number) => void
+  readonlyPlaceholder?: ReadonlyPlaceholder
+  rows: SyncParams["rows"]
   title: string
   handleChange: (key: string, value: string) => void
+  handleTimeBlur: () => void
   timer: ReturnType<typeof useTimer>
 }) {
+  const headingId = useId()
+  const t = useTranslations("Timer")
   const {
     minutes,
     seconds,
     isStarted,
     isPaused,
     isTimedOut,
+    currentRepeat,
     elapsedPercentage,
     handleAction,
   } = timer
-
-  const [showFailedPlaceholderCopy, setShowFailedPlaceholderCopy] =
-    useState(false)
-
-  useEffect(() => {
-    if (readonlyPlaceholderState !== "failed") {
-      setShowFailedPlaceholderCopy(false)
-      return
+  const activeRow = rows[activeIndex] ?? rows[0]
+  const hasMultipleRows = rows.length > 1
+  const hasPreviousRow = hasMultipleRows && activeIndex > 0
+  const hasNextRow = hasMultipleRows && activeIndex < rows.length - 1
+  const highlightNextAction =
+    isTimedOut && activeRow?.endBehavior === "stop" && hasNextRow
+  const shouldReserveTitleSpace = rows.some(
+    (row) => row.title.trim().length > 0,
+  )
+  let readoutState: TimerReadoutState = "editing"
+  if (isReadonly) {
+    readoutState = "viewOnly"
+  } else if (isTimedOut) {
+    readoutState = "finished"
+  } else if (isStarted && isPaused) {
+    readoutState = "paused"
+  } else if (isStarted) {
+    readoutState = "running"
+  }
+  const remainingSeconds =
+    Number.parseInt(minutes || "0", 10) * 60 +
+    Number.parseInt(seconds || "0", 10)
+  const hasElapsedTime = isTimedOut || remainingSeconds < timer.totalDuration
+  const readoutSummary = buildTimerReadoutLabel({
+    activeIndex,
+    readoutState,
+    remainingSeconds,
+    rowCount: rows.length,
+    stepTitle: activeRow?.title ?? "",
+    t,
+  })
+  const stepSummary = hasMultipleRows
+    ? buildTimerStepLabel({
+        activeIndex,
+        rowCount: rows.length,
+        t,
+        title: activeRow?.title ?? "",
+      })
+    : null
+  const currentRepeatLabel =
+    activeRow && activeRow.repeatCount > 1
+      ? t("loop", {
+          current: currentRepeat,
+          total: activeRow.repeatCount,
+        })
+      : null
+  const stepTitles = rows.map((row, index) => {
+    const rowTitle = row.title.trim()
+    if (rowTitle) {
+      return t("stepTitleWithName", {
+        step: index + 1,
+        title: rowTitle,
+      })
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setShowFailedPlaceholderCopy(true)
-    }, FAILED_PLACEHOLDER_COPY_DELAY_MS)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [readonlyPlaceholderState])
-
-  const readonlyPlaceholderText =
-    readonlyPlaceholderState === "failed" && showFailedPlaceholderCopy
-      ? {
-          body: "The viewer could not recover the shared timer yet.",
-          heading: "Shared timer unavailable",
-          eyebrow: "Viewer offline",
-        }
-      : readonlyPlaceholderState === "reconnecting"
-        ? {
-            body: "Trying to recover the shared timer and refresh the display.",
-            heading: "Reconnecting to shared timer",
-            eyebrow: "Reconnecting viewer",
-          }
-        : {
-            body: "Waiting for the host to send the current timer state.",
-            heading: "Connecting to shared timer",
-            eyebrow: "Connecting viewer",
-          }
+    return t("stepTitleWithoutName", {
+      step: index + 1,
+    })
+  })
 
   return (
-    <div className="flex flex-col h-full">
-      <EditableHtml
+    <section aria-labelledby={headingId} className="flex h-full flex-col">
+      <h1 className="sr-only" id={headingId}>
+        {title.trim() || t("screenHeading")}
+      </h1>
+      <TimerTitle
         disabled={isReadonly}
-        html={title}
+        isDimmed={isControlsDimmed}
+        reserveSpace={shouldReserveTitleSpace}
+        value={title}
         onChange={(value) => handleChange("title", value)}
-        className={`text-center text-[3em] font-bold pt-1 md:text-[5em] rouded-lg ${
-          isReadonly ? "" : "hover:outline-4 hover:-outline-offset-4"
-        }`}
-        title={isReadonly ? undefined : "Click to edit title"}
       />
-      <div className="flex items-center justify-center grow h-[10em] p-[1em] relative">
+      <div className="relative flex h-[10em] grow items-center justify-center p-[1em]">
         <Pie
           percentage={elapsedPercentage > 1 ? 0 : 100 * (1 - elapsedPercentage)}
         />
 
-        {readonlyPlaceholderState ? (
-          <div
-            className="absolute inset-0 flex items-center justify-center px-6"
-            data-testid="readonly-timer-placeholder"
-          >
-            <div className="w-full max-w-lg rounded-3xl border border-foreground/12 bg-background/72 px-6 py-8 text-center shadow-xl shadow-background/20 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
-                {readonlyPlaceholderText.eyebrow}
-              </p>
-              <div className="mt-5 flex items-center justify-center gap-3">
-                <div className="h-4 w-4 rounded-full bg-primary/80 motion-safe:animate-pulse" />
-                <div className="h-4 w-4 rounded-full bg-foreground/30 motion-safe:animate-pulse [animation-delay:150ms]" />
-                <div className="h-4 w-4 rounded-full bg-foreground/18 motion-safe:animate-pulse [animation-delay:300ms]" />
-              </div>
-              <p className="mt-5 text-lg font-semibold text-foreground">
-                {readonlyPlaceholderText.heading}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-foreground/68">
-                {readonlyPlaceholderText.body}
-              </p>
-            </div>
-          </div>
+        {readonlyPlaceholder ? (
+          <TimerReadonlyPlaceholder placeholder={readonlyPlaceholder} />
         ) : (
-          <div className="flex flex-col items-center justify-center grow absolute inset-0">
+          <div className="absolute inset-0 flex grow flex-col items-center justify-center">
+            {hasPreviousRow && !isReadonly ? (
+              <TimerStepButton
+                ariaLabel={t("previousStep")}
+                direction="previous"
+                isDimmed={isControlsDimmed}
+                onClick={() => handleAction("previous")}
+              />
+            ) : null}
+            {hasNextRow && !isReadonly ? (
+              <TimerStepButton
+                ariaLabel={t("nextStep")}
+                direction="next"
+                isDimmed={isControlsDimmed}
+                isHighlighted={highlightNextAction}
+                onClick={() => handleAction("next")}
+              />
+            ) : null}
             <DigitalDisplay
+              accessibleText={readoutSummary}
               data-testid="timer-display"
+              displayMode={isReadonly || isStarted ? "readout" : "editable"}
               isAlert={isTimedOut}
               isReadonly={isReadonly || isStarted}
               minutes={minutes}
-              seconds={seconds}
+              onBlur={handleTimeBlur}
               onMinutesChange={(event) => handleChange("m", event.target.value)}
               onSecondsChange={(event) => handleChange("s", event.target.value)}
+              seconds={seconds}
+            />
+            <div className="sr-only" data-testid="timer-readout-summary">
+              {readoutSummary}
+              {stepSummary ? ` ${stepSummary}.` : ""}
+            </div>
+            <TimerSequenceProgress
+              isDimmed={isControlsDimmed}
+              activeIndex={activeIndex}
+              currentRepeatLabel={currentRepeatLabel}
+              isReadonly={isReadonly}
+              rows={rows}
+              stepTitles={stepTitles}
+              onSelectSequenceRow={onSelectSequenceRow}
             />
             {!isReadonly && (
-              <div
-                className="flex flex-wrap items-center justify-center gap-2 py-[0.625em]"
-                data-testid="timer-controls"
-              >
-                <button
-                  className={timerButtonClassName}
-                  disabled={isTimedOut}
-                  onClick={() => handleAction(isPaused ? "start" : "pause")}
-                >
-                  {isPaused ? "START" : "PAUSE"}
-                </button>
-                <button
-                  className={timerButtonClassName}
-                  disabled={!isStarted}
-                  onClick={() => handleAction("reset")}
-                >
-                  RESET
-                </button>
-              </div>
+              <TimerControls
+                isDimmed={isControlsDimmed}
+                isPaused={isPaused}
+                isResetDisabled={!hasElapsedTime}
+                isTimedOut={isTimedOut}
+                pauseLabel={t("pause")}
+                resetLabel={t("reset")}
+                startLabel={t("start")}
+                stateLabel={getTimerReadoutStateLabel(readoutState, t)}
+                onPause={() => handleAction("pause")}
+                onReset={() => handleAction("restart")}
+                onStart={() => handleAction("start")}
+              />
             )}
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }

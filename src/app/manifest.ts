@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "mkrz timer",
     short_name: "timer",
-    description: "simple time keeping",
+    description: "Simple timekeeping",
     start_url: "/",
     scope: "/",
     display: "standalone",

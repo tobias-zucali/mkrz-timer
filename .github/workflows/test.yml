@@ -32,4 +32,4 @@ jobs:
         run: pnpm test:ci
 
       - name: Build
-        run: pnpm exec next build
+        run: pnpm build

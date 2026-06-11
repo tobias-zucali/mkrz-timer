@@ -1,24 +1,34 @@
 # mkrz timer
 
-`mkrz timer` is a workshop timer with a relay-backed remote mode for shared control and viewing across browsers.
+`mkrz timer` is a workshop timer built for local facilitation and simple remote sharing, so one person can stay in control while other people follow the same timer from their own screens.
 
-## About
+## Product Goals
 
-- Production target: `timer.mkrz.at`
-- Frontend: static Next.js export
-- Remote mode: server-relayed WebSocket sessions
-- Hosting target: Hetzner CAX11 with Docker Compose and Caddy
+- Keep the timer fast to start and easy to operate during workshops.
+- Let one person share the current timer with other browsers without handing over control by accident.
+- Keep the product privacy-first by transferring and storing as little user data as possible.
+- Keep the hosted setup small enough to operate without unnecessary infrastructure.
+- Favor implementation complexity only when it produces a clear user or operator benefit.
 
 Agent-facing repo guidance lives in [AGENTS.md](./AGENTS.md).
 Technical details live in:
 
 - [docs/development.md](./docs/development.md)
-- [docs/remote-mode.md](./docs/remote-mode.md)
+- [docs/documentation.md](./docs/documentation.md)
+- [docs/i18n.md](./docs/i18n.md)
+- [docs/live-sessions.md](./docs/live-sessions.md)
+- [docs/title-layout.md](./docs/title-layout.md)
 - [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
+
+## Security Notes
+
+- Treat all URL params, local edits, and relay-synchronized payloads as untrusted input.
+- Timer titles are plain text only, normalized to a single paragraph, and shared session snapshots are validated before use.
+- See [docs/live-sessions.md](./docs/live-sessions.md) for trust boundaries, sanitization rules, dangerous patterns, and how to add new synchronized fields safely.
 
 ## Getting Started
 
-Use Node.js `22.6.0` or newer and `pnpm`.
+Use Node.js `22.12.0` or newer and `pnpm`.
 
 ```bash
 corepack enable
@@ -29,46 +39,41 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Useful Commands
+ESLint includes `eslint-plugin-better-tailwindcss` in the shared flat config. For editor feedback, enable your editor's ESLint integration so Tailwind class issues surface inline; no separate Tailwind-specific editor plugin is required for linting.
+
+The config uses the plugin's recommended preset, with `better-tailwindcss/enforce-consistent-line-wrapping` disabled because Prettier rewrites multiline JSX class strings in a way that does not stay stable with that rule.
+
+## Common Commands
 
 ```bash
 pnpm dev
-pnpm dev:relay
-pnpm build:docker
 pnpm test
-pnpm test:full
+pnpm test:full # including visual tests
 pnpm build
-pnpm lint
-pnpm format
+pnpm lint:fix
+pnpm format:fix
 ```
 
-## Remote Mode
+## Prototype Mode
 
-See [docs/remote-mode.md](./docs/remote-mode.md) for the session model, client behavior, and code layout.
+If you explicitly ask an agent for prototype mode, the repo-specific workflow and closeout policy live in [AGENTS.md](./AGENTS.md) and [`.agents/skills/prototype`](./.agents/skills/prototype/SKILL.md).
+
+## Live Sessions
+
+See [docs/live-sessions.md](./docs/live-sessions.md) for the live-session user contract, capability boundaries, trust boundaries, and contributor rules.
 
 ## Local Development
 
-See [docs/development.md](./docs/development.md) for:
-
-- local app and relay defaults
-- Playwright and agent lane ports
-- relevant environment variables
-- when Docker makes sense locally
+See [docs/development.md](./docs/development.md) for local setup goals, runtime defaults, test lanes, and when Docker makes sense locally.
 
 ## Testing
 
-- `pnpm test`: lint + unit tests + smoke e2e
-- `pnpm test:ci`: lint + unit tests + CI-safe e2e
-- `pnpm test:full`: lint + unit tests + full e2e
-- `pnpm build`: runs `pnpm test:full` first, then builds the static frontend
-- `pnpm build:docker`: runs the full app build, then `docker compose build`
+Use `pnpm test*` and `pnpm test:e2e:*` commands. Use `pnpm scope` when you want the repo-specific validation helper.
 
 ## Deployment
 
-Production is intended to run on a Hetzner CAX11 using Docker Compose and Caddy.
+See [docs/deploy-hetzner.md](./docs/deploy-hetzner.md) for the deployment goals, operator checks, and the workflow/script files that act as the executable source of truth.
 
-Deployment files and the runbook live in:
+## Maintainer Tools
 
-- [docker-compose.yml](./docker-compose.yml)
-- [Caddyfile](./Caddyfile)
-- [docs/deploy-hetzner.md](./docs/deploy-hetzner.md)
+- [tools/project-export/README.md](./tools/project-export/README.md): maintainer-only GitHub Project export utility, separate from the app runtime and implementation

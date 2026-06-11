@@ -1,0 +1,14 @@
+commands:
+  - pnpm test:e2e:remote -- tests/e2e/live-session/sync.spec.ts
+rules:
+  - match:
+      - route.ts
+      - route.test.ts
+      - recovery.ts
+      - recovery.test.ts
+      - fallback.ts
+      - fallback.test.ts
+      - timerPage/client
+    commands:
+      - pnpm test:e2e:remote -- tests/e2e/live-session/client.spec.ts
+    contract: true

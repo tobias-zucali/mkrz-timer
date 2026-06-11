@@ -1,6 +1,8 @@
 import classNames from "classnames"
 import { useId } from "react"
 
+import styles from "@/components/InputField/index.module.css"
+
 const baseInputClassName = classNames(
   "block h-10 w-full rounded-md",
   "bg-background text-base text-foreground",
@@ -19,8 +21,8 @@ export default function InputField({
 }: {
   containerClassName?: string
   description?: string
-  label: string
   id: string
+  label: string
   onChange?: React.ChangeEventHandler<HTMLInputElement>
   children?: React.ReactNode
 } & React.InputHTMLAttributes<HTMLInputElement>) {
@@ -48,6 +50,7 @@ export default function InputField({
           className={classNames(
             otherProps.type !== "color" && "pl-3",
             hasInsetPadding && "pr-3",
+            otherProps.type === "number" && styles.numberInput,
             "border border-foreground/10",
             baseInputClassName,
             className,
@@ -65,10 +68,7 @@ export default function InputField({
         {children}
       </div>
       {description && (
-        <p
-          className="text-sm leading-6 text-foreground/68 mt--2"
-          id={`${inputId}-desc`}
-        >
+        <p className="text-sm/6 text-foreground/68" id={`${inputId}-desc`}>
           {description}
         </p>
       )}

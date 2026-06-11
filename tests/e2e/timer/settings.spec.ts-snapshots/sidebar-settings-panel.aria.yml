@@ -1,0 +1,38 @@
+- heading "Settings" [level=2]
+- button "Close sidebar"
+- heading "Language" [level=3]
+- combobox "Language":
+  - option "English" [selected]
+  - option "Deutsch"
+- heading "Appearance" [level=3]
+- paragraph: Adjust the timer colors that frame the clock.
+- 'textbox /Background #\d+/'
+- text: "/Background #\\d+/"
+- 'textbox "Foreground #ffffff"'
+- text: "Foreground #ffffff"
+- heading "Voice & Sound" [level=3]
+- paragraph: Configure spoken announcements and the sound that plays when the timer finishes.
+- text: Sound when finished
+- combobox "Sound when finished":
+  - option "Attention" [selected]
+  - option "Ringing Bell"
+  - option "Old Ring Ringing"
+  - option "No sound"
+- button "Preview sound"
+- checkbox "Voice announcements"
+- text: Voice announcements
+- heading "Floating Timer" [level=3]
+- paragraph: Keep a compact timer visible above other windows.
+- button "Open floating timer"
+- heading "Keyboard Shortcuts" [level=3]
+- paragraph: Global timer shortcuts stay available unless focus is inside an editable field.
+- paragraph: Enter / Space
+- paragraph: Start or pause the timer, and reset when time has run out.
+- paragraph: P
+- paragraph: Start or pause the timer without resetting a finished step.
+- paragraph: R / Escape
+- paragraph: Reset the timer.
+- paragraph: Arrow Left / Right
+- paragraph: Move to the previous or next step.
+- paragraph: Arrow Up / Down
+- paragraph: Add or remove one minute.

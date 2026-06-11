@@ -1,0 +1,5 @@
+- dialog "mkrz timer · Local link":
+  - button "Close"
+  - heading "mkrz timer · Local link" [level=1]
+  - img "Local link"
+  - text: /http:\/\/\d+\.\d+\.0\.1:\d+\/en\?v=1&t=3%21d61f69%\d+%\d+%\d+&a=0/

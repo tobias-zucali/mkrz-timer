@@ -1,0 +1,13 @@
+commands:
+  - pnpm test:e2e:remote -- tests/e2e/live-session/client.spec.ts
+rules:
+  - match:
+      - sync.spec.ts
+      - sync.spec.ts-snapshots
+    commands:
+      - pnpm test:e2e:remote -- tests/e2e/live-session/sync.spec.ts
+  - match:
+      - pip.spec.ts
+      - pip.spec.ts-snapshots
+    commands:
+      - pnpm test:e2e:remote -- tests/e2e/live-session/pip.spec.ts
