@@ -7,7 +7,7 @@ description: Run fast prototype loops in this repository while intentionally def
 
 ## Overview
 
-Use this skill when the user explicitly wants prototype mode. Follow the prototype-mode rules defined in `AGENTS.md` and keep a persistent closeout ledger so prototype mode always ends with one of two outcomes:
+Use this skill when the user explicitly wants prototype mode. Follow the prototype-mode rules defined in `AGENTS.md` and keep a persistent closeout ledger. The ledger is the source of truth for deferred prototype obligations, and prototype mode must always end with one of two outcomes:
 
 1. Finish the work by backfilling docs, tests, and validation.
 2. Revert the prototype-only changes if the result is not worth keeping.
@@ -29,9 +29,9 @@ scripts/prototype_session.mjs start --repo "$PWD" --goal "<short goal>"
 
 ## During Prototype Mode
 
-### Example Ledger Updates
+### Illustrative Ledger Updates
 
-After each meaningful change set, update the ledger:
+After each meaningful change set, or whenever the prototype direction changes, update the ledger:
 
 ```bash
 scripts/prototype_session.mjs update --repo "$PWD" --note "<what changed>"
@@ -50,8 +50,8 @@ These examples are illustrative. Record the docs, tests, validation requirements
 ## Prototype Guardrails
 
 - Treat `AGENTS.md` as the execution policy even in prototype mode.
-- Keep files short and focused; prototype mode does not permit sloppy structure.
-- Treat external and user-controlled values as untrusted.
+- Treat the ledger as the source of truth for deferred prototype obligations.
+- Update the ledger notes whenever the prototype direction, retained scope, or closeout requirements change.
 - Record deferred work and review obligations in the ledger so closeout can follow `AGENTS.md` correctly.
 
 ## Finish Prototype Mode

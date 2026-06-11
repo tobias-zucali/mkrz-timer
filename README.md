@@ -56,10 +56,7 @@ pnpm format:fix
 
 ## Prototype Mode
 
-- If you explicitly ask for prototype mode, the working agreement changes temporarily:
-- during prototype mode, validation commands can be skipped while fast UI or behavior iteration is still in progress
-- documentation updates, test updates, and the full validation lane can wait until you explicitly ask to end prototype mode or finish the work
-- once prototype mode ends, the expectation returns to updating the relevant docs and tests and then running the full required validation lane
+If you explicitly ask an agent for prototype mode, the repo-specific workflow and closeout policy live in [AGENTS.md](./AGENTS.md) and [`.agents/skills/prototype`](./.agents/skills/prototype/SKILL.md).
 
 ## Live Sessions
 

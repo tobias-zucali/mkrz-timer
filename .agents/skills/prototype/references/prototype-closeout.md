@@ -10,7 +10,7 @@
 
 Use this checklist when `scripts/prototype_session.mjs finish-plan --repo "$PWD"` reports deferred work:
 
-1. Review the ledger notes and current git diff.
+1. Treat the ledger notes as the authoritative record of deferred prototype obligations, then review the current git diff.
 2. Review the prototype-introduced changes with the current diff and decide what stays.
 3. Update docs affected by the prototype.
 4. Add or adapt tests affected by the prototype.

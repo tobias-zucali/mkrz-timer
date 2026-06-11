@@ -13,12 +13,13 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Before implementation, review the current architecture and existing functionality to verify that the planned approach is still appropriate, does not duplicate newer functionality, integrates cleanly with the current repository state, and still fulfills the purpose of the requested change.
 - Run `pnpm scope -- <paths...>` (or `pnpm scope` for the current diff) to determine the smallest recommended validation lane.
 - Prefer the smallest validation lane that covers the affected area before broader validation.
-- Check for existing helpers, abstractions, and feature boundaries before introducing new patterns or duplicate functionality.
+- Prefer extending existing helpers, abstractions, and feature boundaries before introducing new patterns or parallel implementations.
 
 ### Validation Defaults
 
 - After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke`, and `pnpm format:fix` before considering the task done.
 - After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
+- Treat `pnpm scope` recommendations as advisory. Agents remain responsible for choosing validation that is sufficient for the actual risk of the change.
 - Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 
 ### Prototype Mode
@@ -49,6 +50,14 @@ This file captures durable repo conventions for agents. For product/setup contex
 - New user-controlled fields require validation plus escaping review before merge.
 - Changes to synchronized or relay-persisted fields require an explicit security review.
 
+## Architectural Hot Spots
+
+- Live sessions: treat `docs/live-sessions.md` as the contract for capability boundaries, recovery behavior, and relay-owned shared state. Extend the existing relay/client model before introducing parallel session flows.
+- Synchronization: keep schema validation, normalization, merge rules, and shared-field ownership centralized. Extend existing shared abstractions instead of duplicating sync logic across UI, client, and relay paths.
+- URL state: treat query params and route shapes as a compatibility surface. Reuse the existing parse/normalize/share-link abstractions so hydration, redirects, and copied links stay aligned.
+- Persistence: preserve the current boundaries between local state, URL state, and relay snapshots. Reuse existing storage and restore paths before adding new caches or persistence mechanisms.
+- Timer progression semantics: preserve one canonical model for elapsed time, paused state, and resumed progression. Extend existing derivation utilities before introducing alternate clock calculations.
+
 ## Live Sessions
 
 - `docs/live-sessions.md` is the source of truth for live-session contracts, trust boundaries, and synchronized-field rules.
@@ -69,6 +78,7 @@ This file captures durable repo conventions for agents. For product/setup contex
   - avoid overlapping Playwright lanes that share the same ports
   - if a UI change is intentional, update affected aria or visual snapshots immediately instead of discovering that need in repeated full-lane reruns
 - Use `pnpm scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
+- Escalate beyond the smallest suggested lane when the change affects live sessions, synchronization, URL state, persistence, timer progression semantics, or any shared contract/invariant.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 - Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.
 - Multi-client relay coverage belongs in the isolated remote Playwright lane, not the default local lane.

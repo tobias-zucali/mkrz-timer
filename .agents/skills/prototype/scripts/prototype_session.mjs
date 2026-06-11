@@ -10,7 +10,10 @@ import { execFileSync } from "node:child_process"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const TMP_ROOT = path.resolve(SCRIPT_DIR, "..", "tmp")
-const DEFAULT_COMMANDS = ["pnpm lint", "pnpm test", "pnpm format:fix"]
+const DEFAULT_VALIDATION_OBLIGATIONS = [
+  "Return to the standard validation requirements defined in AGENTS.md before finishing prototype mode.",
+  "Re-check the final scope recommendation before choosing the closeout lane.",
+]
 
 function nowIso() {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
@@ -83,6 +86,21 @@ function formatList(items) {
     : "- none"
 }
 
+function validationObligations(session) {
+  if (Array.isArray(session.validation_obligations)) {
+    return session.validation_obligations
+  }
+  if (Array.isArray(session.required_commands)) {
+    return [
+      "Return to the standard validation requirements defined in AGENTS.md before finishing prototype mode.",
+      ...session.required_commands.map(
+        (command) => `Legacy deferred validation command recorded: ${command}`,
+      ),
+    ]
+  }
+  return DEFAULT_VALIDATION_OBLIGATIONS
+}
+
 function prototypeOnlyFiles(repo, session) {
   const dirty = currentDirty(repo)
   const baseline = new Set([
@@ -98,8 +116,8 @@ function printStatus(repo, session) {
   console.log(`Goal: ${session.goal || "(none)"}`)
   console.log(`Started: ${session.started_at}`)
   console.log(`Branch: ${session.branch}`)
-  console.log("Deferred commands:")
-  console.log(formatList(session.required_commands))
+  console.log("Deferred validation obligations:")
+  console.log(formatList(validationObligations(session)))
   console.log("Deferred docs:")
   console.log(formatList(session.docs))
   console.log("Deferred tests:")
@@ -120,7 +138,7 @@ function startSession(repo, goal) {
     started_at: nowIso(),
     branch: repoBranch(repo),
     baseline: currentDirty(repo),
-    required_commands: DEFAULT_COMMANDS,
+    validation_obligations: DEFAULT_VALIDATION_OBLIGATIONS,
     docs: [],
     tests: [],
     needs_full_validation: false,
@@ -163,11 +181,13 @@ function finishPlan(repo) {
   )
   console.log("- Update the deferred docs before validation.")
   console.log("- Add or adapt the deferred tests before validation.")
-  for (const command of session.required_commands) {
-    console.log(`- Run \`${command}\``)
+  for (const obligation of validationObligations(session)) {
+    console.log(`- ${obligation}`)
   }
   if (session.needs_full_validation) {
-    console.log("- Run `pnpm test:full`")
+    console.log(
+      "- Escalate to the broader AGENTS.md validation lane for route, session, synchronization, persistence, or shared-state changes.",
+    )
   }
   if (session.needs_security_review) {
     console.log(
