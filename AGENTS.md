@@ -30,6 +30,15 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Prototype mode overrides the validation defaults in this file until prototype mode ends.
 - When prototype mode ends, return to the validation defaults and complete required documentation and test updates before considering the work done.
 
+### Focused Review Workflows
+
+- Opt-in review workflows live under `.agents/workflows`.
+- Use `pnpm review:workflows -- <paths...>` (or `pnpm review:workflows` for the current diff) to generate compact parallel review briefs.
+- These workflows narrow inspection scope; they do not replace `AGENTS.md`.
+- Review subagents must not make code changes unless explicitly assigned implementation responsibility.
+- Review subagents must not run validation commands unless explicitly assigned validation responsibility.
+- The main agent remains responsible for final integration decisions, validation choice, and conflict resolution.
+
 ## Code Conventions
 
 - Prefer `@/` imports over relative `../..` imports.
