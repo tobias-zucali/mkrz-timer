@@ -9,13 +9,12 @@ For the quick project overview, start with the [README](../README.md).
 
 ## Product Contract
 
-Live sessions are relay-backed. There is no dedicated browser host.
+Live sessions exist so one person can stay in control of a timer while other people can safely follow the same state from their own browsers.
 
 - `/<locale>/view/<readonlyToken>` is a readonly viewer link.
 - `/<locale>/control/<controlToken>` is a control-capable link.
 - Legacy unprefixed `/view/<readonlyToken>` and `/control/<controlToken>` URLs redirect to the English-prefixed equivalent.
 - Viewer and control capabilities must remain strictly separated.
-- The relay owns the canonical timer snapshot and participant roster.
 - Live session URLs may include the canonical timer-state params `v`, `t`, and `a`.
 - Control URLs may also include the `title` query param.
 - Live session URLs may include selected non-default settings params when those settings are intentionally shared.
@@ -25,7 +24,6 @@ Live sessions are relay-backed. There is no dedicated browser host.
 - Viewers stay readonly across normal use, disconnects, and reconnects.
 - Control clients can publish timer and settings changes.
 - New clients receive the current shared snapshot when they join.
-- The relay remains the source of truth for shared state and recovery decisions.
 - An already-connected control client should rebuild a relay session automatically after a relay restart so existing control and viewer links keep working.
 - Timer action chrome stays mounted on every viewport for local, viewer, and control clients; it dims after five seconds of inactivity and returns to full visibility on interaction or focused controls.
 - Invalid, malformed, or expired live-session links must fail closed with a recoverable error state.
@@ -64,7 +62,13 @@ Live sessions are relay-backed. There is no dedicated browser host.
 - relay implementation: [src/server/relay/index.ts](../src/server/relay/index.ts)
 - relay session store: [src/server/liveSession/sessionStore.ts](../src/server/liveSession/sessionStore.ts)
 
-## Transport Decision
+## Current Implementation
+
+The current implementation uses a server relay to own the canonical shared snapshot, participant roster, and recovery flow. There is no dedicated browser host.
+
+This design is a means to the product contract above, not the contract itself.
+
+## Current Transport Decision
 
 Keep the current relay model and `ws` transport. Improve internal relay and client abstractions inside that model instead of migrating to a new realtime framework.
 

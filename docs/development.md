@@ -6,6 +6,8 @@ Accessibility tree conventions live in [docs/accessibility-tree.md](./accessibil
 
 ## Local App And Relay
 
+The local development setup exists to keep the common loop simple: run the app, run live sessions locally, and only add extra infrastructure when it helps validate a real risk.
+
 `pnpm dev` starts both the Next.js app and the local relay with a compatible default:
 
 - app: `http://localhost:3000`
@@ -27,6 +29,8 @@ Environment variables:
 - `RELAY_SESSION_TTL_MS`: in-memory idle session expiry
 
 ## Test Lanes
+
+The testing workflow is organized to answer the smallest useful product question first, then widen only when a change crosses boundaries.
 
 Audience split:
 
@@ -158,7 +162,7 @@ Attach mode uses these advanced commands:
 - `pnpm agent:serve:test`
 - `pnpm agent:serve:relay`
 
-The lane split is still useful because it isolates Playwright ports, dist dirs, and tracked process metadata from normal local development.
+The lane split is useful because it protects the normal local workflow from test-lane interference while keeping broader agent validation reproducible.
 
 Practical rule:
 
@@ -187,7 +191,7 @@ Use `$prototype` when the user explicitly asks for prototype mode and you need a
 
 ## Docker Locally
 
-Local Docker builds make sense for deployment parity checks, not for day-to-day UI iteration.
+Local Docker builds make sense when the goal is deployment parity, not when the goal is fast day-to-day product iteration.
 
 Use Docker locally when you want to:
 

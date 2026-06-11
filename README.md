@@ -1,18 +1,20 @@
 # mkrz timer
 
-`mkrz timer` is a workshop timer with relay-backed live sessions for shared control and viewing across browsers.
+`mkrz timer` is a workshop timer built for local facilitation and simple remote sharing, so one person can stay in control while other people follow the same timer from their own screens.
 
-## About
+## Product Goals
 
-- Production target: `timer.mkrz.at`
-- Frontend: static Next.js export
-- Live sessions: server-relayed WebSocket sessions
-- Hosting target: Hetzner CAX11 with Docker Compose and Caddy
+- Keep the timer fast to start and easy to operate during workshops.
+- Let one person share the current timer with other browsers without handing over control by accident.
+- Keep the product privacy-first by transferring and storing as little user data as possible.
+- Keep the hosted setup small enough to operate without unnecessary infrastructure.
+- Favor implementation complexity only when it produces a clear user or operator benefit.
 
 Agent-facing repo guidance lives in [AGENTS.md](./AGENTS.md).
 Technical details live in:
 
 - [docs/development.md](./docs/development.md)
+- [docs/documentation.md](./docs/documentation.md)
 - [docs/i18n.md](./docs/i18n.md)
 - [docs/live-sessions.md](./docs/live-sessions.md)
 - [docs/title-layout.md](./docs/title-layout.md)
@@ -63,11 +65,11 @@ pnpm format:fix
 
 ## Live Sessions
 
-See [docs/live-sessions.md](./docs/live-sessions.md) for live-session terminology, capability boundaries, trust boundaries, and contributor rules.
+See [docs/live-sessions.md](./docs/live-sessions.md) for the live-session user contract, capability boundaries, trust boundaries, and contributor rules.
 
 ## Local Development
 
-See [docs/development.md](./docs/development.md) for local app and relay defaults, environment variables, test lanes, and when Docker makes sense locally.
+See [docs/development.md](./docs/development.md) for local setup goals, runtime defaults, test lanes, and when Docker makes sense locally.
 
 ## Testing
 
@@ -75,7 +77,7 @@ Humans should use the generic `pnpm test*` commands here. Detailed lane definiti
 
 ## Deployment
 
-Production deployment targets a Hetzner CAX11 with Docker Compose and Caddy. See [docs/deploy-hetzner.md](./docs/deploy-hetzner.md) for the runbook and the workflow/script files it points to for executable deployment behavior.
+See [docs/deploy-hetzner.md](./docs/deploy-hetzner.md) for the deployment goals, operator checks, and the workflow/script files that act as the executable source of truth.
 
 ## Maintainer Tools
 

@@ -1,6 +1,6 @@
 # Accessibility Tree Conventions
 
-This app treats the accessibility tree as a first-class UI surface.
+This app treats the accessibility tree as a first-class UI surface so screen-reader and keyboard users can operate the timer without depending on visual affordances.
 
 ## Core Rules
 

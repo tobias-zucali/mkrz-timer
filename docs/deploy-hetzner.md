@@ -4,7 +4,9 @@ Project overview: [README.md](../README.md)
 
 ## Overview
 
-Production is designed around:
+The deployment approach should keep the app inexpensive to host, straightforward to operate, and easy to verify after each release.
+
+The current production setup uses:
 
 - `Caddy` as the public reverse proxy with TLS
 - `timer-web` serving the static frontend
@@ -16,7 +18,7 @@ The executable deployment flow lives in:
 - [.github/workflows/build-and-deploy.yml](../.github/workflows/build-and-deploy.yml)
 - [scripts/deploy-production.sh](../scripts/deploy-production.sh)
 
-Treat those files as the source of truth for exact deployment steps, bundle contents, and environment wiring.
+Treat those files as the source of truth for exact deployment steps, bundle contents, and environment wiring. This document is for goals, checks, and operator expectations.
 
 ## Server Prerequisites
 
@@ -26,7 +28,7 @@ Treat those files as the source of truth for exact deployment steps, bundle cont
 - Install Docker and Docker Compose on the server.
 - Point DNS at the VM for the app domain, and for the relay domain if you keep the relay on a separate hostname.
 
-If you use a single-domain setup, route `/ws` through Caddy instead of a dedicated relay hostname.
+If you use a single-domain setup, route `/ws` through Caddy instead of a dedicated relay hostname. Keep the user-visible goal the same: the app and live sessions should remain reachable without extra manual coordination.
 
 ## Repository Secrets And Env
 
@@ -38,7 +40,7 @@ Current names and defaults live in:
 - [scripts/deploy-production.sh](../scripts/deploy-production.sh)
 - [docker-compose.yml](../docker-compose.yml)
 
-Keep this document at the level of categories, not exact variable duplication, so changes to workflow wiring only need to be updated in one place.
+Keep this document at the level of categories, not exact variable duplication, so workflow wiring can change without forcing unnecessary prose churn.
 
 ## Verification
 
@@ -65,7 +67,7 @@ curl https://ws.timer.mkrz.at/health
 - Revert to a known-good revision in the repository.
 - Trigger the deployment workflow again.
 
-If rollback requirements become stricter, add image tagging or a registry-backed release flow rather than expanding this runbook with duplicated workflow logic.
+If rollback requirements become stricter, prefer adding a clearer release mechanism rather than expanding this runbook with duplicated workflow logic.
 
 ## Hosting Notes
 

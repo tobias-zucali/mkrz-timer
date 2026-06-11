@@ -1,6 +1,10 @@
 # Timer Title Layout
 
-This note captures the current constraints for the timer title UI so future layout work does not accidentally reintroduce oversized hit areas, unstable height shifts, or clipped title text.
+This note captures the goal and constraints for the timer title UI so future layout work does not accidentally reintroduce oversized hit areas, unstable height shifts, or clipped title text.
+
+## Goal
+
+The title area should stay easy to read, easy to edit, and visually secondary to the timer itself.
 
 ## Current Rules
 
