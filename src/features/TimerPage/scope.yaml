@@ -1,6 +1,6 @@
 commands:
-  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+  - pnpm test:e2e:local -- tests/e2e/timer/actions.spec.ts
 rules:
   - match: settings
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts
+      - pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts

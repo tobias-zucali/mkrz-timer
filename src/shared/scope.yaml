@@ -1,7 +1,7 @@
 commands:
-  - pnpm agent:test:remote -- tests/e2e/live-session/sync.spec.ts
+  - pnpm test:e2e:remote -- tests/e2e/live-session/sync.spec.ts
 rules:
   - match: urlState
     commands:
-      - pnpm agent:test:remote -- tests/e2e/live-session/client.spec.ts
+      - pnpm test:e2e:remote -- tests/e2e/live-session/client.spec.ts
     contract: true

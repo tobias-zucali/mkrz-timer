@@ -8,12 +8,13 @@ Accessibility tree conventions live in [docs/accessibility-tree.md](./accessibil
 
 The local development setup exists to keep the common loop simple: run the app, run live sessions locally, and only add extra infrastructure when it helps validate a real risk.
 
-`pnpm dev` starts both the Next.js app and the local relay with a compatible default:
+`pnpm dev` starts both the Next.js app and the local relay through one runtime launcher. It prefers these ports and walks upward when they are busy:
 
-- app: `http://localhost:3000`
-- relay bind: `0.0.0.0:9100`
-- relay websocket from the same computer: `ws://127.0.0.1:9100/ws`
-- relay websocket from another device on the LAN: `ws://<your-dev-machine-ip>:9100/ws`
+- app: starts at `http://localhost:3000`
+- relay bind: starts at `0.0.0.0:9100`
+- relay websocket from the same computer: starts at `ws://127.0.0.1:9100/ws`
+- relay websocket from another device on the LAN: the same relay port on `ws://<your-dev-machine-ip>:<chosen-port>/ws`
+- each launcher run writes its Next.js build output to a port-derived `.next-runs/<lane>-<appPort>-<relayPort>` directory so concurrent dev and test runs do not share the same Next.js lock
 
 You can also run the relay by itself:
 
@@ -32,10 +33,7 @@ Environment variables:
 
 The testing workflow is organized to answer the smallest useful product question first, then widen only when a change crosses boundaries.
 
-Audience split:
-
-- Humans should use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md).
-- Agents should use the tracked `pnpm agent:test*` lane wherever an equivalent exists, because it isolates ports, dist dirs, and process metadata from ordinary local development.
+Use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md). `pnpm scope` remains the repo-specific helper for choosing the smallest useful first-pass lane from changed files. The launcher chooses the first free ports near the preferred defaults instead of assuming fixed ports are always available.
 
 Local validation lanes:
 
@@ -66,14 +64,14 @@ Authoring rules:
 Why `scope.yaml` exists:
 
 - keep validation ownership next to the subsystem that owns it instead of in one brittle central mapping table
-- let `pnpm agent:scope` recommend the smallest useful first-pass lane before broader reruns
+- let `pnpm scope` recommend the smallest useful first-pass lane before broader reruns
 - make route, live-session, and contract-sensitive boundaries visible during edits
 - avoid leaf-by-leaf metadata and treat exception-heavy scope files as a signal that the boundary is too fine-grained
 
 `scope.yaml` keys:
 
 - `commands`: array of explicit first-pass validation commands
-- `contract`: boolean; set this when the boundary affects route, share-link, hydration, or recovery contracts so `pnpm agent:scope` prints the contract-first checklist
+- `contract`: boolean; set this when the boundary affects route, share-link, hydration, or recovery contracts so `pnpm scope` prints the contract-first checklist
 - `rules`: optional array of narrower overrides for descendants
 - `match`: descendant-relative file or folder selector for a rule; literal paths are the default, and `*` or `?` opt into glob matching
 
@@ -81,11 +79,11 @@ Example:
 
 ```yaml
 commands:
-  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+  - pnpm test:e2e:local -- tests/e2e/timer/actions.spec.ts
 rules:
   - match: settings
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts
+      - pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts
 ```
 
 Keep the model coarse:
@@ -93,28 +91,30 @@ Keep the model coarse:
 - add a `scope.yaml` when a folder becomes a stable subsystem boundary with a default recommended lane
 - prefer one parent `scope.yaml` with a few rules over many leaf scopes
 - keep `scope.yaml` metadata-only; do not use markdown body text as part of the contract
-- after structural changes, run `pnpm agent:scope -- <changed paths...>` and confirm the suggested commands match the intended boundary
-- if a scope recommends any `pnpm agent:test:remote -- ...` command, finish with `pnpm agent:test:full`
+- after structural changes, run `pnpm scope -- <changed paths...>` and confirm the suggested commands match the intended boundary
+- if a scope recommends any `pnpm test:e2e:remote -- ...` command, finish with `pnpm test:full`
 
 Local Playwright lane:
 
-- app: `http://127.0.0.1:3100`
-- relay health: `http://127.0.0.1:9100/health`
-- relay websocket: `ws://127.0.0.1:9100/ws`
-- app server command: `pnpm dev:test`
+- runtime: `scripts/runtime-lane.mjs` allocates the first free pair and exports them to Playwright
+- app server command when you want to inspect that lane manually: `pnpm dev:test`
 - config: `playwright.config.ts`
 - file selection: everything in `tests/e2e` except `tests/e2e/live-session/**/*.spec.ts` and `tests/e2e/timer/pwa.spec.ts`
 - test scope: local-only specs that are safe to run in parallel
 
 Remote Playwright lane:
 
-- app: `http://127.0.0.1:3100`
-- relay health: `http://127.0.0.1:9100/health`
-- relay websocket: `ws://127.0.0.1:9100/ws`
+- runtime: `scripts/runtime-lane.mjs` allocates the first free pair and exports them to Playwright
 - config: `playwright.remote.config.ts`
 - file selection: `tests/e2e/live-session/**/*.spec.ts`
 - execution model: serial (`workers: 1`, `fullyParallel: false`)
 - test scope: relay-backed multi-client, reconnect, offline, and PiP scenarios
+
+Shared Playwright notes:
+
+- preferred app port: `3300`
+- preferred relay port: `9200`
+- each Playwright run writes its test artifacts and HTML report to a matching `.playwright-runs/<lane>-<appPort>-<relayPort>/...` directory so concurrent runs do not share report or trace output
 
 Relevant commands:
 
@@ -124,50 +124,24 @@ Relevant commands:
 - `pnpm test:e2e:remote`
 - `pnpm test:e2e:remote:ci`
 - `pnpm test:e2e:visual`
-
-Tracked agent lane:
-
-- app: `http://127.0.0.1:3300`
-- relay health: `http://127.0.0.1:9200/health`
-- relay websocket: `ws://127.0.0.1:9200/ws`
-- local config: `scripts/agent-lane.mjs`
-- remote config: `playwright.agent.remote.config.ts`
-
-Relevant commands:
-
-- `pnpm agent:test`
-- `pnpm agent:test:attach`
-- `pnpm agent:test:local`
-- `pnpm agent:test:full`
-- `pnpm agent:test:full:local`
-- `pnpm agent:test:remote`
-- `pnpm agent:test:debug`
-- `pnpm agent:status`
-- `pnpm agent:stop`
-- `pnpm agent:scope -- <paths...>`
+- `pnpm test:e2e:report`
+- `pnpm scope -- <paths...>`
 
 Smallest-first workflow:
 
 - Start with the narrowest lane that exercises the changed contract, then widen only after that subsystem is stable.
-- `pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts` runs one local Playwright spec in the tracked lane.
-- `pnpm agent:test:remote -- tests/e2e/live-session/sync.spec.ts` runs one remote live-session spec.
-- `pnpm agent:scope -- src/shared/urlState/index.ts src/utils/liveSession/route.ts` prints a recommended first-pass validation sequence for the given files.
-- `pnpm agent:scope:audit` validates every `scope.yaml` and prints structural warnings for rule-heavy or exception-only boundaries.
-- `pnpm agent:scope` discovers the nearest ancestor `scope.yaml` for each changed file, so moving a feature usually means moving its `scope.yaml` with it instead of editing a central mapping table.
-- Do not run overlapping Playwright lanes in parallel when they share ports or tracked services.
+- `pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts` runs one local Playwright spec.
+- `pnpm test:e2e:remote -- tests/e2e/live-session/sync.spec.ts` runs one remote live-session spec.
+- `pnpm scope -- src/shared/urlState/index.ts src/utils/liveSession/route.ts` prints a recommended first-pass validation sequence for the given files.
+- `pnpm scope:audit` validates every `scope.yaml` and prints structural warnings for rule-heavy or exception-only boundaries.
+- `pnpm scope` discovers the nearest ancestor `scope.yaml` for each changed file, so moving a feature usually means moving its `scope.yaml` with it instead of editing a central mapping table.
+- Do not run overlapping Playwright lanes in parallel when they share ports.
 - If a UI change is intentional and snapshots fail, update the affected aria or visual snapshots before broad reruns.
-
-Attach mode uses these advanced commands:
-
-- `pnpm agent:serve:test`
-- `pnpm agent:serve:relay`
-
-The lane split is useful because it protects the normal local workflow from test-lane interference while keeping broader agent validation reproducible.
 
 Practical rule:
 
-- If you are a human running the app locally, default to the generic lanes.
-- If you are an agent or automation workflow choosing a validation lane, default to the `agent:*` lanes.
+- If you are running the app locally, default to the generic lanes.
+- If you are an agent or automation workflow choosing a validation lane, use `pnpm scope` first and then run the recommended standard test commands.
 
 ## Prototype Workflow Skill
 
@@ -177,7 +151,7 @@ Use `$prototype` when the user explicitly asks for prototype mode and you need a
 
 - deferred docs and tests
 - the standard `AGENTS.md` validation lane that must be backfilled at closeout
-- whether `pnpm agent:test:full` is required
+- whether `pnpm test:full` is required
 - whether the prototype should be finished or reverted
 
 ## Writing Stable Browser Tests

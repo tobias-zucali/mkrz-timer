@@ -44,13 +44,17 @@ const eslintConfig = defineConfig([
     ".next-e2e/**",
     ".next-agent/**",
     ".next-agent-e2e/**",
+    ".next-runs/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
     "playwright-report/**",
     "playwright-report-agent/**",
+    "playwright-report-remote/**",
+    ".playwright-runs/**",
     "test-results/**",
     "test-results-agent/**",
+    "test-results-remote/**",
   ]),
   {
     rules: {

@@ -19,7 +19,7 @@ function buildTimerPath({
 
 const timerUrl = buildTimerPath({ seconds: 60 })
 export const relayUrl =
-  process.env.PLAYWRIGHT_RELAY_URL || "http://127.0.0.1:9100"
+  process.env.PLAYWRIGHT_RELAY_URL || "http://127.0.0.1:9200"
 export const relayRoutePattern = `${relayUrl}/ws`
 export const peerServerRoutePattern = `${relayUrl}/**`
 

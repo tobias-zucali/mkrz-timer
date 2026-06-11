@@ -1,10 +1,10 @@
 commands:
-  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+  - pnpm test:e2e:local -- tests/e2e/timer/actions.spec.ts
 rules:
   - match: useFloatingTimerPiP
     commands:
-      - pnpm agent:test:remote -- tests/e2e/live-session/pip.spec.ts
+      - pnpm test:e2e:remote -- tests/e2e/live-session/pip.spec.ts
   - match: useParams.ts
     commands:
-      - pnpm agent:test:remote -- tests/e2e/live-session/client.spec.ts
+      - pnpm test:e2e:remote -- tests/e2e/live-session/client.spec.ts
     contract: true

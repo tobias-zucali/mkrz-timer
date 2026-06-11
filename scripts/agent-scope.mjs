@@ -387,7 +387,7 @@ const runScopeRecommendation = (files) => {
   const hasContractChange = resolvedScopes.some(({ scope }) => scope.contract)
   const needsFullLane = resolvedScopes.some(({ scope }) =>
     scope.commands.some((command) =>
-      command.startsWith("pnpm agent:test:remote -- "),
+      command.startsWith("pnpm test:e2e:remote -- "),
     ),
   )
 
@@ -426,11 +426,11 @@ const runScopeRecommendation = (files) => {
   print()
   print("Required finish lane")
   print("- `pnpm lint`")
-  print("- `pnpm agent:test`")
+  print("- `pnpm test:e2e:local:smoke`")
   print("- `pnpm format:fix`")
 
   if (needsFullLane) {
-    print("- `pnpm agent:test:full`")
+    print("- `pnpm test:full`")
   }
 
   print()
@@ -441,10 +441,10 @@ const runScopeRecommendation = (files) => {
     )
   }
   print(
-    "- Do not run overlapping Playwright lanes in parallel when they share the same ports or tracked services.",
+    "- Do not run overlapping Playwright lanes in parallel when they share the same ports.",
   )
   print(
-    "- Delay `pnpm agent:test:full` until the last failing local or remote subsystem is already stable.",
+    "- Delay `pnpm test:full` until the last failing local or remote subsystem is already stable.",
   )
 }
 
@@ -504,7 +504,7 @@ const runScopeAudit = (targets) => {
 
   print()
   print("Guidance")
-  print("- Fix scope errors before relying on `pnpm agent:scope` output.")
+  print("- Fix scope errors before relying on `pnpm scope` output.")
   print(
     "- Treat `[review]` warnings as prompts to revisit boundaries during the next structural change.",
   )

@@ -5,9 +5,8 @@ This file captures durable repo conventions for agents. For product/setup contex
 ## Baseline
 
 - `README.md` is the human-facing command surface. Agents should treat `AGENTS.md` as the execution policy.
-- When a repo provides dedicated `agent:*` validation lanes, use those instead of generic validation commands.
-- After edits, run `pnpm lint`, `pnpm agent:test` and `pnpm format:fix` before considering the task done.
-- After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm agent:test:full` before considering the task done.
+- After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke` and `pnpm format:fix` before considering the task done.
+- After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
 - When the user explicitly asks for prototype mode, skip validation commands while the behavior is still moving quickly, including `pnpm lint`.
 - While prototype mode is active, defer documentation updates, test updates, and the full validation lane until the user explicitly asks to end prototype mode or finish the work.
 - As soon as prototype mode ends, add or adapt the relevant documentation and tests, then run the full required validation lane before considering the work complete.
@@ -36,18 +35,18 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ## Testing
 
-- `docs/development.md` is the source of truth for test lanes, Playwright tagging, agent-lane commands, and browser-test authoring rules.
+- `docs/development.md` is the source of truth for test lanes, `pnpm scope` commands, and browser-test authoring rules.
 - Feature and subsystem folders may define a local `scope.yaml` YAML file for agent validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
 - The goal of `scope.yaml` is to keep validation ownership next to the code boundary it describes, so agents can choose the smallest useful lane first and feature moves do not require brittle central remapping.
-- When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm agent:scope -- <changed paths...>`.
+- When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm scope -- <changed paths...>`.
 - Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
 - On coupled changes, tighten the loop before broad validation:
   - isolate the contract first, especially when routes, URL params, hydration, recovery, or live-session link generation are all in play
   - update shared helpers and invariants before chasing downstream e2e failures
-  - run the smallest targeted lane that covers the changed area before `pnpm agent:test:full`
-  - avoid overlapping Playwright lanes that share the same ports or tracked agent-lane services
+  - run the smallest targeted lane that covers the changed area before `pnpm test:full`
+  - avoid overlapping Playwright lanes that share the same ports
   - if a UI change is intentional, update affected aria or visual snapshots immediately instead of discovering that need in repeated full-lane reruns
-- Use `pnpm agent:scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm agent:scope` without explicit paths uses the current git diff.
+- Use `pnpm scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 - Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.
 - Multi-client relay coverage belongs in the isolated remote Playwright lane, not the default local lane.

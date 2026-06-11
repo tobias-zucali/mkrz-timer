@@ -39,8 +39,6 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-This README is the human-facing command surface. Use the generic `pnpm test*` and `pnpm test:e2e:*` commands here. Agents should follow [AGENTS.md](./AGENTS.md) and use `agent:*` lanes instead so automated runs stay on the tracked ports and process model.
-
 ESLint includes `eslint-plugin-better-tailwindcss` in the shared flat config. For editor feedback, enable your editor's ESLint integration so Tailwind class issues surface inline; no separate Tailwind-specific editor plugin is required for linting.
 
 The config uses the plugin's recommended preset, with `better-tailwindcss/enforce-consistent-line-wrapping` disabled because Prettier rewrites multiline JSX class strings in a way that does not stay stable with that rule.
@@ -73,7 +71,7 @@ See [docs/development.md](./docs/development.md) for local setup goals, runtime 
 
 ## Testing
 
-Humans should use the generic `pnpm test*` commands here. Detailed lane definitions, e2e variants, and agent-specific validation commands live in [docs/development.md](./docs/development.md) and [AGENTS.md](./AGENTS.md).
+Use `pnpm test*` and `pnpm test:e2e:*` commands. Use `pnpm scope` when you want the repo-specific validation helper.
 
 ## Deployment
 

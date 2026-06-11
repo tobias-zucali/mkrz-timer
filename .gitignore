@@ -16,6 +16,7 @@
 /playwright-report-agent
 /playwright-report-agent-remote
 /playwright-report-remote
+/.playwright-runs/
 /test-results
 /test-results-agent
 /test-results-agent-remote
@@ -24,6 +25,7 @@
 # next.js
 /.next/
 /.next-e2e/
+/.next-runs/
 /.next-agent/
 /.next-agent-e2e/
 /out/

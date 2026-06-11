@@ -1,12 +1,12 @@
 commands:
-  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+  - pnpm test:e2e:local -- tests/e2e/timer/actions.spec.ts
 rules:
   - match:
       - settings.spec.ts
       - settings.spec.ts-snapshots
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts
+      - pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts
   - match:
       - pwa.spec.ts
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/pwa.spec.ts
+      - pnpm test:e2e:pwa:run

@@ -1,5 +1,5 @@
 commands:
-  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+  - pnpm test:e2e:local -- tests/e2e/timer/actions.spec.ts
 rules:
   - match:
       - HelpText
@@ -7,10 +7,10 @@ rules:
       - Sidebar
       - UrlCopyField
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts
+      - pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts
   - match: FloatingTimerContent
     commands:
-      - pnpm agent:test:remote -- tests/e2e/live-session/pip.spec.ts
+      - pnpm test:e2e:remote -- tests/e2e/live-session/pip.spec.ts
   - match: ServiceWorkerRegistration
     commands:
-      - pnpm agent:test:local -- tests/e2e/timer/pwa.spec.ts
+      - pnpm test:e2e:local -- tests/e2e/timer/pwa.spec.ts
