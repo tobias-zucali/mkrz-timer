@@ -1,1 +1,1 @@
-export { default } from "./BrowserLocaleRedirectPage"
+export { default } from "./liveSession/BrowserLocaleRedirectPage"

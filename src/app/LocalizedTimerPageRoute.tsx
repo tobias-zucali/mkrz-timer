@@ -5,7 +5,7 @@ import RedirectCurrentPathToLocale from "@/i18n/RedirectCurrentPathToLocale"
 import { isAppLocale, resolveAppLocale } from "@/i18n/locale"
 import { getMessagesForLocale } from "@/i18n/messages"
 
-import TimerPage from "./index"
+import TimerPage from "@/features/TimerPage"
 
 const timerPageNamespaces = [
   "AppShell",

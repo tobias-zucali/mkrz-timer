@@ -1,0 +1,12 @@
+commands:
+  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+rules:
+  - match:
+      - control
+      - view
+      - "[locale]/control"
+      - "[locale]/view"
+      - liveSession
+    commands:
+      - pnpm agent:test:remote -- tests/e2e/live-session/client.spec.ts
+    contract: true

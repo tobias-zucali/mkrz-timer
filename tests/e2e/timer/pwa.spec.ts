@@ -1,5 +1,5 @@
-import { getDisplayedSeconds, openTimer } from "./live-session.helpers"
-import { expect, test } from "./test"
+import { getDisplayedSeconds, openTimer } from "../support/helpers"
+import { expect, test } from "../support/test"
 
 test.skip("exposes install metadata and reloads offline after service worker setup", async ({
   baseURL,

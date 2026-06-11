@@ -10,7 +10,7 @@ import {
   parseTimerUrlState,
   projectFirstUrlTimerRowToSyncParams,
 } from "@/shared/urlState"
-import useSyncConflictResolution from "@/app/useSyncConflictResolution"
+import useSyncConflictResolution from "@/app/liveSession/useSyncConflictResolution"
 import type useParams from "@/utils/useParams"
 import type { TimerState } from "@/utils/useTimer"
 

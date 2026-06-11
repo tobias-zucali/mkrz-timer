@@ -21,8 +21,8 @@ import {
   resolveRecoveryDialogIfPresent,
   updateTimerSettings,
   waitForRemoteCluster,
-} from "./live-session.helpers"
-import { expect, test } from "./test"
+} from "../support/helpers"
+import { expect, test } from "../support/test"
 
 async function getRemoteTitleMetrics(page: Page) {
   const titleRoot = page.getByTestId("timer-title")

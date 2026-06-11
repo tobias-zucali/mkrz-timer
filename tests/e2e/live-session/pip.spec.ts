@@ -8,8 +8,8 @@ import {
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
-} from "./live-session.helpers"
-import { expect, test } from "./test"
+} from "../support/helpers"
+import { expect, test } from "../support/test"
 
 function getFloatingTimerToggle(page: Page) {
   return page.getByRole("button", {

@@ -1,5 +1,5 @@
 import { expect, Page } from "@playwright/test"
-import { hexToRgbChannels } from "../../src/utils/colors"
+import { hexToRgbChannels } from "../../../src/utils/colors"
 
 function buildTimerPath({
   backgroundColor = "000000",

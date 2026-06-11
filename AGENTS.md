@@ -37,6 +37,17 @@ This file captures durable repo conventions for agents. For product/setup contex
 ## Testing
 
 - `docs/development.md` is the source of truth for test lanes, Playwright tagging, agent-lane commands, and browser-test authoring rules.
+- Feature and subsystem folders may define a local `scope.yaml` YAML file for agent validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
+- The goal of `scope.yaml` is to keep validation ownership next to the code boundary it describes, so agents can choose the smallest useful lane first and feature moves do not require brittle central remapping.
+- When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm agent:scope -- <changed paths...>`.
+- Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
+- On coupled changes, tighten the loop before broad validation:
+  - isolate the contract first, especially when routes, URL params, hydration, recovery, or live-session link generation are all in play
+  - update shared helpers and invariants before chasing downstream e2e failures
+  - run the smallest targeted lane that covers the changed area before `pnpm agent:test:full`
+  - avoid overlapping Playwright lanes that share the same ports or tracked agent-lane services
+  - if a UI change is intentional, update affected aria or visual snapshots immediately instead of discovering that need in repeated full-lane reruns
+- Use `pnpm agent:scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm agent:scope` without explicit paths uses the current git diff.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 - Prefer unit or server-safe tests for protocol branches, merge logic, malformed payload handling, and other non-visual state transitions.
 - Multi-client relay coverage belongs in the isolated remote Playwright lane, not the default local lane.

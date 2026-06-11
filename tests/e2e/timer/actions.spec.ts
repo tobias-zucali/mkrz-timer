@@ -6,8 +6,13 @@ import {
   openTimer,
   openSidebarPanel,
   updateTimerSettings,
-} from "./live-session.helpers"
-import { expect, installE2eBrowserMocks, test, type Page } from "./test"
+} from "../support/helpers"
+import {
+  expect,
+  installE2eBrowserMocks,
+  test,
+  type Page,
+} from "../support/test"
 
 const timerVisualFormFactors = [
   {

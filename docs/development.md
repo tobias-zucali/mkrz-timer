@@ -56,7 +56,41 @@ Authoring rules:
   - `@smoke` for the minimum must-pass browser checks
   - `@visual` for screenshot and layout-regression coverage
   - leave broader behavioral coverage untagged so it runs in the full lane only
-- keep relay-backed specs on the `live-session-*.spec.ts` naming convention so the isolated multi-client Playwright lane can select them by pattern instead of hardcoded file lists
+- keep Playwright specs grouped by feature under `tests/e2e/timer`, `tests/e2e/live-session`, and `tests/e2e/support` so lane selection and validation hints can stay path-based instead of relying on fragile filename conventions
+- keep agent validation hints in metadata-only `scope.yaml` files at coarse feature or subsystem boundaries; the nearest ancestor file owns the default recommendation for descendants, and any matching `rules` entry overrides that default for narrower files
+
+Why `scope.yaml` exists:
+
+- keep validation ownership next to the subsystem that owns it instead of in one brittle central mapping table
+- let `pnpm agent:scope` recommend the smallest useful first-pass lane before broader reruns
+- make route, live-session, and contract-sensitive boundaries visible during edits
+- avoid leaf-by-leaf metadata and treat exception-heavy scope files as a signal that the boundary is too fine-grained
+
+`scope.yaml` keys:
+
+- `commands`: array of explicit first-pass validation commands
+- `contract`: boolean; set this when the boundary affects route, share-link, hydration, or recovery contracts so `pnpm agent:scope` prints the contract-first checklist
+- `rules`: optional array of narrower overrides for descendants
+- `match`: descendant-relative file or folder selector for a rule; literal paths are the default, and `*` or `?` opt into glob matching
+
+Example:
+
+```yaml
+commands:
+  - pnpm agent:test:local -- tests/e2e/timer/actions.spec.ts
+rules:
+  - match: settings
+    commands:
+      - pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts
+```
+
+Keep the model coarse:
+
+- add a `scope.yaml` when a folder becomes a stable subsystem boundary with a default recommended lane
+- prefer one parent `scope.yaml` with a few rules over many leaf scopes
+- keep `scope.yaml` metadata-only; do not use markdown body text as part of the contract
+- after structural changes, run `pnpm agent:scope -- <changed paths...>` and confirm the suggested commands match the intended boundary
+- if a scope recommends any `pnpm agent:test:remote -- ...` command, finish with `pnpm agent:test:full`
 
 Local Playwright lane:
 
@@ -65,7 +99,7 @@ Local Playwright lane:
 - relay websocket: `ws://127.0.0.1:9100/ws`
 - app server command: `pnpm dev:test`
 - config: `playwright.config.ts`
-- file selection: everything in `tests/e2e` except `live-session-*.spec.ts` and `pwa.spec.ts`
+- file selection: everything in `tests/e2e` except `tests/e2e/live-session/**/*.spec.ts` and `tests/e2e/timer/pwa.spec.ts`
 - test scope: local-only specs that are safe to run in parallel
 
 Remote Playwright lane:
@@ -74,7 +108,7 @@ Remote Playwright lane:
 - relay health: `http://127.0.0.1:9100/health`
 - relay websocket: `ws://127.0.0.1:9100/ws`
 - config: `playwright.remote.config.ts`
-- file selection: `live-session-*.spec.ts`
+- file selection: `tests/e2e/live-session/**/*.spec.ts`
 - execution model: serial (`workers: 1`, `fullyParallel: false`)
 - test scope: relay-backed multi-client, reconnect, offline, and PiP scenarios
 
@@ -99,12 +133,25 @@ Relevant commands:
 
 - `pnpm agent:test`
 - `pnpm agent:test:attach`
+- `pnpm agent:test:local`
 - `pnpm agent:test:full`
 - `pnpm agent:test:full:local`
 - `pnpm agent:test:remote`
 - `pnpm agent:test:debug`
 - `pnpm agent:status`
 - `pnpm agent:stop`
+- `pnpm agent:scope -- <paths...>`
+
+Smallest-first workflow:
+
+- Start with the narrowest lane that exercises the changed contract, then widen only after that subsystem is stable.
+- `pnpm agent:test:local -- tests/e2e/timer/settings.spec.ts` runs one local Playwright spec in the tracked lane.
+- `pnpm agent:test:remote -- tests/e2e/live-session/sync.spec.ts` runs one remote live-session spec.
+- `pnpm agent:scope -- src/shared/urlState/index.ts src/utils/liveSession/route.ts` prints a recommended first-pass validation sequence for the given files.
+- `pnpm agent:scope:audit` validates every `scope.yaml` and prints structural warnings for rule-heavy or exception-only boundaries.
+- `pnpm agent:scope` discovers the nearest ancestor `scope.yaml` for each changed file, so moving a feature usually means moving its `scope.yaml` with it instead of editing a central mapping table.
+- Do not run overlapping Playwright lanes in parallel when they share ports or tracked services.
+- If a UI change is intentional and snapshots fail, update the affected aria or visual snapshots before broad reruns.
 
 Attach mode uses these advanced commands:
 

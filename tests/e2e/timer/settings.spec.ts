@@ -10,8 +10,8 @@ import {
   openSettingsOverlay,
   openTimer,
   updateTimerSettings,
-} from "./live-session.helpers"
-import { expect, installE2eBrowserMocks, test } from "./test"
+} from "../support/helpers"
+import { expect, installE2eBrowserMocks, test } from "../support/test"
 
 const sidebarVisualScenarios = [
   {

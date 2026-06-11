@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react"
 
-import useSyncConflictResolution from "@/app/useSyncConflictResolution"
+import useSyncConflictResolution from "@/app/liveSession/useSyncConflictResolution"
 import type { SyncParams } from "@/shared/liveSession/types"
 import debug from "@/utils/debug"
 import useLiveSession from "@/utils/liveSession"

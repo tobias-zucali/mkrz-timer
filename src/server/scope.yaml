@@ -1,0 +1,2 @@
+commands:
+  - pnpm agent:test:remote -- tests/e2e/live-session/sync.spec.ts

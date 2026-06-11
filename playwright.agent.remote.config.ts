@@ -7,7 +7,7 @@ const laneScriptPath = path.join(process.cwd(), "scripts/agent-lane.mjs")
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["**/live-session-*.spec.ts"],
+  testMatch: ["**/live-session/**/*.spec.ts"],
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,

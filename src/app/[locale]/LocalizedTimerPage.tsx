@@ -1,4 +1,4 @@
-import TimerPageRoute from "@/features/TimerPage/Route"
+import TimerPageRoute from "@/app/LocalizedTimerPageRoute"
 
 type LocalizedTimerPageProps = {
   params: Promise<{ locale: string }>
