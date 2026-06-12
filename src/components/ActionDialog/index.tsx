@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useId, useRef } from "react"
+import { type ReactNode, useEffect, useId, useRef } from "react"
 
 import CloseButton from "@/components/CloseButton"
 import OverlayBackdrop from "@/components/OverlayBackdrop"
@@ -44,6 +44,15 @@ export default function ActionDialog({
     defaultFocusRef: defaultActionRef,
     dialogRef,
   })
+
+  useEffect(() => {
+    if (!onClose) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [onClose])
 
   return (
     <div

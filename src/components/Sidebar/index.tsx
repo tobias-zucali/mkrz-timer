@@ -326,6 +326,9 @@ export default function Sidebar({
             isOpen && "translate-x-0",
             selectedEntry ? "right-0 w-full" : "hidden w-0",
           )}
+          aria-labelledby={
+            selectedEntry ? `sidebar-panel-${selectedEntry}` : undefined
+          }
           data-testid="sidebar-offcanvas"
           id={offcanvasId}
           ref={offcanvasRef}

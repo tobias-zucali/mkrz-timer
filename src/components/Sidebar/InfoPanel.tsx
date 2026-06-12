@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl"
 
+import LocaleFallbackNotice from "@/features/InfoPages/LocaleFallbackNotice"
 import MarkdownContent from "@/features/InfoPages/MarkdownContent"
 import type { InfoPageContent } from "@/features/InfoPages/content"
 import type { AppLocale } from "@/i18n/config"
@@ -13,9 +14,7 @@ export default function InfoPanel({ content }: { content: InfoPageContent }) {
   return (
     <article className="space-y-4 pb-2">
       {content.resolvedLocale !== content.requestedLocale ? (
-        <p className="inline-flex rounded-full border border-primary/50 bg-primary/12 px-3 py-1 text-sm text-foreground/88">
-          {tInfoPages("contentFallback")}
-        </p>
+        <LocaleFallbackNotice>{tInfoPages("contentFallback")}</LocaleFallbackNotice>
       ) : null}
       <MarkdownContent compact locale={locale} markdown={content.body} />
     </article>

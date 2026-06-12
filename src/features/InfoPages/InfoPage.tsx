@@ -2,6 +2,7 @@ import { getMessagesForLocale } from "@/i18n/messages"
 import type { AppLocale } from "@/i18n/config"
 
 import PublicPageFrame from "@/features/PublicSite/PublicPageFrame"
+import LocaleFallbackNotice from "./LocaleFallbackNotice"
 import MarkdownContent from "./MarkdownContent"
 import { getInfoPageContent, type InfoPageSlug } from "./content"
 
@@ -35,9 +36,7 @@ export default function InfoPage({
       <article className="p-6 sm:p-8 lg:p-10">
         <div className="mx-auto max-w-4xl space-y-6">
           {content.resolvedLocale !== content.requestedLocale ? (
-            <p className="inline-flex rounded-full border border-primary/50 bg-primary/12 px-3 py-1 text-sm text-foreground/88">
-              {InfoPages.contentFallback}
-            </p>
+            <LocaleFallbackNotice>{InfoPages.contentFallback}</LocaleFallbackNotice>
           ) : null}
           <MarkdownContent locale={locale} markdown={content.body} />
         </div>
