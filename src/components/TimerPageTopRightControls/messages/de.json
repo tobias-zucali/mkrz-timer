@@ -1,5 +1,5 @@
 {
-  "shareViewerLink": "Zuschauer-Link teilen",
+  "shareViewerLink": "Join link teilen",
   "openSharing": "Teilen öffnen",
   "share": "Teilen",
   "toggleFloatingWindow": "Floating Fenster umschalten",
@@ -8,5 +8,5 @@
   "enterFullscreen": "Vollbild aktivieren",
   "closeFullscreen": "Vollbild schließen",
   "fullscreenMode": "Vollbildmodus",
-  "viewerLink": "Zuschauer-Link"
+  "viewerLink": "Join link"
 }

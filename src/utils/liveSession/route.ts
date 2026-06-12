@@ -1,4 +1,8 @@
 import type { AppLocale } from "../../i18n/config.ts"
+import {
+  legacyRemoteRoutePrefixes,
+  remoteRoutePrefixes,
+} from "../../routing/remotePaths.ts"
 import type { RemoteAccessRole } from "../../shared/liveSession/types.ts"
 import { stripLocalePrefix } from "../../i18n/locale.ts"
 import { normalizeRemoteAccessToken } from "../../shared/security/input.ts"
@@ -15,22 +19,21 @@ export type RemoteRoute =
       token: string | null
     }
 
-const REMOTE_ROUTE_PREFIXES = {
-  control: "/control",
-  readonly: "/view",
-} satisfies Record<RemoteAccessRole, string>
-
 function getRoleForPath(pathname: string): RemoteAccessRole | null {
   if (
-    pathname === REMOTE_ROUTE_PREFIXES.control ||
-    pathname.startsWith(`${REMOTE_ROUTE_PREFIXES.control}/`)
+    pathname === remoteRoutePrefixes.control ||
+    pathname.startsWith(`${remoteRoutePrefixes.control}/`) ||
+    pathname === legacyRemoteRoutePrefixes.control ||
+    pathname.startsWith(`${legacyRemoteRoutePrefixes.control}/`)
   ) {
     return "control"
   }
 
   if (
-    pathname === REMOTE_ROUTE_PREFIXES.readonly ||
-    pathname.startsWith(`${REMOTE_ROUTE_PREFIXES.readonly}/`)
+    pathname === remoteRoutePrefixes.readonly ||
+    pathname.startsWith(`${remoteRoutePrefixes.readonly}/`) ||
+    pathname === legacyRemoteRoutePrefixes.readonly ||
+    pathname.startsWith(`${legacyRemoteRoutePrefixes.readonly}/`)
   ) {
     return "readonly"
   }
@@ -39,7 +42,7 @@ function getRoleForPath(pathname: string): RemoteAccessRole | null {
 }
 
 export function getRemotePathPrefix(role: RemoteAccessRole) {
-  return REMOTE_ROUTE_PREFIXES[role]
+  return remoteRoutePrefixes[role]
 }
 
 export function buildRemotePath({

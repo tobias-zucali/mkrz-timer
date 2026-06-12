@@ -5,9 +5,9 @@ description: Legal disclosure and contact information for mkrz timer.
 
 # Impressum
 
-Information according to § 5 ECG, § 25 Mediengesetz, and disclosure requirements for websites operated in Austria.
+Information according to Austrian disclosure requirements, including § 5 ECG and § 25 Mediengesetz.
 
-## Responsible for the content
+## Responsible for the project content
 
 Tobias Zucali  
 Peter-Behrens-Platz 3  
@@ -26,7 +26,7 @@ mkrz lab OG
 Firmenbuchnummer: FN 608607 k  
 UID: ATU79693235
 
-The project supports workshops, facilitation, collaborative processes, educational contexts, and synchronized group interactions through a simple and accessible timer application.
+The project supports workshops, facilitation, collaborative processes, educational contexts, sports, exercise, and shared timing situations through a simple and accessible timer application.
 
 ## Website and project owner
 
@@ -44,7 +44,7 @@ Tobias Zucali
 
 ## Liability for content
 
-The contents of this website were created with great care. However, no guarantee can be given for the accuracy, completeness, or timeliness of the provided information.
+The contents of this website were created with care. However, no guarantee can be given for the accuracy, completeness, or timeliness of the provided information.
 
 Unless otherwise stated, this website is operated from Austria.
 
@@ -64,7 +64,7 @@ Unless stated otherwise, the contents and source code of this project are subjec
 
 ## Contact and collaboration
 
-We are always happy to hear from people using the timer in workshops, facilitation settings, collaborative processes, educational environments, and creative projects.
+We are always happy to hear from people using the timer in workshops, facilitation settings, educational environments, sports, exercise, and creative or collaborative projects.
 
 For feedback, collaboration inquiries, or commercial requests, feel free to get in touch.
 

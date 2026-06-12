@@ -6,12 +6,13 @@ import { localizePathname } from "@/i18n/locale"
 
 type MarkdownBlock =
   | { level: 1 | 2 | 3; text: string; type: "heading" }
-  | { items: string[]; type: "list" }
+  | { items: string[]; ordered: boolean; type: "list" }
   | { lines: string[]; type: "paragraph" }
 
 function parseMarkdown(markdown: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = []
   const currentList: string[] = []
+  let currentListOrdered = false
   const currentParagraph: string[] = []
 
   const flushList = () => {
@@ -21,9 +22,11 @@ function parseMarkdown(markdown: string): MarkdownBlock[] {
 
     blocks.push({
       items: [...currentList],
+      ordered: currentListOrdered,
       type: "list",
     })
     currentList.length = 0
+    currentListOrdered = false
   }
 
   const flushParagraph = () => {
@@ -82,7 +85,19 @@ function parseMarkdown(markdown: string): MarkdownBlock[] {
 
     if (trimmedLine.startsWith("- ")) {
       flushParagraph()
+      if (currentList.length === 0) {
+        currentListOrdered = false
+      }
       currentList.push(trimmedLine.slice(2).trim())
+      continue
+    }
+
+    if (/^\d+\.\s+/.test(trimmedLine)) {
+      flushParagraph()
+      if (currentList.length === 0) {
+        currentListOrdered = true
+      }
+      currentList.push(trimmedLine.replace(/^\d+\.\s+/, "").trim())
       continue
     }
 
@@ -249,12 +264,14 @@ export default function MarkdownContent({
         }
 
         if (block.type === "list") {
+          const ListTag = block.ordered ? "ol" : "ul"
+
           return (
-            <ul
+            <ListTag
               className={
                 compact
-                  ? "list-disc space-y-1.5 pl-4 text-base/6 marker:text-primary"
-                  : "list-disc space-y-2 pl-5 text-base/7 marker:text-primary"
+                  ? `${block.ordered ? "list-decimal" : "list-disc"} space-y-1.5 pl-3.5 text-base/6 marker:text-primary`
+                  : `${block.ordered ? "list-decimal" : "list-disc"} space-y-1.5 pl-4 text-base/7 marker:text-primary`
               }
               key={`${block.type}-${index}`}
             >
@@ -263,7 +280,7 @@ export default function MarkdownContent({
                   {renderInline(item, locale)}
                 </li>
               ))}
-            </ul>
+            </ListTag>
           )
         }
 

@@ -1,0 +1,19 @@
+{
+  "home": {
+    "startLocalTimer": "Start local timer",
+    "createLiveSession": "Create live session",
+    "localTimerLabel": "Local timer",
+    "localTimerDescription": "Use the timer directly in your browser.",
+    "liveSessionLabel": "Live session",
+    "liveSessionDescription": "Keep multiple devices synchronized in real time.",
+    "trustLine": "No account required · Local-first usage · Open source"
+  },
+  "navigation": {
+    "openTimer": "Open timer",
+    "github": "GitHub",
+    "footerLabel": "Website navigation",
+    "languageLabel": "Language",
+    "languageEnglish": "English",
+    "languageGerman": "Deutsch"
+  }
+}

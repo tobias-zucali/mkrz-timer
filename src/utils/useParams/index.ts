@@ -69,7 +69,9 @@ export default function useParams() {
   )
   const isSearchParamsEmpty = searchParams.size === 0
   const normalizedPathname = stripLocalePrefix(pathname)
-  const isReadonlyRemotePath = normalizedPathname.startsWith("/view")
+  const isReadonlyRemotePath =
+    normalizedPathname.startsWith("/join") ||
+    normalizedPathname.startsWith("/view")
   const allowTimerState = !isReadonlyRemotePath
   const allowPageTitle = !isReadonlyRemotePath
   const parsedTimerUrlState = useMemo(
@@ -192,7 +194,13 @@ export default function useParams() {
               ? allowTimerState
               : !(
                   stripLocalePrefix(window.location.pathname).startsWith(
+                    "/join",
+                  ) ||
+                  stripLocalePrefix(window.location.pathname).startsWith(
                     "/view",
+                  ) ||
+                  stripLocalePrefix(window.location.pathname).startsWith(
+                    "/manage",
                   ) ||
                   stripLocalePrefix(window.location.pathname).startsWith(
                     "/control",

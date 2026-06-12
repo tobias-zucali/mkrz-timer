@@ -1,47 +1,53 @@
 ---
 title: Contact
-description: Contact information, collaboration inquiries, and public project channels.
+description: Support, feedback, collaboration, and public project channels.
 ---
 
 # Contact
 
-mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
+Questions, feedback, ideas, bug reports, accessibility suggestions, and collaboration inquiries are always welcome.
 
-We are always happy to hear from people using the timer in workshops, facilitation sessions, educational contexts, collaborative processes, or creative projects.
+## Support
 
-## Questions, feedback, and support
-
-For questions about the timer, bug reports, feature ideas, accessibility feedback, or general support, please contact:
+For support, feature requests, bug reports, accessibility feedback, or general questions:
 
 - <timer@mkrz.at>
 
-You are also welcome to contribute or report issues through the public GitHub repository:
+You can also contribute or report issues through GitHub:
 
-- [github.com/tobias-zucali/mkrz-timer](https://github.com/tobias-zucali/mkrz-timer)
+- [GitHub repository](https://github.com/tobias-zucali/mkrz-timer)
 - [GitHub issues](https://github.com/tobias-zucali/mkrz-timer/issues)
 
-## Collaboration and commercial inquiries
+## Collaboration
 
-We are happy to collaborate on projects, workshops, interactive formats, facilitation processes, creative technology projects, installations, and future-oriented learning environments.
+mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
 
-Since 2023, mkrz lab has also been operating the Alternative Lab for Future Skills at Haus FALK in the Tabakfabrik Linz, Austria — a collaborative workshop and experimentation space for organizations, education, and innovation processes.
+We enjoy hearing from people using the timer in:
 
-The space is used for workshops, vision processes, prototyping, facilitation, team development, and collaborative future-oriented formats. We always enjoy welcoming guests, collaborators, and project partners to the space.
+- workshops
+- facilitation
+- education
+- sports and exercise
+- community projects
+- creative and collaborative settings
 
-Contact:  
-mkrz lab OG  
-Peter-Behrens-Platz 3  
-4020 Linz  
-<timer@mkrz.at>
+Collaboration inquiries, workshop requests, and project ideas are welcome.
 
 ## Public channels
 
-You can follow the work of mkrz lab and stay updated through our public channels:
+You can follow the work of mkrz through:
 
 - [mkrz website](https://www.mkrz.at/)
-- [mkrz on LinkedIn](https://www.linkedin.com/company/mkrz)
-- [mkrz on Instagram](https://www.instagram.com/mkrz.at/)
+- [LinkedIn](https://www.linkedin.com/company/mkrz)
+- [Instagram](https://www.instagram.com/mkrz.at/)
 
-You can also connect directly with Tobias Zucali:
+You can also connect directly with Tobias Zucali on [LinkedIn](https://www.linkedin.com/in/tobias-zucali/).
 
-- [Tobias Zucali on Linkedin](https://www.linkedin.com/in/tobias-zucali/)
+## Contact details
+
+mkrz lab OG  
+Peter-Behrens-Platz 3  
+4020 Linz  
+Austria
+
+<timer@mkrz.at>

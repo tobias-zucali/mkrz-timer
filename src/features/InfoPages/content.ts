@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 import { defaultAppLocale, type AppLocale } from "@/i18n/config"
-import { localizePathname } from "@/i18n/locale"
 
 export const infoPageSlugs = [
   "about",
@@ -14,7 +13,7 @@ export const infoPageSlugs = [
 ] as const
 
 export type InfoPageSlug = (typeof infoPageSlugs)[number]
-export const contentSlugs = [...infoPageSlugs, "welcome"] as const
+export const contentSlugs = ["home", ...infoPageSlugs] as const
 export type ContentSlug = (typeof contentSlugs)[number]
 export type InfoPageContentBySlug = Record<InfoPageSlug, InfoPageContent>
 
@@ -84,10 +83,6 @@ function resolveContentFile(locale: AppLocale, slug: ContentSlug) {
   }
 }
 
-export function getInfoPagePath(locale: AppLocale, slug: InfoPageSlug) {
-  return localizePathname(`/${slug}`, locale)
-}
-
 export function getInfoPageContent(
   locale: AppLocale,
   slug: ContentSlug,
@@ -106,8 +101,8 @@ export function getInfoPageContent(
   }
 }
 
-export function getWelcomeContent(locale: AppLocale) {
-  return getInfoPageContent(locale, "welcome")
+export function getHomeContent(locale: AppLocale) {
+  return getInfoPageContent(locale, "home")
 }
 
 export function getInfoPageContents(locale: AppLocale): InfoPageContentBySlug {

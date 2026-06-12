@@ -2,6 +2,8 @@ import os from "node:os"
 import type { NextConfig } from "next"
 import createNextIntlPlugin from "next-intl/plugin"
 
+import { buildRemoteRewrites } from "./src/routing/remotePaths.ts"
+
 const distDir = process.env.NEXT_DIST_DIR
 const isStaticExport = process.env.NODE_ENV === "production"
 
@@ -19,24 +21,7 @@ const nextConfig: NextConfig = {
   ...(!isStaticExport
     ? {
         async rewrites() {
-          return [
-            {
-              destination: "/view",
-              source: "/view/:token+",
-            },
-            {
-              destination: "/control",
-              source: "/control/:token+",
-            },
-            {
-              destination: "/:locale/view",
-              source: "/:locale(en|de)/view/:token+",
-            },
-            {
-              destination: "/:locale/control",
-              source: "/:locale(en|de)/control/:token+",
-            },
-          ]
+          return buildRemoteRewrites()
         },
       }
     : {}),

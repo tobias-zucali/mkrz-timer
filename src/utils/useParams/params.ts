@@ -75,12 +75,15 @@ export const getRemoteSessionOnlyOmitKeys = (
 
   if (
     !normalizedPathname ||
-    !/^\/(?:view|control)(?:\/|$)/.test(normalizedPathname)
+    !/^\/(?:join|manage|view|control)(?:\/|$)/.test(normalizedPathname)
   ) {
     return []
   }
 
-  if (normalizedPathname.startsWith("/view/")) {
+  if (
+    normalizedPathname.startsWith("/join/") ||
+    normalizedPathname.startsWith("/view/")
+  ) {
     return [...readonlyRemoteOnlyOmitKeys]
   }
 

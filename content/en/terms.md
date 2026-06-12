@@ -5,70 +5,65 @@ description: Terms and usage expectations for mkrz timer.
 
 # Terms of Use
 
-mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
-
-The project is intended to support workshops, facilitation, collaborative processes, learning environments, and other shared activities through a simple and accessible timer experience.
+mkrz timer is provided free of charge.
 
 By using the hosted version of the application, you agree to these terms.
 
-## Free usage
+## Intended usage
 
-mkrz timer is provided free of charge.
+The project is designed to support time-based activities including:
 
-The project is intended for personal, educational, community, workshop, and non-commercial usage.
+- workshops
+- facilitation
+- education
+- presentations
+- sports and exercise
+- collaborative work
+- personal productivity
 
-Commercial usage of the hosted service or source code may require additional permission. Please [contact us](mailto:timer@mkrz.at) if you are interested in collaboration or commercial usage.
+At its core, mkrz timer is simply a timer.
 
 ## Open source and licensing
 
-The source code of the project is publicly available on [GitHub](https://github.com/tobias-zucali/mkrz-timer).
+The source code is publicly available on [GitHub](https://github.com/tobias-zucali/mkrz-timer).
 
-The project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International license.
+The project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license.
 
 Please refer to the LICENSE file and repository documentation for details.
 
-## Local and remote usage
-
-mkrz timer supports both local-only usage and synchronized live sessions.
-
-In local-only mode, timer data remains on your device.
-
-Live sessions depend on the relay service and synchronization infrastructure. Availability, performance, or long-term persistence of live sessions cannot be guaranteed.
-
 ## Responsible usage
-
-Please use the service responsibly.
 
 You agree not to:
 
-- intentionally disrupt or misuse the synchronization infrastructure
+- intentionally disrupt the synchronization infrastructure
 - attempt unauthorized access to systems or sessions
 - use the service for illegal activities
 - interfere with the availability or stability of the hosted service
 
-## Availability and warranty
+## Availability
 
-The project is provided “as is” without guarantees of availability, uptime, reliability, or fitness for a particular purpose.
+The project is provided "as is".
 
-Features, infrastructure, and functionality may change over time.
+Availability, uptime, reliability, performance, and long-term persistence of live sessions cannot be guaranteed.
 
-While we aim to provide a stable and accessible experience, interruptions or technical issues may occur.
+Features and infrastructure may change over time.
 
 ## Privacy
 
-Information about local storage, synchronized sessions, and privacy-related behavior is available on the [Privacy](/privacy) page.
+Information about browser storage, live sessions, and data handling is available on the [Privacy](/privacy) page.
 
-## Collaboration
+## Commercial usage
 
-We are always happy to hear from people using the timer in workshops, facilitation settings, educational contexts, collaborative processes, and creative projects.
+The project is licensed under a non-commercial license.
 
-If you are interested in collaboration, workshops, facilitation support, creative technology projects, or commercial inquiries, feel free to reach out.
+Commercial usage may require additional permission.
+
+Please [contact us](mailto:timer@mkrz.at) if you are interested in commercial usage, collaboration, workshops, or related projects.
 
 ## Contact
 
-For questions about these terms, collaboration requests, or commercial inquiries:
+For questions regarding these terms or commercial inquiries, please see the [Contact](/contact) page.
 
-mkrz lab OG – Tobias Zucali
-Peter-Behrens-Platz 3
-4020 Linz
-<timer@mkrz.at>
+## Legal information
+
+Legal disclosure information is available on the [Impressum](/impressum) page.

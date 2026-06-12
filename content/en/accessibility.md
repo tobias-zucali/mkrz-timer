@@ -1,96 +1,60 @@
 ---
 title: Accessibility
-description: Accessibility goals and usability considerations for mkrz timer.
+description: Accessibility goals and ongoing improvements for mkrz timer.
 ---
 
 # Accessibility
 
-mkrz timer is a personal side project by Tobias Zucali, Co-Founder of [mkrz lab](https://www.mkrz.at/).
+Accessibility is an important goal of mkrz timer.
 
-The project is intended to support collaborative, educational, and facilitation contexts through a simple and accessible timer interface.
+The project aims to support participation across different devices, environments, and usage contexts.
 
-Accessibility is considered an important part of the project.
+## Goals
 
-## Accessibility goals
-
-The project aims to support:
+We aim to support:
 
 - keyboard-friendly interaction
-- readable and distraction-free layouts
-- responsive and mobile-friendly usage
+- readable layouts
+- responsive design
+- mobile-friendly usage
+- collaborative and presentation contexts
 - clear interaction patterns
-- accessible usage across collaborative and presentation contexts
 
-The intention is to create an experience that works well across different environments, devices, and participation settings.
+## Collaborative environments
 
-## Collaborative and physical spaces
+Many people use mkrz timer in workshops, classrooms, presentations, facilitation sessions, exercise settings, and shared environments.
 
-mkrz timer is often used in collaborative and facilitation contexts where digital and physical interaction overlap.
+This influences design decisions such as:
 
-This influences many design decisions, including:
-
-- readability in shared spaces
+- readability from a distance
 - low-distraction presentation modes
-- compatibility across different devices and display situations
-- support for hybrid and collaborative participation
+- support for different screen sizes
+- support for shared and collaborative usage
 
-## Current status
+## Ongoing improvement
 
 Accessibility is an ongoing process.
 
-While we aim to improve usability and accessibility continuously, the project may still contain limitations, inconsistencies, or areas that can be improved.
+While we continuously work to improve usability and accessibility, limitations may still exist and new issues may be discovered over time.
 
-We especially welcome accessibility-related feedback from people using assistive technologies or participating in collaborative workshop settings.
+Feedback helps identify areas for improvement and prioritize future work.
 
 ## Current limitations
 
-While accessibility is considered throughout the project, some areas may still present challenges.
+Because the project is actively evolving:
 
-Possible limitations can include:
+- some accessibility issues may not yet be identified
+- behavior may differ across browsers and devices
+- newly introduced features may require additional accessibility improvements
 
-- incomplete accessibility optimization in some interface areas
-- differences in behavior across browsers, devices, or network conditions
-- reduced accessibility in experimental or newly introduced features
+## Feedback
 
-Because the project is actively evolving, some accessibility issues may not yet be identified.
+Accessibility feedback, usability suggestions, bug reports, and contributions are welcome.
 
-## Planned improvements
+Please visit the [Contact](/contact) page if you would like to get in touch.
 
-We aim to continue improving:
+## Learn more
 
-- keyboard and screen reader accessibility
-- responsive and mobile-friendly layouts
-- readability and usability in collaborative and presentation contexts
-- accessibility testing across devices and browsers
-- accessibility considerations for collaborative and hybrid participation
-
-Feedback from users, facilitators, and participants directly helps prioritize future improvements.
-
-## Technical considerations
-
-Depending on the features used, the application may rely on:
-
-- browser capabilities
-- local browser storage
-- the relay service for live synchronization
-- network connectivity
-
-Some features may behave differently depending on browser support, device capabilities, or network conditions.
-
-## Open source and feedback
-
-The source code of the project is publicly available on [GitHub](https://github.com/tobias-zucali/mkrz-timer).
-
-Feedback, accessibility suggestions, bug reports, and contributions are welcome.
-
-You can also learn more about the background of the project and the work of mkrz lab on the [About](/about) and [Contact](/contact) pages.
-
-## Contact
-
-For accessibility feedback, workshop collaboration, usability suggestions, or technical questions:
-
-mkrz lab OG – Tobias Zucali  
-Peter-Behrens-Platz 3  
-4020 Linz  
-Austria  
-<timer@mkrz.at>
+- [About](/about)
+- [Privacy](/privacy)
+- [Contact](/contact)

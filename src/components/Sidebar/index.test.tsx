@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 
 import {
   DEFAULT_SYNC_PARAMS,
@@ -8,57 +8,6 @@ import { renderWithIntl } from "@/test/renderWithIntl"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
 import Sidebar from "./index"
-
-const infoPageContents = {
-  about: {
-    body: "# About mkrz timer\n\nAbout body",
-    description: "About description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "about" as const,
-    title: "About mkrz timer",
-  },
-  privacy: {
-    body: "# Privacy\n\nPrivacy body",
-    description: "Privacy description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "privacy" as const,
-    title: "Privacy",
-  },
-  impressum: {
-    body: "# Impressum\n\nImpressum body",
-    description: "Impressum description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "impressum" as const,
-    title: "Impressum",
-  },
-  terms: {
-    body: "# Terms\n\nTerms body",
-    description: "Terms description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "terms" as const,
-    title: "Terms",
-  },
-  accessibility: {
-    body: "# Accessibility\n\nAccessibility body",
-    description: "Accessibility description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "accessibility" as const,
-    title: "Accessibility",
-  },
-  contact: {
-    body: "# Contact\n\nContact body",
-    description: "Contact description",
-    requestedLocale: "en" as const,
-    resolvedLocale: "en" as const,
-    slug: "contact" as const,
-    title: "Contact",
-  },
-}
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en",
@@ -87,7 +36,7 @@ function buildTimerPanel(pageTitle = "") {
 }
 
 const baseProps = {
-  infoPageContents,
+  locale: "en" as const,
   settingsPanel: {
     floatingTimerData: {
       isOpen: false,
@@ -221,19 +170,12 @@ describe("Sidebar", () => {
     ).toBeVisible()
   })
 
-  it("renders informational entries and opens their panel content", () => {
-    renderWithIntl(
-      <Sidebar
-        {...baseProps}
-        shell={{ ...baseProps.shell, selectedEntryId: "about" }}
-      />,
-    )
+  it("links the sidebar heading back to the public home page", () => {
+    renderWithIntl(<Sidebar {...baseProps} />)
 
-    expect(screen.getByRole("button", { name: "About" })).toBeVisible()
-    expect(screen.getByRole("button", { name: "Privacy" })).toBeVisible()
-    expect(screen.getByRole("button", { name: "Accessibility" })).toBeVisible()
-    expect(
-      within(screen.getByTestId("sidebar-panel-about")).getByText("About body"),
-    ).toBeVisible()
+    expect(screen.getByRole("link", { name: "mkrz timer" })).toHaveAttribute(
+      "href",
+      "/en",
+    )
   })
 })

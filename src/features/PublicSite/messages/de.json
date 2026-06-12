@@ -1,0 +1,19 @@
+{
+  "home": {
+    "startLocalTimer": "Lokalen Timer starten",
+    "createLiveSession": "Live-Session erstellen",
+    "localTimerLabel": "Lokaler Timer",
+    "localTimerDescription": "Verwenden Sie den Timer direkt in Ihrem Browser.",
+    "liveSessionLabel": "Live-Sitzung",
+    "liveSessionDescription": "Synchronisiere mehrere Geräte in Echtzeit.",
+    "trustLine": "Kein Konto erforderlich · Lokale Nutzung · Open Source"
+  },
+  "navigation": {
+    "openTimer": "Timer öffnen",
+    "github": "GitHub",
+    "footerLabel": "Website-Navigation",
+    "languageLabel": "Sprache",
+    "languageEnglish": "English",
+    "languageGerman": "Deutsch"
+  }
+}

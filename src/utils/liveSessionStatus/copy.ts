@@ -4,8 +4,8 @@ import type {
 } from "@/utils/liveSessionStatus"
 
 export const ROLE_LABELS: Record<LiveSessionStatusRole, string> = {
-  control: "Control session",
-  readonly: "Readonly session",
+  control: "Manage session",
+  readonly: "Join session",
 }
 
 export const STATE_LABELS: Record<LiveSessionStatusState, string> = {
@@ -21,22 +21,21 @@ const DESCRIPTIONS: Record<
   Record<LiveSessionStatusState, string>
 > = {
   control: {
-    connected: "Can control the shared timer and settings.",
-    connecting: "Starting or joining the shared timer with control access.",
+    connected: "Can manage the shared timer and settings.",
+    connecting: "Starting or joining the shared timer with manage access.",
     failed:
-      "Automatic recovery could not restore control access yet. Retry to rejoin the session.",
-    recovered: "Connection recovered. Control access is live again.",
+      "Automatic recovery could not restore manage access yet. Retry to rejoin the session.",
+    recovered: "Connection recovered. Manage access is live again.",
     reconnecting:
-      "Trying to reconnect to the shared timer with control access.",
+      "Trying to reconnect to the shared timer with manage access.",
   },
   readonly: {
-    connected: "Viewing the shared timer without controls.",
-    connecting:
-      "Joining the shared timer as a viewer and waiting for the first sync.",
+    connected: "Joined the shared timer without manage access.",
+    connecting: "Joining the shared timer and waiting for the first sync.",
     failed:
-      "Automatic recovery could not restore the viewer connection yet. Retry to request a fresh sync.",
-    recovered: "Viewer connection recovered and the timer is live again.",
-    reconnecting: "Trying to reconnect to the shared timer view.",
+      "Automatic recovery could not restore the join connection yet. Retry to request a fresh sync.",
+    recovered: "Join connection recovered and the timer is live again.",
+    reconnecting: "Trying to reconnect to the shared timer.",
   },
 }
 
@@ -71,17 +70,17 @@ export function getConnectionSummary({
 
   if (role === "readonly") {
     if (!hasControllingParticipant) {
-      return "Waiting for controller"
+      return "Waiting for manager"
     }
 
     return otherParticipantCount > 0
-      ? `Viewing with ${otherParticipantCount} ${participantLabel}`
-      : "Viewing shared timer"
+      ? `Joined with ${otherParticipantCount} ${participantLabel}`
+      : "Joined shared timer"
   }
 
   return otherParticipantCount > 0
-    ? `Controlling with ${otherParticipantCount} ${participantLabel}`
-    : "Controlling shared timer"
+    ? `Managing with ${otherParticipantCount} ${participantLabel}`
+    : "Managing shared timer"
 }
 
 export function getDescription(
@@ -94,7 +93,7 @@ export function getDescription(
     state === "connected" &&
     !hasControllingParticipant
   ) {
-    return "Viewing the last shared timer state while waiting for a controller."
+    return "Viewing the last shared timer state while waiting for a manager."
   }
 
   return DESCRIPTIONS[role][state]
