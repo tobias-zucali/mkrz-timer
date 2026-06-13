@@ -23,11 +23,11 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 `pnpm scope` outputs one of these lanes — smallest first:
 
-| Lane | Command | When to use |
-|---|---|---|
-| unit | `pnpm test` | Logic-only changes with no route, session, or shared-state risk |
-| smoke | `pnpm test:e2e:local:smoke` | UI or route changes with limited cross-feature impact |
-| full | `pnpm test:full` | Anything touching live sessions, sync, URL state, persistence, or shared contracts |
+| Lane  | Command                     | When to use                                                                        |
+| ----- | --------------------------- | ---------------------------------------------------------------------------------- |
+| unit  | `pnpm test`                 | Logic-only changes with no route, session, or shared-state risk                    |
+| smoke | `pnpm test:e2e:local:smoke` | UI or route changes with limited cross-feature impact                              |
+| full  | `pnpm test:full`            | Anything touching live sessions, sync, URL state, persistence, or shared contracts |
 
 ### Validation Defaults
 
@@ -39,10 +39,11 @@ This file captures durable repo conventions for agents. For product/setup contex
 ### Prototype Mode
 
 - Prototype mode is only active when the user explicitly asks for it.
+- Before starting prototype mode, check `git status --short`. If the worktree is dirty, require an explicit baseline decision: commit the pending changes, stage them, stash them, or accept that the prototype may modify them without a reliable trace.
 - While prototype mode is active, follow the repo-local prototype workflow at `.agents/skills/prototype`.
-- Use `$prototype` when the tracked ledger and closeout/revert flow are needed.
+- Use `$prototype` for a description-only prototype workflow that defers normal closeout requirements while exploration is in progress.
 - Prototype mode overrides the validation defaults in this file until prototype mode ends.
-- When prototype mode ends, return to the validation defaults and complete required documentation and test updates before considering the work done.
+- When prototype mode ends, perform a diff-based closeout review of the prototype changes, then return to the validation defaults and complete the required documentation, tests, validation, and any needed security review before considering the work done.
 
 ## Code Conventions
 

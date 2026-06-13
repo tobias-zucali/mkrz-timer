@@ -149,12 +149,14 @@ Practical rule:
 
 This repo includes a repo-local Codex skill at [`.agents/skills/prototype`](../.agents/skills/prototype/SKILL.md).
 
-Use `$prototype` when the user explicitly asks for prototype mode and you need a persistent ledger for:
+Use `$prototype` when the user explicitly asks for prototype mode and you want to defer normal closeout work while exploring.
 
-- deferred docs and tests
-- the standard `AGENTS.md` validation lane that must be backfilled at closeout
-- whether `pnpm test:full` is required
-- whether the prototype should be finished or reverted
+When prototype mode ends, the agent must perform a diff-based closeout review that identifies:
+
+- the user-visible behavior that changed
+- which docs and tests must be backfilled
+- the final validation lane required by the real scope
+- whether security review or live-session contract updates are required
 
 ## Writing Stable Browser Tests
 

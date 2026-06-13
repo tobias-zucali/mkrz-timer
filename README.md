@@ -56,7 +56,7 @@ pnpm format:fix
 
 ## Prototype Mode
 
-If you explicitly ask an agent for prototype mode, the repo-specific workflow and closeout policy live in [AGENTS.md](./AGENTS.md) and [`.agents/skills/prototype`](./.agents/skills/prototype/SKILL.md).
+If you explicitly ask an agent for prototype mode, the repo-specific workflow and diff-based closeout review policy live in [AGENTS.md](./AGENTS.md) and [`.agents/skills/prototype`](./.agents/skills/prototype/SKILL.md).
 
 ## Live Sessions
 
