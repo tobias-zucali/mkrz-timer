@@ -72,7 +72,7 @@ export default function useSessionDiagnostics({
     backgroundColor: string
     elapsedPercentage: number
     foregroundColor: string
-    isTimedOut: boolean
+    isFinished: boolean
     minutes: string
     primaryColor: string
     seconds: string

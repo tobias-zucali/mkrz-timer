@@ -401,6 +401,10 @@ export const applyTimerCommandToSnapshot = ({
 
   switch (command.type) {
     case "start":
+      if (resolvedSnapshot.state.totalDuration === 0) {
+        return resolvedSnapshot
+      }
+
       if (resolvedSnapshot.state.status === "running") {
         return resolvedSnapshot
       }

@@ -19,9 +19,9 @@ const buildSnapshot = (
   overrides: Partial<TimerAnnouncementSnapshot> = {},
 ): TimerAnnouncementSnapshot => ({
   activeIndex: 0,
+  isFinished: false,
   isPaused: true,
   isStarted: false,
-  isTimedOut: false,
   remainingSeconds: 60,
   stepTitle: "",
   totalDuration: 60,
@@ -96,9 +96,9 @@ describe("announcement rules", () => {
     expect(
       getTimerEventAnnouncement({
         current: buildSnapshot({
+          isFinished: true,
           isPaused: true,
           isStarted: true,
-          isTimedOut: true,
           remainingSeconds: 0,
           totalDuration: 30,
         }),

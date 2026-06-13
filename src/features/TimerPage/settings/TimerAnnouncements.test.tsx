@@ -26,9 +26,9 @@ const buildProps = (
   overrides: Partial<TimerAnnouncementsTestProps> = {},
 ): TimerAnnouncementsTestProps => ({
   activeIndex: 0,
+  isFinished: false,
   isPaused: true,
   isStarted: false,
-  isTimedOut: false,
   minutes: "01",
   seconds: "00",
   sessionAccessibilityLabel: "Private session",
@@ -346,9 +346,9 @@ describe("TimerAnnouncements", () => {
       <NextIntlClientProvider locale={defaultAppLocale} messages={messages}>
         <TimerAnnouncements
           {...buildProps({
+            isFinished: true,
             isPaused: false,
             isStarted: true,
-            isTimedOut: true,
             minutes: "00",
             seconds: "00",
             totalDuration: 30,

@@ -49,9 +49,10 @@ export default function Timer({
   const {
     minutes,
     seconds,
+    isFinished,
     isStarted,
     isPaused,
-    isTimedOut,
+    isStartDisabled,
     currentRepeat,
     elapsedPercentage,
     handleAction,
@@ -61,14 +62,14 @@ export default function Timer({
   const hasPreviousRow = hasMultipleRows && activeIndex > 0
   const hasNextRow = hasMultipleRows && activeIndex < rows.length - 1
   const highlightNextAction =
-    isTimedOut && activeRow?.endBehavior === "stop" && hasNextRow
+    isFinished && activeRow?.endBehavior === "stop" && hasNextRow
   const shouldReserveTitleSpace = rows.some(
     (row) => row.title.trim().length > 0,
   )
   let readoutState: TimerReadoutState = "editing"
   if (isReadonly) {
     readoutState = "viewOnly"
-  } else if (isTimedOut) {
+  } else if (isFinished) {
     readoutState = "finished"
   } else if (isStarted && isPaused) {
     readoutState = "paused"
@@ -78,7 +79,8 @@ export default function Timer({
   const remainingSeconds =
     Number.parseInt(minutes || "0", 10) * 60 +
     Number.parseInt(seconds || "0", 10)
-  const hasElapsedTime = isTimedOut || remainingSeconds < timer.totalDuration
+  const hasElapsedTime =
+    isStarted && (isFinished || remainingSeconds < timer.totalDuration)
   const readoutSummary = buildTimerReadoutLabel({
     activeIndex,
     readoutState,
@@ -158,7 +160,7 @@ export default function Timer({
               accessibleText={readoutSummary}
               data-testid="timer-display"
               displayMode={isReadonly || isStarted ? "readout" : "editable"}
-              isAlert={isTimedOut}
+              isAlert={isFinished}
               isReadonly={isReadonly || isStarted}
               minutes={minutes}
               onBlur={handleTimeBlur}
@@ -184,7 +186,8 @@ export default function Timer({
                 isDimmed={isControlsDimmed}
                 isPaused={isPaused}
                 isResetDisabled={!hasElapsedTime}
-                isTimedOut={isTimedOut}
+                isStartDisabled={isStartDisabled}
+                isFinished={isFinished}
                 pauseLabel={t("pause")}
                 resetLabel={t("reset")}
                 startLabel={t("start")}

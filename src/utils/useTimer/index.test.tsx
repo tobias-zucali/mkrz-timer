@@ -451,6 +451,42 @@ describe("useTimer finish sound", () => {
     )
   })
 
+  it("keeps zero-duration timers editable and ignores start shortcuts", () => {
+    const syncStateRef = {
+      current: {
+        ...buildSyncStateRef().current,
+        durationSeconds: 0,
+        totalDuration: 0,
+      },
+    }
+    const { result } = renderHook(() =>
+      useTimer({
+        onAction,
+        params: {
+          ...DEFAULT_SYNC_PARAMS,
+          m: "00",
+          rows: [
+            {
+              ...DEFAULT_SYNC_PARAMS.rows[0],
+              totalSeconds: 0,
+            },
+          ],
+          s: "00",
+        },
+        syncStateRef,
+      }),
+    )
+
+    expect(result.current.isFinished).toBe(false)
+    expect(result.current.isStartDisabled).toBe(true)
+
+    act(() => {
+      dispatchKeyboardEvent({ key: "Enter" })
+    })
+
+    expect(onAction).not.toHaveBeenCalled()
+  })
+
   it("adjusts idle step duration with ArrowUp and ArrowDown", () => {
     const syncStateRef = buildSyncStateRef()
     renderHook(() =>

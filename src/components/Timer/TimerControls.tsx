@@ -13,9 +13,10 @@ const timerButtonClassName =
 
 type TimerControlsProps = {
   isDimmed: boolean
+  isFinished: boolean
   isPaused: boolean
   isResetDisabled: boolean
-  isTimedOut: boolean
+  isStartDisabled: boolean
   onPause: () => void
   onReset: () => void
   onStart: () => void
@@ -27,9 +28,10 @@ type TimerControlsProps = {
 
 export default function TimerControls({
   isDimmed,
+  isFinished,
   isPaused,
   isResetDisabled,
-  isTimedOut,
+  isStartDisabled,
   onPause,
   onReset,
   onStart,
@@ -73,7 +75,7 @@ export default function TimerControls({
     >
       <button
         className={timerButtonClassName}
-        disabled={isTimedOut}
+        disabled={isPaused ? isStartDisabled : isFinished}
         onClick={isPaused ? onStart : onPause}
         style={timerButtonStyle}
         type="button"
