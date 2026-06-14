@@ -501,14 +501,14 @@ function TimerApp() {
     remoteRole,
     remoteStatusEnabled,
     sessionId,
-      timerState: {
-        backgroundColor: bg,
-        elapsedPercentage,
-        foregroundColor: fg,
-        isFinished,
-        minutes,
-        primaryColor: pc,
-        seconds,
+    timerState: {
+      backgroundColor: bg,
+      elapsedPercentage,
+      foregroundColor: fg,
+      isFinished,
+      minutes,
+      primaryColor: pc,
+      seconds,
       title,
     },
   })

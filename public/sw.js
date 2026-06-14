@@ -1,13 +1,14 @@
-const CACHE_NAME = "mkrz-timer-pwa-v1"
-const PRECACHE_URLS = [
-  "/",
-  "/manifest.webmanifest",
-  "/android-chrome-192x192.png",
-  "/android-chrome-512x512.png",
-  "/apple-touch-icon.png",
-  "/favicon.ico",
-  "/favicon.svg",
-]
+try {
+  importScripts("/sw-precache-manifest.js")
+} catch {}
+
+const precacheManifest = self.__PWA_PRECACHE_MANIFEST ?? {
+  urls: [],
+  version: "missing-manifest",
+}
+
+const CACHE_NAME = `mkrz-timer-pwa-${precacheManifest.version}`
+const PRECACHE_URLS = precacheManifest.urls
 
 function isCachableAssetRequest(request, url) {
   if (request.method !== "GET" || url.origin !== self.location.origin) {

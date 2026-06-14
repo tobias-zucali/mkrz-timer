@@ -1,7 +1,7 @@
 import { getDisplayedSeconds, openTimer } from "../support/helpers"
 import { expect, test } from "../support/test"
 
-test.skip("exposes install metadata and reloads offline after service worker setup", async ({
+test("exposes install metadata and reloads offline after service worker setup", async ({
   baseURL,
   context,
   page,
@@ -29,11 +29,18 @@ test.skip("exposes install metadata and reloads offline after service worker set
     return response.json()
   }, manifestUrl.toString())
 
+  const swPrecacheManifest = await page.evaluate(async () => {
+    const response = await fetch("/sw-precache-manifest.js")
+    return response.text()
+  })
+
   expect(manifest).toMatchObject({
+    id: "/",
     background_color: "#dddddd",
-    description: "simple time keeping",
+    description: "An accessible presentation timer with live sharing controls.",
     display: "standalone",
     name: "mkrz timer",
+    orientation: "portrait",
     scope: "/",
     short_name: "timer",
     start_url: "/",
@@ -52,6 +59,18 @@ test.skip("exposes install metadata and reloads offline after service worker set
         type: "image/png",
       }),
     ]),
+  )
+  expect(swPrecacheManifest).toContain('"/"')
+  expect(swPrecacheManifest).toContain('"/en"')
+  expect(swPrecacheManifest).toContain('"/manifest.webmanifest"')
+
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    "href",
+    "/apple-touch-icon.png",
+  )
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+    "content",
+    "#dddddd",
   )
 
   const registration = await page.evaluate(async () => {
