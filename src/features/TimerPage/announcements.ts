@@ -7,9 +7,9 @@ type TimerTranslationFn = (
 
 export type TimerAnnouncementSnapshot = {
   activeIndex: number
+  isFinished: boolean
   isPaused: boolean
   isStarted: boolean
-  isTimedOut: boolean
   remainingSeconds: number
   stepTitle: string
   totalDuration: number
@@ -93,7 +93,7 @@ export const getTimerEventAnnouncement = ({
     })
   }
 
-  if (!previous.isTimedOut && current.isTimedOut) {
+  if (!previous.isFinished && current.isFinished) {
     return t("announcementFinished")
   }
 

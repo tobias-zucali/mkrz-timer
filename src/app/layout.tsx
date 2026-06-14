@@ -5,6 +5,7 @@ import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import { defaultAppLocale } from "@/i18n/config"
+import { PWA_APP_NAME, PWA_DESCRIPTION, PWA_THEME_COLOR } from "@/app/pwa"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,12 +18,24 @@ const geistMono = Geist_Mono({
 })
 
 export const viewport: Viewport = {
-  themeColor: "#dddddd",
+  themeColor: PWA_THEME_COLOR,
 }
 
 export const metadata: Metadata = {
-  title: "mkrz timer",
-  description: "An accessible presentation timer with live sharing controls.",
+  applicationName: PWA_APP_NAME,
+  title: PWA_APP_NAME,
+  description: PWA_DESCRIPTION,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: PWA_APP_NAME,
+  },
+  formatDetection: {
+    address: false,
+    date: false,
+    email: false,
+    telephone: false,
+  },
 }
 
 export default async function RootLayout({
@@ -43,7 +56,8 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         {/* Microsoft Tiles */}
-        <meta name="msapplication-TileColor" content="#00aba9" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content={PWA_THEME_COLOR} />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
         {/* Safari Pinned Tab */}

@@ -401,6 +401,20 @@ for (const { minutes, seconds, totalSeconds } of durationCases) {
   })
 }
 
+test("keeps a zero-duration timer editable and disables start", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+
+  await setTimer(page, "00", "00")
+
+  const timerDisplay = page.getByTestId("timer-display")
+  await expect(timerDisplay.getByLabel("Minutes")).toBeEditable()
+  await expect(timerDisplay.getByLabel("Seconds")).toBeEditable()
+  await expect(page.getByRole("button", { name: "START" })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "RESET" })).toBeDisabled()
+})
+
 test("keeps the timer usable after strange duration input", async ({
   page,
 }) => {

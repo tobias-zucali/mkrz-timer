@@ -188,7 +188,7 @@ function TimerApp() {
     shortcutsEnabled: !isReadonlyClient,
     syncStateRef,
   })
-  const { elapsedPercentage, isTimedOut, minutes, seconds, setState } = timer
+  const { elapsedPercentage, isFinished, minutes, seconds, setState } = timer
 
   const { liveSession, remoteLinkError } = useTimerPageLiveSession({
     hasRecentlyEndedLiveSession,
@@ -523,7 +523,7 @@ function TimerApp() {
       backgroundColor: bg,
       elapsedPercentage,
       foregroundColor: fg,
-      isTimedOut,
+      isFinished,
       minutes,
       primaryColor: pc,
       seconds,
@@ -714,7 +714,7 @@ function TimerApp() {
           activeIndex={params.activeIndex}
           isPaused={timer.isPaused}
           isStarted={timer.isStarted}
-          isTimedOut={timer.isTimedOut}
+          isFinished={timer.isFinished}
           minutes={minutes}
           seconds={seconds}
           sessionAccessibilityLabel={

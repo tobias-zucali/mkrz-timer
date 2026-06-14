@@ -147,16 +147,27 @@ Practical rule:
 - If you are running the app locally, default to the generic lanes.
 - If you are an agent or automation workflow choosing a validation lane, use `pnpm scope` first and then run the recommended standard test commands.
 
+## Manual PWA Verification
+
+Run manual PWA checks only for release-sensitive changes to the install or offline shell, not for ordinary timer UI work.
+
+- Start from a production-style export with `pnpm test:e2e:pwa` or `pnpm build`, not `pnpm dev`.
+- Verify installability in a supported browser and confirm the installed app opens in standalone mode without normal browser chrome.
+- While the app is offline, reload the installed app and confirm the timer shell still renders from the cached export.
+- After a service worker or offline-shell change, rebuild and verify the installed app picks up the updated version without getting stuck on stale assets.
+
 ## Prototype Workflow Skill
 
 This repo includes a repo-local Codex skill at [`.agents/skills/prototype`](../.agents/skills/prototype/SKILL.md).
 
-Use `$prototype` when the user explicitly asks for prototype mode and you need a persistent ledger for:
+Use `$prototype` when the user explicitly asks for prototype mode and you want to defer normal closeout work while exploring.
 
-- deferred docs and tests
-- the standard `AGENTS.md` validation lane that must be backfilled at closeout
-- whether `pnpm test:full` is required
-- whether the prototype should be finished or reverted
+When prototype mode ends, the agent must perform a diff-based closeout review that identifies:
+
+- the user-visible behavior that changed
+- which docs and tests must be backfilled
+- the final validation lane required by the real scope
+- whether security review or live-session contract updates are required
 
 ## Writing Stable Browser Tests
 

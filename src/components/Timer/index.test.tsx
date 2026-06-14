@@ -11,9 +11,10 @@ const timerStub = {
   currentRepeat: 1,
   elapsedPercentage: 0,
   handleAction: vi.fn(),
+  isFinished: false,
   isPaused: true,
+  isStartDisabled: false,
   isStarted: false,
-  isTimedOut: false,
   minutes: "01",
   seconds: "00",
   setState: vi.fn(),
@@ -139,7 +140,7 @@ describe("Timer", () => {
       ],
       timer: {
         ...timerStub,
-        isTimedOut: true,
+        isFinished: true,
       } as ReturnType<typeof useTimer>,
     })
 
@@ -180,5 +181,18 @@ describe("Timer", () => {
     })
 
     expect(screen.getByRole("button", { name: "RESET" })).toBeEnabled()
+  })
+
+  it("keeps reset disabled for a fresh zero-duration timer", () => {
+    renderTimer({
+      timer: {
+        ...timerStub,
+        minutes: "00",
+        seconds: "00",
+        totalDuration: 0,
+      } as ReturnType<typeof useTimer>,
+    })
+
+    expect(screen.getByRole("button", { name: "RESET" })).toBeDisabled()
   })
 })

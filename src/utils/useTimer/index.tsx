@@ -160,7 +160,10 @@ export default function useTimer({
     resolvedState.totalDuration === 0
       ? 1
       : resolvedState.elapsedTime / resolvedState.totalDuration
-  const isTimedOut = elapsedPercentage >= 1
+  const isFinished = resolvedState.status === "finished"
+  const isStartDisabled =
+    (resolvedState.status === "idle" || resolvedState.status === "paused") &&
+    resolvedState.totalDuration === 0
   const rawElapsedTime =
     rawState.status === "running" && rawState.anchorServerTimestamp > 0
       ? rawState.elapsedSecondsAtAnchor +
@@ -175,8 +178,8 @@ export default function useTimer({
     : null
 
   useEffect(() => {
-    const didJustTimeOut = !previousIsTimedOutRef.current && isTimedOut
-    previousIsTimedOutRef.current = isTimedOut
+    const didJustTimeOut = !previousIsTimedOutRef.current && isFinished
+    previousIsTimedOutRef.current = isFinished
 
     const didCompleteNewStep =
       completedStepKey !== null &&
@@ -201,7 +204,7 @@ export default function useTimer({
         return
       }
     })
-  }, [completedStepKey, isTimedOut, params.snd])
+  }, [completedStepKey, isFinished, params.snd])
 
   useEffect(() => {
     return () => {
@@ -442,7 +445,7 @@ export default function useTimer({
         handleAction("next")
         return
       case "pause":
-        if (!isTimedOut) {
+        if (!isFinished) {
           handleAction(isPaused ? "start" : "pause")
         }
         return
@@ -453,7 +456,7 @@ export default function useTimer({
         handleAction("restart")
         return
       case "toggle":
-        handleAction(isTimedOut ? "restart" : isPaused ? "start" : "pause")
+        handleAction(isFinished ? "restart" : isPaused ? "start" : "pause")
         return
     }
   })
@@ -510,9 +513,10 @@ export default function useTimer({
     currentRepeat,
     elapsedPercentage,
     handleAction,
+    isFinished,
     isPaused,
+    isStartDisabled,
     isStarted,
-    isTimedOut,
     minutes,
     seconds,
     setState,

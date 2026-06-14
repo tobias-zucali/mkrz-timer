@@ -11,9 +11,9 @@ import {
 
 type TimerAnnouncementsProps = {
   activeIndex: number
+  isFinished: boolean
   isPaused: boolean
   isStarted: boolean
-  isTimedOut: boolean
   minutes: string
   seconds: string
   sessionAccessibilityLabel: string
@@ -24,9 +24,9 @@ type TimerAnnouncementsProps = {
 
 export default function TimerAnnouncements({
   activeIndex,
+  isFinished,
   isPaused,
   isStarted,
-  isTimedOut,
   minutes,
   seconds,
   sessionAccessibilityLabel,
@@ -58,18 +58,18 @@ export default function TimerAnnouncements({
   const currentSnapshot = useMemo<TimerAnnouncementSnapshot>(
     () => ({
       activeIndex,
+      isFinished,
       isPaused,
       isStarted,
-      isTimedOut,
       remainingSeconds,
       stepTitle,
       totalDuration,
     }),
     [
       activeIndex,
+      isFinished,
       isPaused,
       isStarted,
-      isTimedOut,
       remainingSeconds,
       stepTitle,
       totalDuration,

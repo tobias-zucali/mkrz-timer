@@ -3,9 +3,10 @@ import { render, screen } from "@testing-library/react"
 import TimerControls from "./TimerControls"
 
 const baseProps = {
+  isFinished: false,
   isPaused: true,
   isResetDisabled: false,
-  isTimedOut: false,
+  isStartDisabled: false,
   onPause: vi.fn(),
   onReset: vi.fn(),
   onStart: vi.fn(),
@@ -40,5 +41,12 @@ describe("TimerControls", () => {
     render(<TimerControls {...baseProps} isDimmed={false} isResetDisabled />)
 
     expect(screen.getByRole("button", { name: "RESET" })).toBeDisabled()
+  })
+
+  it("disables start without treating the timer as finished", () => {
+    render(<TimerControls {...baseProps} isDimmed={false} isStartDisabled />)
+
+    expect(screen.getByRole("button", { name: "START" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "RESET" })).toBeEnabled()
   })
 })

@@ -7,7 +7,7 @@ const baseProps = {
   backgroundColor: "#000000",
   elapsedPercentage: 0.35,
   foregroundColor: "#ffffff",
-  isTimedOut: false,
+  isFinished: false,
   minutes: "12",
   primaryColor: "#d61f69",
   seconds: "34",

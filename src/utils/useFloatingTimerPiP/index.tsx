@@ -25,7 +25,7 @@ type FloatingTimerState = {
   backgroundColor: string
   elapsedPercentage: number
   foregroundColor: string
-  isTimedOut: boolean
+  isFinished: boolean
   minutes: string
   primaryColor: string
   seconds: string
@@ -144,7 +144,7 @@ export default function useFloatingTimerPiP({
       <FloatingTimerContent
         accessibleTimerText={buildTimerReadoutLabel({
           activeIndex: 0,
-          readoutState: state.isTimedOut ? "finished" : "viewOnly",
+          readoutState: state.isFinished ? "finished" : "viewOnly",
           remainingSeconds:
             Number.parseInt(state.minutes, 10) * 60 +
             Number.parseInt(state.seconds, 10),
@@ -154,7 +154,7 @@ export default function useFloatingTimerPiP({
         backgroundColor={state.backgroundColor}
         elapsedPercentage={state.elapsedPercentage}
         foregroundColor={state.foregroundColor}
-        isTimedOut={state.isTimedOut}
+        isFinished={state.isFinished}
         minutes={state.minutes}
         primaryColor={state.primaryColor}
         seconds={state.seconds}

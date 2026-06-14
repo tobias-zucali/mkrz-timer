@@ -16,20 +16,20 @@ export default function FloatingTimerContent({
   title,
   backgroundColor,
   foregroundColor,
+  isFinished,
   primaryColor,
   minutes,
   seconds,
-  isTimedOut,
   elapsedPercentage,
 }: {
   accessibleTimerText: string
   title: string
   backgroundColor: string
   foregroundColor: string
+  isFinished: boolean
   primaryColor: string
   minutes: string
   seconds: string
-  isTimedOut: boolean
   elapsedPercentage: number
 }) {
   const titleFontStyle = getTimerTitleFontStyle({
@@ -88,7 +88,7 @@ export default function FloatingTimerContent({
             className={`
               flex max-w-full flex-nowrap items-baseline justify-center
               font-mono font-bold
-              ${isTimedOut ? "animate-pulse text-primary" : ""}
+              ${isFinished ? "animate-pulse text-primary" : ""}
             `}
             data-testid="floating-timer-display"
             role="timer"

@@ -105,6 +105,42 @@ test("resolveSessionSnapshotAt respects runtime-extended total duration while ru
   assert.equal(resolved.state.elapsedTime, 300)
 })
 
+test("applyTimerCommandToSnapshot ignores start when duration is zero", () => {
+  const snapshot = {
+    params: {
+      ...DEFAULT_SYNC_PARAMS,
+      m: "00",
+      rows: [
+        {
+          ...DEFAULT_SYNC_PARAMS.rows[0],
+          totalSeconds: 0,
+        },
+      ],
+      s: "00",
+    },
+    state: {
+      ...DEFAULT_TIMER_STATE,
+      currentRepeat: 1,
+      durationSeconds: 0,
+      elapsedSecondsAtAnchor: 0,
+      elapsedTime: 0,
+      isPaused: true,
+      isStarted: false,
+      revision: 4,
+      status: "idle" as const,
+      totalDuration: 0,
+    },
+  } satisfies SessionSnapshot
+
+  const nextSnapshot = applyTimerCommandToSnapshot({
+    command: { type: "start" },
+    now: 10_000,
+    snapshot,
+  })
+
+  assert.deepEqual(nextSnapshot, resolveSessionSnapshotAt(snapshot, 10_000))
+})
+
 test("stampTimerStateAt refreshes the timestamp with the resolved current state", () => {
   const stamped = stampTimerStateAt(
     {
