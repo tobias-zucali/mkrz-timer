@@ -651,6 +651,40 @@ test("announces timer state changes and uses semantic readout mode", async ({
   await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
 })
 
+test("@smoke keeps the timer viewport fixed while sidebar panels scroll", async ({
+  page,
+}) => {
+  await openTimer(page, 12)
+
+  const viewportStyles = await page.evaluate(() => {
+    const main = document.querySelector("main")
+
+    return {
+      bodyOverflow: window.getComputedStyle(document.body).overflow,
+      bodyOverscroll: window.getComputedStyle(document.body).overscrollBehavior,
+      htmlOverflow: window.getComputedStyle(document.documentElement).overflow,
+      mainOverflow: main ? window.getComputedStyle(main).overflow : null,
+      mainOverscroll: main
+        ? window.getComputedStyle(main).overscrollBehavior
+        : null,
+    }
+  })
+
+  expect(viewportStyles).toEqual({
+    bodyOverflow: "hidden",
+    bodyOverscroll: "none",
+    htmlOverflow: "hidden",
+    mainOverflow: "hidden",
+    mainOverscroll: "none",
+  })
+
+  await openSidebarPanel(page, "Timer")
+  await expect(page.getByTestId("sidebar-panel-timer")).toHaveCSS(
+    "overflow-y",
+    "auto",
+  )
+})
+
 test("keeps paused step switches silent and auto-advances running sequences", async ({
   page,
 }) => {

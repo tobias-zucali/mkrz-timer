@@ -44,6 +44,12 @@ body {
   font-family: Geist, Arial, Helvetica, sans-serif;
 }
 
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 @utility timer-chrome-transition {
   transition-duration: 700ms;
 }
