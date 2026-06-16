@@ -1,8 +1,8 @@
 {
   "appearanceHeading": "Appearance",
-  "appearanceDescription": "Adjust the timer colors that frame the clock.",
-  "background": "Background",
-  "foreground": "Foreground",
+  "appearanceDescription": "Choose between dark and bright mode.",
+  "themeDark": "Dark",
+  "themeBright": "Bright",
   "languageHeading": "Language",
   "languageEnglish": "English",
   "languageGerman": "Deutsch",

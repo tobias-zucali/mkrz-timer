@@ -47,7 +47,7 @@ export default function UrlCopyField({
   return (
     <>
       <InputField
-        className="text-sm text-foreground/75"
+        className="text-sm text-ink/75"
         description={description}
         id={fieldId}
         label={label}

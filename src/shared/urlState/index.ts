@@ -1,4 +1,5 @@
 import type {
+  AppTheme,
   SyncParams,
   TimerEndBehavior,
   TimerSequenceRow,
@@ -7,8 +8,8 @@ import {
   DEFAULT_SYNC_PARAMS,
   MAX_TIMER_DURATION_SECONDS,
   MAX_TITLE_LENGTH,
-  normalizeColor,
   normalizeOptionalColor,
+  normalizeTheme,
   normalizeTitle,
 } from "../security/input.ts"
 import {
@@ -30,8 +31,7 @@ export type UrlTimerRow = TimerSequenceRow
 
 export type ParsedTimerUrlState = {
   activeIndex: number
-  bg: string
-  fg: string
+  theme: AppTheme
   hasTimerState: boolean
   rows: UrlTimerRow[]
   snd: SyncParams["snd"]
@@ -144,8 +144,7 @@ export const parseTimerUrlState = ({
   allowTimerState?: boolean
   searchParams: URLSearchParams
 }): ParsedTimerUrlState => {
-  const bg = normalizeColor(searchParams.get("bg"), DEFAULT_SYNC_PARAMS.bg)
-  const fg = normalizeColor(searchParams.get("fg"), DEFAULT_SYNC_PARAMS.fg)
+  const theme = normalizeTheme(searchParams.get("theme"))
   const snd = normalizeTimerFinishedSoundId(
     searchParams.get("s"),
     DEFAULT_SYNC_PARAMS.snd,
@@ -158,8 +157,7 @@ export const parseTimerUrlState = ({
   if (!allowTimerState) {
     return {
       activeIndex: 0,
-      bg,
-      fg,
+      theme,
       hasTimerState: false,
       rows: [],
       snd,
@@ -173,8 +171,7 @@ export const parseTimerUrlState = ({
   if (version !== TIMER_URL_VERSION || !rowsValue) {
     return {
       activeIndex: 0,
-      bg,
-      fg,
+      theme,
       hasTimerState: false,
       rows: [],
       snd,
@@ -191,8 +188,7 @@ export const parseTimerUrlState = ({
 
   return {
     activeIndex: parseUrlActiveIndex(searchParams.get("a"), rows.length),
-    bg,
-    fg,
+    theme,
     hasTimerState: rows.length > 0,
     rows,
     snd,
@@ -240,8 +236,7 @@ export const projectTimerUrlStateToSyncParams = ({
   if (!state.rows[0]) {
     return {
       ...fallback,
-      bg: state.bg,
-      fg: state.fg,
+      theme: state.theme,
       snd: state.snd,
       tts: state.tts,
     }
@@ -256,8 +251,7 @@ export const projectTimerUrlStateToSyncParams = ({
 
   return {
     activeIndex,
-    bg: state.bg,
-    fg: state.fg,
+    theme: state.theme,
     m: duration.m,
     pc: activeRow.primaryColor || fallback.pc,
     rows: state.rows.map(buildUrlTimerRow),
@@ -275,7 +269,7 @@ export const syncParamsMatchParsedTimerUrlState = ({
   params,
   state,
 }: {
-  params: Pick<SyncParams, "activeIndex" | "bg" | "fg" | "rows" | "snd" | "tts">
+  params: Pick<SyncParams, "activeIndex" | "theme" | "rows" | "snd" | "tts">
   state: ParsedTimerUrlState
 }) => {
   if (!state.hasTimerState) {
@@ -288,8 +282,7 @@ export const syncParamsMatchParsedTimerUrlState = ({
   })
 
   return (
-    params.bg === projectedParams.bg &&
-    params.fg === projectedParams.fg &&
+    params.theme === projectedParams.theme &&
     params.snd === projectedParams.snd &&
     params.tts === projectedParams.tts &&
     params.activeIndex === projectedParams.activeIndex &&
@@ -311,24 +304,21 @@ export const serializeUrlTimerRow = (row: UrlTimerRow) => {
 
 export const buildTimerUrlSearchParams = ({
   activeIndex = 0,
-  bg,
+  theme,
   extraParams = {},
-  fg,
   rows,
   snd = DEFAULT_SYNC_PARAMS.snd,
   tts = DEFAULT_SYNC_PARAMS.tts,
 }: {
   activeIndex?: number
-  bg?: string | null
+  theme?: AppTheme | null
   extraParams?: Record<string, string | null | undefined>
-  fg?: string | null
   rows: UrlTimerRow[]
   snd?: SyncParams["snd"]
   tts?: boolean
 }) => {
   const searchParams = new URLSearchParams()
-  const normalizedBg = normalizeColor(bg, DEFAULT_SYNC_PARAMS.bg)
-  const normalizedFg = normalizeColor(fg, DEFAULT_SYNC_PARAMS.fg)
+  const normalizedTheme = normalizeTheme(theme)
   const normalizedSound = normalizeTimerFinishedSoundId(
     snd,
     DEFAULT_SYNC_PARAMS.snd,
@@ -348,11 +338,8 @@ export const buildTimerUrlSearchParams = ({
     candidateSearchParams.set("v", TIMER_URL_VERSION)
     candidateSearchParams.set("t", candidateRows)
     candidateSearchParams.set("a", activeIndex.toString())
-    if (normalizedBg !== DEFAULT_SYNC_PARAMS.bg) {
-      candidateSearchParams.set("bg", normalizedBg.replace(/^#/, ""))
-    }
-    if (normalizedFg !== DEFAULT_SYNC_PARAMS.fg) {
-      candidateSearchParams.set("fg", normalizedFg.replace(/^#/, ""))
+    if (normalizedTheme !== DEFAULT_SYNC_PARAMS.theme) {
+      candidateSearchParams.set("theme", normalizedTheme)
     }
     if (normalizedSound !== DEFAULT_SYNC_PARAMS.snd) {
       candidateSearchParams.set("s", normalizedSound)
@@ -389,12 +376,8 @@ export const buildTimerUrlSearchParams = ({
     )
   }
 
-  if (normalizedBg !== DEFAULT_SYNC_PARAMS.bg) {
-    searchParams.set("bg", normalizedBg.replace(/^#/, ""))
-  }
-
-  if (normalizedFg !== DEFAULT_SYNC_PARAMS.fg) {
-    searchParams.set("fg", normalizedFg.replace(/^#/, ""))
+  if (normalizedTheme !== DEFAULT_SYNC_PARAMS.theme) {
+    searchParams.set("theme", normalizedTheme)
   }
   if (normalizedSound !== DEFAULT_SYNC_PARAMS.snd) {
     searchParams.set("s", normalizedSound)

@@ -24,9 +24,9 @@ export default function TimerReadonlyPlaceholder({
     >
       <div
         className="
-          w-full max-w-lg rounded-3xl border border-foreground/12
-          bg-background/72 px-6 py-8 text-center shadow-xl
-          shadow-background/20 backdrop-blur-sm
+          w-full max-w-lg rounded-3xl border border-ink/12
+          bg-screen/72 px-6 py-8 text-center shadow-xl
+          shadow-screen/20 backdrop-blur-sm
         "
       >
         {placeholder.eyebrow ? (
@@ -48,21 +48,21 @@ export default function TimerReadonlyPlaceholder({
           />
           <div
             className="
-              size-4 rounded-full bg-foreground/30
+              size-4 rounded-full bg-ink/30
               [animation-delay:150ms] motion-safe:animate-pulse
             "
           />
           <div
             className="
-              size-4 rounded-full bg-foreground/18
+              size-4 rounded-full bg-ink/18
               [animation-delay:300ms] motion-safe:animate-pulse
             "
           />
         </div>
-        <p className="mt-5 text-lg font-semibold text-foreground">
+        <p className="mt-5 text-lg font-semibold text-ink">
           {placeholder.heading}
         </p>
-        <p className="mt-2 text-sm/6 text-foreground/68">{placeholder.body}</p>
+        <p className="mt-2 text-sm/6 text-ink/68">{placeholder.body}</p>
         {placeholder.actionLabel && placeholder.onAction ? (
           <button
             className="

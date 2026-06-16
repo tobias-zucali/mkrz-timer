@@ -9,12 +9,5 @@
     "accessibility": "Barrierefreiheit",
     "github": "GitHub",
     "contact": "Kontakt"
-  },
-  "welcomeBanner": {
-    "eyebrow": "Erste Nutzung",
-    "title": "Willkommen bei mkrz timer",
-    "description": "Nutzen Sie den Timer lokal in diesem Browser oder teilen Sie getrennte Steuerungs- und Ansichtslinks, wenn mehrere Personen synchron bleiben sollen.",
-    "hide": "Diesen Hinweis auf diesem Gerät nicht mehr anzeigen.",
-    "dismiss": "Timer verwenden!"
   }
 }

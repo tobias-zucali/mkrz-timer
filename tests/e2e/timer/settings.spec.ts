@@ -114,27 +114,27 @@ test("redirects unprefixed routes to the browser locale with English fallback", 
   })
 })
 
-test("opens the about sidebar panel from the footer and does not restore it on reload", async ({
+test("redirects legacy localized timer URLs from the public home route", async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("timer.welcomeBanner.v1.dismissed", "1")
+  await page.goto(
+    "/en?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+  )
+
+  await expect(page).toHaveURL(/\/en\/t\?v=1&t=.*&a=0&title=Workshop\+timer$/, {
+    timeout: 30_000,
   })
+  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+})
+
+test("navigates to the about page from the footer link", async ({ page }) => {
   await openTimer(page, 60)
 
-  await page.locator("footer").getByRole("button", { name: "About" }).click()
-  await expect(page.getByTestId("sidebar-panel-about")).toBeVisible({
-    timeout: 10_000,
-  })
+  await page.locator("footer").getByRole("link", { name: "About" }).click()
+  await expect(page).toHaveURL(/\/en\/about$/, { timeout: 10_000 })
   await expect(
-    page.getByTestId("sidebar-panel-about").getByRole("heading", {
-      name: "About mkrz timer",
-    }),
+    page.getByRole("heading", { name: "About mkrz timer" }),
   ).toBeVisible()
-
-  await page.reload()
-
-  await expect(page.getByTestId("sidebar-panel-about")).not.toBeVisible()
 })
 
 test("matches sidebar panel aria structures", async ({ page }) => {
@@ -155,7 +155,7 @@ test("matches sidebar panel aria structures", async ({ page }) => {
     await page.getByRole("textbox", { name: "Local link" }).inputValue(),
   )
 
-  expect(localLink.pathname).toBe("/en")
+  expect(localLink.pathname).toBe("/en/t")
   expect(localLink.searchParams.get("v")).toBe("1")
   expect(localLink.searchParams.get("t")).toBeTruthy()
   expect(localLink.searchParams.get("a")).toBe("0")
@@ -164,30 +164,6 @@ test("matches sidebar panel aria structures", async ({ page }) => {
   await expect(page.getByTestId("sidebar-panel-settings")).toMatchAriaSnapshot({
     name: "sidebar-settings-panel.aria.yml",
   })
-
-  for (const panel of [
-    { name: "About", snapshot: "sidebar-about-panel.aria.yml" },
-    {
-      name: "Accessibility",
-      snapshot: "sidebar-accessibility-panel.aria.yml",
-    },
-    { name: "Contact", snapshot: "sidebar-contact-panel.aria.yml" },
-    { name: "Impressum", snapshot: "sidebar-impressum-panel.aria.yml" },
-    { name: "Privacy", snapshot: "sidebar-privacy-panel.aria.yml" },
-    { name: "Terms", snapshot: "sidebar-terms-panel.aria.yml" },
-  ] as const) {
-    await openSidebarPanel(page, panel.name)
-    await expect(
-      page.getByTestId(`sidebar-panel-${panel.name.toLowerCase()}`),
-    ).toBeVisible({
-      timeout: 10_000,
-    })
-    await expect(
-      page.getByTestId(`sidebar-panel-${panel.name.toLowerCase()}`),
-    ).toMatchAriaSnapshot({
-      name: panel.snapshot,
-    })
-  }
 })
 
 test(
@@ -197,8 +173,7 @@ test(
     await openTimer(page, 3)
 
     const settings = {
-      backgroundColor: "#123456",
-      foregroundColor: "#fefefe",
+      theme: "bright" as const,
       minutes: "02",
       primaryColor: "#00aa88",
       seconds: "15",
@@ -219,7 +194,6 @@ test("toggles shared settings in the local share link", async ({ page }) => {
   await openTimer(page, 3)
 
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
     soundId: "b",
     ttsEnabled: true,
   })
@@ -227,7 +201,6 @@ test("toggles shared settings in the local share link", async ({ page }) => {
   await openSidebarPanel(page, "Share")
   const localLink = page.getByRole("textbox", { name: "Local link" })
 
-  await expect(localLink).toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 
@@ -237,7 +210,6 @@ test("toggles shared settings in the local share link", async ({ page }) => {
     })
     .uncheck()
 
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 })
@@ -248,7 +220,6 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   await openTimer(page, 3)
 
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
     soundId: "b",
     ttsEnabled: true,
   })
@@ -260,7 +231,6 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   const localLink = page.getByRole("textbox", { name: "Local link" })
 
   await includeSettingsToggle.uncheck()
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 
@@ -268,7 +238,6 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   await openSidebarPanel(page, "Share")
 
   await expect(includeSettingsToggle).not.toBeChecked()
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 })
@@ -280,7 +249,7 @@ test("switches languages without losing the current route state", async ({
   await openSidebarPanel(page, "Settings")
 
   await page.getByTestId("language-switcher").selectOption("de")
-  await expect(page).toHaveURL(/\/de\?v=1&t=/, { timeout: 15_000 })
+  await expect(page).toHaveURL(/\/de\/t\?v=1&t=/, { timeout: 15_000 })
 
   await page.getByRole("button", { name: "Teilen öffnen" }).click()
   await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
@@ -288,7 +257,7 @@ test("switches languages without losing the current route state", async ({
     await page.getByRole("textbox", { name: "Lokaler Link" }).inputValue(),
   )
 
-  expect(localLink.pathname).toBe("/de")
+  expect(localLink.pathname).toBe("/de/t")
 })
 
 test("keeps timer shortcuts predictable inside the sidebar", async ({

@@ -22,7 +22,6 @@
   - list:
     - listitem: "recent and current local timer snapshots in `timer.localLibrary`"
     - listitem: "the share-panel preference in `timer.share.includeVoiceSoundSettings`"
-    - listitem: "the welcome-banner dismissal flag in `timer.welcomeBanner.v1.dismissed`"
   - paragraph: "We do not currently use browser cookies for the timer itself, and we do not currently use `sessionStorage` for the timer state described on this page."
   - paragraph: In local-only mode, this information remains on your device unless you intentionally share a URL.
   - heading "Live synchronized sessions" [level=2]

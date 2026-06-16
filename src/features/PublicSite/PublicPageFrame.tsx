@@ -11,9 +11,9 @@ import PublicLocaleSwitcher from "./PublicLocaleSwitcher"
 function DecorativeBackdrop() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <div className="absolute top-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/22 blur-3xl" />
-      <div className="absolute top-32 right-[8%] h-56 w-56 rounded-full border border-primary/25" />
-      <div className="absolute bottom-24 left-[6%] h-32 w-32 rounded-full border border-white/8" />
+      <div className="absolute top-0 left-1/2 size-80 -translate-x-1/2 rounded-full bg-primary/22 blur-3xl" />
+      <div className="absolute top-32 right-[8%] size-56 rounded-full border border-primary/25" />
+      <div className="absolute bottom-24 left-[6%] size-32 rounded-full border border-white/8" />
     </div>
   )
 }
@@ -35,9 +35,9 @@ export default function PublicPageFrame({
   }))
 
   return (
-    <main className="relative min-h-full overflow-hidden bg-background text-foreground">
+    <main className="relative min-h-full overflow-hidden bg-screen text-ink">
       <DecorativeBackdrop />
-      <div className="relative mx-auto flex min-h-full max-w-6xl flex-col gap-8 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="relative mx-auto flex min-h-full max-w-6xl flex-col gap-8 px-4 py-5 sm:p-6 lg:p-8">
         <header className="p-2 sm:p-3">
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -48,7 +48,7 @@ export default function PublicPageFrame({
                 >
                   {AppShell.metadata.title}
                 </Link>
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary/80">
+                <p className="text-sm font-medium tracking-[0.18em] text-primary/80 uppercase">
                   {AppShell.footer.credit}
                 </p>
               </div>
@@ -60,13 +60,13 @@ export default function PublicPageFrame({
                   label={PublicSite.navigation.languageLabel}
                 />
                 <Link
-                  className="rounded-full border border-primary/35 bg-primary/90 px-4 py-2 font-semibold text-background transition hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+                  className="rounded-full border border-primary/35 bg-primary/90 px-4 py-2 font-semibold text-white transition hover:bg-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                   href={`/${locale}/t`}
                 >
                   {PublicSite.navigation.openTimer}
                 </Link>
                 <a
-                  className="font-medium text-foreground/78 underline decoration-primary/60 underline-offset-4 transition hover:text-foreground"
+                  className="font-medium text-ink/78 underline decoration-primary/60 underline-offset-4 transition hover:text-ink"
                   href="https://github.com/tobias-zucali/mkrz-timer"
                   rel="noreferrer"
                   target="_blank"
@@ -80,11 +80,13 @@ export default function PublicPageFrame({
         <div className="flex-1">{children}</div>
         <footer className="p-2 sm:p-3">
           <nav aria-label={InfoPages.footer.navigationLabel}>
-            <ul className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-foreground/84">
+            <ul className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-ink/84">
               {footerLinks.map((link) => (
                 <li key={link.slug}>
                   <Link
-                    aria-current={currentSlug === link.slug ? "page" : undefined}
+                    aria-current={
+                      currentSlug === link.slug ? "page" : undefined
+                    }
                     className="underline decoration-primary/60 underline-offset-4"
                     href={link.href}
                   >

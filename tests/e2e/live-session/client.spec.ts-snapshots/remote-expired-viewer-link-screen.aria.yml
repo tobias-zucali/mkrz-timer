@@ -1,12 +1,12 @@
 - main "mkrz timer":
-  - status "Timer announcements": Live session, Error, VIEWER access
+  - status "Timer announcements": Live session, Error, JOIN access
   - region "Timer":
     - heading "Timer" [level=1]
     - paragraph: Error
     - paragraph: Error
     - paragraph: Live session link is invalid or expired. Ask for a fresh link an
-  - button "Share viewer link"
-- button "Open session status. Live session, Error, VIEWER access": Error VIEWER
+  - button "Share join link"
+- button "Open session status. Live session, Error, JOIN access"
 - alertdialog "Live session recovery needs your decision.":
   - paragraph: Live session recovery
   - heading "Live session recovery needs your decision." [level=2]
@@ -17,5 +17,6 @@
 - contentinfo:
   - link "by mkrz":
     - /url: https://www.mkrz.at/
-  - button "About"
+  - link "About":
+    - /url: /en/about
 - alert

@@ -5,13 +5,13 @@
 - paragraph: Synchronize this timer across multiple devices.
 - list:
   - listitem: • Live updates
-  - listitem: • Viewer and control links
+  - listitem: • Join and manage links
   - listitem: • Automatic reconnect support
 - button "Start live session"
 - paragraph: Local share
 - paragraph: Open this timer setup independently. No live synchronization. Changes are independent after opening.
 - text: Local link
-- textbox "Local link": /http:\/\/\d+\.\d+\.0\.1:\d+\/en\?v=1&t=3%21d61f69%\d+%\d+%\d+&a=0/
+- textbox "Local link": /http:\/\/\d+\.\d+\.0\.1:\d+\/en\/t\?v=1&t=3%21d61f69%\d+%\d+%\d+&a=0/
 - button "Copy URL"
 - button "Show Local link"
 - paragraph: Snapshot of the current timer configuration with no live synchronization.

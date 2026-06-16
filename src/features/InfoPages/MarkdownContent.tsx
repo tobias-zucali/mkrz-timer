@@ -287,9 +287,7 @@ export default function MarkdownContent({
         return (
           <p
             className={
-              compact
-                ? "text-base/6 text-foreground/88"
-                : "text-base/7 text-foreground/88"
+              compact ? "text-base/6 text-ink/88" : "text-base/7 text-ink/88"
             }
             key={index}
           >

@@ -250,7 +250,7 @@ export default function TimerTitle({
         autoComplete="off"
         className={classNames(
           titleSurfaceClassName,
-          "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-foreground/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-foreground/70",
+          "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-ink/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ink/70",
           hasText
             ? "relative z-10 cursor-text"
             : showFocusedTextarea
@@ -309,9 +309,9 @@ export default function TimerTitle({
           className={classNames(
             "absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2",
             "cursor-pointer items-center justify-center rounded-full",
-            "border border-dashed border-foreground/18 bg-foreground/3 px-4 py-1.5",
-            "text-sm font-semibold text-foreground/72 hover:border-foreground/28",
-            "hover:bg-foreground/6 hover:text-foreground focus-visible:outline-2",
+            "border border-dashed border-ink/18 bg-ink/3 px-4 py-1.5",
+            "text-sm font-semibold text-ink/72 hover:border-ink/28",
+            "hover:bg-ink/6 hover:text-ink focus-visible:outline-2",
             "focus-visible:outline-offset-2 focus-visible:outline-primary",
             "transition-opacity timer-chrome-transition",
             isDimmed ? "timer-chrome-dimmed" : "opacity-100",

@@ -18,14 +18,13 @@ import {
 test("parseTimerUrlState reads valid multi-row timer params", () => {
   const parsed = parseTimerUrlState({
     searchParams: new URLSearchParams(
-      "v=1&t=300!!Opening!2!1|900!dc2626!Q%26A%20Session!1!0&a=1&bg=111111&fg=eeeeee",
+      "v=1&t=300!!Opening!2!1|900!dc2626!Q%26A%20Session!1!0&a=1&theme=bright",
     ),
   })
 
   assert.deepEqual(parsed, {
     activeIndex: 1,
-    bg: "#111111",
-    fg: "#eeeeee",
+    theme: "bright",
     hasTimerState: true,
     rows: [
       {
@@ -68,13 +67,12 @@ test("parseTimerUrlState accepts legacy 4-part rows", () => {
 
 test("parseTimerUrlState reads compact settings params", () => {
   const parsed = parseTimerUrlState({
-    searchParams: new URLSearchParams("ts=1&s=b&bg=123456&fg=abcdef"),
+    searchParams: new URLSearchParams("ts=1&s=b&theme=bright"),
   })
 
   assert.deepEqual(parsed, {
     activeIndex: 0,
-    bg: "#123456",
-    fg: "#abcdef",
+    theme: "bright",
     hasTimerState: false,
     rows: [],
     snd: "b",
@@ -103,12 +101,11 @@ test("parseTimerUrlState fails closed when timer state is disabled", () => {
   assert.deepEqual(
     parseTimerUrlState({
       allowTimerState: false,
-      searchParams: new URLSearchParams("v=1&t=300!!Opening!1!0&bg=111111"),
+      searchParams: new URLSearchParams("v=1&t=300!!Opening!1!0&theme=bright"),
     }),
     {
       activeIndex: 0,
-      bg: "#111111",
-      fg: "#ffffff",
+      theme: "bright",
       hasTimerState: false,
       rows: [],
       snd: DEFAULT_SYNC_PARAMS.snd,
@@ -122,8 +119,7 @@ test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
   const projected = projectTimerUrlStateToSyncParams({
     state: {
       activeIndex: 1,
-      bg: "#123456",
-      fg: "#abcdef",
+      theme: "bright",
       hasTimerState: true,
       rows: [
         buildUrlTimerRow({
@@ -149,8 +145,7 @@ test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
 
   assert.deepEqual(projected, {
     activeIndex: 1,
-    bg: "#123456",
-    fg: "#abcdef",
+    theme: "bright",
     m: "00",
     pc: "#dc2626",
     rows: [
@@ -189,25 +184,23 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t
 
   const query = buildTimerUrlSearchParams({
     activeIndex: 0,
-    bg: "#123456",
+    theme: "bright",
     extraParams: {
       settings: "1",
     },
-    fg: "#abcdef",
     rows: [row],
   }).toString()
 
   assert.equal(
     query,
-    "v=1&t=75%21%21Line%25201%2520Line%25202%212%211&a=0&bg=123456&fg=abcdef&settings=1",
+    "v=1&t=75%21%21Line%25201%2520Line%25202%212%211&a=0&theme=bright&settings=1",
   )
 })
 
 test("buildTimerUrlSearchParams omits default settings and serializes selected ones compactly", () => {
   const defaultsQuery = buildTimerUrlSearchParams({
     activeIndex: 0,
-    bg: DEFAULT_SYNC_PARAMS.bg,
-    fg: DEFAULT_SYNC_PARAMS.fg,
+    theme: DEFAULT_SYNC_PARAMS.theme,
     rows: [
       buildUrlTimerRow({
         title: "",
@@ -248,8 +241,7 @@ test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", 
 
   const query = buildTimerUrlSearchParams({
     activeIndex: 0,
-    bg: "#000000",
-    fg: "#ffffff",
+    theme: "dark",
     rows: longRows,
   }).toString()
 
@@ -286,16 +278,14 @@ test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState brid
     syncParamsMatchParsedTimerUrlState({
       params: {
         activeIndex: 0,
-        bg: "#123456",
-        fg: "#eeeeee",
+        theme: "bright",
         rows: [row],
         snd: DEFAULT_SYNC_PARAMS.snd,
         tts: DEFAULT_SYNC_PARAMS.tts,
       },
       state: {
         activeIndex: 0,
-        bg: "#123456",
-        fg: "#eeeeee",
+        theme: "bright",
         hasTimerState: true,
         rows: [row],
         snd: DEFAULT_SYNC_PARAMS.snd,

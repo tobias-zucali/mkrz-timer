@@ -9,7 +9,7 @@ import type { StoredTimerEntry } from "@/utils/timerLibrary"
 import { TrashIcon } from "@/utils/icons"
 
 const listButtonClassName =
-  "w-full rounded-2xl border border-foreground/10 bg-background px-4 py-3 text-left transition hover:border-primary/35 hover:bg-foreground/3 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+  "w-full rounded-2xl border border-ink/10 bg-screen px-4 py-3 text-left transition hover:border-primary/35 hover:bg-ink/3 focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
 
 function getFirstStepTitle(entry: StoredTimerEntry) {
   return (
@@ -92,19 +92,19 @@ export default function RecentTimersList({
               type="button"
             >
               <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-semibold text-foreground">
+                <p className="truncate text-sm font-semibold text-ink">
                   {label}
                 </p>
                 {isCurrent ? (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-background">
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-white">
                     {t("currentTimer")}
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 truncate text-xs text-foreground/62">
+              <p className="mt-1 truncate text-xs text-ink/62">
                 {buildEntrySummary(entry, t)}
               </p>
-              <p className="mt-2 text-xs text-foreground/52">
+              <p className="mt-2 text-xs text-ink/52">
                 {t("updatedAt", {
                   timestamp: formatter.format(entry.updatedAt),
                 })}

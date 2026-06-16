@@ -73,8 +73,8 @@ export default function ActionDialog({
           className={`
             pointer-events-auto flex max-h-[calc(100vh-2rem)] min-h-0 w-full
             ${size === "large" ? "max-w-2xl" : "max-w-lg"}
-            flex-col rounded-3xl border border-foreground/12 bg-background p-6
-            shadow-2xl shadow-background/45 sm-height:max-h-[calc(100vh-3rem)]
+            flex-col rounded-3xl border border-ink/12 bg-screen p-6
+            shadow-2xl shadow-screen/45 sm-height:max-h-[calc(100vh-3rem)]
           `}
           onClick={(event) => event.stopPropagation()}
           ref={dialogRef}
@@ -94,18 +94,15 @@ export default function ActionDialog({
               <h2
                 className={
                   eyebrow
-                    ? "mt-2 text-2xl font-semibold text-foreground"
-                    : "text-2xl font-semibold text-foreground"
+                    ? "mt-2 text-2xl font-semibold text-ink"
+                    : "text-2xl font-semibold text-ink"
                 }
                 id={titleId}
               >
                 {title}
               </h2>
               {description ? (
-                <p
-                  className="mt-3 text-sm/6 text-foreground/68"
-                  id={descriptionId}
-                >
+                <p className="mt-3 text-sm/6 text-ink/68" id={descriptionId}>
                   {description}
                 </p>
               ) : null}
@@ -121,7 +118,7 @@ export default function ActionDialog({
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">{children}</div>
           <div
             className="
-              mt-6 flex flex-col gap-3 border-t border-foreground/8 pt-4
+              mt-6 flex flex-col gap-3 border-t border-ink/8 pt-4
               lg:flex-row lg:justify-end lg:border-t-0
               lg:pt-0
             "
@@ -132,7 +129,7 @@ export default function ActionDialog({
                   action.tone === "primary"
                     ? `
                       inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary
-                      text-sm font-semibold text-background transition
+                      text-sm font-semibold text-white transition
                       hover:bg-primary/85
                       focus:outline-2 focus:-outline-offset-2
                       focus:outline-primary
@@ -140,8 +137,8 @@ export default function ActionDialog({
                     `
                     : `
                       inline-flex cursor-pointer items-center justify-center rounded-xl border
-                      border-foreground/12 text-sm font-semibold text-foreground transition
-                      hover:bg-foreground/6
+                      border-ink/12 text-sm font-semibold text-ink transition
+                      hover:bg-ink/6
                       focus:outline-2 focus:-outline-offset-2
                       focus:outline-primary
                       ${action.size === "small" ? "min-h-10 self-end px-5 py-2" : "min-h-11 px-4 py-2.5"}

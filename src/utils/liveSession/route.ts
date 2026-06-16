@@ -41,6 +41,21 @@ function getRoleForPath(pathname: string): RemoteAccessRole | null {
   return null
 }
 
+function getMatchedPathPrefix(pathname: string) {
+  const prefixes = [
+    remoteRoutePrefixes.control,
+    remoteRoutePrefixes.readonly,
+    legacyRemoteRoutePrefixes.control,
+    legacyRemoteRoutePrefixes.readonly,
+  ] as const
+
+  return (
+    prefixes.find(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    ) ?? null
+  )
+}
+
 export function getRemotePathPrefix(role: RemoteAccessRole) {
   return remoteRoutePrefixes[role]
 }
@@ -60,7 +75,8 @@ export function buildRemotePath({
 }
 
 export function parseRemoteRoute(pathname: string): RemoteRoute {
-  const role = getRoleForPath(stripLocalePrefix(pathname))
+  const normalizedPathname = stripLocalePrefix(pathname)
+  const role = getRoleForPath(normalizedPathname)
   if (role === null) {
     return {
       isRemote: false,
@@ -69,10 +85,11 @@ export function parseRemoteRoute(pathname: string): RemoteRoute {
     }
   }
 
-  const prefix = getRemotePathPrefix(role)
-  const suffix = stripLocalePrefix(pathname)
-    .slice(prefix.length)
-    .replace(/^\/+/, "")
+  const matchedPrefix = getMatchedPathPrefix(normalizedPathname)
+  const suffix =
+    matchedPrefix === null
+      ? ""
+      : normalizedPathname.slice(matchedPrefix.length).replace(/^\/+/, "")
   const token = suffix.includes("/") ? null : normalizeRemoteAccessToken(suffix)
 
   return {

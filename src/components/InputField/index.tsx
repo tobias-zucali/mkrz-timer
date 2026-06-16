@@ -5,8 +5,8 @@ import styles from "@/components/InputField/index.module.css"
 
 const baseInputClassName = classNames(
   "block h-10 w-full rounded-md",
-  "bg-background text-base text-foreground",
-  "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-foreground/50",
+  "bg-screen text-base text-ink",
+  "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-ink/50",
   "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
 )
 
@@ -35,7 +35,7 @@ export default function InputField({
   return (
     <div className={classNames("w-full", containerClassName)}>
       <label
-        className="mb-2 block text-sm font-medium text-foreground"
+        className="mb-2 block text-sm font-medium text-ink"
         htmlFor={inputId}
       >
         {label}
@@ -51,7 +51,7 @@ export default function InputField({
             otherProps.type !== "color" && "pl-3",
             hasInsetPadding && "pr-3",
             otherProps.type === "number" && styles.numberInput,
-            "border border-foreground/10",
+            "border border-ink/10",
             baseInputClassName,
             className,
           )}
@@ -68,7 +68,7 @@ export default function InputField({
         {children}
       </div>
       {description && (
-        <p className="text-sm/6 text-foreground/68" id={`${inputId}-desc`}>
+        <p className="text-sm/6 text-ink/68" id={`${inputId}-desc`}>
           {description}
         </p>
       )}

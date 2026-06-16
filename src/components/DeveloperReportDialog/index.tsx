@@ -70,8 +70,8 @@ export default function DeveloperReportDialog({
       <OverlayBackdrop ariaLabel={tCloseButton("close")} onClick={onClose} />
       <div
         className="
-          relative z-10 w-full max-w-xl rounded-3xl border border-foreground/12 bg-background
-          p-6 shadow-2xl shadow-background/35
+          relative z-10 w-full max-w-xl rounded-3xl border border-ink/12 bg-screen
+          p-6 shadow-2xl shadow-screen/35
         "
       >
         <div className="flex items-start justify-between gap-4">
@@ -84,18 +84,18 @@ export default function DeveloperReportDialog({
             >
               {t("support")}
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">
+            <h2 className="mt-2 text-2xl font-semibold text-ink">
               {t("heading")}
             </h2>
           </div>
           <CloseButton onClick={onClose} />
         </div>
-        <label className="mt-5 block text-sm font-medium text-foreground">
+        <label className="mt-5 block text-sm font-medium text-ink">
           {t("whatHappened")}
           <textarea
             className="
-              mt-2 min-h-28 w-full rounded-2xl border border-foreground/12
-              bg-foreground/4 px-4 py-3 text-sm text-foreground transition
+              mt-2 min-h-28 w-full rounded-2xl border border-ink/12
+              bg-ink/4 px-4 py-3 text-sm text-ink transition
               outline-none focus:border-primary
             "
             onChange={(event) => setReportComment(event.target.value)}
@@ -107,9 +107,9 @@ export default function DeveloperReportDialog({
           {canCopy ? (
             <ActionButton
               className="
-                border border-foreground/12 bg-foreground/4 text-foreground
-                hover:border-foreground/18 hover:bg-foreground/8
-                hover:text-foreground
+                border border-ink/12 bg-ink/4 text-ink
+                hover:border-ink/18 hover:bg-ink/8
+                hover:text-ink
               "
               onClick={() => copyText(mailBody)}
             >

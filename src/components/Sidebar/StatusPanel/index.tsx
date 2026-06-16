@@ -57,7 +57,7 @@ function DisclosureSection({
   const contentId = useId()
 
   return (
-    <section className="rounded-2xl border border-foreground/10 bg-foreground/4">
+    <section className="rounded-2xl border border-ink/10 bg-ink/4">
       <button
         aria-controls={contentId}
         aria-expanded={isOpen}
@@ -70,17 +70,17 @@ function DisclosureSection({
         {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
         type="button"
       >
-        <span className="text-sm font-semibold text-foreground">{title}</span>
+        <span className="text-sm font-semibold text-ink">{title}</span>
         <span
           className="
-          text-xs font-medium tracking-[0.12em] text-foreground/52 uppercase
+          text-xs font-medium tracking-[0.12em] text-ink/52 uppercase
         "
         >
           {isOpen ? t("hide") : t("show")}
         </span>
       </button>
       {isOpen && (
-        <div className="border-t border-foreground/10 p-4" id={contentId}>
+        <div className="border-t border-ink/10 p-4" id={contentId}>
           {children}
         </div>
       )}
@@ -167,9 +167,7 @@ export default function StatusPanel({
     <>
       <div className="space-y-6" data-testid="remote-status-panel">
         <section className="space-y-4">
-          <h3 className="text-base font-semibold text-foreground">
-            {t("heading")}
-          </h3>
+          <h3 className="text-base font-semibold text-ink">{t("heading")}</h3>
           {errorText && (
             <div
               className="
@@ -209,44 +207,40 @@ export default function StatusPanel({
           )}
           <div
             className="
-            rounded-2xl border border-foreground/10 bg-white/4 p-4
+            rounded-2xl border border-ink/10 bg-white/4 p-4
           "
           >
             <dl
               className="
-              grid gap-2 text-sm text-foreground/80
+              grid gap-2 text-sm text-ink/80
               sm:grid-cols-[auto_1fr] sm:gap-x-3
             "
             >
-              <dt className="font-medium text-foreground">{t("session")}</dt>
+              <dt className="font-medium text-ink">{t("session")}</dt>
               <dd data-testid="remote-status-session">
                 {sessionPresentation.statusPanel.sessionLabel}
               </dd>
-              <dt className="font-medium text-foreground">{t("state")}</dt>
+              <dt className="font-medium text-ink">{t("state")}</dt>
               <dd data-testid="remote-status-state">{displayStateLabel}</dd>
-              <dt className="font-medium text-foreground">{t("access")}</dt>
+              <dt className="font-medium text-ink">{t("access")}</dt>
               <dd data-testid="remote-status-role">
                 {sessionPresentation.statusPanel.accessLabel}
               </dd>
-              <dt className="font-medium text-foreground">
-                {t("liveSession")}
-              </dt>
+              <dt className="font-medium text-ink">{t("liveSession")}</dt>
               <dd data-testid="remote-status-link">
                 {sessionPresentation.statusPanel.summaryLabel}
               </dd>
               {hasLiveSessionDetails && (
                 <>
-                  <dt className="font-medium text-foreground">
-                    {t("participants")}
-                  </dt>
+                  <dt className="font-medium text-ink">{t("participants")}</dt>
                   <dd data-testid="remote-status-participant-count">
                     {participantCountLabel}
                   </dd>
                 </>
               )}
-              <dt className="font-medium text-foreground">{t("build")}</dt>
+              <dt className="font-medium text-ink">{t("build")}</dt>
               <dd
-                className="font-mono text-xs text-foreground/72"
+                className="font-mono text-xs text-ink/72"
                 data-testid="remote-status-build"
                 title={buildId}
               >
@@ -254,7 +248,7 @@ export default function StatusPanel({
               </dd>
             </dl>
             <p
-              className="mt-4 text-sm/6 text-foreground/66"
+              className="mt-4 text-sm/6 text-ink/66"
               data-testid="remote-status-description"
             >
               {displayDescription}
@@ -262,10 +256,10 @@ export default function StatusPanel({
           </div>
           <ActionButton
             className="
-              min-h-9 border border-foreground/12 bg-foreground/6 px-3 py-1.5
-              text-xs text-foreground/78
-              hover:border-foreground/18 hover:bg-foreground/10
-              hover:text-foreground
+              min-h-9 border border-ink/12 bg-ink/6 px-3 py-1.5
+              text-xs text-ink/78
+              hover:border-ink/18 hover:bg-ink/10
+              hover:text-ink
             "
             onClick={() => setIsReportOverlayOpen(true)}
           >
@@ -279,34 +273,32 @@ export default function StatusPanel({
         >
           <dl
             className="
-            grid gap-2 text-sm text-foreground/80
+            grid gap-2 text-sm text-ink/80
             sm:grid-cols-[auto_1fr] sm:gap-x-3
           "
           >
-            <dt className="font-medium text-foreground">{t("network")}</dt>
+            <dt className="font-medium text-ink">{t("network")}</dt>
             <dd data-testid="remote-status-network">{networkLabel}</dd>
             {hasLiveSessionDetails && (
               <>
-                <dt className="font-medium text-foreground">{t("access")}</dt>
+                <dt className="font-medium text-ink">{t("access")}</dt>
                 <dd data-testid="remote-status-session-role">
                   {sessionPresentation.roleChipLabel}
                 </dd>
-                <dt className="font-medium text-foreground">
-                  {t("sessionId")}
-                </dt>
+                <dt className="font-medium text-ink">{t("sessionId")}</dt>
                 <dd
-                  className="font-mono text-xs text-foreground/72"
+                  className="font-mono text-xs text-ink/72"
                   data-testid="remote-status-session-id"
                 >
                   {sessionId ?? t("unavailable")}
                 </dd>
-                <dt className="font-medium text-foreground">
+                <dt className="font-medium text-ink">
                   {t("relayReachability")}
                 </dt>
                 <dd data-testid="remote-status-relay-reachability">
                   {relayReachabilityLabel}
                 </dd>
-                <dt className="font-medium text-foreground">{t("relay")}</dt>
+                <dt className="font-medium text-ink">{t("relay")}</dt>
                 <dd data-testid="remote-status-relay">{relayLabel}</dd>
               </>
             )}
@@ -315,7 +307,7 @@ export default function StatusPanel({
             <div className="mt-4 space-y-3">
               <h4
                 className="
-                text-xs font-medium tracking-[0.12em] text-foreground/58
+                text-xs font-medium tracking-[0.12em] text-ink/58
                 uppercase
               "
               >
@@ -323,8 +315,8 @@ export default function StatusPanel({
               </h4>
               <ul
                 className="
-                  space-y-2 rounded-2xl border border-foreground/10
-                  bg-foreground/4 p-3
+                  space-y-2 rounded-2xl border border-ink/10
+                  bg-ink/4 p-3
                 "
                 data-testid="remote-status-connections"
               >
@@ -340,22 +332,22 @@ export default function StatusPanel({
                       <span className="flex min-w-0 items-center gap-2">
                         <span
                           className="
-                          shrink-0 rounded-full border border-foreground/12 px-2
+                          shrink-0 rounded-full border border-ink/12 px-2
                           py-0.5 text-[10px] font-semibold tracking-[0.12em]
-                          text-foreground/72 uppercase
+                          text-ink/72 uppercase
                         "
                         >
                           {getParticipantLabel(detail.participantLabel, t)}
                         </span>
                         <span
                           className="
-                          truncate font-mono text-xs text-foreground/68
+                          truncate font-mono text-xs text-ink/68
                         "
                         >
                           {detail.id}
                         </span>
                       </span>
-                      <span className="text-foreground/72">
+                      <span className="text-ink/72">
                         {detail.isAlive
                           ? t("participantLive")
                           : t("participantStale")}
@@ -363,9 +355,7 @@ export default function StatusPanel({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-foreground/68">
-                    {t("noParticipants")}
-                  </li>
+                  <li className="text-sm text-ink/68">{t("noParticipants")}</li>
                 )}
               </ul>
             </div>
@@ -386,8 +376,8 @@ export default function StatusPanel({
                     data-testid="remote-status-activity-entry"
                     key={`${entry}-${index}`}
                   >
-                    <span className="text-foreground/72">{detail}</span>
-                    <span className="shrink-0 text-xs text-foreground/52">
+                    <span className="text-ink/72">{detail}</span>
+                    <span className="shrink-0 text-xs text-ink/52">
                       {formatRelativeTimestamp(timestamp, relativeNow, locale)}
                     </span>
                   </li>

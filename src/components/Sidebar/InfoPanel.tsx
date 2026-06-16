@@ -14,7 +14,9 @@ export default function InfoPanel({ content }: { content: InfoPageContent }) {
   return (
     <article className="space-y-4 pb-2">
       {content.resolvedLocale !== content.requestedLocale ? (
-        <LocaleFallbackNotice>{tInfoPages("contentFallback")}</LocaleFallbackNotice>
+        <LocaleFallbackNotice>
+          {tInfoPages("contentFallback")}
+        </LocaleFallbackNotice>
       ) : null}
       <MarkdownContent compact locale={locale} markdown={content.body} />
     </article>

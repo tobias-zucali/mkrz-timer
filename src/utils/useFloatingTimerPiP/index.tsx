@@ -22,9 +22,7 @@ type DocumentPictureInPictureApi = EventTarget & {
 }
 
 type FloatingTimerState = {
-  backgroundColor: string
   elapsedPercentage: number
-  foregroundColor: string
   isFinished: boolean
   minutes: string
   primaryColor: string
@@ -99,6 +97,12 @@ function copyDocumentStyles(targetDocument: Document) {
 
 function applyPiPDocumentStyles(targetDocument: Document) {
   targetDocument.documentElement.className = document.documentElement.className
+  const theme =
+    document.body.getAttribute("data-theme") ??
+    document.documentElement.getAttribute("data-theme")
+  if (theme) {
+    targetDocument.documentElement.setAttribute("data-theme", theme)
+  }
   targetDocument.body.className = document.body.className
   targetDocument.body.style.cssText = [
     document.body.style.cssText,
@@ -151,9 +155,7 @@ export default function useFloatingTimerPiP({
           rowCount: 1,
           t: tTimer,
         })}
-        backgroundColor={state.backgroundColor}
         elapsedPercentage={state.elapsedPercentage}
-        foregroundColor={state.foregroundColor}
         isFinished={state.isFinished}
         minutes={state.minutes}
         primaryColor={state.primaryColor}

@@ -25,14 +25,14 @@ export default function PublicLocaleSwitcher({
 
   return (
     <label
-      className="flex items-center gap-2 text-sm text-foreground/78"
+      className="flex items-center gap-2 text-sm text-ink/78"
       htmlFor={fieldId}
     >
       <span>{label}</span>
       <select
         className="
           rounded-full border border-white/10 bg-white/4 px-3 py-1.5 text-sm
-          text-foreground outline-none transition focus:border-primary
+          text-ink transition outline-none focus:border-primary
           focus:ring-2 focus:ring-primary/20
         "
         id={fieldId}

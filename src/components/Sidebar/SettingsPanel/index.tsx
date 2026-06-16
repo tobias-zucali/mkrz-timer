@@ -6,9 +6,9 @@ import { useTranslations } from "next-intl"
 import HelpText from "@/components/HelpText"
 import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
 import SoundPreviewField from "@/components/SoundPreviewField"
+import type { AppTheme } from "@/shared/liveSession/types"
 import { type TimerFinishedSoundId } from "@/shared/timerSettings"
 import ActionButton from "@/utils/ActionButton"
-import ColorSwatchField from "@/utils/ColorSwatchField"
 import { WindowIcon } from "@/utils/icons"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
 
@@ -16,8 +16,7 @@ export type SettingsPanelProps = {
   floatingTimerData: FloatingTimerData
   handleChange: (key: string, value: string) => void
   params: {
-    bg: string
-    fg: string
+    theme: AppTheme
     snd: TimerFinishedSoundId
     tts: boolean
   }
@@ -29,8 +28,6 @@ export default function SettingsPanel({
   params,
 }: SettingsPanelProps) {
   const t = useTranslations("Sidebar.settings")
-  const backgroundId = useId()
-  const foregroundId = useId()
   const ttsId = useId()
 
   return (
@@ -38,40 +35,58 @@ export default function SettingsPanel({
       <LocaleSwitcher />
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="text-base font-semibold text-ink">
             {t("appearanceHeading")}
           </h3>
-          <p className="mt-1 text-sm/6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-ink/68">
             {t("appearanceDescription")}
           </p>
         </div>
-        <div className="grid gap-3">
-          <ColorSwatchField
-            id={backgroundId}
-            label={t("background")}
-            onChange={(event) => handleChange("bg", event.target.value)}
-            value={params.bg}
-          />
-          <ColorSwatchField
-            id={foregroundId}
-            label={t("foreground")}
-            onChange={(event) => handleChange("fg", event.target.value)}
-            value={params.fg}
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => handleChange("theme", "dark")}
+            className={`
+              flex items-center justify-center gap-2 rounded-field border px-4 py-2.5
+              text-sm font-medium transition
+              ${
+                params.theme === "dark"
+                  ? "border-primary bg-primary text-white"
+                  : "border-hairline text-ink hover:border-primary/40"
+              }
+            `}
+          >
+            {t("themeDark")}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChange("theme", "bright")}
+            className={`
+              flex items-center justify-center gap-2 rounded-field border px-4 py-2.5
+              text-sm font-medium transition
+              ${
+                params.theme === "bright"
+                  ? "border-primary bg-primary text-white"
+                  : "border-hairline text-ink hover:border-primary/40"
+              }
+            `}
+          >
+            {t("themeBright")}
+          </button>
         </div>
       </section>
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="text-base font-semibold text-ink">
             {t("announcementsHeading")}
           </h3>
-          <p className="mt-1 text-sm/6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-ink/68">
             {t("announcementsDescription")}
           </p>
         </div>
         <div
           className="space-y-4 rounded-2xl border
-              border-foreground/10 bg-foreground/2 p-4"
+              border-ink/10 bg-ink/2 p-4"
         >
           <SoundPreviewField
             label={t("finishedSound")}
@@ -94,7 +109,7 @@ export default function SettingsPanel({
               }
               type="checkbox"
             />
-            <span className="block text-sm font-medium text-foreground">
+            <span className="block text-sm font-medium text-ink">
               {t("speakAnnouncements")}
             </span>
           </label>
@@ -102,10 +117,10 @@ export default function SettingsPanel({
       </section>
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="text-base font-semibold text-ink">
             {t("floatingHeading")}
           </h3>
-          <p className="mt-1 text-sm/6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-ink/68">
             {t("floatingDescription")}
           </p>
         </div>
@@ -126,7 +141,7 @@ export default function SettingsPanel({
             <WindowIcon className="size-4" />
           </ActionButton>
           {!floatingTimerData.isSupported && (
-            <p className="text-sm/6 text-foreground/68">
+            <p className="text-sm/6 text-ink/68">
               {floatingTimerData.unsupportedReason ?? t("floatingUnsupported")}
             </p>
           )}
@@ -134,10 +149,10 @@ export default function SettingsPanel({
       </section>
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="text-base font-semibold text-ink">
             {t("shortcutsHeading")}
           </h3>
-          <p className="mt-1 text-sm/6 text-foreground/68">
+          <p className="mt-1 text-sm/6 text-ink/68">
             {t("shortcutsDescription")}
           </p>
         </div>

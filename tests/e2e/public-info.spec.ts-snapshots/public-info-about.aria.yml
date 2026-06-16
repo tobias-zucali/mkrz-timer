@@ -1,105 +1,124 @@
 - main:
   - link "mkrz timer":
     - /url: /en
+  - paragraph: by mkrz
+  - text: Language
+  - combobox "Language":
+    - option "English" [selected]
+    - option "Deutsch"
+  - link "Open timer":
+    - /url: /en/t
+  - link "GitHub":
+    - /url: https://github.com/tobias-zucali/mkrz-timer
   - article:
     - heading "About mkrz timer" [level=1]
-    - paragraph: mkrz timer is a workshop timer focused on simplicity, accessibility, and reliable live synchronization across devices.
+    - paragraph: mkrz timer is a timer focused on simplicity, accessibility, sharing, and reliable synchronization across devices.
+    - paragraph: The project was originally created for workshops, facilitation sessions, classrooms, and collaborative group processes, but today it is used in many different contexts wherever people need a timer that stays focused on timing rather than getting in the way.
     - paragraph:
-      - text: The project is a personal side project by Tobias Zucali, Co-Founder of
+      - text: mkrz timer is a personal side project by Tobias Zucali, Co-Founder of
       - link "mkrz lab":
         - /url: https://www.mkrz.at/
       - text: .
     - heading "Why this project exists" [level=2]
-    - paragraph: The timer was originally created out of practical needs during workshops, facilitation sessions, and collaborative group processes.
-    - paragraph: While working with groups using making as a method, reliable and distraction-free timekeeping became an important part of the process. Existing timer solutions often felt too complex, visually noisy, difficult to share, or unreliable across devices.
-    - paragraph: "mkrz timer was created to provide:"
+    - paragraph: The timer grew out of practical experience working with groups.
+    - paragraph: Reliable timekeeping plays an important role in workshops, collaborative processes, learning environments, meetings, and facilitated sessions. Existing timer solutions often felt overly complex, visually noisy, difficult to share, or unreliable when multiple devices needed to stay synchronized.
+    - paragraph: "The goal of mkrz timer is simple:"
     - list:
-      - listitem: a clean and focused timer experience
-      - listitem: simple sharing between participants and facilitators
-      - listitem: synchronization across multiple devices
-      - listitem: accessible interaction patterns
-      - listitem: a tool that works well in workshops, classrooms, and collaborative environments
-    - heading "Local-only use" [level=2]
-    - paragraph: The timer is designed so it can be used directly in the browser without creating an account.
-    - paragraph: "In local-only use:"
+      - listitem: make timers easy to use
+      - listitem: make timers easy to share
+      - listitem: make timers easy to understand
+      - listitem: support both individual and collaborative usage
+      - listitem: reduce distractions during time-based activities
+    - paragraph: The project aims to provide a tool that fades into the background so people can focus on their work, discussion, exercise, learning, or collaboration.
+    - heading "Design principles" [level=2]
+    - paragraph: Several principles guide the project.
+    - heading "Simplicity" [level=3]
+    - paragraph: The timer should remain understandable without requiring a manual, account, or setup process.
+    - heading "Accessibility" [level=3]
+    - paragraph: The timer should work across different devices, screen sizes, and participation contexts.
+    - heading "Sharing" [level=3]
+    - paragraph: Creating and sharing timers should be straightforward for both organizers and participants.
+    - heading "Privacy" [level=3]
+    - paragraph: Users should be able to use the timer without creating an account.
+    - heading "Collaboration" [level=3]
+    - paragraph: The timer should support people working together, whether they are in the same room or participating remotely.
+    - heading "Accessibility" [level=2]
+    - paragraph: Accessibility is an important project goal.
+    - paragraph: "We aim to support:"
     - list:
-      - listitem: timer data stays on your device
-      - listitem: no live session is created
-      - listitem: no timer state is synchronized through the relay
-      - listitem: no account is required
-      - listitem: the application can be used as a standalone local timer
-    - heading "Live sessions" [level=2]
-    - paragraph: The application also supports synchronized live sessions.
-    - paragraph: In live-session mode, timer state is synchronized through a relay service so multiple devices and participants can stay in sync.
-    - paragraph: The goal is to make collaborative timing simple during workshops, presentations, hybrid sessions, and distributed facilitation.
+      - listitem: keyboard-friendly interaction
+      - listitem: readable layouts
+      - listitem: responsive design
+      - listitem: accessibility across different devices and environments
+      - listitem: collaborative and presentation use cases
+    - paragraph: Accessibility is an ongoing process, and feedback helps guide future improvements.
     - paragraph:
-      - text: If you want to learn more about synchronization, browser storage, and how local-only and remote sessions are handled, additional details are available on the
+      - text: Learn more on the
+      - link "Accessibility":
+        - /url: /en/accessibility
+      - text: page.
+    - heading "Privacy" [level=2]
+    - paragraph: The project is designed around local-first usage and simple sharing.
+    - paragraph: You can use the timer entirely within your browser without creating an account, or create live sessions that allow multiple devices to stay in sync.
+    - paragraph: Privacy, transparency, and understandable technology are important goals of the project.
+    - paragraph:
+      - text: Learn more on the
       - link "Privacy":
         - /url: /en/privacy
       - text: page.
-    - heading "Accessibility" [level=2]
-    - paragraph: Accessibility is considered an important project goal.
-    - paragraph: "The project aims to support:"
-    - list:
-      - listitem: keyboard navigation
-      - listitem: mobile-friendly usage
-      - listitem: readable visual layouts
-      - listitem: clear interaction patterns
-      - listitem: distraction-free presentation
-      - listitem: support for different screen sizes and environments
-    - paragraph: The goal is to create a timer that works well for facilitators, participants, and collaborative environments alike.
-    - heading "Open source, licensing, and contributions" [level=2]
+    - heading "Collaboration and support" [level=2]
+    - paragraph: Feedback, bug reports, accessibility suggestions, feature ideas, and collaboration inquiries are always welcome.
+    - paragraph: We enjoy hearing from people using the timer in workshops, education, facilitation, sports, creative projects, and other collaborative settings.
+    - paragraph:
+      - text: Get in touch through the
+      - link "Contact":
+        - /url: /en/contact
+      - text: page.
+    - heading "Open source and licensing" [level=2]
     - paragraph:
       - text: The source code is publicly available on
       - link "GitHub":
         - /url: https://github.com/tobias-zucali/mkrz-timer
       - text: .
-    - paragraph: The project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International license.
-    - paragraph: "This means you are welcome to:"
-    - list:
-      - listitem: use the project for personal and non-commercial purposes
-      - listitem: study and adapt the source code
-      - listitem: contribute improvements and fixes
-      - listitem: share and build upon the project with attribution
-    - paragraph: Commercial usage is not permitted without explicit written permission.
+    - paragraph: The project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license.
+    - paragraph: Contributions, ideas, bug reports, accessibility feedback, and improvements are welcome.
+    - paragraph: If you would like to build upon the project, adapt it, or contribute to its development, please take a look at the repository documentation and license information.
     - paragraph:
-      - text: Please see the
-      - link "LICENSE":
-        - /url: https://github.com/tobias-zucali/mkrz-timer/blob/main/LICENSE.md
-      - text: file for details.
-    - paragraph: Contributions, ideas, bug reports, and accessibility feedback are welcome!
-    - heading "About mkrz lab" [level=2]
-    - paragraph: mkrz lab focuses on formats and processes where “making” becomes a tool for creativity, collaboration, participation, and innovation.
-    - paragraph: For us, making means experimenting with materials, thinking through action, and creating together in a hands-on and accessible way. The process itself matters as much as the outcome.
-    - paragraph: In an increasingly digital world, we believe physical interaction, shared experiences, and collaborative creation remain important. Our work therefore often explores the connection between digital and physical spaces, combining facilitation, interaction, and tangible experiences.
+      - text: You can also learn more about usage expectations and legal information on the
+      - link "Terms":
+        - /url: /en/terms
+      - text: and
+      - link "Impressum":
+        - /url: /en/impressum
+      - text: pages.
+    - heading "About mkrz" [level=2]
+    - paragraph: mkrz timer is part of the broader work of mkrz lab.
+    - paragraph: At mkrz, we create workshops, learning environments, facilitation formats, innovation processes, and collaborative experiences where making becomes a tool for creativity, participation, and problem solving.
+    - paragraph: For us, making means learning through experimentation, creating together, and exploring ideas through action. The process itself is often just as important as the outcome.
+    - paragraph: In an increasingly digital world, we believe physical interaction, shared experiences, and collaborative creation remain important. Much of our work explores the connection between digital and physical spaces and how technology can support meaningful participation.
     - paragraph: This perspective also influenced the design of mkrz timer.
-    - paragraph: The project is designed to support workshops, collaborative learning environments, co-creative formats, hybrid participation, and distributed group processes with a reliable and accessible timing tool.
-    - paragraph: The timer is intentionally designed to help bridge the boundary between digital and physical collaboration spaces. Shared timers can support hybrid workshops, collaborative sessions, interactive installations, and group processes where people work together across devices, locations, and physical environments.
-    - paragraph: The broader work around mkrz lab includes facilitation formats, creative interaction concepts, workshops, and future-oriented learning environments.
-    - paragraph: We work across education, organizations, and cultural contexts with a focus on collaboration, participation, and innovation.
-    - paragraph:
-      - text: You can learn more about
-      - link "mkrz lab":
-        - /url: https://www.mkrz.at/
-      - text: ", our workshop and facilitation work, and the Alternative Lab for Future Skills through our public channels and on the"
-      - link "Contact":
-        - /url: /en/contact
-      - text: page.
+    - heading "How people use mkrz timer" [level=2]
+    - paragraph: "Although the timer was originally developed for workshops and facilitation, people use it in many different ways, including:"
+    - list:
+      - listitem: workshops and facilitation
+      - listitem: classrooms and educational settings
+      - listitem: presentations and events
+      - listitem: sports and exercise sessions
+      - listitem: study sessions
+      - listitem: meetings
+      - listitem: collaborative projects
+      - listitem: hybrid and remote participation
+      - listitem: personal productivity
+    - paragraph: At its core, it is simply a timer.
     - heading "Free usage" [level=2]
     - paragraph: mkrz timer is free to use.
-    - paragraph:
-      - text: If you find the project useful, we would appreciate your support by following the work of
-      - link "mkrz lab":
-        - /url: https://www.mkrz.at/
-      - text: ", connecting with us on"
-      - link "LinkedIn":
-        - /url: https://www.linkedin.com/company/mkrz
-      - text: ", or sharing the project with others."
-    - heading "Contact" [level=2]
-    - paragraph:
-      - text: /mkrz lab OG – Tobias Zucali Peter-Behrens-Platz 3 \d+ Linz Austria/
-      - link "timer@mkrz.at":
-        - /url: mailto:timer@mkrz.at
+    - paragraph: "If you find the project useful, consider:"
+    - list:
+      - listitem: following the work of mkrz
+      - listitem: contributing feedback or ideas
+      - listitem: reporting bugs
+      - listitem: contributing improvements
+      - listitem: sharing the project with others
   - navigation "Information pages":
     - list:
       - listitem:

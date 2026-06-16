@@ -74,17 +74,17 @@ export default function TimerSequenceInspector({
     >
       <div className="w-full">
         <label
-          className="mb-2 block text-sm font-medium text-foreground"
+          className="mb-2 block text-sm font-medium text-ink"
           htmlFor={`sidebar-sequence-title-${rowIndex}`}
         >
           {t("title")}
         </label>
         <textarea
           className="
-            block min-h-0 w-full resize-none overflow-hidden rounded-md border border-foreground/10
-            bg-background px-3 py-2 text-sm/6 text-foreground outline-1
-            -outline-offset-1 outline-foreground/10
-            placeholder:text-foreground/50 focus:outline-2
+            block min-h-0 w-full resize-none overflow-hidden rounded-md border border-ink/10
+            bg-screen px-3 py-2 text-sm/6 text-ink outline-1
+            -outline-offset-1 outline-ink/10
+            placeholder:text-ink/50 focus:outline-2
             focus:-outline-offset-2 focus:outline-(--step-color)
           "
           id={`sidebar-sequence-title-${rowIndex}`}
@@ -176,16 +176,16 @@ export default function TimerSequenceInspector({
       <div className="grid gap-4 md:grid-cols-3">
         <div>
           <label
-            className="mb-2 block text-sm font-medium text-foreground"
+            className="mb-2 block text-sm font-medium text-ink"
             htmlFor={`sidebar-sequence-repeat-count-${rowIndex}`}
           >
             {t("repetitions")}
           </label>
           <select
             className="
-              block h-10 w-full rounded-md border border-foreground/10
-              bg-background px-3 text-sm text-foreground outline-1
-              -outline-offset-1 outline-foreground/10
+              block h-10 w-full rounded-md border border-ink/10
+              bg-screen px-3 text-sm text-ink outline-1
+              -outline-offset-1 outline-ink/10
               focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
             "
             id={`sidebar-sequence-repeat-count-${rowIndex}`}
@@ -210,16 +210,16 @@ export default function TimerSequenceInspector({
         </div>
         <div className="md:col-span-2">
           <label
-            className="mb-2 block text-sm font-medium text-foreground"
+            className="mb-2 block text-sm font-medium text-ink"
             htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}
           >
             {t("endBehavior")}
           </label>
           <select
             className="
-              block h-10 w-full rounded-md border border-foreground/10
-              bg-background px-3 text-sm text-foreground outline-1
-              -outline-offset-1 outline-foreground/10
+              block h-10 w-full rounded-md border border-ink/10
+              bg-screen px-3 text-sm text-ink outline-1
+              -outline-offset-1 outline-ink/10
               focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
             "
             id={`sidebar-sequence-end-behavior-${rowIndex}`}

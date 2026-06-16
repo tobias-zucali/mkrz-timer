@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Kanit, Roboto, Space_Mono } from "next/font/google"
 
 import "./globals.css"
 import ParamStyledBody from "@/components/ParamStyledBody"
@@ -7,14 +7,22 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import { defaultAppLocale } from "@/i18n/config"
 import { PWA_APP_NAME, PWA_DESCRIPTION, PWA_THEME_COLOR } from "@/app/pwa"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const kanit = Kanit({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 })
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const roboto = Roboto({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
+})
+
+const spaceMono = Space_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 })
 
 export const viewport: Viewport = {
@@ -44,7 +52,12 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang={defaultAppLocale} className="h-full" suppressHydrationWarning>
+    <html
+      lang={defaultAppLocale}
+      className="h-full"
+      data-theme="dark"
+      suppressHydrationWarning
+    >
       <head>
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/first-paint-theme.js" />
@@ -65,8 +78,9 @@ export default async function RootLayout({
       </head>
       <ParamStyledBody
         className={`
-          ${geistSans.variable}
-          ${geistMono.variable}
+          ${kanit.variable}
+          ${roboto.variable}
+          ${spaceMono.variable}
           h-full antialiased
         `}
       >

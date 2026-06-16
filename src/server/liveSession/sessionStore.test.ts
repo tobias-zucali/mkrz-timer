@@ -36,7 +36,7 @@ test("create returns one session with separate readonly and control tokens", () 
     clientId: "host",
     snapshot: buildSnapshot({
       params: {
-        bg: "#111111",
+        theme: "bright",
         pc: "#ff0000",
         rows: [
           {
@@ -286,7 +286,7 @@ test("create and updateSnapshot normalize hostile values safely", () => {
     clientId: "host",
     snapshot: buildSnapshot({
       params: {
-        bg: "bad" as never,
+        theme: "bad" as never,
         m: "05",
         pc: "#00ff00",
         rows: [
@@ -308,7 +308,7 @@ test("create and updateSnapshot normalize hostile values safely", () => {
     }),
   })
 
-  assert.equal(created.session.snapshot.params.bg, "#000000")
+  assert.equal(created.session.snapshot.params.theme, "dark")
   assert.equal(
     created.session.snapshot.params.title,
     "  <script>alert(1)</script>  ",

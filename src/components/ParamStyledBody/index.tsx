@@ -1,25 +1,20 @@
 "use client"
 
 import { createContext, HTMLAttributes, useState } from "react"
-import { hexToRgbChannels } from "@/utils/colors"
+import type { AppTheme } from "@/shared/liveSession/types"
 
-// fix typescript warning
-declare module "react" {
-  interface CSSProperties {
-    [key: `--${string}`]: string | number
-  }
+type ParamStyleContextValue = {
+  theme: AppTheme
+  pc: string
+  setTheme: React.Dispatch<React.SetStateAction<AppTheme>>
+  setPc: React.Dispatch<React.SetStateAction<string>>
 }
 
-const defaultColors = {
-  bg: "",
-  fg: "",
+export const ParamStyleContext = createContext<ParamStyleContextValue>({
+  theme: "dark" as AppTheme,
   pc: "",
-}
-
-export const ParamStyleContext = createContext({
-  ...defaultColors,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setColors: (colors: typeof defaultColors) => {},
+  setTheme: () => {},
+  setPc: () => {},
 })
 
 export default function ParamStyledBody({
@@ -28,21 +23,23 @@ export default function ParamStyledBody({
 }: HTMLAttributes<HTMLBodyElement> & {
   children: React.ReactNode
 }) {
-  const [colors, setColors] = useState(defaultColors)
+  const [theme, setTheme] = useState<AppTheme>("dark")
+  const [pc, setPc] = useState("")
 
   return (
     <body
-      style={{
-        ...(colors.bg ? { "--background": hexToRgbChannels(colors.bg) } : {}),
-        ...(colors.fg ? { "--foreground": hexToRgbChannels(colors.fg) } : {}),
-        ...(colors.pc ? { "--primary": hexToRgbChannels(colors.pc) } : {}),
-      }}
+      data-theme={theme}
+      style={
+        pc ? ({ "--color-primary": pc } as React.CSSProperties) : undefined
+      }
       {...otherProps}
     >
       <ParamStyleContext
         value={{
-          ...colors,
-          setColors,
+          theme,
+          pc,
+          setTheme,
+          setPc,
         }}
       >
         {children}

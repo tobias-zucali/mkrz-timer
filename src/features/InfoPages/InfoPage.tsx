@@ -36,7 +36,9 @@ export default function InfoPage({
       <article className="p-6 sm:p-8 lg:p-10">
         <div className="mx-auto max-w-4xl space-y-6">
           {content.resolvedLocale !== content.requestedLocale ? (
-            <LocaleFallbackNotice>{InfoPages.contentFallback}</LocaleFallbackNotice>
+            <LocaleFallbackNotice>
+              {InfoPages.contentFallback}
+            </LocaleFallbackNotice>
           ) : null}
           <MarkdownContent locale={locale} markdown={content.body} />
         </div>

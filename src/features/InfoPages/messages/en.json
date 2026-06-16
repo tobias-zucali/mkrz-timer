@@ -9,12 +9,5 @@
     "accessibility": "Accessibility",
     "github": "GitHub",
     "contact": "Contact"
-  },
-  "welcomeBanner": {
-    "eyebrow": "First use",
-    "title": "Welcome to mkrz timer",
-    "description": "Use the timer locally in this browser, or share separate control and view links when people need to stay in sync.",
-    "hide": "Don't show this welcome again on this device.",
-    "dismiss": "Use the timer!"
   }
 }

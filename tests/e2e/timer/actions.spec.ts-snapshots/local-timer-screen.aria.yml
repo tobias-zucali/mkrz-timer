@@ -16,7 +16,9 @@
   - button "Enter fullscreen"
 - button "Toggle navigation"
 - dialog:
-  - banner: mkrz timer
+  - banner:
+    - link "mkrz timer":
+      - /url: /en
   - navigation:
     - list:
       - listitem:
@@ -27,19 +29,6 @@
         - button "Settings"
     - list:
       - listitem:
-        - button "About"
-      - listitem:
-        - button "Privacy"
-      - listitem:
-        - button "Impressum"
-      - listitem:
-        - button "Terms"
-      - listitem:
-        - button "Accessibility"
-      - listitem:
-        - button "Contact"
-    - list:
-      - listitem:
         - button "LOCAL Private session"
       - listitem:
         - button "Status"
@@ -47,5 +36,6 @@
 - contentinfo:
   - link "by mkrz":
     - /url: https://www.mkrz.at/
-  - button "About"
+  - link "About":
+    - /url: /en/about
 - alert

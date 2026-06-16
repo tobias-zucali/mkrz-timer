@@ -354,8 +354,7 @@ export const resolveTimerStateAt = (
     {
       params: {
         activeIndex: 0,
-        bg: "#000000",
-        fg: "#ffffff",
+        theme: "dark",
         m: "00",
         pc: "#ffffff",
         rows: [
@@ -657,8 +656,8 @@ export const sessionSnapshotsMatch = ({
   return (
     resolvedCurrentSnapshot.params.activeIndex ===
       resolvedIncomingSnapshot.params.activeIndex &&
-    resolvedCurrentSnapshot.params.bg === resolvedIncomingSnapshot.params.bg &&
-    resolvedCurrentSnapshot.params.fg === resolvedIncomingSnapshot.params.fg &&
+    resolvedCurrentSnapshot.params.theme ===
+      resolvedIncomingSnapshot.params.theme &&
     JSON.stringify(resolvedCurrentSnapshot.params.rows) ===
       JSON.stringify(resolvedIncomingSnapshot.params.rows) &&
     resolvedCurrentSnapshot.state.currentRepeat ===

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./design-tokens.css";
 
 @custom-variant sm-height {
   @media (height >= 24rem) {
@@ -24,24 +25,73 @@
   }
 }
 
-:root {
-  --background: 0 0 0;
-  --foreground: 221 221 221;
-  --primary: 109 113 86;
-}
-
 @theme inline {
-  --color-background: rgb(var(--background));
-  --color-foreground: rgb(var(--foreground));
-  --color-primary: rgb(var(--primary));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Semantic roles — read CSS vars at runtime for dark/bright theme switching */
+  --color-screen: var(--bg-screen);
+  --color-card: var(--bg-card);
+  --color-input-bg: var(--bg-input);
+  --color-control: var(--bg-control);
+  --color-ink: var(--text-primary);
+  --color-ink-secondary: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+  --color-hairline: var(--border-hairline);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-soft: var(--color-soft);
+  --color-success: var(--color-success);
+
+  /* Raw palette — bridge to design-tokens.css vars so changes propagate automatically */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-sand-50: var(--sand-50);
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-300: var(--sand-300);
+  --color-sand-400: var(--sand-400);
+  --color-carbon-700: var(--carbon-700);
+  --color-carbon-800: var(--carbon-800);
+  --color-carbon-900: var(--carbon-900);
+  --color-carbon-950: var(--carbon-950);
+  --color-clay-100: var(--clay-100);
+  --color-clay-200: var(--clay-200);
+  --color-clay-300: var(--clay-300);
+  --color-clay-400: var(--clay-400);
+  --color-clay-500: var(--clay-500);
+  --color-clay-800: var(--clay-800);
+  --color-clay-900: var(--clay-900);
+  --color-mint-500: var(--mint-500);
+  --color-mint-700: var(--mint-700);
+  --color-amber-400: var(--amber-400);
+  --color-amber-600: var(--amber-600);
+
+  /* Timer ring accent set */
+  --color-ring-pink: var(--ring-pink);
+  --color-ring-amber: var(--ring-amber);
+  --color-ring-mint: var(--ring-mint);
+  --color-ring-blue: var(--ring-blue);
+  --color-ring-violet: var(--ring-violet);
+
+  /* Fonts */
+  --font-display: "Kanit", sans-serif;
+  --font-body: "Roboto", sans-serif;
+  --font-mono: '"Space Mono"', monospace;
+
+  /* Radii — same names as design-tokens.css vars, so values are hardcoded here to avoid circular refs */
+  --radius-sm: 8px;
+  --radius-field: 10px;
+  --radius-md: 12px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
 }
 
 body {
-  background: rgb(var(--background));
-  color: rgb(var(--foreground));
-  font-family: Geist, Arial, Helvetica, sans-serif;
+  background: var(--bg-screen);
+  color: var(--text-primary);
+  font-family: var(--font-body);
 }
 
 html,

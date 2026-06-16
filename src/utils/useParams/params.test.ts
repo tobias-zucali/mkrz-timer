@@ -29,8 +29,6 @@ test("withColorHash keeps existing hashes and adds missing hashes", () => {
 })
 
 test("serializeParamValue strips hashes only from color params", () => {
-  assert.equal(serializeParamValue("bg", "#000000"), "000000")
-  assert.equal(serializeParamValue("fg", "#ffffff"), "ffffff")
   assert.equal(serializeParamValue("pc", "#d61f69"), "d61f69")
   assert.equal(serializeParamValue("title", "#retro"), "#retro")
 })
@@ -47,8 +45,7 @@ test("buildPathWithParams preserves non-timer params alongside the new timer for
     buildPathWithParams(
       {
         ...buildParams(),
-        bg: "#123456",
-        fg: "#abcdef",
+        theme: "bright",
         rows: [
           {
             ...buildDefaultTimerSequenceRow(),
@@ -64,7 +61,7 @@ test("buildPathWithParams preserves non-timer params alongside the new timer for
         pathname: "/control/token-1",
       },
     ),
-    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&bg=123456&fg=abcdef&title=Workshop+timer&settings=1",
+    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&theme=bright&title=Workshop+timer&settings=1",
   )
 })
 

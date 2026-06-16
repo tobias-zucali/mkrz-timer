@@ -46,8 +46,7 @@ const baseProps = {
     } satisfies FloatingTimerData,
     handleChange: vi.fn(),
     params: {
-      bg: DEFAULT_SYNC_PARAMS.bg,
-      fg: DEFAULT_SYNC_PARAMS.fg,
+      theme: DEFAULT_SYNC_PARAMS.theme,
       snd: DEFAULT_SYNC_PARAMS.snd,
       tts: DEFAULT_SYNC_PARAMS.tts,
     },

@@ -39,11 +39,11 @@ export function getIconButtonClassName({
     sizeClassNames[size],
     shapeClassNames[shape],
     appearance === "outline" &&
-      "border border-foreground/12 text-foreground/72 hover:border-primary/40 hover:text-foreground",
+      "border border-ink/12 text-ink/72 hover:border-primary/40 hover:text-ink",
     appearance === "surface" &&
-      "border border-foreground/10 bg-foreground/6 text-foreground/80 hover:bg-foreground/12 hover:text-foreground",
+      "border border-ink/10 bg-ink/6 text-ink/80 hover:bg-ink/12 hover:text-ink",
     appearance === "ghost" &&
-      (isActive ? "text-primary" : "text-foreground/78 hover:text-primary"),
+      (isActive ? "text-primary" : "text-ink/78 hover:text-primary"),
     className,
   )
 }

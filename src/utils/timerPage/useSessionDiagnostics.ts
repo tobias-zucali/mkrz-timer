@@ -69,9 +69,7 @@ export default function useSessionDiagnostics({
   remoteStatusEnabled: boolean
   sessionId?: string
   timerState: {
-    backgroundColor: string
     elapsedPercentage: number
-    foregroundColor: string
     isFinished: boolean
     minutes: string
     primaryColor: string

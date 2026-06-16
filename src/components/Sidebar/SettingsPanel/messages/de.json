@@ -1,8 +1,8 @@
 {
   "appearanceHeading": "Darstellung",
-  "appearanceDescription": "Passen Sie die Farben des Timers an, die die Uhr umrahmen.",
-  "background": "Hintergrund",
-  "foreground": "Vordergrund",
+  "appearanceDescription": "Wählen Sie zwischen Dunkel- und Hellmodus.",
+  "themeDark": "Dunkel",
+  "themeBright": "Hell",
   "languageHeading": "Sprache",
   "languageEnglish": "English",
   "languageGerman": "Deutsch",

@@ -33,7 +33,7 @@ export default function TimerSequenceProgress({
     >
       <div className="pointer-events-auto flex flex-col items-center gap-3">
         {currentRepeatLabel ? (
-          <span className="text-xs font-medium text-foreground/52">
+          <span className="text-xs font-medium text-ink/52">
             {currentRepeatLabel}
           </span>
         ) : null}
@@ -41,8 +41,8 @@ export default function TimerSequenceProgress({
           {rows.map((_, index) => {
             const isCurrent = index === activeIndex
             const buttonClassName = isCurrent
-              ? "h-2.5 w-6 rounded-full bg-foreground"
-              : "size-2.5 cursor-pointer rounded-full bg-foreground/22 hover:bg-foreground/42"
+              ? "h-2.5 w-6 rounded-full bg-ink"
+              : "size-2.5 cursor-pointer rounded-full bg-ink/22 hover:bg-ink/42"
 
             return (
               <button

@@ -26,8 +26,7 @@ const DESCRIPTIONS: Record<
     failed:
       "Automatic recovery could not restore manage access yet. Retry to rejoin the session.",
     recovered: "Connection recovered. Manage access is live again.",
-    reconnecting:
-      "Trying to reconnect to the shared timer with manage access.",
+    reconnecting: "Trying to reconnect to the shared timer with manage access.",
   },
   readonly: {
     connected: "Joined the shared timer without manage access.",

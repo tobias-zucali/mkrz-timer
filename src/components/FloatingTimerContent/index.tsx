@@ -1,7 +1,6 @@
 "use client"
 
 import Pie from "@/components/Pie"
-import { hexToRgbChannels } from "@/utils/colors"
 import { getResponsiveClamp } from "@/utils/responsiveClamp"
 import {
   getTimerTitleBoxStyle,
@@ -14,8 +13,6 @@ import classNames from "classnames"
 export default function FloatingTimerContent({
   accessibleTimerText,
   title,
-  backgroundColor,
-  foregroundColor,
   isFinished,
   primaryColor,
   minutes,
@@ -24,8 +21,6 @@ export default function FloatingTimerContent({
 }: {
   accessibleTimerText: string
   title: string
-  backgroundColor: string
-  foregroundColor: string
   isFinished: boolean
   primaryColor: string
   minutes: string
@@ -41,14 +36,14 @@ export default function FloatingTimerContent({
   return (
     <div
       className="
-        flex h-screen flex-col overflow-hidden bg-background text-foreground
+        flex h-screen flex-col overflow-hidden bg-screen text-ink
       "
       data-testid="floating-timer-root"
-      style={{
-        ["--background"]: hexToRgbChannels(backgroundColor),
-        ["--foreground"]: hexToRgbChannels(foregroundColor),
-        ["--primary"]: hexToRgbChannels(primaryColor),
-      }}
+      style={
+        primaryColor
+          ? ({ ["--color-primary"]: primaryColor } as React.CSSProperties)
+          : undefined
+      }
     >
       <div
         className={classNames(

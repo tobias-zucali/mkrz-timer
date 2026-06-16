@@ -65,6 +65,7 @@ const EMPTY_STORED_TIMER_FINGERPRINT = buildStoredTimerFingerprint({
   pageTitle: "",
   params: DEFAULT_SYNC_PARAMS,
 })
+
 export default function TimerPage() {
   return (
     <Suspense fallback={null}>
@@ -87,7 +88,7 @@ function TimerApp() {
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
   const { pageTitle, params } = paramData
-  const { title, bg, fg, pc } = params
+  const { title, pc } = params
   const syncParams = params
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
@@ -255,7 +256,7 @@ function TimerApp() {
 
   const handleChange = useCallback(
     (key: string, value: string) => {
-      if (key === "bg" || key === "fg" || key === "snd" || key === "tts") {
+      if (key === "theme" || key === "snd" || key === "tts") {
         applyParamPatch({
           [key]: key === "tts" ? value === "1" : value,
         } as Partial<SyncParams>)
@@ -520,9 +521,7 @@ function TimerApp() {
     remoteStatusEnabled,
     sessionId,
     timerState: {
-      backgroundColor: bg,
       elapsedPercentage,
-      foregroundColor: fg,
       isFinished,
       minutes,
       primaryColor: pc,
@@ -751,8 +750,7 @@ function TimerApp() {
           floatingTimerData: sessionDiagnostics.floatingTimerData,
           handleChange,
           params: {
-            bg: params.bg,
-            fg: params.fg,
+            theme: params.theme,
             snd: params.snd,
             tts: params.tts,
           },
@@ -867,12 +865,12 @@ function TimerApp() {
         <a className="underline hover:text-primary" href="https://www.mkrz.at/">
           {tAppShell("footer.credit")}
         </a>
-        <span className="text-foreground/72" aria-hidden="true">
+        <span className="text-ink/72" aria-hidden="true">
           ·
         </span>
         <a
           className="
-            cursor-pointer text-foreground/78 underline transition
+            cursor-pointer text-ink/78 underline transition
             hover:text-primary focus:outline-2 focus:-outline-offset-2
             focus:outline-primary
           "

@@ -16,14 +16,14 @@ export default function ColorSwatchField({
   return (
     <label
       className="
-        flex items-center gap-4 rounded-xl border border-foreground/12
+        flex items-center gap-4 rounded-xl border border-ink/12
         bg-white/3 px-4 py-3
       "
       htmlFor={id}
     >
       <input
         className="
-          h-11 w-14 cursor-pointer rounded-lg border border-foreground/15
+          h-11 w-14 cursor-pointer rounded-lg border border-ink/15
           bg-transparent
         "
         id={id}
@@ -35,12 +35,10 @@ export default function ColorSwatchField({
         value={value}
       />
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">
-          {label}
-        </span>
+        <span className="block text-sm font-medium text-ink">{label}</span>
         <span
           className="
-          mt-0.5 block font-mono text-xs tracking-[0.08em] text-foreground/55
+          mt-0.5 block font-mono text-xs tracking-[0.08em] text-ink/55
           uppercase
         "
         >

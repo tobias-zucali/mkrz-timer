@@ -57,7 +57,7 @@ export default function useParams() {
   const pathname =
     typeof window === "undefined" ? nextPathname : window.location.pathname
   const router = useRouter()
-  const { setColors } = useContext(ParamStyleContext)
+  const { setTheme, setPc } = useContext(ParamStyleContext)
 
   const searchParamsString =
     typeof window === "undefined"
@@ -106,12 +106,9 @@ export default function useParams() {
   )
 
   useEffect(() => {
-    setColors({
-      bg: currentParams.bg,
-      fg: currentParams.fg,
-      pc: currentParams.pc,
-    })
-  }, [setColors, currentParams.bg, currentParams.fg, currentParams.pc])
+    setTheme(currentParams.theme)
+    setPc(currentParams.pc)
+  }, [setTheme, setPc, currentParams.theme, currentParams.pc])
 
   const getPathWithParams = useCallback(
     (options: ParamBuildOptions = {}) => {

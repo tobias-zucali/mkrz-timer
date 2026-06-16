@@ -87,8 +87,8 @@ export default function TopRightControls({
       <div
         className={classNames(
           "absolute top-0 right-0 z-20 m-2 flex items-center rounded-lg",
-          "bg-background/58 backdrop-blur-xs transition-opacity timer-chrome-transition",
-          "hover:bg-background/74",
+          "bg-screen/58 backdrop-blur-xs transition-opacity timer-chrome-transition",
+          "hover:bg-screen/74",
           isDimmed ? "timer-chrome-dimmed" : "opacity-100",
         )}
         data-dimmed={String(isDimmed)}

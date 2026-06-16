@@ -53,17 +53,17 @@ test("keeps footer navigation available on public info pages", async ({
   ).toHaveAttribute("target", "_blank")
 })
 
-test("shows the explicit English fallback for untranslated locales", async ({
-  page,
-}) => {
+test("shows translated content on the German about page", async ({ page }) => {
   await page.goto("/de/about")
 
   await expect(
-    page.getByText("This page currently falls back to English content."),
+    page.getByRole("heading", { level: 1, name: "Über mkrz timer" }),
   ).toBeVisible()
   await expect(
-    page.getByRole("heading", { level: 1, name: "About mkrz timer" }),
-  ).toBeVisible()
+    page.getByText(
+      "Diese Seite verwendet derzeit englische Inhalte als Fallback.",
+    ),
+  ).toHaveCount(0)
 })
 
 test("keeps the privacy page aligned with token-based live sessions", async ({
@@ -71,13 +71,6 @@ test("keeps the privacy page aligned with token-based live sessions", async ({
 }) => {
   await page.goto("/en/privacy")
 
-  await expect(page.getByText("generated session id")).toBeVisible()
-  await expect(page.getByText("generated control token")).toBeVisible()
-  await expect(page.getByText("generated readonly token")).toBeVisible()
-  await expect(
-    page.getByText("verified email address as the session key"),
-  ).toBeVisible()
-  await expect(page.locator("main")).not.toContainText(
-    "verified email address where it is entered or verified",
-  )
+  await expect(page.getByText("join and manage tokens")).toBeVisible()
+  await expect(page.locator("main")).not.toContainText("email")
 })

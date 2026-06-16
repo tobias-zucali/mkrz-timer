@@ -137,13 +137,15 @@ const runScopeRecommendation = (files) => {
   }
 
   print()
-  print("Required finish lane")
-  print("- `pnpm lint`")
-  print("- `pnpm test:e2e:local:smoke`")
-  print("- `pnpm format:fix`")
-
+  print("Validation gate")
+  print("Always required:")
+  print("  pnpm lint:fix")
+  print("  pnpm format:fix")
+  print("  pnpm test:e2e:local:smoke")
   if (needsFullLane) {
-    print("- `pnpm test:full`")
+    print("")
+    print("Also required:")
+    print("  pnpm test:full")
   }
 
   print()
@@ -155,9 +157,6 @@ const runScopeRecommendation = (files) => {
   }
   print(
     "- Do not run overlapping Playwright lanes in parallel when they share the same ports.",
-  )
-  print(
-    "- Delay `pnpm test:full` until the last failing local or remote subsystem is already stable.",
   )
 }
 

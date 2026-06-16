@@ -1,62 +1,75 @@
 - main:
   - link "mkrz timer":
     - /url: /en
+  - paragraph: by mkrz
+  - text: Language
+  - combobox "Language":
+    - option "English" [selected]
+    - option "Deutsch"
+  - link "Open timer":
+    - /url: /en/t
+  - link "GitHub":
+    - /url: https://github.com/tobias-zucali/mkrz-timer
   - article:
     - heading "Terms of Use" [level=1]
-    - paragraph:
-      - text: mkrz timer is a personal side project by Tobias Zucali, Co-Founder of
-      - link "mkrz lab":
-        - /url: https://www.mkrz.at/
-      - text: .
-    - paragraph: The project is intended to support workshops, facilitation, collaborative processes, learning environments, and other shared activities through a simple and accessible timer experience.
-    - paragraph: By using the hosted version of the application, you agree to these terms.
-    - heading "Free usage" [level=2]
     - paragraph: mkrz timer is provided free of charge.
-    - paragraph: The project is intended for personal, educational, community, workshop, and non-commercial usage.
-    - paragraph:
-      - text: Commercial usage of the hosted service or source code may require additional permission. Please
-      - link "contact us":
-        - /url: mailto:timer@mkrz.at
-      - text: if you are interested in collaboration or commercial usage.
+    - paragraph: By using the hosted version of the application, you agree to these terms.
+    - heading "Intended usage" [level=2]
+    - paragraph: "The project is designed to support time-based activities including:"
+    - list:
+      - listitem: workshops
+      - listitem: facilitation
+      - listitem: education
+      - listitem: presentations
+      - listitem: sports and exercise
+      - listitem: collaborative work
+      - listitem: personal productivity
+    - paragraph: At its core, mkrz timer is simply a timer.
     - heading "Open source and licensing" [level=2]
     - paragraph:
-      - text: The source code of the project is publicly available on
+      - text: The source code is publicly available on
       - link "GitHub":
         - /url: https://github.com/tobias-zucali/mkrz-timer
       - text: .
-    - paragraph: The project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International license.
+    - paragraph: The project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license.
     - paragraph: Please refer to the LICENSE file and repository documentation for details.
-    - heading "Local and remote usage" [level=2]
-    - paragraph: mkrz timer supports both local-only usage and synchronized live sessions.
-    - paragraph: In local-only mode, timer data remains on your device.
-    - paragraph: Live sessions depend on the relay service and synchronization infrastructure. Availability, performance, or long-term persistence of live sessions cannot be guaranteed.
     - heading "Responsible usage" [level=2]
-    - paragraph: Please use the service responsibly.
     - paragraph: "You agree not to:"
     - list:
-      - listitem: intentionally disrupt or misuse the synchronization infrastructure
+      - listitem: intentionally disrupt the synchronization infrastructure
       - listitem: attempt unauthorized access to systems or sessions
       - listitem: use the service for illegal activities
       - listitem: interfere with the availability or stability of the hosted service
-    - heading "Availability and warranty" [level=2]
-    - paragraph: The project is provided “as is” without guarantees of availability, uptime, reliability, or fitness for a particular purpose.
-    - paragraph: Features, infrastructure, and functionality may change over time.
-    - paragraph: While we aim to provide a stable and accessible experience, interruptions or technical issues may occur.
+    - heading "Availability" [level=2]
+    - paragraph: The project is provided "as is".
+    - paragraph: Availability, uptime, reliability, performance, and long-term persistence of live sessions cannot be guaranteed.
+    - paragraph: Features and infrastructure may change over time.
     - heading "Privacy" [level=2]
     - paragraph:
-      - text: Information about local storage, synchronized sessions, and privacy-related behavior is available on the
+      - text: Information about browser storage, live sessions, and data handling is available on the
       - link "Privacy":
         - /url: /en/privacy
       - text: page.
-    - heading "Collaboration" [level=2]
-    - paragraph: We are always happy to hear from people using the timer in workshops, facilitation settings, educational contexts, collaborative processes, and creative projects.
-    - paragraph: If you are interested in collaboration, workshops, facilitation support, creative technology projects, or commercial inquiries, feel free to reach out.
-    - heading "Contact" [level=2]
-    - paragraph: "For questions about these terms, collaboration requests, or commercial inquiries:"
+    - heading "Commercial usage" [level=2]
+    - paragraph: The project is licensed under a non-commercial license.
+    - paragraph: Commercial usage may require additional permission.
     - paragraph:
-      - text: /mkrz lab OG – Tobias Zucali Peter-Behrens-Platz 3 \d+ Linz/
-      - link "timer@mkrz.at":
+      - text: Please
+      - link "contact us":
         - /url: mailto:timer@mkrz.at
+      - text: if you are interested in commercial usage, collaboration, workshops, or related projects.
+    - heading "Contact" [level=2]
+    - paragraph:
+      - text: For questions regarding these terms or commercial inquiries, please see the
+      - link "Contact":
+        - /url: /en/contact
+      - text: page.
+    - heading "Legal information" [level=2]
+    - paragraph:
+      - text: Legal disclosure information is available on the
+      - link "Impressum":
+        - /url: /en/impressum
+      - text: page.
   - navigation "Information pages":
     - list:
       - listitem:

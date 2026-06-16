@@ -9,8 +9,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 ### Start Checklist
 
 - Read `README.md` for product and setup context.
-- Review the task scope and inspect the affected files before making changes.
-- Run `pnpm scope -- <paths...>` (or `pnpm scope` for the current diff) to determine the smallest recommended validation lane.
+- Inspect the affected files before making changes.
 - Prefer extending existing helpers, abstractions, and feature boundaries before introducing new patterns or parallel implementations.
 
 ### Tooling
@@ -21,20 +20,30 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ### Validation Lanes
 
-`pnpm scope` outputs one of these lanes — smallest first:
+`pnpm scope` determines the required lane and prints it under "Validation gate". Do not choose a lane manually.
 
-| Lane  | Command                     | When to use                                                                        |
-| ----- | --------------------------- | ---------------------------------------------------------------------------------- |
-| unit  | `pnpm test`                 | Logic-only changes with no route, session, or shared-state risk                    |
-| smoke | `pnpm test:e2e:local:smoke` | UI or route changes with limited cross-feature impact                              |
-| full  | `pnpm test:full`            | Anything touching live sessions, sync, URL state, persistence, or shared contracts |
+| Lane  | Command                     | What it covers                                                                    |
+| ----- | --------------------------- | --------------------------------------------------------------------------------- |
+| smoke | `pnpm test:e2e:local:smoke` | Fast local E2E pass — always the first gate                                       |
+| full  | `pnpm test:full`            | Lint, unit, component, local E2E, and remote E2E — required when scope demands it |
 
-### Validation Defaults
+### Validation Gate
 
-- After edits, run `pnpm lint`, `pnpm test:e2e:local:smoke`, and `pnpm format:fix` before considering the task done.
-- After changes that can cause side effects across routes, sessions, synchronization, persistence, or shared state, also run `pnpm test:full` before considering the task done.
-- Treat `pnpm scope` recommendations as advisory. Agents remain responsible for choosing validation that is sufficient for the actual risk of the change.
-- Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
+This is a hard stop. Do not summarize work, offer to commit, or consider the task done until all steps below pass. If resuming from a prior session or context summary, re-run the gate — do not assume a previous session completed it.
+
+1. If the change introduces new behavior, modifies a user-visible guarantee, or changes a live-session or URL-state contract:
+   - Add or update Playwright coverage for the affected behavior.
+   - Add or update relevant documentation (`docs/`, `README.md`, or inline `scope.yaml` hints).
+2. Always run in order — do not skip ahead:
+   - `pnpm lint:fix` then `pnpm lint` to confirm 0 errors. Warnings are acceptable.
+   - `pnpm format:fix`
+   - `pnpm test:e2e:local:smoke`
+3. Run `pnpm scope` (or `pnpm scope -- <changed paths>` for targeted scope). If the "Validation gate" output includes "Also required", run it only after step 2 is fully clean:
+   - `pnpm test:full`
+
+If any step fails, fix the failure before proceeding to the next step. Do not report partial results as done.
+
+Prompt the user to create GitHub issues for follow-up work introduced during implementation instead of editing a local TODO file.
 
 ### Prototype Mode
 
@@ -77,7 +86,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 ## Live Sessions
 
 - `docs/live-sessions.md` is the source of truth for live-session contracts, trust boundaries, and synchronized-field rules.
-- When live-session behavior changes, update both docs and Playwright coverage in the same change.
+- When live-session behavior changes, apply the documentation and test coverage requirements in the Validation Gate.
 
 ## Testing
 
@@ -85,8 +94,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Feature and subsystem folders may define a local `scope.yaml` YAML file for validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
 - When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm scope -- <changed paths...>`.
 - Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
-- Use `pnpm scope -- <paths...>` to get a smallest-first validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
-- Escalate beyond the smallest suggested lane when the change affects live sessions, synchronization, URL state, persistence, timer progression semantics, or any shared contract/invariant.
+- Use `pnpm scope -- <paths...>` to get a validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 
 ## Maintenance

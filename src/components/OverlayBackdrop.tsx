@@ -6,7 +6,7 @@ type OverlayBackdropProps = {
   onClick?: () => void
 }
 
-export const overlayBackdropClassName = "bg-foreground/14 backdrop-blur-[3px]"
+export const overlayBackdropClassName = "bg-ink/14 backdrop-blur-[3px]"
 
 export default function OverlayBackdrop({
   ariaLabel,

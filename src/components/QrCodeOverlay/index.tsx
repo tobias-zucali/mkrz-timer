@@ -54,9 +54,9 @@ export default function QrCodeOverlay({
     >
       <CloseButton
         className="
-          absolute top-4 right-4 z-1 size-6 rounded-full border-foreground/14
-          bg-white/3 text-foreground/60
-          hover:bg-white/7 hover:text-foreground
+          absolute top-4 right-4 z-1 size-6 rounded-full border-ink/14
+          bg-white/3 text-ink/60
+          hover:bg-white/7 hover:text-ink
           focus:outline-white
           sm:top-6 sm:right-6
         "

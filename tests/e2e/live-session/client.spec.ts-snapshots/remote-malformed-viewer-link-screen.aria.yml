@@ -5,10 +5,11 @@
     - paragraph: Error
     - paragraph: Error
     - paragraph: Live session link is malformed. Check the URL and try again.
-  - button "Share viewer link"
-- button "Open session status. Live session, Error, VIEWER access": Error VIEWER
+  - button "Share join link"
+- button "Open session status. Live session, Error, JOIN access"
 - contentinfo:
   - link "by mkrz":
     - /url: https://www.mkrz.at/
-  - button "About"
+  - link "About":
+    - /url: /en/about
 - alert
