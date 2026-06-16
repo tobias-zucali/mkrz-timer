@@ -1,0 +1,37 @@
+{
+  "roleLabels": {
+    "control": "Manage session",
+    "readonly": "Join session"
+  },
+  "stateLabels": {
+    "connected": "Connected",
+    "connecting": "Connecting",
+    "failed": "Reconnect failed",
+    "recovered": "Recovered",
+    "reconnecting": "Reconnecting"
+  },
+  "descriptions": {
+    "control": {
+      "connected": "Can manage the shared timer and settings.",
+      "connecting": "Starting or joining the shared timer with manage access."
+    },
+    "readonly": {
+      "connected": "Joined the shared timer without manage access.",
+      "connecting": "Joining the shared timer and waiting for the first sync.",
+      "connectedNoController": "Viewing the last shared timer state while waiting for a manager."
+    },
+    "failed": "Automatic recovery failed. Retry to reconnect.",
+    "recovered": "Connection recovered. The timer is live again.",
+    "reconnecting": "Trying to reconnect to the shared timer."
+  },
+  "connectionSummary": {
+    "waitingForSync": "Waiting for timer sync",
+    "restoringRelay": "Restoring relay connection",
+    "recoveryNeedsRetry": "Recovery needs a retry",
+    "waitingForManager": "Waiting for manager",
+    "joinedSharedTimer": "Joined shared timer",
+    "managingSharedTimer": "Managing shared timer",
+    "joinedWithOthers": "Joined with {count, plural, one {# other participant} other {# other participants}}",
+    "managingWithOthers": "Managing with {count, plural, one {# other participant} other {# other participants}}"
+  }
+}

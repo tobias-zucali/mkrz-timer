@@ -117,6 +117,7 @@ export default function useSessionDiagnostics({
     participantCount: connectionCount,
     role: remoteStatusRole,
     showPendingHostStatus: isHostRemoteSession && !sessionId,
+    t: t as AppTranslationFn,
   })
   const sessionPresentation = getSessionPresentation({
     hasPendingSyncConflict,

@@ -1,0 +1,37 @@
+{
+  "roleLabels": {
+    "control": "Sitzung verwalten",
+    "readonly": "An Sitzung teilnehmen"
+  },
+  "stateLabels": {
+    "connected": "Verbunden",
+    "connecting": "Wird verbunden",
+    "failed": "Wiederverbindung fehlgeschlagen",
+    "recovered": "Wiederhergestellt",
+    "reconnecting": "Wiederverbindung wird hergestellt"
+  },
+  "descriptions": {
+    "control": {
+      "connected": "Kann den gemeinsamen Timer und die Einstellungen verwalten.",
+      "connecting": "Den gemeinsamen Timer mit Verwaltungszugriff starten oder ihm beitreten."
+    },
+    "readonly": {
+      "connected": "Dem gemeinsamen Timer ohne Verwaltungszugriff beigetreten.",
+      "connecting": "Beitritt zum gemeinsamen Timer und Warten auf die erste Synchronisierung.",
+      "connectedNoController": "Der letzte Status des gemeinsamen Timers wird angezeigt, während auf einen Manager gewartet wird."
+    },
+    "failed": "Die automatische Wiederherstellung ist fehlgeschlagen. Erneut versuchen, um die Verbindung wiederherzustellen.",
+    "recovered": "Verbindung wiederhergestellt. Der Timer ist wieder aktiv.",
+    "reconnecting": "Es wird versucht, die Verbindung zum gemeinsamen Timer wiederherzustellen."
+  },
+  "connectionSummary": {
+    "waitingForSync": "Warten auf Timer-Synchronisierung",
+    "restoringRelay": "Wiederherstellung der Relay-Verbindung",
+    "recoveryNeedsRetry": "Wiederherstellung erfordert einen erneuten Versuch",
+    "waitingForManager": "Warten auf Manager",
+    "joinedSharedTimer": "Dem gemeinsamen Timer beigetreten",
+    "managingSharedTimer": "Gemeinsamen Timer verwalten",
+    "joinedWithOthers": "Mit {count, plural, one {# anderen Teilnehmer} other {# anderen Teilnehmern}} verbunden",
+    "managingWithOthers": "Gemeinsam mit {count, plural, one {# anderen Teilnehmer} other {# anderen Teilnehmern}} verwaltet"
+  }
+}

@@ -1,8 +1,9 @@
+import type { AppTranslationFn } from "@/i18n/translator"
 import {
   getConnectionSummary,
   getDescription,
-  ROLE_LABELS,
-  STATE_LABELS,
+  getRoleLabel,
+  getStateLabel,
 } from "./copy.ts"
 
 export type LiveSessionStatusRole = "control" | "readonly"
@@ -60,6 +61,7 @@ export default function getLiveSessionStatus({
   role,
   showPendingHostStatus = false,
   isRemoteEnabled,
+  t,
 }: {
   canRetryManually: boolean
   hasConnectedOnce: boolean
@@ -70,12 +72,12 @@ export default function getLiveSessionStatus({
   participantCount: number
   role: LiveSessionStatusRole
   showPendingHostStatus?: boolean
+  t: AppTranslationFn
 }): LiveSessionStatusModel | null {
   if (!isRemoteEnabled && !showPendingHostStatus) {
     return null
   }
 
-  const roleLabel = ROLE_LABELS[role]
   const controllingParticipantPresent = hasControllingParticipant ?? false
   const state = getLiveSessionState({
     hasConnectedOnce,
@@ -86,18 +88,21 @@ export default function getLiveSessionStatus({
 
   return {
     canRetryManually,
-    connectionSummary: getConnectionSummary({
-      hasControllingParticipant: controllingParticipantPresent,
-      hasReceivedInitialSync,
-      participantCount,
-      role,
-      state,
-    }),
-    description: getDescription(role, state, controllingParticipantPresent),
+    connectionSummary: getConnectionSummary(
+      {
+        hasControllingParticipant: controllingParticipantPresent,
+        hasReceivedInitialSync,
+        participantCount,
+        role,
+        state,
+      },
+      t,
+    ),
+    description: getDescription(role, state, controllingParticipantPresent, t),
     hasControllingParticipant: controllingParticipantPresent,
     role,
-    roleLabel,
+    roleLabel: getRoleLabel(role, t),
     state,
-    stateLabel: STATE_LABELS[state],
+    stateLabel: getStateLabel(state, t),
   }
 }
