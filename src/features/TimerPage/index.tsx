@@ -708,7 +708,7 @@ function TimerApp() {
     <>
       <main
         aria-label={title.trim() || tAppShell("metadata.title")}
-        className="h-full"
+        className="h-full overflow-hidden overscroll-none"
       >
         <TimerAnnouncements
           activeIndex={params.activeIndex}

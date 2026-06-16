@@ -49,13 +49,22 @@ function buildCandidates(urlPathname) {
   ]
 }
 
-function getRemoteFallbackPath(urlPathname) {
-  if (urlPathname.startsWith("/view/") || urlPathname === "/view") {
-    return "/view"
+export function getRemoteFallbackPath(urlPathname) {
+  const localizedPathname = urlPathname.replace(/^\/(?:en|de)(?=\/|$)/, "")
+  const localePrefix =
+    localizedPathname === urlPathname
+      ? ""
+      : urlPathname.slice(0, urlPathname.length - localizedPathname.length)
+
+  if (localizedPathname.startsWith("/view/") || localizedPathname === "/view") {
+    return `${localePrefix}/view`
   }
 
-  if (urlPathname.startsWith("/control/") || urlPathname === "/control") {
-    return "/control"
+  if (
+    localizedPathname.startsWith("/control/") ||
+    localizedPathname === "/control"
+  ) {
+    return `${localePrefix}/control`
   }
 
   return null
@@ -101,7 +110,7 @@ async function resolveFilePath(urlPathname) {
   return null
 }
 
-const server = createServer(async (request, response) => {
+export const server = createServer(async (request, response) => {
   if (!request.url) {
     response.writeHead(400)
     response.end("Missing request URL")
@@ -127,6 +136,11 @@ const server = createServer(async (request, response) => {
   response.end(file)
 })
 
-server.listen(port, host, () => {
-  process.stdout.write(`Serving ${rootDir} at http://${host}:${port}\n`)
-})
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename
+
+if (isDirectRun) {
+  server.listen(port, host, () => {
+    process.stdout.write(`Serving ${rootDir} at http://${host}:${port}\n`)
+  })
+}

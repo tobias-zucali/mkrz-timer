@@ -1,6 +1,5 @@
 import { ComponentProps, useId, useState } from "react"
 
-import Link from "next/link"
 import { useTranslations } from "next-intl"
 
 import IconButton, { getIconButtonClassName } from "@/components/IconButton"
@@ -15,6 +14,19 @@ import { getTimerSpaceShortcutButtonProps } from "@/utils/timerShortcutButtons"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 
 import InputField from "../InputField"
+
+export function openUrlInNewContext(value: string) {
+  const openedWindow = window.open("", "_blank")
+
+  if (!openedWindow) {
+    return false
+  }
+
+  openedWindow.opener = null
+  openedWindow.location.replace(value)
+
+  return true
+}
 
 export default function UrlCopyField({
   description,
@@ -62,7 +74,7 @@ export default function UrlCopyField({
           </IconButton>
         )}
         {showOpenButton && (
-          <Link
+          <a
             className={getIconButtonClassName({
               appearance: "surface",
               className: "ml-2",
@@ -70,12 +82,20 @@ export default function UrlCopyField({
               size: "field",
             })}
             href={isClient ? value : ""}
+            onClick={(event) => {
+              event.preventDefault()
+
+              if (isClient && value) {
+                openUrlInNewContext(value)
+              }
+            }}
+            rel="noopener noreferrer"
             target="_blank"
             title={t("openUrl")}
             aria-label={t("openUrl")}
           >
             <ArrowTopRightOnSquareIcon className="size-5" />
-          </Link>
+          </a>
         )}
         {isClient && value && (
           <IconButton
