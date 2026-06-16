@@ -124,11 +124,11 @@ const runScopeRecommendation = (files) => {
   }
 
   print()
-  print("Suggested first-pass validation")
+  print("Required targeted validation")
   const uniqueCommands = dedupe(commands)
   if (uniqueCommands.length === 0) {
     print(
-      "- No narrow lane matched. Start with the closest unit or component test, then widen.",
+      "- No narrow lane matched. Start with the closest unit or component test, then widen before closeout.",
     )
   } else {
     for (const command of uniqueCommands) {
@@ -138,7 +138,7 @@ const runScopeRecommendation = (files) => {
 
   print()
   print("Validation gate")
-  print("Always required:")
+  print("Always required after targeted validation:")
   print("  pnpm lint:fix")
   print("  pnpm format:fix")
   print("  pnpm test:e2e:local:smoke")

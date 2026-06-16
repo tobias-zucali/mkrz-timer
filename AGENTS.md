@@ -20,7 +20,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 
 ### Validation Lanes
 
-`pnpm scope` determines the required lane and prints it under "Validation gate". Do not choose a lane manually.
+`pnpm scope` determines the required targeted lane and whether the full lane is also required. Do not choose a lane manually.
 
 | Lane  | Command                     | What it covers                                                                    |
 | ----- | --------------------------- | --------------------------------------------------------------------------------- |
@@ -34,11 +34,12 @@ This is a hard stop. Do not summarize work, offer to commit, or consider the tas
 1. If the change introduces new behavior, modifies a user-visible guarantee, or changes a live-session or URL-state contract:
    - Add or update Playwright coverage for the affected behavior.
    - Add or update relevant documentation (`docs/`, `README.md`, or inline `scope.yaml` hints).
-2. Always run in order — do not skip ahead:
+2. Run `pnpm scope` (or `pnpm scope -- <changed paths>` for targeted scope) and complete every command listed under "Required targeted validation".
+3. Always run in order after the targeted validation is clean — do not skip ahead:
    - `pnpm lint:fix` then `pnpm lint` to confirm 0 errors. Warnings are acceptable.
    - `pnpm format:fix`
    - `pnpm test:e2e:local:smoke`
-3. Run `pnpm scope` (or `pnpm scope -- <changed paths>` for targeted scope). If the "Validation gate" output includes "Also required", run it only after step 2 is fully clean:
+4. If the "Validation gate" output includes "Also required", run it only after step 3 is fully clean:
    - `pnpm test:full`
 
 If any step fails, fix the failure before proceeding to the next step. Do not report partial results as done.
@@ -94,7 +95,7 @@ Prompt the user to create GitHub issues for follow-up work introduced during imp
 - Feature and subsystem folders may define a local `scope.yaml` YAML file for validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
 - When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm scope -- <changed paths...>`.
 - Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
-- Use `pnpm scope -- <paths...>` to get a validation recommendation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
+- Use `pnpm scope -- <paths...>` to get the required targeted validation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.
 - Keep browser tests focused on user-visible guarantees rather than internal relay/debug timing.
 
 ## Maintenance
