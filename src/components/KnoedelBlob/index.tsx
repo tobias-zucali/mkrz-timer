@@ -13,7 +13,7 @@ export default function KnoedelBlob({
 }: {
   className?: string
   height: number
-  width: number,
+  width: number
 } & React.SVGProps<SVGSVGElement>) {
   return (
     <svg

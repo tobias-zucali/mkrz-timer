@@ -50,7 +50,15 @@ export function DeviceIcon() {
         viewBox="0 0 20 20"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <rect height="14" rx="2" stroke="currentColor" strokeWidth="1.5" width="10" x="5" y="3" />
+        <rect
+          height="14"
+          rx="2"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          width="10"
+          x="5"
+          y="3"
+        />
         <circle cx="10" cy="14.5" fill="currentColor" r="0.75" />
       </svg>
     </div>
@@ -67,7 +75,13 @@ export function GroupIcon() {
         viewBox="0 0 20 20"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <circle cx="7.5" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+        <circle
+          cx="7.5"
+          cy="7"
+          r="2.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
         <path
           d="M2 16c0-3 2.5-5 5.5-5s5.5 2 5.5 5"
           stroke="currentColor"

@@ -93,6 +93,7 @@ Prompt the user to create GitHub issues for follow-up work introduced during imp
 
 - `docs/development.md` is the source of truth for test lanes, `pnpm scope` commands, and browser-test authoring rules.
 - Feature and subsystem folders may define a local `scope.yaml` YAML file for validation hints. Keep these files metadata-only and at stable feature boundaries, not leaf components.
+- When introducing a new feature folder that will contain user-visible behavior, add a `scope.yaml` pointing to the relevant e2e spec in the same change.
 - When a feature boundary moves, split, or disappears, move, split, or delete the corresponding `scope.yaml` in the same change and verify the new recommendation with `pnpm scope -- <changed paths...>`.
 - Treat growing `scope.yaml` `rules` lists as a structural smell. Prefer extracting a new folder boundary over adding many exceptions.
 - Use `pnpm scope -- <paths...>` to get the required targeted validation from the changed files. Running `pnpm scope` without explicit paths uses the current git diff.

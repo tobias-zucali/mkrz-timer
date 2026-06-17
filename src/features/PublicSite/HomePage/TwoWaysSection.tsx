@@ -54,7 +54,10 @@ export default function TwoWaysSection({ locale }: { locale: AppLocale }) {
             </p>
             <ul className="mt-4 space-y-2">
               {localFeatures.map((feature) => (
-                <li className="flex items-start gap-2 font-body text-sm text-clay-800" key={feature}>
+                <li
+                  className="flex items-start gap-2 font-body text-sm text-clay-800"
+                  key={feature}
+                >
                   <CheckIcon />
                   {feature}
                 </li>
@@ -85,7 +88,10 @@ export default function TwoWaysSection({ locale }: { locale: AppLocale }) {
             </p>
             <ol className="mt-4 space-y-2">
               {liveSteps.map((step, i) => (
-                <li className="flex items-start gap-3 font-body text-sm text-clay-800" key={step}>
+                <li
+                  className="flex items-start gap-3 font-body text-sm text-clay-800"
+                  key={step}
+                >
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-clay-900 font-mono text-[10px] font-bold text-white">
                     {i + 1}
                   </span>

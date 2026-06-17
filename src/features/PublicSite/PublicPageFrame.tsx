@@ -187,7 +187,11 @@ export default function PublicPageFrame({
               >
                 mkrz lab
               </a>
-              {InfoPages.footer.copyright.split("mkrz lab")[1].split("Tobias Zucali")[0]}
+              {
+                InfoPages.footer.copyright
+                  .split("mkrz lab")[1]
+                  .split("Tobias Zucali")[0]
+              }
               <a
                 className="transition hover:text-white"
                 href="https://www.linkedin.com/in/tobias-zucali/"
