@@ -1,16 +1,19 @@
 "use client"
 
-import { startTransition, useId } from "react"
+import { startTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import type { AppLocale } from "@/i18n/config"
 import { localizePathname } from "@/i18n/locale"
 import { pauseUrlSyncDuringRemoteRouteTransition } from "@/utils/timerPage/routeTransition"
 
+const LOCALE_LABEL: Record<AppLocale, string> = {
+  de: "DE",
+  en: "EN",
+}
+
 export default function PublicLocaleSwitcher({
   currentLocale,
-  englishLabel,
-  germanLabel,
   label,
 }: {
   currentLocale: AppLocale
@@ -18,42 +21,31 @@ export default function PublicLocaleSwitcher({
   germanLabel: string
   label: string
 }) {
-  const fieldId = useId()
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  return (
-    <label
-      className="flex items-center gap-2 text-sm text-ink/78"
-      htmlFor={fieldId}
-    >
-      <span>{label}</span>
-      <select
-        className="
-          rounded-full border border-white/10 bg-white/4 px-3 py-1.5 text-sm
-          text-ink transition outline-none focus:border-primary
-          focus:ring-2 focus:ring-primary/20
-        "
-        id={fieldId}
-        onChange={(event) => {
-          const nextLocale = event.target.value as AppLocale
-          const nextPathname = localizePathname(pathname, nextLocale)
-          const nextSearch = searchParams.toString()
-          const nextUrl = nextSearch
-            ? `${nextPathname}?${nextSearch}`
-            : nextPathname
+  function switchTo(nextLocale: AppLocale) {
+    const nextPathname = localizePathname(pathname, nextLocale)
+    const nextSearch = searchParams.toString()
+    const nextUrl = nextSearch ? `${nextPathname}?${nextSearch}` : nextPathname
 
-          startTransition(() => {
-            pauseUrlSyncDuringRemoteRouteTransition()
-            router.replace(nextUrl)
-          })
-        }}
-        value={currentLocale}
-      >
-        <option value="en">{englishLabel}</option>
-        <option value="de">{germanLabel}</option>
-      </select>
-    </label>
+    startTransition(() => {
+      pauseUrlSyncDuringRemoteRouteTransition()
+      router.replace(nextUrl)
+    })
+  }
+
+  const otherLocale: AppLocale = currentLocale === "en" ? "de" : "en"
+
+  return (
+    <button
+      aria-label={label}
+      className="cursor-pointer font-body text-sm font-medium text-clay-400 transition hover:text-clay-900"
+      onClick={() => switchTo(otherLocale)}
+      type="button"
+    >
+      {LOCALE_LABEL[otherLocale]}
+    </button>
   )
 }

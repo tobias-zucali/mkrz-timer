@@ -100,6 +100,25 @@ body {
   overscroll-behavior: none;
 }
 
+@keyframes blob-float-a {
+  0%, 100% { transform: var(--blob-rotate, rotate(0deg)) translateY(0px); }
+  50% { transform: var(--blob-rotate, rotate(0deg)) translateY(-20px); }
+}
+@keyframes blob-float-b {
+  0%, 100% { transform: var(--blob-rotate, rotate(0deg)) translateY(0px); }
+  33% { transform: var(--blob-rotate, rotate(0deg)) translateY(-14px); }
+  66% { transform: var(--blob-rotate, rotate(0deg)) translateY(-6px); }
+}
+@keyframes blob-float-c {
+  0%, 100% { transform: var(--blob-rotate, rotate(0deg)) translateY(0px); }
+  50% { transform: var(--blob-rotate, rotate(0deg)) translateY(-24px); }
+}
+@keyframes blob-float-d {
+  0%, 100% { transform: var(--blob-rotate, rotate(0deg)) translateY(0px); }
+  40% { transform: var(--blob-rotate, rotate(0deg)) translateY(-10px); }
+  80% { transform: var(--blob-rotate, rotate(0deg)) translateY(-18px); }
+}
+
 @utility timer-chrome-transition {
   transition-duration: 700ms;
 }

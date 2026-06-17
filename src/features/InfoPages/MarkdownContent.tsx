@@ -220,13 +220,13 @@ export default function MarkdownContent({
   const blocks = parseMarkdown(markdown)
 
   return (
-    <div className={compact ? "space-y-4" : "space-y-6"}>
+    <div className={compact ? "space-y-3" : "space-y-4"}>
       {blocks.map((block, index) => {
         if (block.type === "heading") {
           if (block.level === 1) {
             return (
               <h1
-                className="text-4xl font-semibold tracking-tight sm:text-5xl"
+                className="font-display text-4xl font-semibold tracking-tight text-clay-900 sm:text-5xl"
                 key={`${block.type}-${index}`}
               >
                 {block.text}
@@ -239,8 +239,8 @@ export default function MarkdownContent({
               <h2
                 className={
                   compact
-                    ? "pt-3 text-xl font-semibold tracking-tight"
-                    : "pt-4 text-2xl font-semibold tracking-tight"
+                    ? "pt-3 font-display text-xl font-semibold tracking-tight text-clay-900"
+                    : "pt-4 font-display text-2xl font-semibold tracking-tight text-clay-900"
                 }
                 key={`${block.type}-${index}`}
               >
@@ -253,8 +253,8 @@ export default function MarkdownContent({
             <h3
               className={
                 compact
-                  ? "text-lg font-semibold tracking-tight"
-                  : "text-xl font-semibold tracking-tight"
+                  ? "font-display text-lg font-semibold tracking-tight text-clay-900"
+                  : "font-display text-xl font-semibold tracking-tight text-clay-900"
               }
               key={`${block.type}-${index}`}
             >
@@ -287,7 +287,9 @@ export default function MarkdownContent({
         return (
           <p
             className={
-              compact ? "text-base/6 text-ink/88" : "text-base/7 text-ink/88"
+              compact
+                ? "text-base/5 text-clay-500"
+                : "text-base/6 text-clay-500"
             }
             key={index}
           >

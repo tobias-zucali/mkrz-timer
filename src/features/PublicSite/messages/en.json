@@ -1,12 +1,16 @@
 {
   "home": {
+    "heroTagline": "// simple timekeeping · by mkrz lab",
+    "heroHeadlineStart": "Simple ",
+    "heroHeadlineAccent": "timekeeping",
+    "heroHeadlineEnd": ".",
     "startLocalTimer": "Start local timer",
     "createLiveSession": "Create live session",
     "localTimerLabel": "Local timer",
     "localTimerDescription": "Use the timer directly in your browser.",
     "liveSessionLabel": "Live session",
     "liveSessionDescription": "Keep multiple devices synchronized in real time.",
-    "trustLine": "No account required · Local-first usage · Open source"
+    "trustLine": "No account required · Local-first · Open source"
   },
   "navigation": {
     "openTimer": "Open timer",
