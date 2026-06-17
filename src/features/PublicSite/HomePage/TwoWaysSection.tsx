@@ -3,7 +3,7 @@ import Link from "next/link"
 import type { AppLocale } from "@/i18n/config"
 import { getMessagesForLocale } from "@/i18n/messages"
 
-import { CheckIcon, DeviceIcon, GroupIcon } from "./HomePageIcons"
+import { CheckIcon, DeviceIcon, GroupIcon } from "./icons"
 
 const liveSessionButtonCn =
   "inline-flex items-center rounded-2xl border-2 border-clay-900 px-5 py-2.5 font-body font-semibold text-clay-900 transition hover:border-primary hover:text-primary focus:outline-2 focus:-outline-offset-2 focus:outline-primary"

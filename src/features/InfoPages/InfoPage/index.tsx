@@ -2,9 +2,9 @@ import { getMessagesForLocale } from "@/i18n/messages"
 import type { AppLocale } from "@/i18n/config"
 
 import PublicPageFrame from "@/features/PublicSite/PublicPageFrame"
+import MarkdownContent from "../MarkdownContent"
+import { getInfoPageContent, type InfoPageSlug } from "../content"
 import LocaleFallbackNotice from "./LocaleFallbackNotice"
-import MarkdownContent from "./MarkdownContent"
-import { getInfoPageContent, type InfoPageSlug } from "./content"
 
 export function buildInfoPageMetadata({
   locale,
@@ -14,7 +14,6 @@ export function buildInfoPageMetadata({
   slug: InfoPageSlug
 }) {
   const content = getInfoPageContent(locale, slug)
-
   return {
     description: content.description,
     title: content.title,

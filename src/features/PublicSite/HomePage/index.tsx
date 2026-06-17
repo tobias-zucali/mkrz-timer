@@ -1,12 +1,11 @@
-import MarkdownContent from "@/features/InfoPages/MarkdownContent"
 import { getHomeContent } from "@/features/InfoPages/content"
 import type { AppLocale } from "@/i18n/config"
 import { getMessagesForLocale } from "@/i18n/messages"
 
+import PublicPageFrame from "../PublicPageFrame"
 import GoodToKnowSection from "./GoodToKnowSection"
-import PublicPageFrame from "./PublicPageFrame"
+import { WavyUnderline } from "./icons"
 import TwoWaysSection from "./TwoWaysSection"
-import { WavyUnderline } from "./HomePageIcons"
 
 export function buildHomePageMetadata(locale: AppLocale) {
   const content = getHomeContent(locale)
@@ -17,9 +16,7 @@ export function buildHomePageMetadata(locale: AppLocale) {
 }
 
 export default function HomePage({ locale }: { locale: AppLocale }) {
-  const content = getHomeContent(locale)
   const { PublicSite } = getMessagesForLocale(locale)
-  const intro = content.body.split("\n## ")[0].trim()
 
   return (
     <PublicPageFrame currentSlug="home" locale={locale}>
@@ -34,9 +31,9 @@ export default function HomePage({ locale }: { locale: AppLocale }) {
             {PublicSite.home.heroHeadlineEnd}
           </h1>
 
-          <div className="mt-6 font-body text-lg/8 text-clay-500">
-            <MarkdownContent locale={locale} markdown={intro} />
-          </div>
+          <p className="mt-6 font-body text-lg/8 text-clay-500">
+            {PublicSite.home.heroSubtitle}
+          </p>
 
           <p className="mt-10 font-mono text-xs font-bold tracking-[0.16em] text-clay-400 uppercase">
             {PublicSite.home.trustLine}

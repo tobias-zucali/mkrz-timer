@@ -1,15 +1,14 @@
 {
   "home": {
     "heroTagline": "// einfaches zeitmanagement · by mkrz lab",
+    "heroSubtitle": "Ein Timer mit Fokus auf einfaches Teilen, gemeinsame Sitzungen, Barrierefreiheit und eine Nutzung ohne unnötige Ablenkungen.",
     "heroHeadlineStart": "Einfaches ",
     "heroHeadlineAccent": "Zeitmanagement",
     "heroHeadlineEnd": ".",
     "startLocalTimer": "Lokalen Timer starten",
     "createLiveSession": "Live-Session erstellen",
     "localTimerLabel": "Lokaler Timer",
-    "localTimerDescription": "Verwenden Sie den Timer direkt in Ihrem Browser.",
     "liveSessionLabel": "Live-Sitzung",
-    "liveSessionDescription": "Synchronisiere mehrere Geräte in Echtzeit.",
     "trustLine": "Kein Konto erforderlich · Lokal · Open Source",
     "twoWaysTagline": "// zwei wege, zeit zu messen",
     "twoWaysHeadline": "Lokal oder live.",

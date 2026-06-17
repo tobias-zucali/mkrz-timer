@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl"
 
-import LocaleFallbackNotice from "@/features/InfoPages/LocaleFallbackNotice"
+import LocaleFallbackNotice from "@/features/InfoPages/InfoPage/LocaleFallbackNotice"
 import MarkdownContent from "@/features/InfoPages/MarkdownContent"
 import type { InfoPageContent } from "@/features/InfoPages/content"
 import type { AppLocale } from "@/i18n/config"
