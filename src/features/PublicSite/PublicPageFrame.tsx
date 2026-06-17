@@ -26,43 +26,53 @@ function DecorativeBackdrop() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 overflow-x-clip"
     >
       {/* left-middle, large */}
-      <KnoedelBlob
-        className="absolute top-1/3 -left-6 text-amber-400/30"
-        height={200}
-        style={blob(20, "blob-float-a", "0s", "9s")}
-        width={200}
-      />
+      <div className="absolute top-1/3 -left-6 blob-parallax-slow">
+        <KnoedelBlob
+          className="text-amber-400/30"
+          height={200}
+          style={blob(20, "blob-float-a", "0s", "9s")}
+          width={200}
+        />
+      </div>
       {/* bottom-left, medium */}
-      <KnoedelBlob
-        className="absolute bottom-36 -left-12 text-amber-500/20"
-        height={140}
-        style={blob(-15, "blob-float-b", "1.2s", "7s")}
-        width={140}
-      />
+      <div className="absolute bottom-36 -left-12 blob-parallax-fast">
+        <KnoedelBlob
+          className="text-amber-500/20"
+          height={140}
+          style={blob(-15, "blob-float-b", "1.2s", "7s")}
+          width={140}
+        />
+      </div>
       {/* top-right, small */}
-      <KnoedelBlob
-        className="absolute top-30 -right-1 text-amber-800/20"
-        height={90}
-        style={blob(35, "blob-float-c", "0.5s", "11s")}
-        width={90}
-      />
+      <div className="absolute top-30 -right-1 blob-parallax-slow">
+        <KnoedelBlob
+          className="text-amber-800/20"
+          height={90}
+          style={blob(35, "blob-float-c", "0.5s", "11s")}
+          width={90}
+        />
+      </div>
       {/* right-middle, medium */}
-      <KnoedelBlob
-        className="absolute top-1/2 right-4 text-amber-400/25"
-        height={120}
-        style={blob(-25, "blob-float-d", "2s", "8s")}
-        width={120}
-      />
+      <div className="absolute top-1/2 right-4 blob-parallax-medium">
+        <KnoedelBlob
+          className="text-amber-400/25"
+          height={120}
+          style={blob(-25, "blob-float-d", "2s", "8s")}
+          width={120}
+        />
+      </div>
       {/* bottom-right, large */}
-      <KnoedelBlob
-        className="absolute -right-12 bottom-20 text-amber-500/25"
-        height={170}
-        style={blob(10, "blob-float-a", "1.8s", "10s")}
-        width={170}
-      />
+      <div className="absolute -right-12 bottom-20 blob-parallax-fast">
+        <KnoedelBlob
+          className="text-amber-500/25"
+          height={170}
+          style={blob(10, "blob-float-a", "1.8s", "10s")}
+          width={170}
+        />
+      </div>
     </div>
   )
 }
@@ -76,7 +86,7 @@ export default function PublicPageFrame({
   currentSlug?: InfoPageSlug | "home"
   locale: AppLocale
 }) {
-  const { AppShell, InfoPages, PublicSite } = getMessagesForLocale(locale)
+  const { InfoPages, PublicSite } = getMessagesForLocale(locale)
   const footerLinks = infoPageSlugs.map((slug) => ({
     href: getInfoPagePath(locale, slug),
     label: InfoPages.footer[slug],
@@ -84,7 +94,7 @@ export default function PublicPageFrame({
   }))
 
   return (
-    <main className="relative h-screen overflow-y-auto bg-sand-100 text-clay-900">
+    <main className="relative h-screen overflow-y-auto bg-sand-100 text-clay-900 public-page-scroll">
       <DecorativeBackdrop />
       <div className="relative mx-auto flex min-h-full max-w-6xl flex-col gap-8 px-4 py-5 sm:p-6 lg:p-8">
         <header className="p-2 sm:p-3">

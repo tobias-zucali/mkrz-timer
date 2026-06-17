@@ -100,6 +100,36 @@ body {
   overscroll-behavior: none;
 }
 
+@keyframes blob-parallax-slow   { to { translate: 0 60px;  } }
+@keyframes blob-parallax-medium { to { translate: 0 100px;  } }
+@keyframes blob-parallax-fast   { to { translate: 0 160px; } }
+
+@utility public-page-scroll {
+  scroll-timeline-name: --public-page;
+  scroll-timeline-axis: block;
+}
+
+@utility blob-parallax-slow {
+  animation-name: blob-parallax-slow;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: --public-page;
+}
+
+@utility blob-parallax-medium {
+  animation-name: blob-parallax-medium;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: --public-page;
+}
+
+@utility blob-parallax-fast {
+  animation-name: blob-parallax-fast;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: --public-page;
+}
+
 @keyframes blob-float-a {
   0%, 100% { transform: var(--blob-rotate, rotate(0deg)) translateY(0px); }
   50% { transform: var(--blob-rotate, rotate(0deg)) translateY(-20px); }
