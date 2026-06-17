@@ -106,3 +106,9 @@ Prompt the user to create GitHub issues for follow-up work introduced during imp
 - Follow [docs/documentation.md](./docs/documentation.md) when adding or revising repo documentation.
 - Code, tests, and workflow files should describe implementation.
 - Update it when repo-level workflow, testing, or deployment conventions change.
+
+## Source of Truth
+
+- `AGENTS.md` and the `.agents/` directory are the canonical source of truth for agent policy and skills.
+- Do not duplicate their content elsewhere. Other files (e.g. `CLAUDE.md`, entries under `.claude/`) must symlink to the originals, not copy them.
+- When adding a new skill under `.agents/skills/<name>/`, add a corresponding `.claude/skills/<name>/SKILL.md` symlink so Claude Code discovers it automatically.

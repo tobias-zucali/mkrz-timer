@@ -130,6 +130,20 @@ const runScopeRecommendation = (files) => {
     print(
       "- No narrow lane matched. Start with the closest unit or component test, then widen before closeout.",
     )
+    const uncovered = files.filter((filePath) => {
+      const underSrc =
+        filePath.startsWith("src/") || filePath.startsWith("tests/")
+      if (!underSrc) return false
+      return findNearestScopePath(filePath) === null
+    })
+    if (uncovered.length > 0) {
+      print(
+        "- The following files have no scope.yaml ancestor. Check whether a scope.yaml should be added for their feature boundary (see AGENTS.md → Testing):",
+      )
+      for (const filePath of uncovered) {
+        print(`  - ${filePath}`)
+      }
+    }
   } else {
     for (const command of uniqueCommands) {
       print(`- ${command}`)
