@@ -44,19 +44,21 @@ async function getRemoteTitleMetrics(page: Page) {
     }, "timer-title")
   }
 
-  return titleRoot.getByLabel("Title", { exact: true }).evaluate((node, root) => {
-    const element = node as HTMLElement
-    const rootElement = document.querySelector(
-      `[data-testid="${root}"]`,
-    ) as HTMLElement | null
-    const computedStyle = window.getComputedStyle(element)
+  return titleRoot
+    .getByLabel("Title", { exact: true })
+    .evaluate((node, root) => {
+      const element = node as HTMLElement
+      const rootElement = document.querySelector(
+        `[data-testid="${root}"]`,
+      ) as HTMLElement | null
+      const computedStyle = window.getComputedStyle(element)
 
-    return {
-      fontSize: Number.parseFloat(computedStyle.fontSize),
-      rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
-      text: (node as HTMLTextAreaElement).value,
-    }
-  }, "timer-title")
+      return {
+        fontSize: Number.parseFloat(computedStyle.fontSize),
+        rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+        text: (node as HTMLTextAreaElement).value,
+      }
+    }, "timer-title")
 }
 
 async function expectParticipantLabels(

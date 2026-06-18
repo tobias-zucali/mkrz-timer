@@ -548,9 +548,7 @@ test.describe("countdown progression", () => {
     "starts, pauses, and resumes the timer",
     { tag: "@smoke" },
     async ({ page }) => {
-      test.slow()
-
-      await openTimer(page, 30)
+      await openTimer(page, 60)
 
       await page.getByRole("button", { name: "START" }).click()
       await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
@@ -560,7 +558,7 @@ test.describe("countdown progression", () => {
           message: "timer should count down after start",
           timeout: 8_000,
         })
-        .toBeLessThan(30)
+        .toBeLessThan(60)
 
       await page.getByRole("button", { name: "PAUSE" }).click()
       await expect(page.getByRole("button", { name: "START" })).toBeVisible()
@@ -584,26 +582,16 @@ test.describe("countdown progression", () => {
     "runs a short timer to completion and resets it",
     { tag: "@smoke" },
     async ({ page }) => {
-      test.slow()
-
       await openTimer(page, 3)
+
+      const liveRegion = page.getByRole("status", {
+        name: "Timer announcements",
+      })
 
       await page.getByRole("button", { name: "START" }).click()
       await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
 
-      // Confirm readout mode is active before polling the value — the <output role="timer">
-      // element only exists while the timer is running, avoiding a race where getDisplayedSeconds
-      // reads the pre-start configured duration from the editable inputs.
-      await expect(
-        page.locator('[data-testid="timer-display"][role="timer"]'),
-      ).toBeVisible({ timeout: 5_000 })
-
-      await expect
-        .poll(() => getDisplayedSeconds(page), {
-          message: "timer should reach zero",
-          timeout: 8_000,
-        })
-        .toBe(0)
+      await expect(liveRegion).toContainText("Time is up.", { timeout: 10_000 })
 
       await expect(page.getByRole("button", { name: "RESET" })).toBeEnabled()
       await page.getByRole("button", { name: "RESET" }).click()
@@ -619,7 +607,7 @@ test.describe("countdown progression", () => {
   test("announces timer state changes and uses semantic readout mode", async ({
     page,
   }) => {
-    await openTimer(page, 12)
+    await openTimer(page, 60)
 
     const liveRegion = page.getByRole("status", {
       name: "Timer announcements",
@@ -629,7 +617,7 @@ test.describe("countdown progression", () => {
     await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
     await expect(
       page.getByRole("timer", {
-        name: /Running\. Remaining time\. 12 seconds/i,
+        name: /Running\. Remaining time\. 1 minute/i,
       }),
     ).toBeVisible()
     await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(
@@ -638,21 +626,20 @@ test.describe("countdown progression", () => {
     await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(
       0,
     )
-    await expect(liveRegion).toContainText("12 seconds timer started.")
+    await expect(liveRegion).toContainText("1 minute timer started.")
 
     await expect
       .poll(() => getDisplayedSeconds(page), {
-        message:
-          "timer should count down while semantic readout mode is active",
+        message: "timer should count down before pausing",
         timeout: 8_000,
       })
-      .toBeLessThan(12)
+      .toBeLessThan(60)
 
     await page.getByRole("button", { name: "PAUSE" }).click()
     await expect(liveRegion).toContainText("Paused.")
 
     await page.getByRole("button", { name: "RESET" }).click()
-    await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
+    await expect(liveRegion).toContainText("Timer reset to 1 minute.")
   })
 })
 

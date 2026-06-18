@@ -322,7 +322,9 @@ export async function openSidebarPanel(
 export async function openSettingsOverlay(page: Page) {
   await openSidebarPanel(page, "Timer")
   await expect(
-    page.getByTestId("sidebar-panel-timer").getByLabel("Title", { exact: true }),
+    page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Title", { exact: true }),
   ).toBeVisible()
 }
 

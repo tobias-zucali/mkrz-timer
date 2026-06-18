@@ -196,11 +196,7 @@ export default function StatusPanel({
             </div>
           )}
           {sessionPresentation.state === "liveConflict" && (
-            <ActionButton
-              data-testid="remote-status-retry"
-              disabled={isRetrying}
-              onClick={onRetry}
-            >
+            <ActionButton disabled={isRetrying} onClick={onRetry}>
               {isRetrying ? t("retrying") : t("retryConnection")}
             </ActionButton>
           )}
@@ -216,9 +212,7 @@ export default function StatusPanel({
             "
             >
               <dt className="font-medium text-ink">{t("session")}</dt>
-              <dd data-testid="remote-status-session">
-                {sessionPresentation.statusPanel.sessionLabel}
-              </dd>
+              <dd>{sessionPresentation.statusPanel.sessionLabel}</dd>
               <dt className="font-medium text-ink">{t("state")}</dt>
               <dd data-testid="remote-status-state">{displayStateLabel}</dd>
               <dt className="font-medium text-ink">{t("access")}</dt>
@@ -238,11 +232,7 @@ export default function StatusPanel({
                 </>
               )}
               <dt className="font-medium text-ink">{t("build")}</dt>
-              <dd
-                className="font-mono text-xs text-ink/72"
-                data-testid="remote-status-build"
-                title={buildId}
-              >
+              <dd className="font-mono text-xs text-ink/72" title={buildId}>
                 {buildLabel}
               </dd>
             </dl>
@@ -281,14 +271,9 @@ export default function StatusPanel({
             {hasLiveSessionDetails && (
               <>
                 <dt className="font-medium text-ink">{t("access")}</dt>
-                <dd data-testid="remote-status-session-role">
-                  {sessionPresentation.roleChipLabel}
-                </dd>
+                <dd>{sessionPresentation.roleChipLabel}</dd>
                 <dt className="font-medium text-ink">{t("sessionId")}</dt>
-                <dd
-                  className="font-mono text-xs text-ink/72"
-                  data-testid="remote-status-session-id"
-                >
+                <dd className="font-mono text-xs text-ink/72">
                   {sessionId ?? t("unavailable")}
                 </dd>
                 <dt className="font-medium text-ink">
@@ -298,7 +283,7 @@ export default function StatusPanel({
                   {relayReachabilityLabel}
                 </dd>
                 <dt className="font-medium text-ink">{t("relay")}</dt>
-                <dd data-testid="remote-status-relay">{relayLabel}</dd>
+                <dd>{relayLabel}</dd>
               </>
             )}
           </dl>
@@ -366,13 +351,12 @@ export default function StatusPanel({
             testId="remote-status-activity"
             title={t("recentActivity")}
           >
-            <ul className="space-y-2" data-testid="remote-status-activity-log">
+            <ul className="space-y-2">
               {activityLog.map((entry, index) => {
                 const { detail, timestamp } = splitTimelineEntry(entry)
                 return (
                   <li
                     className="flex items-start justify-between gap-3 text-sm"
-                    data-testid="remote-status-activity-entry"
                     key={`${entry}-${index}`}
                   >
                     <span className="text-ink/72">{detail}</span>

@@ -292,7 +292,9 @@ test("limits titles to 64 characters in settings", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
-  const titleField = page.getByTestId("sidebar-panel-timer").getByLabel("Title", { exact: true })
+  const titleField = page
+    .getByTestId("sidebar-panel-timer")
+    .getByLabel("Title", { exact: true })
   const longTitle = "Facilitator notes ".repeat(6)
 
   await titleField.fill(longTitle)
