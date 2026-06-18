@@ -31,6 +31,7 @@ import StatusPanel, {
 import TimerPanel, {
   type TimerPanelProps,
 } from "@/components/Sidebar/TimerPanel"
+import Wordmark from "@/components/Wordmark"
 import { getCompactStatusAppearance } from "@/components/StatusBadge/statusHelpers"
 import type { AppLocale } from "@/i18n/config"
 import {
@@ -429,10 +430,11 @@ export default function Sidebar({
         >
           <header className="flex items-center justify-between gap-3 border-b border-ink/10 p-4">
             <Link
-              className="text-xl font-semibold text-ink underline-offset-4 hover:underline focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              aria-label={tAppShell("metadata.title")}
+              className="underline-offset-4 hover:underline focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
               href={`/${locale}`}
             >
-              {tAppShell("metadata.title")}
+              <Wordmark onDark size="sm" />
             </Link>
             <CloseButton
               className="sm:hidden"

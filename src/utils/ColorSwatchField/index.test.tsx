@@ -43,4 +43,27 @@ describe("ColorSwatchField", () => {
     expect(onKeyDown).not.toHaveBeenCalled()
     expect(onKeyUp).not.toHaveBeenCalled()
   })
+
+  it("supports preset swatch selection", () => {
+    const handleChange = vi.fn()
+
+    render(
+      <ColorSwatchField
+        id="theme-accent"
+        label="Accent"
+        onChange={handleChange}
+        value="#112233"
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Preset #d61f69" }))
+
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: "#d61f69",
+        }),
+      }),
+    )
+  })
 })

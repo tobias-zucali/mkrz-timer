@@ -8,26 +8,32 @@
 - text: Title
 - textbox "Title"
 - text: Minutes
-- spinbutton "Minutes"
+- group "Minutes":
+  - button "Decrease"
+  - spinbutton "Minutes"
+  - button "Increase"
 - text: Seconds
-- spinbutton "Seconds"
+- group "Seconds":
+  - button "Decrease"
+  - spinbutton "Seconds"
+  - button "Increase"
 - text: Repetitions
-- combobox "Repetitions":
-  - option "1" [selected]
-  - option "2"
-  - option "3"
-  - option "4"
-  - option "5"
-  - option "6"
-  - option "7"
-  - option "8"
-  - option "9"
+- group "Repetitions":
+  - button "Decrease"
+  - spinbutton "Repetitions"
+  - button "Increase"
 - text: After this step
 - combobox "After this step":
   - option "Stop timer" [selected]
   - option "Start next step"
-- 'textbox "Color #d61f69"'
-- text: "Color #d61f69"
+- text: "Color #D61F69"
+- 'button "Preset #d61f69"'
+- 'button "Preset #ef9e3b"'
+- 'button "Preset #2f7fd6"'
+- 'button "Preset #34b87a"'
+- 'button "Preset #8a55d6"'
+- button "Custom swatch"
+- textbox "Color": "#d61f69"
 - button "Add step"
 - button "New"
 - button "Duplicate"

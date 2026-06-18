@@ -114,7 +114,6 @@ test("redirects unprefixed routes to the browser locale with English fallback", 
   })
 })
 
-
 test("navigates to the about page from the footer link", async ({ page }) => {
   await openTimer(page, 60)
 
@@ -274,6 +273,33 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
   await expect(
     page.getByTestId("timer-controls").getByRole("button", { name: "RESET" }),
   ).toBeDisabled()
+})
+
+test("supports accessible stepper controls for timing and repetitions", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await openSidebarPanel(page, "Timer")
+
+  const timerPanel = page.getByTestId("sidebar-panel-timer")
+  const minutesInput = timerPanel.getByRole("spinbutton", { name: "Minutes" })
+  const repetitionsInput = timerPanel.getByRole("spinbutton", {
+    name: "Repetitions",
+  })
+  const minutesStepper = timerPanel.getByRole("group", { name: "Minutes" })
+  const repetitionsStepper = timerPanel.getByRole("group", {
+    name: "Repetitions",
+  })
+
+  await minutesStepper.getByRole("button", { name: "Increase" }).click()
+  await expect(minutesInput).toHaveValue("01")
+
+  await repetitionsInput.focus()
+  await repetitionsInput.press("ArrowUp")
+  await expect(repetitionsInput).toHaveValue("2")
+
+  await repetitionsStepper.getByRole("button", { name: "Decrease" }).click()
+  await expect(repetitionsInput).toHaveValue("1")
 })
 
 test("limits titles to 64 characters in settings", async ({ page }) => {

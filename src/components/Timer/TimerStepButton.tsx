@@ -31,7 +31,7 @@ export default function TimerStepButton({
         direction === "previous" ? "left-4" : "right-4",
         isHighlighted
           ? "border-primary bg-primary hover:bg-primary/88"
-          : "border-ink/12 bg-screen/72 hover:border-primary/40 hover:text-primary",
+          : "border-ink/18 bg-screen/82 hover:border-primary/40 hover:bg-screen/90 hover:text-primary",
         !isHighlighted && isDimmed && "timer-chrome-dimmed",
       )}
       onClick={onClick}

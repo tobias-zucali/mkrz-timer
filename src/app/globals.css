@@ -76,9 +76,9 @@
   --color-ring-violet: var(--ring-violet);
 
   /* Fonts */
-  --font-display: "Kanit", sans-serif;
-  --font-body: "Roboto", sans-serif;
-  --font-mono: '"Space Mono"', monospace;
+  --font-display: var(--font-display-family, "Kanit"), sans-serif;
+  --font-body: var(--font-body-family, "Roboto"), sans-serif;
+  --font-mono: var(--font-mono-family, "Space Mono"), monospace;
 
   /* Radii — same names as design-tokens.css vars, so values are hardcoded here to avoid circular refs */
   --radius-sm: 8px;
@@ -92,6 +92,10 @@ body {
   background: var(--bg-screen);
   color: var(--text-primary);
   font-family: var(--font-body);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 26%, transparent);
 }
 
 html,
@@ -191,4 +195,12 @@ body {
 
 @utility timer-chrome-dimmed {
   opacity: 0.3;
+}
+
+@utility panel-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }

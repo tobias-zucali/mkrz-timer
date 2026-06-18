@@ -20,7 +20,7 @@ export const buildDefaultTimerSequenceRow = (): TimerSequenceRow => ({
   primaryColor: DEFAULT_TIMER_PRIMARY_COLOR,
   repeatCount: 1,
   title: "",
-  totalSeconds: 60,
+  totalSeconds: 300,
 })
 
 export const clampTimerSequenceIndex = ({

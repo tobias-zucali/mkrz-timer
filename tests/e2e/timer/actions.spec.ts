@@ -691,7 +691,7 @@ test("keeps paused step switches silent and auto-advances running sequences", as
   const timerPanel = page.getByTestId("sidebar-panel-timer")
   await timerPanel.getByLabel("After this step").selectOption("advance")
   await timerPanel.getByRole("button", { name: "Add step" }).click()
-  await timerPanel.getByLabel("Seconds").fill("05")
+  await timerPanel.getByRole("spinbutton", { name: "Seconds" }).fill("05")
 
   const liveRegion = page.getByRole("status", { name: "Timer announcements" })
 
@@ -733,7 +733,7 @@ test("applies shortcut focus rules and minute adjustments", async ({
   const timerPanel = page.getByTestId("sidebar-panel-timer")
   const displayedBeforeBlockedKeys = await getDisplayedSeconds(page)
 
-  await timerPanel.getByLabel("Seconds").focus()
+  await timerPanel.getByRole("spinbutton", { name: "Seconds" }).focus()
   await page.keyboard.press("Space")
   await page.keyboard.press("r")
   await page.waitForTimeout(1_200)

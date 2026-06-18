@@ -28,7 +28,7 @@ import {
 } from "@/utils/timerSequenceEditor"
 
 const stateBadgeClassName =
-  "rounded-full px-2 py-0.5 text-[0.68rem] font-semibold"
+  "rounded-full px-2.5 py-1 font-display text-[0.68rem] font-semibold tracking-[0.05em]"
 
 type SequenceRow = SyncParams["rows"][number]
 
@@ -218,8 +218,9 @@ export default function TimerPanel({
           aria-label={t("pageTitleLabel")}
           autoComplete="off"
           className="
-            block w-full border-none bg-transparent px-0 text-2xl font-semibold
-            text-ink outline-none placeholder:text-ink/42
+            block w-full border-none bg-transparent px-0 font-display text-2xl
+            font-semibold tracking-tight text-ink outline-none
+            placeholder:text-ink/42
           "
           id={pageTitleInputId}
           maxLength={MAX_TITLE_LENGTH}
@@ -237,7 +238,9 @@ export default function TimerPanel({
       </section>
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-ink">{t("heading")}</h3>
+          <h3 className="font-display text-base font-semibold text-ink">
+            {t("heading")}
+          </h3>
         </div>
 
         <div className="space-y-3">
@@ -251,7 +254,7 @@ export default function TimerPanel({
 
             return (
               <section
-                className={`rounded-2xl border bg-screen p-4 transition ${
+                className={`rounded-card border bg-card p-4 shadow-[0_18px_44px_rgba(0,0,0,0.12)] transition ${
                   isSelected ? "" : "cursor-pointer"
                 }`}
                 key={index}
@@ -269,14 +272,14 @@ export default function TimerPanel({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className="text-xs font-semibold tracking-[0.14em] uppercase"
+                        className="panel-label text-xs"
                         style={{ color: displayRow.primaryColor }}
                       >
                         {t("step", { step: index + 1 })}
                       </span>
                       {isActive ? (
                         <span
-                          className={`${stateBadgeClassName} text-ink`}
+                          className={`${stateBadgeClassName} text-white shadow-[0_10px_24px_rgba(214,31,105,0.2)]`}
                           style={{ backgroundColor: displayRow.primaryColor }}
                         >
                           {t("active")}
@@ -301,7 +304,7 @@ export default function TimerPanel({
 
                     <div className="mt-2 min-w-0 text-left">
                       {!isSelected && sourceRow.title ? (
-                        <p className="truncate text-sm font-semibold text-ink">
+                        <p className="truncate font-display text-base font-semibold text-ink">
                           {sourceRow.title}
                         </p>
                       ) : null}
@@ -319,6 +322,7 @@ export default function TimerPanel({
                         aria-label={t("moveStepUp", {
                           step: index + 1,
                         })}
+                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, -1)
@@ -337,6 +341,7 @@ export default function TimerPanel({
                         aria-label={t("moveStepDown", {
                           step: index + 1,
                         })}
+                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, 1)
@@ -354,6 +359,7 @@ export default function TimerPanel({
                       aria-label={t("duplicateStep", {
                         step: index + 1,
                       })}
+                      className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
                       onClick={(event) => {
                         event.stopPropagation()
                         handleDuplicateRow(index)
@@ -371,6 +377,7 @@ export default function TimerPanel({
                         aria-label={t("deleteStep", {
                           step: index + 1,
                         })}
+                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleDeleteRow(index)
@@ -401,8 +408,9 @@ export default function TimerPanel({
           <button
             className="
               inline-flex min-h-11 w-full cursor-pointer items-center justify-center
-              rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-ink
-              transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2
+              rounded-xl bg-primary px-4 py-2.5 font-display text-sm font-semibold
+              tracking-wider text-white shadow-[0_16px_32px_rgba(214,31,105,0.28)]
+              transition hover:bg-primary-hover focus:outline-2 focus:-outline-offset-2
               focus:outline-primary
             "
             onClick={handleAddRow}

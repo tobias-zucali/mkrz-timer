@@ -8,19 +8,19 @@ import { defaultAppLocale } from "@/i18n/config"
 import { PWA_APP_NAME, PWA_DESCRIPTION, PWA_THEME_COLOR } from "@/app/pwa"
 
 const kanit = Kanit({
-  variable: "--font-display",
+  variable: "--font-display-family",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 })
 
 const roboto = Roboto({
-  variable: "--font-body",
+  variable: "--font-body-family",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
 })
 
 const spaceMono = Space_Mono({
-  variable: "--font-mono",
+  variable: "--font-mono-family",
   subsets: ["latin"],
   weight: ["400", "700"],
 })

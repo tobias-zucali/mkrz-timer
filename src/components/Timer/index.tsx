@@ -79,8 +79,7 @@ export default function Timer({
   const remainingSeconds =
     Number.parseInt(minutes || "0", 10) * 60 +
     Number.parseInt(seconds || "0", 10)
-  const hasElapsedTime =
-    isStarted && (isFinished || remainingSeconds < timer.totalDuration)
+  const isResetAvailable = isStarted
   const readoutSummary = buildTimerReadoutLabel({
     activeIndex,
     readoutState,
@@ -119,7 +118,10 @@ export default function Timer({
   })
 
   return (
-    <section aria-labelledby={headingId} className="flex h-full flex-col">
+    <section
+      aria-labelledby={headingId}
+      className="flex h-full flex-col text-ink"
+    >
       <h1 className="sr-only" id={headingId}>
         {title.trim() || t("screenHeading")}
       </h1>
@@ -185,7 +187,7 @@ export default function Timer({
               <TimerControls
                 isDimmed={isControlsDimmed}
                 isPaused={isPaused}
-                isResetDisabled={!hasElapsedTime}
+                isResetDisabled={!isResetAvailable}
                 isStartDisabled={isStartDisabled}
                 isFinished={isFinished}
                 pauseLabel={t("pause")}
