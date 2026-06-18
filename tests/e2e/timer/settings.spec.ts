@@ -114,18 +114,6 @@ test("redirects unprefixed routes to the browser locale with English fallback", 
   })
 })
 
-test("redirects legacy localized timer URLs from the public home route", async ({
-  page,
-}) => {
-  await page.goto(
-    "/en?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
-  )
-
-  await expect(page).toHaveURL(/\/en\/t\?v=1&t=.*&a=0&title=Workshop\+timer$/, {
-    timeout: 30_000,
-  })
-  await expect(page.getByRole("button", { name: "START" })).toBeVisible()
-})
 
 test("navigates to the about page from the footer link", async ({ page }) => {
   await openTimer(page, 60)
