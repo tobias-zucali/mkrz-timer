@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import type { CSSProperties, ReactNode } from "react"
 
 import { infoPageSlugs, type InfoPageSlug } from "@/features/InfoPages/content"
@@ -106,12 +107,14 @@ export default function PublicPageFrame({
               <Wordmark size="sm" />
             </Link>
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <PublicLocaleSwitcher
-                currentLocale={locale}
-                englishLabel={PublicSite.navigation.languageEnglish}
-                germanLabel={PublicSite.navigation.languageGerman}
-                label={PublicSite.navigation.languageLabel}
-              />
+              <Suspense>
+                <PublicLocaleSwitcher
+                  currentLocale={locale}
+                  englishLabel={PublicSite.navigation.languageEnglish}
+                  germanLabel={PublicSite.navigation.languageGerman}
+                  label={PublicSite.navigation.languageLabel}
+                />
+              </Suspense>
               <Link
                 className="rounded-pill border border-primary/35 bg-primary px-4 py-2 font-body font-semibold text-white transition hover:bg-primary-hover focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
                 href={`/${locale}/t`}
