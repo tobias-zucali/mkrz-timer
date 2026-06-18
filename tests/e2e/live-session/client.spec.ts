@@ -44,7 +44,7 @@ async function getRemoteTitleMetrics(page: Page) {
     }, "timer-title")
   }
 
-  return titleRoot.getByTestId("timer-title-input").evaluate((node, root) => {
+  return titleRoot.getByLabel("Title", { exact: true }).evaluate((node, root) => {
     const element = node as HTMLElement
     const rootElement = document.querySelector(
       `[data-testid="${root}"]`,

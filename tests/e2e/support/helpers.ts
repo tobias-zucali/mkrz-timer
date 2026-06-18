@@ -322,7 +322,7 @@ export async function openSidebarPanel(
 export async function openSettingsOverlay(page: Page) {
   await openSidebarPanel(page, "Timer")
   await expect(
-    page.getByTestId("sidebar-panel-timer").getByLabel("Title"),
+    page.getByTestId("sidebar-panel-timer").getByLabel("Title", { exact: true }),
   ).toBeVisible()
 }
 
@@ -342,7 +342,7 @@ export async function updateTimerSettings(
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Title")
+      .getByLabel("Title", { exact: true })
       .fill(title)
   }
   if (minutes !== undefined) {
@@ -401,9 +401,9 @@ export async function expectTimerRunning(page: Page) {
 
 export async function readTimerTitleValue(page: Page) {
   const timerTitle = page.getByTestId("timer-title")
-  const editor = timerTitle.getByTestId("timer-title-input")
+  const editor = timerTitle.getByLabel("Title", { exact: true })
   const display = timerTitle.getByTestId("timer-title-text")
-  const emptyAction = timerTitle.getByTestId("timer-title-empty-action")
+  const emptyAction = timerTitle.getByRole("button", { name: "Add title" })
 
   if ((await editor.count()) > 0) {
     return editor.inputValue()
@@ -728,23 +728,27 @@ export async function expectTimerControlsToMatch(pages: Page[]) {
 }
 
 export async function getDisplayedSeconds(page: Page) {
+  // data-testid="timer-display" is on the same element in both modes:
+  //   readout (running/finished): <output role="timer"> — text spans only, no inputs
+  //   editable (ready/paused):    <div role="group">   — labeled minute/second inputs
+  // Checking the role directly avoids the fragile input-count heuristic and prevents
+  // accidentally reading the pre-start configured duration from the editable inputs.
   const timerDisplay = page.getByTestId("timer-display")
-  const minutesInput = timerDisplay.getByLabel("Minutes")
-  const secondsInput = timerDisplay.getByLabel("Seconds")
+  const isReadout = await timerDisplay.evaluate(
+    (el) => el.getAttribute("role") === "timer",
+  )
 
-  if ((await minutesInput.count()) > 0 && (await secondsInput.count()) > 0) {
-    const minutes = Number(await minutesInput.inputValue())
-    const seconds = Number(await secondsInput.inputValue())
-
+  if (isReadout) {
+    const text =
+      ((await timerDisplay.textContent()) ?? "").replace(/\s+/g, "") || "00:00"
+    const [minutes, seconds] = text.split(":").map(Number)
     return minutes * 60 + seconds
   }
 
-  const displayText =
-    ((await timerDisplay.textContent()) ?? "").replace(/\s+/g, "") || "00:00"
-  const [minutes, seconds] = displayText
-    .split(":")
-    .map((value) => Number(value))
-
+  const minutesInput = timerDisplay.getByLabel("Minutes")
+  const secondsInput = timerDisplay.getByLabel("Seconds")
+  const minutes = Number(await minutesInput.inputValue())
+  const seconds = Number(await secondsInput.inputValue())
   return minutes * 60 + seconds
 }
 

@@ -248,7 +248,7 @@ test("switches languages without losing the current route state", async ({
   await openTimer(page, 3)
   await openSidebarPanel(page, "Settings")
 
-  await page.getByTestId("language-switcher").selectOption("de")
+  await page.getByLabel("Language").selectOption("de")
   await expect(page).toHaveURL(/\/de\/t\?v=1&t=/, { timeout: 15_000 })
 
   await page.getByRole("button", { name: "Teilen öffnen" }).click()
@@ -269,7 +269,7 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
   const offcanvas = page.getByTestId("sidebar-offcanvas")
   const viewportSize = page.viewportSize()
 
-  await timerPanel.getByLabel("Title").press(" ")
+  await timerPanel.getByLabel("Title", { exact: true }).press(" ")
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
   await expect(timerPanel).toBeVisible()
 
@@ -292,7 +292,7 @@ test("limits titles to 64 characters in settings", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
-  const titleField = page.getByTestId("sidebar-panel-timer").getByLabel("Title")
+  const titleField = page.getByTestId("sidebar-panel-timer").getByLabel("Title", { exact: true })
   const longTitle = "Facilitator notes ".repeat(6)
 
   await titleField.fill(longTitle)

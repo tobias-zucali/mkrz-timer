@@ -69,8 +69,8 @@ async function setTimer(page: Page, minutes: string, seconds: string) {
 
 async function setInlineTitle(page: Page, title: string) {
   const titleRoot = page.getByTestId("timer-title")
-  const emptyAction = titleRoot.getByTestId("timer-title-empty-action")
-  const editor = titleRoot.getByTestId("timer-title-input")
+  const emptyAction = titleRoot.getByRole("button", { name: "Add title" })
+  const editor = titleRoot.getByLabel("Title", { exact: true })
 
   if ((await emptyAction.count()) > 0) {
     await emptyAction.click()
@@ -115,7 +115,7 @@ async function getTitleMetrics(page: Page) {
     })
   }
 
-  return titleRoot.getByTestId("timer-title-input").evaluate((node) => {
+  return titleRoot.getByLabel("Title", { exact: true }).evaluate((node) => {
     const element = node as HTMLElement
     const computedStyle = window.getComputedStyle(element)
     const rootElement = document.querySelector(
@@ -133,7 +133,7 @@ async function getTitleMetrics(page: Page) {
 async function getTitleOverflowMetrics(page: Page) {
   return page.evaluate(() => {
     const inputTitle = document.querySelector(
-      '[data-testid="timer-title-input"]',
+      '[aria-label="Title"]',
     ) as HTMLTextAreaElement | null
 
     if (!inputTitle) {
@@ -162,7 +162,7 @@ async function getTitlePositionMetrics(page: Page) {
       '[data-testid="timer-title-text"]',
     ) as HTMLElement | null
     const inputTitle = document.querySelector(
-      '[data-testid="timer-title-input"]',
+      '[aria-label="Title"]',
     ) as HTMLTextAreaElement | null
 
     const toRect = (element: HTMLElement | null) => {
@@ -193,7 +193,7 @@ async function getControlChromeMetrics(page: Page) {
       'button[aria-label="Toggle navigation"]',
     ) as HTMLElement | null
     const titleAction = document.querySelector(
-      '[data-testid="timer-title-empty-action"]',
+      '[aria-label="Add title"]',
     ) as HTMLElement | null
     const topRight = document.querySelector(
       '[data-testid="top-right-controls"]',
@@ -441,7 +441,7 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
   await expect(
     titleRoot.getByRole("button", { name: "Add title" }),
   ).toBeVisible()
-  await expect(titleRoot.getByTestId("timer-title-input")).toHaveCount(1)
+  await expect(titleRoot.getByLabel("Title", { exact: true })).toHaveCount(1)
   await expect(
     titleRoot.evaluate((node) => node.getBoundingClientRect().height),
   ).resolves.toBeLessThan(80)
@@ -453,8 +453,8 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
 
   const displayHeight = await getTitleRootHeight(page)
   const displayPosition = await getTitlePositionMetrics(page)
-  await titleRoot.getByTestId("timer-title-input").click()
-  await expect(titleRoot.getByTestId("timer-title-input")).toBeFocused()
+  await titleRoot.getByLabel("Title", { exact: true }).click()
+  await expect(titleRoot.getByLabel("Title", { exact: true })).toBeFocused()
   const focusHeight = await getTitleRootHeight(page)
   const focusPosition = await getTitlePositionMetrics(page)
   expect(Math.abs(focusHeight - displayHeight)).toBeLessThan(10)
@@ -591,10 +591,17 @@ test.describe("countdown progression", () => {
       await page.getByRole("button", { name: "START" }).click()
       await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
 
+      // Confirm readout mode is active before polling the value — the <output role="timer">
+      // element only exists while the timer is running, avoiding a race where getDisplayedSeconds
+      // reads the pre-start configured duration from the editable inputs.
+      await expect(
+        page.locator('[data-testid="timer-display"][role="timer"]'),
+      ).toBeVisible({ timeout: 5_000 })
+
       await expect
         .poll(() => getDisplayedSeconds(page), {
           message: "timer should reach zero",
-          timeout: 10_000,
+          timeout: 8_000,
         })
         .toBe(0)
 
@@ -867,7 +874,7 @@ test("keeps timer chrome mounted on small screens and dims it after idle", async
             '[data-testid="timer-controls"]',
           ) as HTMLElement | null
           const titleAction = document.querySelector(
-            '[data-testid="timer-title-empty-action"]',
+            '[aria-label="Add title"]',
           ) as HTMLElement | null
 
           if (!topRight || !timerControls || !sidebarToggle || !titleAction) {

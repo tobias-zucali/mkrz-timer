@@ -473,7 +473,6 @@ export default function Sidebar({
                     transition hover:border-primary/50 focus:outline-2
                     focus:-outline-offset-2 focus:outline-primary
                   "
-                  data-testid="sidebar-session-status-button"
                   onClick={openSharePanel}
                   type="button"
                   {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}

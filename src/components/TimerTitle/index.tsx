@@ -258,7 +258,6 @@ export default function TimerTitle({
               : "absolute inset-x-0 top-0 opacity-0",
           !showFocusedTextarea && !hasText && "pointer-events-none",
         )}
-        data-testid="timer-title-input"
         maxLength={MAX_TITLE_LENGTH}
         onBlur={() => setIsFocused(false)}
         onChange={(event) => onChange(normalizeTitle(event.target.value))}
@@ -316,7 +315,6 @@ export default function TimerTitle({
             "transition-opacity timer-chrome-transition",
             isDimmed ? "timer-chrome-dimmed" : "opacity-100",
           )}
-          data-testid="timer-title-empty-action"
           data-timer-chrome-focus-lock="true"
           onClick={() => setIsFocused(true)}
           type="button"

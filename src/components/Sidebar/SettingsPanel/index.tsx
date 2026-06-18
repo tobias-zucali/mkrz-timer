@@ -126,7 +126,6 @@ export default function SettingsPanel({
         </div>
         <div className="space-y-3">
           <ActionButton
-            data-testid="floating-timer-toggle"
             disabled={!floatingTimerData.isSupported}
             onClick={() => {
               void floatingTimerData.toggle()

@@ -28,7 +28,6 @@ export default function LocaleSwitcher() {
             text-sm text-ink transition outline-none
             focus:border-primary focus:ring-2 focus:ring-primary/20
           "
-          data-testid="language-switcher"
           id={fieldId}
           onChange={(event) => {
             const nextLocale = event.target.value as AppLocale

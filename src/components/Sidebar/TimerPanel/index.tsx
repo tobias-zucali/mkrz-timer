@@ -221,7 +221,6 @@ export default function TimerPanel({
             block w-full border-none bg-transparent px-0 text-2xl font-semibold
             text-ink outline-none placeholder:text-ink/42
           "
-          data-testid="sidebar-page-title-input"
           id={pageTitleInputId}
           maxLength={MAX_TITLE_LENGTH}
           onChange={(event) =>

@@ -38,7 +38,6 @@ export default function FloatingTimerContent({
       className="
         flex h-screen flex-col overflow-hidden bg-screen text-ink
       "
-      data-testid="floating-timer-root"
       style={
         primaryColor
           ? ({ ["--color-primary"]: primaryColor } as React.CSSProperties)

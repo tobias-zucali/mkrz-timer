@@ -67,7 +67,6 @@ export default function StatusBadge({
           hover:text-ink/88
           focus:outline-2 focus:-outline-offset-2 focus:outline-primary
         "
-        data-testid="remote-status-toggle"
         onClick={onOpenSharePanel}
         type="button"
       >

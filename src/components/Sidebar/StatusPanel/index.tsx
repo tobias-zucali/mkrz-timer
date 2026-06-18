@@ -187,7 +187,6 @@ export default function StatusPanel({
                 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3
                 text-sm text-amber-100
               "
-              data-testid="status-floating-timer-error"
               role="alert"
             >
               <p className="font-semibold text-amber-50">

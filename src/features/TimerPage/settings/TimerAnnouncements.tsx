@@ -165,7 +165,6 @@ export default function TimerAnnouncements({
       aria-label={tPage("screenReaderAnnouncements")}
       aria-live="polite"
       className="sr-only"
-      data-testid="timer-live-region"
       role="status"
     >
       {announcement}
