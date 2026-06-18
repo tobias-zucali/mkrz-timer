@@ -1,15 +1,14 @@
 - main:
-  - link "mkrz timer":
+  - link "time-timer":
     - /url: /en
-  - paragraph: by mkrz
-  - text: Language
-  - combobox "Language":
-    - option "English" [selected]
-    - option "Deutsch"
+    - img "time-timer": mkrz timer
+  - button "Language"
   - link "Open timer":
     - /url: /en/t
-  - link "GitHub":
-    - /url: https://github.com/tobias-zucali/mkrz-timer
+  - paragraph:
+    - text: // simple timekeeping · by
+    - link "mkrz lab":
+      - /url: https://mkrz.at
   - article:
     - heading "About mkrz timer" [level=1]
     - paragraph: mkrz timer is a timer focused on simplicity, accessibility, sharing, and reliable synchronization across devices.
@@ -119,6 +118,9 @@
       - listitem: reporting bugs
       - listitem: contributing improvements
       - listitem: sharing the project with others
+  - link "time-timer":
+    - /url: /en
+    - img "time-timer": mkrz timer
   - navigation "Information pages":
     - list:
       - listitem:
@@ -139,6 +141,11 @@
       - listitem:
         - link "Contact":
           - /url: /en/contact
-      - listitem:
-        - link "GitHub":
-          - /url: https://github.com/tobias-zucali/mkrz-timer
+  - text: /© \d+/
+  - link "mkrz lab":
+    - /url: https://mkrz.at
+  - text: · by
+  - link "Tobias Zucali":
+    - /url: https://www.linkedin.com/in/tobias-zucali/
+  - link "CC BY-NC-SA 4.0":
+    - /url: https://creativecommons.org/licenses/by-nc-sa/4.0/

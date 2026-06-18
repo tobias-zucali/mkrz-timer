@@ -39,15 +39,12 @@ test("keeps footer navigation available on public info pages", async ({
     "Terms",
     "Accessibility",
     "Contact",
-    "GitHub",
   ]) {
     await expect(footer.getByRole("link", { name: linkName })).toBeVisible()
   }
 
-  await expect(footer.getByRole("link", { name: "GitHub" })).toHaveAttribute(
-    "href",
-    "https://github.com/tobias-zucali/mkrz-timer",
-  )
+  await expect(footer.getByRole("link", { name: "GitHub" })).toHaveCount(0)
+
   await expect(
     page.getByRole("link", { name: "mkrz lab" }).first(),
   ).toHaveAttribute("target", "_blank")

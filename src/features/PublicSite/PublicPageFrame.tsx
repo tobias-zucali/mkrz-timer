@@ -146,33 +146,19 @@ export default function PublicPageFrame({
             </Link>
             <nav aria-label={InfoPages.footer.navigationLabel}>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/60">
-                {footerLinks
-                  .filter((l) =>
-                    ["privacy", "impressum", "accessibility"].includes(l.slug),
-                  )
-                  .map((link) => (
-                    <li key={link.slug}>
-                      <Link
-                        aria-current={
-                          currentSlug === link.slug ? "page" : undefined
-                        }
-                        className="transition hover:text-white aria-[current=page]:text-primary"
-                        href={link.href}
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                <li>
-                  <a
-                    className="transition hover:text-white"
-                    href="https://github.com/tobias-zucali/mkrz-timer"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {InfoPages.footer.github}
-                  </a>
-                </li>
+                {footerLinks.map((link) => (
+                  <li key={link.slug}>
+                    <Link
+                      aria-current={
+                        currentSlug === link.slug ? "page" : undefined
+                      }
+                      className="transition hover:text-white aria-[current=page]:text-primary"
+                      href={link.href}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
           </div>
