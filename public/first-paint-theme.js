@@ -1,13 +1,11 @@
 ;(() => {
   const DEFAULT_SYNC_PARAMS = {
-    bg: "#000000",
-    fg: "#ffffff",
+    theme: "dark",
     pc: "#d61f69",
   }
   const MAX_TIMER_DURATION_SECONDS = 59999
   const FIRST_PAINT_THEME_DATASET_KEYS = {
-    bg: "timerBg",
-    fg: "timerFg",
+    theme: "timerTheme",
     pc: "timerPc",
   }
   const HEX_COLOR_PATTERN = /^#?[0-9a-fA-F]{6}$/
@@ -73,24 +71,16 @@
     return fifthValue === "0" || fifthValue === "1" ? primaryColor : null
   }
 
-  const resolveColors = (searchString) => {
+  const resolveThemeAndPc = (searchString) => {
     const trimmedSearchString = searchString.replace(/^\?/, "")
     const searchParams = new URLSearchParams(trimmedSearchString)
-    const bg = normalizeRuntimeColor(
-      searchParams.get("bg"),
-      DEFAULT_SYNC_PARAMS.bg,
-    )
-    const fg = normalizeRuntimeColor(
-      searchParams.get("fg"),
-      DEFAULT_SYNC_PARAMS.fg,
-    )
+    const theme = searchParams.get("theme") === "bright" ? "bright" : "dark"
     const version = searchParams.get("v")
     const rowsValue = searchParams.get("t")
 
     if (version !== "1" || !rowsValue) {
       return {
-        bg,
-        fg,
+        theme,
         pc: DEFAULT_SYNC_PARAMS.pc,
       }
     }
@@ -102,8 +92,7 @@
 
     if (rows.length === 0) {
       return {
-        bg,
-        fg,
+        theme,
         pc: DEFAULT_SYNC_PARAMS.pc,
       }
     }
@@ -120,35 +109,19 @@
     const activeRowPrimaryColor = rows[activeIndex] ?? ""
 
     return {
-      bg,
-      fg,
+      theme,
       pc: activeRowPrimaryColor || DEFAULT_SYNC_PARAMS.pc,
     }
   }
 
-  const hexToRgbChannels = (value) => {
-    const normalized = value.replace(/^#/, "")
-    if (!/^[\da-fA-F]{6}$/.test(normalized)) {
-      return value
-    }
-
-    const red = Number.parseInt(normalized.slice(0, 2), 16)
-    const green = Number.parseInt(normalized.slice(2, 4), 16)
-    const blue = Number.parseInt(normalized.slice(4, 6), 16)
-
-    return `${red} ${green} ${blue}`
-  }
-
   const root = document.documentElement
-  const colors = resolveColors(window.location.search)
+  const resolved = resolveThemeAndPc(window.location.search)
 
-  root.style.setProperty("--background", hexToRgbChannels(colors.bg))
-  root.style.setProperty("--foreground", hexToRgbChannels(colors.fg))
-  root.style.setProperty("--primary", hexToRgbChannels(colors.pc))
-  root.dataset[FIRST_PAINT_THEME_DATASET_KEYS.bg] =
-    colors.bg || DEFAULT_SYNC_PARAMS.bg
-  root.dataset[FIRST_PAINT_THEME_DATASET_KEYS.fg] =
-    colors.fg || DEFAULT_SYNC_PARAMS.fg
+  root.setAttribute("data-theme", resolved.theme)
+  if (resolved.pc && resolved.pc !== DEFAULT_SYNC_PARAMS.pc) {
+    root.style.setProperty("--color-primary", resolved.pc)
+  }
+  root.dataset[FIRST_PAINT_THEME_DATASET_KEYS.theme] = resolved.theme
   root.dataset[FIRST_PAINT_THEME_DATASET_KEYS.pc] =
-    colors.pc || DEFAULT_SYNC_PARAMS.pc
+    resolved.pc || DEFAULT_SYNC_PARAMS.pc
 })()

@@ -1,5 +1,5 @@
 - main "mkrz timer":
-  - status "Timer announcements": Live session, Connected, CONTROL access
+  - status "Timer announcements": Live session, Connected, MANAGE access
   - region "Timer":
     - heading "Timer" [level=1]
     - textbox "Title"
@@ -16,7 +16,9 @@
   - button "Enter fullscreen"
 - button "Toggle navigation"
 - dialog:
-  - banner: mkrz timer
+  - banner:
+    - link "mkrz timer":
+      - /url: /en
   - navigation:
     - list:
       - listitem:
@@ -30,7 +32,10 @@
         - button "LIVE SESSION Synchronized"
       - listitem:
         - button "Status"
-- button "Open session status. Live session, Connected, CONTROL access"
-- link "by mkrz":
-  - /url: https://www.mkrz.at/
+- button "Open session status. Live session, Connected, MANAGE access"
+- contentinfo:
+  - link "by mkrz":
+    - /url: https://www.mkrz.at/
+  - link "About":
+    - /url: /en/about
 - alert

@@ -20,8 +20,8 @@ export type ParamBuildOptions = {
   pathname?: string
 }
 
-const colorParamKeys = ["bg", "fg", "pc"] as const
-const settingsOnlyOmitKeys = ["bg", "fg", "s", "ts"] as const
+const colorParamKeys = ["pc"] as const
+const settingsOnlyOmitKeys = ["s", "ts"] as const
 const remoteSessionOnlyOmitKeys = ["a", "pid"] as const
 const controlRemoteOnlyOmitKeys = [...remoteSessionOnlyOmitKeys]
 const readonlyRemoteOnlyOmitKeys = [
@@ -75,12 +75,15 @@ export const getRemoteSessionOnlyOmitKeys = (
 
   if (
     !normalizedPathname ||
-    !/^\/(?:view|control)(?:\/|$)/.test(normalizedPathname)
+    !/^\/(?:join|manage|view|control)(?:\/|$)/.test(normalizedPathname)
   ) {
     return []
   }
 
-  if (normalizedPathname.startsWith("/view/")) {
+  if (
+    normalizedPathname.startsWith("/join/") ||
+    normalizedPathname.startsWith("/view/")
+  ) {
     return [...readonlyRemoteOnlyOmitKeys]
   }
 
@@ -121,7 +124,7 @@ export const buildPathWithParams = (
       return
     }
 
-    if (["bg", "fg", "m", "pc", "s", "snd", "title", "tts"].includes(key)) {
+    if (["theme", "m", "pc", "s", "snd", "title", "tts"].includes(key)) {
       return
     }
 
@@ -140,15 +143,8 @@ export const buildPathWithParams = (
       omittedParams.has("a") || typeof mergedParams.activeIndex !== "number"
         ? 0
         : mergedParams.activeIndex,
-    bg:
-      omittedParams.has("bg") || !mergedParams.bg
-        ? null
-        : normalizeSerializableParam("bg", mergedParams.bg),
+    theme: omittedParams.has("theme") ? null : mergedParams.theme,
     extraParams: passthroughParams,
-    fg:
-      omittedParams.has("fg") || !mergedParams.fg
-        ? null
-        : normalizeSerializableParam("fg", mergedParams.fg),
     rows:
       omittedParams.has("v") || omittedParams.has("t") ? [] : normalizedRows,
     snd:

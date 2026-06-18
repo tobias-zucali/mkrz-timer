@@ -1,4 +1,8 @@
 import type { AppLocale } from "../../i18n/config.ts"
+import {
+  legacyRemoteRoutePrefixes,
+  remoteRoutePrefixes,
+} from "../../routing/remotePaths.ts"
 import type { RemoteAccessRole } from "../../shared/liveSession/types.ts"
 import { stripLocalePrefix } from "../../i18n/locale.ts"
 import { normalizeRemoteAccessToken } from "../../shared/security/input.ts"
@@ -15,22 +19,21 @@ export type RemoteRoute =
       token: string | null
     }
 
-const REMOTE_ROUTE_PREFIXES = {
-  control: "/control",
-  readonly: "/view",
-} satisfies Record<RemoteAccessRole, string>
-
 function getRoleForPath(pathname: string): RemoteAccessRole | null {
   if (
-    pathname === REMOTE_ROUTE_PREFIXES.control ||
-    pathname.startsWith(`${REMOTE_ROUTE_PREFIXES.control}/`)
+    pathname === remoteRoutePrefixes.control ||
+    pathname.startsWith(`${remoteRoutePrefixes.control}/`) ||
+    pathname === legacyRemoteRoutePrefixes.control ||
+    pathname.startsWith(`${legacyRemoteRoutePrefixes.control}/`)
   ) {
     return "control"
   }
 
   if (
-    pathname === REMOTE_ROUTE_PREFIXES.readonly ||
-    pathname.startsWith(`${REMOTE_ROUTE_PREFIXES.readonly}/`)
+    pathname === remoteRoutePrefixes.readonly ||
+    pathname.startsWith(`${remoteRoutePrefixes.readonly}/`) ||
+    pathname === legacyRemoteRoutePrefixes.readonly ||
+    pathname.startsWith(`${legacyRemoteRoutePrefixes.readonly}/`)
   ) {
     return "readonly"
   }
@@ -38,8 +41,23 @@ function getRoleForPath(pathname: string): RemoteAccessRole | null {
   return null
 }
 
+function getMatchedPathPrefix(pathname: string) {
+  const prefixes = [
+    remoteRoutePrefixes.control,
+    remoteRoutePrefixes.readonly,
+    legacyRemoteRoutePrefixes.control,
+    legacyRemoteRoutePrefixes.readonly,
+  ] as const
+
+  return (
+    prefixes.find(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    ) ?? null
+  )
+}
+
 export function getRemotePathPrefix(role: RemoteAccessRole) {
-  return REMOTE_ROUTE_PREFIXES[role]
+  return remoteRoutePrefixes[role]
 }
 
 export function buildRemotePath({
@@ -57,7 +75,8 @@ export function buildRemotePath({
 }
 
 export function parseRemoteRoute(pathname: string): RemoteRoute {
-  const role = getRoleForPath(stripLocalePrefix(pathname))
+  const normalizedPathname = stripLocalePrefix(pathname)
+  const role = getRoleForPath(normalizedPathname)
   if (role === null) {
     return {
       isRemote: false,
@@ -66,10 +85,11 @@ export function parseRemoteRoute(pathname: string): RemoteRoute {
     }
   }
 
-  const prefix = getRemotePathPrefix(role)
-  const suffix = stripLocalePrefix(pathname)
-    .slice(prefix.length)
-    .replace(/^\/+/, "")
+  const matchedPrefix = getMatchedPathPrefix(normalizedPathname)
+  const suffix =
+    matchedPrefix === null
+      ? ""
+      : normalizedPathname.slice(matchedPrefix.length).replace(/^\/+/, "")
   const token = suffix.includes("/") ? null : normalizeRemoteAccessToken(suffix)
 
   return {

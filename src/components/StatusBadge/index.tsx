@@ -60,14 +60,13 @@ export default function StatusBadge({
         aria-haspopup="dialog"
         className="
           flex cursor-pointer items-center gap-1.5 rounded-full border
-          border-foreground/8 bg-background/58 px-2 py-1 text-left
-          text-foreground/72 shadow-md shadow-background/18 backdrop-blur-sm
+          border-ink/8 bg-screen/58 px-2 py-1 text-left
+          text-ink/72 shadow-md shadow-screen/18 backdrop-blur-sm
           transition
-          hover:border-foreground/14 hover:bg-background/74
-          hover:text-foreground/88
+          hover:border-ink/14 hover:bg-screen/74
+          hover:text-ink/88
           focus:outline-2 focus:-outline-offset-2 focus:outline-primary
         "
-        data-testid="remote-status-toggle"
         onClick={onOpenSharePanel}
         type="button"
       >
@@ -86,8 +85,8 @@ export default function StatusBadge({
           {sessionPresentation.roleChipLabel && (
             <span
               className="
-              rounded-full bg-foreground/8 px-1.5 py-0.5 text-[0.66rem]
-              font-medium tracking-[0.08em] text-foreground/60 uppercase
+              rounded-full bg-ink/8 px-1.5 py-0.5 text-[0.66rem]
+              font-medium tracking-[0.08em] text-ink/60 uppercase
             "
             >
               {sessionPresentation.roleChipLabel}

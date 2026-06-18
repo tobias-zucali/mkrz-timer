@@ -44,19 +44,21 @@ async function getRemoteTitleMetrics(page: Page) {
     }, "timer-title")
   }
 
-  return titleRoot.getByTestId("timer-title-input").evaluate((node, root) => {
-    const element = node as HTMLElement
-    const rootElement = document.querySelector(
-      `[data-testid="${root}"]`,
-    ) as HTMLElement | null
-    const computedStyle = window.getComputedStyle(element)
+  return titleRoot
+    .getByLabel("Title", { exact: true })
+    .evaluate((node, root) => {
+      const element = node as HTMLElement
+      const rootElement = document.querySelector(
+        `[data-testid="${root}"]`,
+      ) as HTMLElement | null
+      const computedStyle = window.getComputedStyle(element)
 
-    return {
-      fontSize: Number.parseFloat(computedStyle.fontSize),
-      rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
-      text: (node as HTMLTextAreaElement).value,
-    }
-  }, "timer-title")
+      return {
+        fontSize: Number.parseFloat(computedStyle.fontSize),
+        rootHeight: rootElement?.getBoundingClientRect().height ?? 0,
+        text: (node as HTMLTextAreaElement).value,
+      }
+    }, "timer-title")
 }
 
 async function expectParticipantLabels(
@@ -101,7 +103,7 @@ test(
   { tag: "@smoke" },
   async ({ page }) => {
     await page.goto(
-      "/?v=1&t=60!d61f69!%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20!0&bg=javascript:alert(1)&fg=ABCDEF",
+      "/t?v=1&t=60!d61f69!%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20!0&theme=javascript:alert(1)",
     )
 
     await expectTimerTitleValue(
@@ -142,7 +144,6 @@ test("includes selected settings in remote viewer and control links when enabled
 }) => {
   await openTimer(page, 3)
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
     soundId: "b",
     ttsEnabled: true,
   })
@@ -150,15 +151,14 @@ test("includes selected settings in remote viewer and control links when enabled
   await page.getByRole("button", { name: "Start live session" }).click()
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/en\/control\/.+/)
+    .toMatch(/^\/en\/manage\/.+/)
 
-  const viewerLink = page.getByRole("textbox", { name: "Viewer link" })
-  const controlLink = page.getByRole("textbox", { name: "Control link" })
+  const viewerLink = page.getByRole("textbox", { name: "Join link" })
+  const controlLink = page.getByRole("textbox", { name: "Manage link" })
 
-  await expect(viewerLink).toHaveValue(/\/view\/.+(?:\?|&)bg=123456(?:&|$)/)
   await expect(viewerLink).toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(viewerLink).toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
-  await expect(controlLink).toHaveValue(/\/control\/.+(?:\?|&)bg=123456(?:&|$)/)
+  await expect(controlLink).toHaveValue(/\/manage\/.+/)
 
   await page
     .getByRole("checkbox", {
@@ -166,10 +166,8 @@ test("includes selected settings in remote viewer and control links when enabled
     })
     .uncheck()
 
-  await expect(viewerLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(viewerLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(viewerLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
-  await expect(controlLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
 })
 
 test("moves the host onto the control route and ends the live session cleanly", async ({
@@ -179,7 +177,7 @@ test("moves the host onto the control route and ends the live session cleanly", 
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/en\/control\/.+/)
+    .toMatch(/^\/en\/manage\/.+/)
   await openSidebarPanel(page, "Share")
   await resolveRecoveryDialogIfPresent(page)
   await openSidebarPanel(page, "Share")
@@ -237,7 +235,7 @@ test("confirms before ending a live session when other clients are connected", a
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer link",
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -267,7 +265,7 @@ test("confirms before ending a live session when other clients are connected", a
     .getByRole("button", { name: "Keep live session open" })
     .click()
   await expect(confirmationDialog).not.toBeVisible()
-  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/join\//)
   await expectReadonlyTimerControls(readonlyClient)
 
   await page.getByRole("button", { name: "End live session" }).click()
@@ -300,7 +298,7 @@ test("warns before closing a control client while other participants stay connec
   await dialog.dismiss()
   await closePromise
 
-  await expect(controlClient).toHaveURL(/\/en\/control\//)
+  await expect(controlClient).toHaveURL(/\/en\/manage\//)
   await expect(
     controlClient.getByRole("button", { name: "START" }),
   ).toBeVisible()
@@ -314,7 +312,7 @@ test(
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
-      "Viewer link",
+      "Join link",
     )
 
     await expectReadonlyPlaceholder(readonlyClient)
@@ -324,18 +322,18 @@ test(
     await expectLiveSessionStatus(page, {
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
-      role: "Control access",
+      role: "Manage access",
       state: /Connected|Disconnected|Reconnecting\.\.\./,
     })
     await expectLiveSessionStatus(readonlyClient, {
       connectionSummary: /Synchronized|Reconnect in progress/,
       networkStatus: "Online",
-      role: "Viewer access",
+      role: "Join access",
       state: /Connected|Disconnected|Reconnecting\.\.\./,
     })
     await closeSettingsOverlay(page)
 
-    await expect(readonlyClient).not.toHaveURL(/\/en\/control\//)
+    await expect(readonlyClient).not.toHaveURL(/\/en\/manage\//)
     await expectReadonlyTimerControls(readonlyClient)
     await expect(readonlyClient.locator("body")).toMatchAriaSnapshot({
       name: "remote-readonly-client-screen.aria.yml",
@@ -369,7 +367,7 @@ test("readonly clients expose fullscreen share and status overlays", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer link",
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -379,11 +377,9 @@ test("readonly clients expose fullscreen share and status overlays", async ({
     message: "readonly client should connect before overlay assertions",
   })
 
-  await readonlyClient
-    .getByRole("button", { name: "Share viewer link" })
-    .click()
+  await readonlyClient.getByRole("button", { name: "Share join link" }).click()
   const qrCodeDialog = readonlyClient.getByRole("dialog", {
-    name: "Timer · Viewer link",
+    name: "Timer · Join link",
   })
   await expect(qrCodeDialog).toBeVisible()
   await expect(qrCodeDialog).toMatchAriaSnapshot({
@@ -423,7 +419,7 @@ test("viewer clients warn when the last controller leaves", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer link",
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -437,12 +433,12 @@ test("viewer clients warn when the last controller leaves", async ({
   await controlClient.close()
 
   await expectLiveSessionStatus(readonlyClient, {
-    connectionSummary: /Waiting for controller|Reconnect in progress/,
+    connectionSummary: /Waiting for manager|Reconnect in progress/,
     networkStatus: "Online",
-    role: "Viewer access",
+    role: "Join access",
     state: /Waiting|Reconnecting\.\.\./,
   })
-  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/join\//)
   await expectReadonlyTimerControls(readonlyClient)
 })
 
@@ -458,7 +454,7 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
     page,
     readonlyClientUrl,
     2,
-    "Viewer link",
+    "Join link",
   )
   const allPages = [page, ...controlClients, ...readonlyClients]
 
@@ -472,19 +468,19 @@ test("syncs mixed readonly and control clients", async ({ page }) => {
   await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control access",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(controlClients[0], {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control access",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(readonlyClients[0], {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Viewer access",
+    role: "Join access",
     state: "Connected",
   })
 
@@ -519,7 +515,7 @@ test("summarizes participants relative to the current client and labels the raw 
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer link",
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -532,22 +528,22 @@ test("summarizes participants relative to the current client and labels the raw 
   await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 1 control + 1 view",
-    role: "Control access",
+    participantSummary: "You + 1 manage + 1 join",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 1 control + 1 view",
-    role: "Control access",
+    participantSummary: "You + 1 manage + 1 join",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(readonlyClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 2 control",
-    role: "Viewer access",
+    participantSummary: "You + 2 manage",
+    role: "Join access",
     state: "Connected",
   })
 
@@ -560,15 +556,15 @@ test("summarizes participants relative to the current client and labels the raw 
   await expectLiveSessionStatus(page, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 1 control",
-    role: "Control access",
+    participantSummary: "You + 1 manage",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 1 control",
-    role: "Control access",
+    participantSummary: "You + 1 manage",
+    role: "Manage access",
     state: "Connected",
   })
 
@@ -583,8 +579,8 @@ test("summarizes participants relative to the current client and labels the raw 
   await expectLiveSessionStatus(rejoinedViewer, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    participantSummary: "You + 2 control",
-    role: "Viewer access",
+    participantSummary: "You + 2 manage",
+    role: "Join access",
     state: "Connected",
   })
 })
@@ -596,7 +592,7 @@ test("keeps long wrapped titles readable in readonly remote clients", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     readonlyClientUrl,
-    "Viewer link",
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -637,7 +633,7 @@ test(
     const readonlyClient = await openClientFromSettings(
       page,
       readonlyClientUrl,
-      "Viewer link",
+      "Join link",
     )
 
     await closeSettingsOverlay(page)
@@ -690,7 +686,7 @@ test("shows offline network status when the browser loses connectivity", async (
   await expectLiveSessionStatus(controlClient, {
     connectionSummary: /Synchronized|Reconnect in progress/,
     networkStatus: "Online",
-    role: "Control access",
+    role: "Manage access",
     state: /Connected|Disconnected|Reconnecting\.\.\./,
     timeoutMs: 20_000,
   })
@@ -705,7 +701,7 @@ test("shows offline network status when the browser loses connectivity", async (
       connectionSummary:
         /Reconnect in progress|Restoring synchronization|Synchronized/,
       networkStatus: "Offline",
-      role: "Control access",
+      role: "Manage access",
       state: /Connected|Disconnected|Reconnecting\.\.\./,
       timeoutMs: 10_000,
     })
@@ -728,7 +724,7 @@ test("shows offline network status when the browser loses connectivity", async (
       connectionSummary:
         /Reconnect in progress|Restoring synchronization|Synchronized/,
       networkStatus: "Offline",
-      role: "Control access",
+      role: "Manage access",
       state: /Connected|Disconnected|Reconnecting\.\.\./,
       timeoutMs: 10_000,
     })
@@ -841,7 +837,7 @@ test("keeps the live session action visible after an offline start", async ({
 test("shows a recoverable error for malformed viewer links", async ({
   page,
 }) => {
-  await page.goto("/view")
+  await page.goto("/join")
 
   await expect(page.locator("body")).toMatchAriaSnapshot({
     name: "remote-malformed-viewer-link-screen.aria.yml",
@@ -849,7 +845,7 @@ test("shows a recoverable error for malformed viewer links", async ({
   await expectLiveSessionStatus(page, {
     connectionSummary: "Error",
     errorText: /Live session link is malformed\. Check the URL and try again\./,
-    role: "Viewer access",
+    role: "Join access",
     state: "Error",
   })
   await expect(page.getByTestId("readonly-timer-placeholder")).toContainText(
@@ -865,26 +861,13 @@ test(
   "matches the malformed viewer-link error state",
   { tag: "@visual" },
   async ({ page }) => {
-    await page.goto("/view")
+    await page.goto("/join")
 
-    const styleTag = await page.addStyleTag({
-      content: `
-        [data-testid="remote-status-activity-log"] { display: none !important; }
-      `,
+    await expectScreenshotWithoutDebugInfo(page, {
+      fullPage: true,
+      message: "malformed viewer-link error state should stay visually stable",
+      name: "remote-malformed-viewer-link-error.png",
     })
-
-    try {
-      await expectScreenshotWithoutDebugInfo(page, {
-        fullPage: true,
-        message:
-          "malformed viewer-link error state should stay visually stable",
-        name: "remote-malformed-viewer-link-error.png",
-      })
-    } finally {
-      await styleTag.evaluate((node) => {
-        node.parentNode?.removeChild(node)
-      })
-    }
   },
 )
 
@@ -896,7 +879,7 @@ test("controller links can restore control and reused viewer links rejoin the se
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(/^\/en\/control\/.+/)
+    .toMatch(/^\/en\/manage\/.+/)
   await openSidebarPanel(page, "Share")
   await page.getByRole("button", { name: "End live session" }).click()
   await expect(
@@ -910,7 +893,7 @@ test("controller links can restore control and reused viewer links rejoin the se
   ).toBeVisible({
     timeout: 30_000,
   })
-  await expect(controlClient).toHaveURL(/\/en\/control\//)
+  await expect(controlClient).toHaveURL(/\/en\/manage\//)
 
   const readonlyClient = await page.context().newPage()
   await readonlyClient.goto(readonlyClientUrl)
@@ -920,17 +903,17 @@ test("controller links can restore control and reused viewer links rejoin the se
     mainConnectionCount: 1,
     message: "restored control and reused viewer links should reconnect",
   })
-  await expect(readonlyClient).toHaveURL(/\/en\/view\//)
+  await expect(readonlyClient).toHaveURL(/\/en\/join\//)
   await expectLiveSessionStatus(controlClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Control access",
+    role: "Manage access",
     state: "Connected",
   })
   await expectLiveSessionStatus(readonlyClient, {
     connectionSummary: "Synchronized",
     networkStatus: "Online",
-    role: "Viewer access",
+    role: "Join access",
     state: "Connected",
   })
   await expectReadonlyTimerControls(readonlyClient)
@@ -955,22 +938,10 @@ test(
       name: "remote-expired-viewer-link-screen.aria.yml",
     })
 
-    const styleTag = await expiredViewerPage.addStyleTag({
-      content: `
-        [data-testid="remote-status-activity-log"] { display: none !important; }
-      `,
+    await expectScreenshotWithoutDebugInfo(expiredViewerPage, {
+      fullPage: true,
+      message: "expired viewer-link error state should stay visually stable",
+      name: "remote-expired-viewer-link-error.png",
     })
-
-    try {
-      await expectScreenshotWithoutDebugInfo(expiredViewerPage, {
-        fullPage: true,
-        message: "expired viewer-link error state should stay visually stable",
-        name: "remote-expired-viewer-link-error.png",
-      })
-    } finally {
-      await styleTag.evaluate((node) => {
-        node.parentNode?.removeChild(node)
-      })
-    }
   },
 )

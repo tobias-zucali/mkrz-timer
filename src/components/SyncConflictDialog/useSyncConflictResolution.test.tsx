@@ -69,8 +69,6 @@ describe("useSyncConflictResolution", () => {
       result.current.resolveIncomingSnapshot({
         snapshot: {
           params: buildParams({
-            bg: "#333333",
-            fg: "#eeeeee",
             pc: "#ff2200",
             rows: [
               {
@@ -208,8 +206,7 @@ describe("useSyncConflictResolution", () => {
     expect(reconnectSnapshot).toEqual({
       params: {
         activeIndex: 0,
-        bg: "#111111",
-        fg: "#eeeeee",
+        theme: "dark",
         m: "02",
         pc: "#ff8800",
         rows: [

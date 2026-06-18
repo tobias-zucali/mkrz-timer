@@ -1,6 +1,6 @@
 {
-  "control": "{count} Steuerung",
-  "view": "{count} Ansicht",
-  "you": "Sie",
-  "youWithOthers": "Sie + {roles}"
+  "control": "{count} manage",
+  "view": "{count} join",
+  "you": "You",
+  "youWithOthers": "You + {roles}"
 }

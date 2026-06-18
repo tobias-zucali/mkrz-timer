@@ -1,0 +1,2 @@
+commands:
+  - pnpm test:e2e:local -- tests/e2e/public-info.spec.ts

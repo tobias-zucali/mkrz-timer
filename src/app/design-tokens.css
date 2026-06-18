@@ -1,0 +1,107 @@
+/* ============================================================
+   mkrz timer — Design System tokens
+   CSS custom properties. Dark is the default mode; add
+   data-theme="bright" on a wrapper (or <html>) to switch.
+   Marketing/landing surfaces use the cream --sand-100.
+
+   Source of truth: design_system/tokens.css (design_system package).
+   When that file changes, update this copy to match.
+   ============================================================ */
+
+:root {
+  /* ---------- Raw palette (mode-independent) ---------- */
+  /* brand — the single accent: actions, ring, focus, links */
+  --brand-50: #fdeef4;
+  --brand-100: #fad9e8; /* soft pink — PAUSE/RESET, chips */
+  --brand-300: #ff8db3;
+  --brand-400: #e0609a;
+  --brand-500: #d61f69; /* primary */
+  --brand-600: #bd1a5c; /* primary hover */
+
+  /* sand — light surfaces (cards, pages, bright base, controls) */
+  --sand-50: #fffdf7;
+  --sand-100: #fbf2da; /* marketing page background */
+  --sand-200: #f4ecd9; /* bright app screen base */
+  --sand-300: #ece2cc; /* bright control / step */
+  --sand-400: #e9dfc6;
+
+  /* clay — warm gray: text, labels, hairlines, ink */
+  --clay-100: #c9c4bc;
+  --clay-200: #a99e84;
+  --clay-300: #938a77;
+  --clay-400: #7a7163;
+  --clay-500: #5c5648;
+  --clay-800: #3f3a30;
+  --clay-900: #232220; /* ink */
+
+  /* carbon — dark-mode chrome */
+  --carbon-700: #2a2725;
+  --carbon-800: #1d1b19;
+  --carbon-900: #0c0c0c;
+  --carbon-950: #000000;
+
+  /* functional accents */
+  --amber-400: #ef9e3b;
+  --amber-600: #c77a12;
+  --mint-500: #34b87a;
+  --mint-700: #1f7a52;
+
+  /* timer-ring accent set (picker) — brand/amber/mint reused, two net-new */
+  --ring-pink: #d61f69;
+  --ring-amber: #ef9e3b;
+  --ring-mint: #34b87a;
+  --ring-blue: #2f7fd6; /* net-new */
+  --ring-violet: #8a55d6; /* net-new */
+
+  /* ---------- Shared semantic (never swap between modes) ---------- */
+  --color-primary: var(--brand-500);
+  --color-primary-hover: var(--brand-600);
+  --color-soft: var(--brand-100);
+  --color-on-primary: #ffffff;
+  --color-success: var(--mint-500);
+  --focus-ring-color: var(--brand-500);
+
+  /* ---------- Radii ---------- */
+  --radius-sm: 8px; /* step buttons */
+  --radius-field: 10px; /* inputs, selects (9–10px) */
+  --radius-md: 12px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+
+  /* ---------- Type ---------- */
+  --font-display: "Kanit", sans-serif; /* headlines, wordmark, nav */
+  --font-body: "Roboto", sans-serif; /* body, labels, buttons, inputs */
+  --font-mono: "Space Mono", monospace; /* numerals only */
+
+  /* ---------- Misc ---------- */
+  --hit-target-min: 44px;
+}
+
+/* ---------- Dark mode (DEFAULT) ---------- */
+:root,
+[data-theme="dark"] {
+  --bg-screen: var(--carbon-950);
+  --bg-card: var(--carbon-900);
+  --bg-input: var(--carbon-800);
+  --bg-control: var(--carbon-700);
+  --text-primary: #ffffff;
+  --text-secondary: var(--clay-100);
+  --text-muted: var(
+    --clay-300
+  ); /* same in both modes — clay-300 reads well on carbon and sand */
+  --border-hairline: rgba(255, 255, 255, 0.16);
+  --focus-ring: rgba(214, 31, 105, 0.35);
+}
+
+/* ---------- Bright mode ---------- */
+[data-theme="bright"] {
+  --bg-screen: var(--sand-200);
+  --bg-card: var(--sand-50);
+  --bg-input: #ffffff;
+  --bg-control: var(--sand-300);
+  --text-primary: var(--clay-900);
+  --text-secondary: var(--clay-500);
+  --text-muted: var(--clay-300);
+  --border-hairline: rgba(35, 30, 16, 0.12);
+  --focus-ring: rgba(214, 31, 105, 0.25);
+}

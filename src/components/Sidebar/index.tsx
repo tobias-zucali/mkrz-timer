@@ -2,8 +2,8 @@
 
 import {
   type Dispatch,
-  type RefObject,
   type ReactElement,
+  type RefObject,
   type SetStateAction,
   useCallback,
   useEffect,
@@ -13,10 +13,12 @@ import {
 } from "react"
 
 import classNames from "classnames"
+import Link from "next/link"
 import { useTranslations } from "next-intl"
 
 import CloseButton from "@/components/CloseButton"
 import IconButton from "@/components/IconButton"
+import OverlayBackdrop from "@/components/OverlayBackdrop"
 import SettingsPanel, {
   type SettingsPanelProps,
 } from "@/components/Sidebar/SettingsPanel"
@@ -30,6 +32,7 @@ import TimerPanel, {
   type TimerPanelProps,
 } from "@/components/Sidebar/TimerPanel"
 import { getCompactStatusAppearance } from "@/components/StatusBadge/statusHelpers"
+import type { AppLocale } from "@/i18n/config"
 import {
   Bars3Icon,
   ChevronLeftIcon,
@@ -90,19 +93,21 @@ function ReadonlyUnsupportedPlaceholder({ title }: { title: string }) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="text-sm/6 text-foreground/68">{t("readonlyUnsupported")}</p>
+      <h3 className="text-base font-semibold text-ink">{title}</h3>
+      <p className="text-sm/6 text-ink/68">{t("readonlyUnsupported")}</p>
     </div>
   )
 }
 
 export default function Sidebar({
+  locale,
   shell,
   settingsPanel,
   statusPanelData,
   sharePanel,
   timerPanel,
 }: {
+  locale: AppLocale
   shell: SidebarShellProps
   settingsPanel: SettingsPanelProps
   sharePanel: SidebarSharePanelProps
@@ -127,6 +132,7 @@ export default function Sidebar({
   const { panelProps: sharePanelProps, remoteRole } = sharePanel
   const { floatingTimerData, handleChange } = settingsPanel
   const timerEntryLabel = timerPanel.pageTitle.trim() || t("entries.timer")
+
   const mainEntries: SidebarEntry[] = [
     {
       icon: <ClockIcon className="size-4" />,
@@ -190,7 +196,9 @@ export default function Sidebar({
   const openSharePanel = () => {
     openEntry("share")
   }
+
   const isFullscreenSidebar = isReadonlySidebar || isNarrowViewport
+
   const getPanelHeading = useCallback(
     (entry: SidebarEntryId) => {
       switch (entry) {
@@ -228,6 +236,7 @@ export default function Sidebar({
     state: statusPanelData.sessionPresentation.state,
   })
   const StatusSidebarIcon = statusSidebarAppearance.icon
+
   const footerEntries: SidebarEntry[] = [
     {
       icon: (
@@ -244,9 +253,9 @@ export default function Sidebar({
   ]
 
   const sidebarBaseItemClassName =
-    "flex w-full cursor-pointer items-center gap-x-3 rounded-lg border border-transparent px-2.5 py-2 text-left text-base font-semibold text-foreground/74 transition hover:border-primary/50 hover:text-foreground focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+    "flex w-full cursor-pointer items-center gap-x-3 rounded-lg border border-transparent px-2.5 py-2 text-left text-base font-semibold text-ink/74 transition hover:border-primary/50 hover:text-ink focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
   const selectedSidebarItemClassName =
-    "relative z-10 -mr-2 border-primary/40 bg-primary text-background hover:border-primary/40 hover:text-background"
+    "relative z-10 -mr-2 border-primary/40 bg-primary text-white hover:border-primary/40 hover:text-white"
 
   const toggleSidebar = useCallback(() => {
     setIsPinnedOpen((current) => {
@@ -304,16 +313,13 @@ export default function Sidebar({
     return (
       <div className="pointer-events-none fixed inset-0 z-30">
         {isOverlayActive && (
-          <button
-            aria-label={t("closeSidebar")}
+          <OverlayBackdrop
+            ariaLabel={t("closeSidebar")}
             className="
-              pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
-              backdrop-blur-[2px] transition-opacity duration-300
+              pointer-events-auto opacity-100 transition-opacity duration-300
               motion-reduce:transition-none
             "
             onClick={closeSidebar}
-            tabIndex={-1}
-            type="button"
           />
         )}
         <div
@@ -322,26 +328,21 @@ export default function Sidebar({
             isOpen && "translate-x-0",
             selectedEntry ? "right-0 w-full" : "hidden w-0",
           )}
+          aria-labelledby={
+            selectedEntry ? `sidebar-panel-${selectedEntry}` : undefined
+          }
           data-testid="sidebar-offcanvas"
           id={offcanvasId}
           ref={offcanvasRef}
           role="dialog"
           tabIndex={-1}
         >
-          <div
-            aria-labelledby={
-              selectedEntry ? `sidebar-panel-${selectedEntry}` : undefined
-            }
-            className="
-              size-full overflow-hidden bg-background/96 backdrop-blur-xl
-            "
-          >
+          <div className="size-full overflow-hidden bg-screen/96 backdrop-blur-xl">
             {selectedEntry && (
               <div
                 className="
                   relative flex h-full min-h-0 min-w-0 flex-col overflow-y-auto
-                  px-5 pt-5
-                  sm:px-7 sm:pt-6
+                  px-5 pt-5 sm:px-7 sm:pt-6
                 "
                 data-testid={`sidebar-panel-${selectedEntry}`}
               >
@@ -351,14 +352,13 @@ export default function Sidebar({
                   </h2>
                   <CloseButton
                     className="
-                      size-6 rounded-full border-foreground/14 bg-white/3
-                      text-foreground/60
-                      hover:bg-white/7 hover:text-foreground
+                      size-6 rounded-full border-ink/14 bg-white/3
+                      text-ink/60 hover:bg-white/7 hover:text-ink
                     "
                     onClick={closeSidebar}
-                    {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     ref={panelCloseButtonRef}
                     title={t("closeSidebar")}
+                    {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   />
                 </div>
                 <div className="min-h-0 flex-1 pr-1 pb-16">
@@ -375,24 +375,16 @@ export default function Sidebar({
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
       {isOverlayActive && (
-        <button
-          aria-label={t("closeSidebar")}
+        <OverlayBackdrop
+          ariaLabel={t("closeSidebar")}
           className="
-            pointer-events-auto absolute inset-0 bg-foreground/10 opacity-100
-            backdrop-blur-[2px] transition-opacity duration-300
+            pointer-events-auto opacity-100 transition-opacity duration-300
             motion-reduce:transition-none
           "
           onClick={closeSidebar}
-          tabIndex={-1}
-          type="button"
         />
       )}
-      <div
-        className="
-        absolute top-3 left-3
-        md:top-4 md:left-4
-      "
-      >
+      <div className="absolute top-3 left-3 md:top-4 md:left-4">
         <IconButton
           appearance="ghost"
           aria-controls={offcanvasId}
@@ -400,8 +392,8 @@ export default function Sidebar({
           aria-haspopup="dialog"
           aria-label={t("toggleNavigation")}
           className={classNames(
-            "pointer-events-auto border border-foreground/16 bg-background/58 backdrop-blur-xs shadow-sm",
-            "timer-chrome-transition hover:border-foreground/28 hover:bg-background/92 hover:text-foreground",
+            "pointer-events-auto border border-ink/16 bg-screen/58 backdrop-blur-xs shadow-sm",
+            "timer-chrome-transition hover:border-ink/28 hover:bg-screen/92 hover:text-ink",
             isDimmed && "timer-chrome-dimmed",
             isOpen && "border-primary/45",
           )}
@@ -410,8 +402,8 @@ export default function Sidebar({
           onClick={toggleSidebar}
           shape="soft"
           size="nav"
-          {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
           title={t("toggleNavigation")}
+          {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
         >
           <Bars3Icon className="size-4" />
         </IconButton>
@@ -430,20 +422,18 @@ export default function Sidebar({
       >
         <div
           className={classNames(
-            "flex h-full w-full shrink-0 flex-col border-r border-foreground/10 bg-background/96 sm:w-64",
+            "flex h-full w-full shrink-0 flex-col border-r border-ink/10 bg-screen/96 sm:w-64",
             selectedEntry ? "sm:flex" : "",
             selectedEntry && "hidden sm:flex",
           )}
         >
-          <header
-            className="
-            flex items-center justify-between gap-3 border-b
-            border-foreground/10 p-4
-          "
-          >
-            <div className="text-xl font-semibold text-foreground">
+          <header className="flex items-center justify-between gap-3 border-b border-ink/10 p-4">
+            <Link
+              className="text-xl font-semibold text-ink underline-offset-4 hover:underline focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
+              href={`/${locale}`}
+            >
               {tAppShell("metadata.title")}
-            </div>
+            </Link>
             <CloseButton
               className="sm:hidden"
               onClick={closeSidebar}
@@ -451,11 +441,7 @@ export default function Sidebar({
               title={t("closeSidebarMenu")}
             />
           </header>
-          <nav
-            className="
-            flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3
-          "
-          >
+          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3">
             <ul className="space-y-1">
               {mainEntries.map((entry) => {
                 const isSelected = selectedEntryId === entry.id
@@ -468,43 +454,38 @@ export default function Sidebar({
                         isSelected && selectedSidebarItemClassName,
                       )}
                       onClick={() => openEntry(entry.id)}
-                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                       type="button"
+                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     >
-                      <span className="shrink-0 text-foreground/82">
-                        {entry.icon}
-                      </span>
+                      <span className="shrink-0 text-ink/82">{entry.icon}</span>
                       <span>{entry.label}</span>
                     </button>
                   </li>
                 )
               })}
             </ul>
-            <ul className="mt-auto space-y-1 border-t border-foreground/10 pt-3">
+            <ul className="mt-auto space-y-1 border-t border-ink/10 pt-3">
               <li>
                 <button
                   className="
                     flex w-full cursor-pointer flex-col items-start gap-1
                     rounded-lg border border-transparent px-2.5 py-3 text-left
-                    transition
-                    hover:border-primary/50
-                    focus:outline-2 focus:-outline-offset-2
-                    focus:outline-primary
+                    transition hover:border-primary/50 focus:outline-2
+                    focus:-outline-offset-2 focus:outline-primary
                   "
-                  data-testid="sidebar-session-status-button"
                   onClick={openSharePanel}
-                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   type="button"
+                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                 >
                   <span
                     className="
-                    text-[0.68rem] font-semibold tracking-[0.14em]
-                    text-foreground/58 uppercase
-                  "
+                      text-[0.68rem] font-semibold tracking-[0.14em]
+                      text-ink/58 uppercase
+                    "
                   >
                     {statusPanelData.sessionPresentation.sidebarStatus.eyebrow}
                   </span>
-                  <span className="text-sm font-semibold text-foreground/84">
+                  <span className="text-sm font-semibold text-ink/84">
                     {statusPanelData.sessionPresentation.sidebarStatus.label}
                   </span>
                 </button>
@@ -520,12 +501,10 @@ export default function Sidebar({
                         isSelected && selectedSidebarItemClassName,
                       )}
                       onClick={() => openEntry(entry.id)}
-                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                       type="button"
+                      {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                     >
-                      <span className="shrink-0 text-foreground/82">
-                        {entry.icon}
-                      </span>
+                      <span className="shrink-0 text-ink/82">{entry.icon}</span>
                       <span>{entry.label}</span>
                     </button>
                   </li>
@@ -539,18 +518,18 @@ export default function Sidebar({
             selectedEntry ? `sidebar-panel-${selectedEntry}` : undefined
           }
           className={classNames(
-            "h-full min-w-0 overflow-hidden bg-background/96 backdrop-blur-xl",
+            "h-full min-w-0 overflow-hidden bg-screen/96 backdrop-blur-xl",
             selectedEntry && isOpen
-              ? "absolute inset-0 z-10 w-full border-l border-foreground/10 sm:relative sm:z-0 sm:flex-1 sm:border-r"
+              ? "absolute inset-0 z-10 w-full border-l border-ink/10 sm:relative sm:z-0 sm:flex-1 sm:border-r"
               : "hidden w-0",
           )}
         >
           {selectedEntry && (
             <div
-              className={classNames(
-                "relative flex h-full min-h-0 min-w-0 flex-col overflow-y-auto",
-                "px-5 pt-6 sm:px-6 sm:pt-4",
-              )}
+              className="
+                relative flex h-full min-h-0 min-w-0 flex-col overflow-y-auto
+                px-5 pt-6 sm:px-6 sm:pt-4
+              "
               data-testid={`sidebar-panel-${selectedEntry}`}
             >
               <div className="sticky top-0 z-10 ml-auto">
@@ -559,18 +538,17 @@ export default function Sidebar({
                 </h2>
                 <CloseButton
                   className="
-                    size-6 rounded-full border-foreground/14 bg-white/3
-                    text-foreground/60
-                    hover:bg-white/7 hover:text-foreground
+                    size-6 rounded-full border-ink/14 bg-white/3
+                    text-ink/60 hover:bg-white/7 hover:text-ink
                   "
                   onClick={isNarrowViewport ? returnToMenu : closeSidebar}
-                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                   ref={panelCloseButtonRef}
                   title={
                     isNarrowViewport
                       ? t("backToSidebarMenu")
                       : t("closeSidebar")
                   }
+                  {...getTimerSpaceShortcutButtonProps<HTMLButtonElement>()}
                 >
                   {isNarrowViewport ? (
                     <ChevronLeftIcon className="size-5" />

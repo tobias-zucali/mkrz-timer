@@ -37,18 +37,15 @@ export default function SoundPreviewField({
 
   return (
     <div className="space-y-2">
-      <label
-        className="block text-sm font-medium text-foreground"
-        htmlFor={fieldId}
-      >
+      <label className="block text-sm font-medium text-ink" htmlFor={fieldId}>
         {label}
       </label>
       <div className="flex items-center gap-2">
         <select
           className="
-            block h-10 min-w-0 flex-1 rounded-md border border-foreground/10
-            bg-background px-3 text-sm text-foreground outline-1
-            -outline-offset-1 outline-foreground/10 focus:outline-2
+            block h-10 min-w-0 flex-1 rounded-md border border-ink/10
+            bg-screen px-3 text-sm text-ink outline-1
+            -outline-offset-1 outline-ink/10 focus:outline-2
             focus:-outline-offset-2 focus:outline-primary
           "
           id={fieldId}

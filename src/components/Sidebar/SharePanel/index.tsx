@@ -8,7 +8,7 @@ import type { SessionPresentationModel } from "@/utils/sessionPresentation"
 import ActionButton from "@/utils/ActionButton"
 
 const liveSessionToneClassNames = {
-  neutral: "border-foreground/10 bg-white/[0.04]",
+  neutral: "border-ink/10 bg-white/[0.04]",
   success: "border-emerald-400/25 bg-emerald-500/10",
   warning: "border-amber-400/25 bg-amber-500/10",
 }
@@ -46,9 +46,7 @@ export default function SharePanel({
     <div className="space-y-6">
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
-            {t("heading")}
-          </h3>
+          <h3 className="text-base font-semibold text-ink">{t("heading")}</h3>
         </div>
 
         <div
@@ -59,18 +57,18 @@ export default function SharePanel({
         >
           <div className="space-y-3">
             <div>
-              <p className="font-medium text-foreground">{t("liveSession")}</p>
+              <p className="font-medium text-ink">{t("liveSession")}</p>
               {sharePanel.statusLabel && (
-                <p className="mt-2 text-sm font-semibold text-foreground">
+                <p className="mt-2 text-sm font-semibold text-ink">
                   {sharePanel.statusLabel}
                 </p>
               )}
-              <p className="mt-1 text-sm/6 text-foreground/68">
+              <p className="mt-1 text-sm/6 text-ink/68">
                 {sharePanel.description}
               </p>
             </div>
             {sharePanel.bullets.length > 0 && (
-              <ul className="space-y-1 text-sm/6 text-foreground/68">
+              <ul className="space-y-1 text-sm/6 text-ink/68">
                 {sharePanel.bullets.map((bullet) => (
                   <li key={bullet}>• {bullet}</li>
                 ))}
@@ -91,7 +89,7 @@ export default function SharePanel({
           )}
 
           {sharePanel.showLinks && (
-            <div className="space-y-4 border-t border-foreground/10 pt-4">
+            <div className="space-y-4 border-t border-ink/10 pt-4">
               {accessTokens ? (
                 <>
                   <UrlCopyField
@@ -108,12 +106,10 @@ export default function SharePanel({
                   />
                 </>
               ) : (
-                <p className="text-sm/6 text-foreground/68">
-                  {t("waitingForLinks")}
-                </p>
+                <p className="text-sm/6 text-ink/68">{t("waitingForLinks")}</p>
               )}
 
-              <div className="space-y-3 border-t border-foreground/10 pt-4">
+              <div className="space-y-3 border-t border-ink/10 pt-4">
                 {sharePanel.showRetry && (
                   <ActionButton fullWidth={true} onClick={onRetry}>
                     {t("retryNow")}
@@ -121,9 +117,9 @@ export default function SharePanel({
                 )}
                 <ActionButton
                   className="
-                    border border-foreground/12 bg-foreground/4 text-foreground
-                    hover:border-foreground/18 hover:bg-foreground/8
-                    hover:text-foreground
+                    border border-ink/12 bg-ink/4 text-ink
+                    hover:border-ink/18 hover:bg-ink/8
+                    hover:text-ink
                   "
                   fullWidth={true}
                   onClick={() => {
@@ -139,12 +135,12 @@ export default function SharePanel({
 
         <div
           className="
-          space-y-4 rounded-2xl border border-foreground/10 bg-foreground/2 p-4
+          space-y-4 rounded-2xl border border-ink/10 bg-ink/2 p-4
         "
         >
           <div>
-            <p className="font-medium text-foreground">{t("localShare")}</p>
-            <p className="mt-1 text-sm/6 text-foreground/68">
+            <p className="font-medium text-ink">{t("localShare")}</p>
+            <p className="mt-1 text-sm/6 text-ink/68">
               {tSessionPresentation("localShareDescription")}
             </p>
           </div>
@@ -157,7 +153,7 @@ export default function SharePanel({
         <label
           className="
             flex cursor-pointer items-start gap-3 rounded-2xl border
-            border-foreground/10 bg-foreground/2 p-4
+            border-ink/10 bg-ink/2 p-4
           "
         >
           <input
@@ -169,10 +165,10 @@ export default function SharePanel({
             type="checkbox"
           />
           <span className="space-y-1">
-            <span className="block text-sm font-medium text-foreground">
+            <span className="block text-sm font-medium text-ink">
               {t("includeSettings")}
             </span>
-            <span className="block text-sm/6 text-foreground/68">
+            <span className="block text-sm/6 text-ink/68">
               {t("includeSettingsDescription")}
             </span>
           </span>

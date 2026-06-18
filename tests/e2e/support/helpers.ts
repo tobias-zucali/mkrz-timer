@@ -1,20 +1,18 @@
 import { expect, Page } from "@playwright/test"
-import { hexToRgbChannels } from "../../../src/utils/colors"
 
 function buildTimerPath({
-  backgroundColor = "000000",
-  foregroundColor = "ffffff",
   primaryColor = "d61f69",
   seconds,
+  theme,
   title = "",
 }: {
-  backgroundColor?: string
-  foregroundColor?: string
   primaryColor?: string
   seconds: number
+  theme?: "dark" | "bright"
   title?: string
 }) {
-  return `/en?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
+  const themeParam = theme && theme !== "dark" ? `&theme=${theme}` : ""
+  return `/en/t?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0${themeParam}`
 }
 
 const timerUrl = buildTimerPath({ seconds: 60 })
@@ -31,8 +29,7 @@ type RemoteDebugState = {
 }
 
 type TimerSettings = {
-  backgroundColor?: string
-  foregroundColor?: string
+  theme?: "dark" | "bright"
   minutes?: string
   primaryColor?: string
   seconds?: string
@@ -53,7 +50,17 @@ type ScreenshotMaskOptions = {
   name: string
 }
 
-type SidebarPanelName = "Settings" | "Share" | "Status" | "Timer"
+type SidebarPanelName =
+  | "About"
+  | "Accessibility"
+  | "Contact"
+  | "Impressum"
+  | "Privacy"
+  | "Settings"
+  | "Share"
+  | "Status"
+  | "Terms"
+  | "Timer"
 
 const DEBUG_INFO_SELECTORS = [
   "nextjs-portal",
@@ -113,9 +120,11 @@ export async function expectScreenshotWithoutDebugInfo(
       maxDiffPixelRatio,
     })
   } finally {
-    await styleTag.evaluate((node) => {
-      node.parentNode?.removeChild(node)
-    })
+    await styleTag
+      .evaluate((node) => {
+        node.parentNode?.removeChild(node)
+      })
+      .catch(() => {})
   }
 }
 
@@ -132,10 +141,10 @@ export async function enableLiveSession(page: Page) {
   await expectLiveSessionOnlyUrl(page, { control: true })
 
   const readonlyClientUrlInput = page.getByRole("textbox", {
-    name: "Viewer link",
+    name: "Join link",
   })
   const controlClientUrlInput = page.getByRole("textbox", {
-    name: "Control link",
+    name: "Manage link",
   })
   await expect(readonlyClientUrlInput).toBeVisible({ timeout: 30_000 })
   await expect(controlClientUrlInput).toBeVisible()
@@ -143,16 +152,16 @@ export async function enableLiveSession(page: Page) {
     .poll(() => readonlyClientUrlInput.inputValue(), {
       message: "viewer URL should include a readonly token path",
     })
-    .toContain("/view/")
+    .toContain("/join/")
 
   const readonlyClientUrl = await readonlyClientUrlInput.inputValue()
 
-  expect(readonlyClientUrl).not.toContain("/control/")
+  expect(readonlyClientUrl).not.toContain("/manage/")
   await expect
     .poll(() => controlClientUrlInput.inputValue(), {
-      message: "control client URL should include the control token path",
+      message: "control client URL should include the manage token path",
     })
-    .toContain("/control/")
+    .toContain("/manage/")
 
   return controlClientUrlInput.inputValue()
 }
@@ -162,7 +171,7 @@ export async function enableLiveSessionWithClientUrls(
 ): Promise<RemoteClientUrls> {
   const controlClientUrl = await enableLiveSession(page)
   const readonlyClientUrl = await page
-    .getByRole("textbox", { name: "Viewer link" })
+    .getByRole("textbox", { name: "Join link" })
     .inputValue()
 
   return {
@@ -174,7 +183,7 @@ export async function enableLiveSessionWithClientUrls(
 export async function openClientFromSettings(
   page: Page,
   clientUrl: string,
-  label = "Control link",
+  label = "Manage link",
 ) {
   const expectedUrl = new URL(clientUrl)
   await openSidebarPanel(page, "Share")
@@ -194,7 +203,7 @@ export async function openClientsFromSettings(
   page: Page,
   clientUrl: string,
   count: number,
-  label = "Control link",
+  label = "Manage link",
 ) {
   const clients: Page[] = []
 
@@ -236,8 +245,8 @@ export async function closeSettingsOverlay(page: Page) {
 export async function expectUrlQrCode(page: Page, label: string) {
   if (
     label === "Local link" ||
-    label === "Viewer link" ||
-    label === "Control link"
+    label === "Join link" ||
+    label === "Manage link"
   ) {
     await openSidebarPanel(page, "Share")
   }
@@ -313,15 +322,16 @@ export async function openSidebarPanel(
 export async function openSettingsOverlay(page: Page) {
   await openSidebarPanel(page, "Timer")
   await expect(
-    page.getByTestId("sidebar-panel-timer").getByLabel("Title"),
+    page
+      .getByTestId("sidebar-panel-timer")
+      .getByLabel("Title", { exact: true }),
   ).toBeVisible()
 }
 
 export async function updateTimerSettings(
   page: Page,
   {
-    backgroundColor,
-    foregroundColor,
+    theme,
     minutes,
     primaryColor,
     seconds,
@@ -334,7 +344,7 @@ export async function updateTimerSettings(
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Title")
+      .getByLabel("Title", { exact: true })
       .fill(title)
   }
   if (minutes !== undefined) {
@@ -351,19 +361,12 @@ export async function updateTimerSettings(
       .getByLabel("Seconds")
       .fill(seconds)
   }
-  if (backgroundColor !== undefined) {
+  if (theme !== undefined) {
     await openSidebarPanel(page, "Settings")
     await page
       .getByTestId("sidebar-panel-settings")
-      .getByLabel("Background")
-      .fill(backgroundColor)
-  }
-  if (foregroundColor !== undefined) {
-    await openSidebarPanel(page, "Settings")
-    await page
-      .getByTestId("sidebar-panel-settings")
-      .getByLabel("Foreground")
-      .fill(foregroundColor)
+      .getByRole("button", { name: theme === "dark" ? "Dark" : "Bright" })
+      .click()
   }
   if (ttsEnabled !== undefined) {
     await openSidebarPanel(page, "Settings")
@@ -400,9 +403,9 @@ export async function expectTimerRunning(page: Page) {
 
 export async function readTimerTitleValue(page: Page) {
   const timerTitle = page.getByTestId("timer-title")
-  const editor = timerTitle.getByTestId("timer-title-input")
+  const editor = timerTitle.getByLabel("Title", { exact: true })
   const display = timerTitle.getByTestId("timer-title-text")
-  const emptyAction = timerTitle.getByTestId("timer-title-empty-action")
+  const emptyAction = timerTitle.getByRole("button", { name: "Add title" })
 
   if ((await editor.count()) > 0) {
     return editor.inputValue()
@@ -727,23 +730,27 @@ export async function expectTimerControlsToMatch(pages: Page[]) {
 }
 
 export async function getDisplayedSeconds(page: Page) {
+  // data-testid="timer-display" is on the same element in both modes:
+  //   readout (running/finished): <output role="timer"> — text spans only, no inputs
+  //   editable (ready/paused):    <div role="group">   — labeled minute/second inputs
+  // Checking the role directly avoids the fragile input-count heuristic and prevents
+  // accidentally reading the pre-start configured duration from the editable inputs.
   const timerDisplay = page.getByTestId("timer-display")
-  const minutesInput = timerDisplay.getByLabel("Minutes")
-  const secondsInput = timerDisplay.getByLabel("Seconds")
+  const isReadout = await timerDisplay.evaluate(
+    (el) => el.getAttribute("role") === "timer",
+  )
 
-  if ((await minutesInput.count()) > 0 && (await secondsInput.count()) > 0) {
-    const minutes = Number(await minutesInput.inputValue())
-    const seconds = Number(await secondsInput.inputValue())
-
+  if (isReadout) {
+    const text =
+      ((await timerDisplay.textContent()) ?? "").replace(/\s+/g, "") || "00:00"
+    const [minutes, seconds] = text.split(":").map(Number)
     return minutes * 60 + seconds
   }
 
-  const displayText =
-    ((await timerDisplay.textContent()) ?? "").replace(/\s+/g, "") || "00:00"
-  const [minutes, seconds] = displayText
-    .split(":")
-    .map((value) => Number(value))
-
+  const minutesInput = timerDisplay.getByLabel("Minutes")
+  const secondsInput = timerDisplay.getByLabel("Seconds")
+  const minutes = Number(await minutesInput.inputValue())
+  const seconds = Number(await secondsInput.inputValue())
   return minutes * 60 + seconds
 }
 
@@ -775,19 +782,12 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
       .toBe(expectedSeconds)
   }
 
-  if (settings.backgroundColor !== undefined) {
+  if (settings.theme !== undefined) {
     await expect
-      .poll(() => getBodyCssVariable(page, "--background"), {
-        message: "background color should be applied",
+      .poll(() => page.locator("body").getAttribute("data-theme"), {
+        message: "theme should be applied",
       })
-      .toBe(hexToRgbChannels(settings.backgroundColor))
-  }
-  if (settings.foregroundColor !== undefined) {
-    await expect
-      .poll(() => getBodyCssVariable(page, "--foreground"), {
-        message: "foreground color should be applied",
-      })
-      .toBe(hexToRgbChannels(settings.foregroundColor))
+      .toBe(settings.theme)
   }
   if (settings.ttsEnabled !== undefined) {
     await openSidebarPanel(page, "Settings")
@@ -807,10 +807,10 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   }
   if (settings.primaryColor !== undefined) {
     await expect
-      .poll(() => getBodyCssVariable(page, "--primary"), {
+      .poll(() => getBodyCssVariable(page, "--color-primary"), {
         message: "primary color should be applied",
       })
-      .toBe(hexToRgbChannels(settings.primaryColor))
+      .toBe(settings.primaryColor)
   }
 }
 
@@ -830,15 +830,12 @@ export async function expectTimerUrlParams(
     })
     .toEqual(expect.not.stringContaining("#"))
 
-  if (settings.backgroundColor !== undefined) {
-    await expect(page).toHaveURL(
-      new RegExp(`(?:\\?|&)bg=${settings.backgroundColor.slice(1)}(?:&|$)`),
-    )
-  }
-  if (settings.foregroundColor !== undefined) {
-    await expect(page).toHaveURL(
-      new RegExp(`(?:\\?|&)fg=${settings.foregroundColor.slice(1)}(?:&|$)`),
-    )
+  if (settings.theme !== undefined) {
+    if (settings.theme === "bright") {
+      await expect(page).toHaveURL(/(?:\?|&)theme=bright(?:&|$)/)
+    } else {
+      await expect(page).not.toHaveURL(/(?:\?|&)theme=(?:&|$)/)
+    }
   }
   if (settings.ttsEnabled !== undefined) {
     if (settings.ttsEnabled) {
@@ -882,7 +879,7 @@ export async function expectLiveSessionOnlyUrl(
   page: Page,
   { control = false }: { control?: boolean } = {},
 ) {
-  await expect(page).toHaveURL(control ? /\/control\// : /\/view\//)
+  await expect(page).toHaveURL(control ? /\/manage\// : /\/join\//)
 
   await expect
     .poll(() => page.url(), {
@@ -895,7 +892,7 @@ export async function expectControlClientUrlParams(
   page: Page,
   settings: TimerSettings,
 ) {
-  if (page.url().includes("/control/")) {
+  if (page.url().includes("/manage/")) {
     await expectLiveSessionOnlyUrl(page, { control: true })
     await expectTimerSettings(page, settings)
     return

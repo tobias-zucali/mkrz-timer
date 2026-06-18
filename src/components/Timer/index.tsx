@@ -168,7 +168,7 @@ export default function Timer({
               onSecondsChange={(event) => handleChange("s", event.target.value)}
               seconds={seconds}
             />
-            <div className="sr-only" data-testid="timer-readout-summary">
+            <div className="sr-only">
               {readoutSummary}
               {stepSummary ? ` ${stepSummary}.` : ""}
             </div>

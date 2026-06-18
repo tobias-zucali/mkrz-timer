@@ -69,9 +69,7 @@ export default function useSessionDiagnostics({
   remoteStatusEnabled: boolean
   sessionId?: string
   timerState: {
-    backgroundColor: string
     elapsedPercentage: number
-    foregroundColor: string
     isFinished: boolean
     minutes: string
     primaryColor: string
@@ -119,6 +117,7 @@ export default function useSessionDiagnostics({
     participantCount: connectionCount,
     role: remoteStatusRole,
     showPendingHostStatus: isHostRemoteSession && !sessionId,
+    t: t as AppTranslationFn,
   })
   const sessionPresentation = getSessionPresentation({
     hasPendingSyncConflict,

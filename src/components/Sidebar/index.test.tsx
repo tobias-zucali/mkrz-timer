@@ -36,6 +36,7 @@ function buildTimerPanel(pageTitle = "") {
 }
 
 const baseProps = {
+  locale: "en" as const,
   settingsPanel: {
     floatingTimerData: {
       isOpen: false,
@@ -45,8 +46,7 @@ const baseProps = {
     } satisfies FloatingTimerData,
     handleChange: vi.fn(),
     params: {
-      bg: DEFAULT_SYNC_PARAMS.bg,
-      fg: DEFAULT_SYNC_PARAMS.fg,
+      theme: DEFAULT_SYNC_PARAMS.theme,
       snd: DEFAULT_SYNC_PARAMS.snd,
       tts: DEFAULT_SYNC_PARAMS.tts,
     },
@@ -167,5 +167,14 @@ describe("Sidebar", () => {
         name: /Include Voice & Sound settings in links/,
       }),
     ).toBeVisible()
+  })
+
+  it("links the sidebar heading back to the public home page", () => {
+    renderWithIntl(<Sidebar {...baseProps} />)
+
+    expect(screen.getByRole("link", { name: "mkrz timer" })).toHaveAttribute(
+      "href",
+      "/en",
+    )
   })
 })

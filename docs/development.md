@@ -33,7 +33,7 @@ Environment variables:
 
 The testing workflow is organized to answer the smallest useful product question first, then widen only when a change crosses boundaries.
 
-Use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md). `pnpm scope` remains the repo-specific helper for choosing the smallest useful first-pass lane from changed files. The launcher chooses the first free ports near the preferred defaults instead of assuming fixed ports are always available.
+Use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [README.md](../README.md). `pnpm scope` remains the repo-specific helper for choosing the smallest useful required targeted lane from changed files. The launcher chooses the first free ports near the preferred defaults instead of assuming fixed ports are always available.
 
 Local validation lanes:
 
@@ -49,6 +49,7 @@ Authoring rules:
 - use `.test.ts` for pure logic tests that should run under `node:test`, even when the file sits near a component
 - use `.test.tsx` for React/jsdom tests that should run under Vitest
 - keep browser tests focused on visible product guarantees such as route behavior, control permissions, readonly behavior, synchronized timer state, recovery UX, and first-load rendering
+- add `toMatchAriaSnapshot()` coverage for new standalone screens, dialogs, or panels when they introduce meaningful accessibility-tree surface that should remain stable
 - prefer accessibility queries such as `getByRole`, `getByLabel`, and `getByText` when the element is user-perceivable
 - move protocol/state-machine edge cases, merge branches, malformed payload handling, and other non-visual logic into unit or server-safe tests where possible
 - avoid making remote debug attributes or exact participant-count convergence the main acceptance criteria for multi-client coverage
@@ -64,7 +65,7 @@ Authoring rules:
 Why `scope.yaml` exists:
 
 - keep validation ownership next to the subsystem that owns it instead of in one brittle central mapping table
-- let `pnpm scope` recommend the smallest useful first-pass lane before broader reruns
+- let `pnpm scope` recommend the smallest useful required targeted lane before broader reruns
 - make route, live-session, and contract-sensitive boundaries visible during edits
 - avoid leaf-by-leaf metadata and treat exception-heavy scope files as a signal that the boundary is too fine-grained
 
@@ -130,20 +131,21 @@ Relevant commands:
 
 Smallest-first workflow:
 
-- Start with the narrowest lane that exercises the changed contract, then widen only after that subsystem is stable.
+- Start with the narrowest required targeted lane that exercises the changed contract, then widen only after that subsystem is stable.
 - `pnpm test:e2e:local -- tests/e2e/timer/settings.spec.ts` runs one local Playwright spec.
 - `pnpm test:e2e:remote -- tests/e2e/live-session/sync.spec.ts` runs one remote live-session spec.
-- `pnpm scope -- src/shared/urlState/index.ts src/utils/liveSession/route.ts` prints a recommended first-pass validation sequence for the given files.
+- `pnpm scope -- src/shared/urlState/index.ts src/utils/liveSession/route.ts` prints the required targeted validation sequence for the given files.
 - `pnpm scope:audit` validates every `scope.yaml` and prints structural warnings for rule-heavy or exception-only boundaries.
 - `pnpm scope` discovers the nearest ancestor `scope.yaml` for each changed file, so moving a feature usually means moving its `scope.yaml` with it instead of editing a central mapping table.
 - Do not run overlapping Playwright lanes in parallel when they share ports.
 - Managed local and remote E2E commands intentionally block parallel startup even when free ports exist; wait for the running command to finish before retrying, or use `pnpm test:e2e:ui` when you need a parallel interactive session.
 - If a UI change is intentional and snapshots fail, update the affected aria or visual snapshots before broad reruns.
+- Public informational pages and the first-use welcome flow are covered by dedicated Playwright specs. When their structure changes, update the corresponding ARIA snapshots before running the final broad lane.
 
 Practical rule:
 
 - If you are running the app locally, default to the generic lanes.
-- If you are an agent or automation workflow choosing a validation lane, use `pnpm scope` first and then run the recommended standard test commands.
+- If you are an agent or automation workflow choosing a validation lane, use `pnpm scope` first, run every command it lists under "Required targeted validation", and then complete the shared validation gate.
 
 ## Manual PWA Verification
 

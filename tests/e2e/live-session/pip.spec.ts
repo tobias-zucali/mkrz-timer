@@ -64,8 +64,7 @@ async function getFloatingTimerState(page: Page) {
     )
 
     return {
-      backgroundColor: getComputedStyle(pipWindow.document.body)
-        .backgroundColor,
+      theme: pipWindow.document.documentElement.getAttribute("data-theme"),
       displayText: display?.textContent?.replace(/\s+/g, " ").trim() || "",
       hasButtons: pipWindow.document.querySelectorAll("button").length,
       titleText: title?.textContent?.replace(/\s+/g, " ").trim() || "",
@@ -186,7 +185,7 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
   await page.getByRole("button", { name: "RESET" }).click()
   await openSettingsOverlay(page)
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
+    theme: "bright",
     title: "Floating title",
     minutes: "12",
     seconds: "34",
@@ -194,10 +193,10 @@ test("opens a readonly floating timer in local mode and keeps it synced", async 
 
   await expect
     .poll(() => getFloatingTimerState(page), {
-      message: "floating timer should reflect title and color updates",
+      message: "floating timer should reflect title and theme updates",
     })
     .toMatchObject({
-      backgroundColor: "rgb(18, 52, 86)",
+      theme: "bright",
       displayText: "12:34",
       titleText: "Floating title",
     })
@@ -223,7 +222,7 @@ test(
     await openTimer(page, 3)
     await openSidebarPanel(page, "Settings")
     await updateTimerSettings(page, {
-      backgroundColor: "#123456",
+      theme: "bright",
       title: "Floating title",
       minutes: "12",
       seconds: "34",

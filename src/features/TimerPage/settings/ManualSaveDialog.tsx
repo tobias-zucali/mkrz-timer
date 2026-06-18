@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl"
 
 import ActionDialog from "@/components/ActionDialog"
 import IconButton from "@/components/IconButton"
+import {
+  buildDurationPartsFromTotalSeconds,
+  type TimerSequenceRow,
+} from "@/shared/timerSequence"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon } from "@/utils/icons"
 import useClipboardCopy from "@/utils/useClipboardCopy"
 
@@ -13,12 +17,14 @@ export default function ManualSaveDialog({
   onClose,
   pageTitle,
   readonlyClientUrl,
+  rows,
   timerUrl,
 }: {
   controlClientUrl: string
   onClose: () => void
   pageTitle: string
   readonlyClientUrl: string
+  rows: TimerSequenceRow[]
   timerUrl: string
 }) {
   const t = useTranslations("Sidebar.timer")
@@ -26,6 +32,20 @@ export default function ManualSaveDialog({
   const exportTextareaId = useId()
   const { canCopy, copyText, isCopied } = useClipboardCopy()
   const resolvedTimerTitle = pageTitle.trim() || t("pageTitlePlaceholder")
+  const resolvedStepLines = useMemo(
+    () =>
+      rows.map((row, index) => {
+        const duration = buildDurationPartsFromTotalSeconds(row.totalSeconds)
+        const formattedDuration = `${duration.m}:${duration.s}`
+        const stepLabel = t("step", { step: index + 1 })
+        const stepTitle = row.title.trim()
+
+        return stepTitle
+          ? `${stepLabel} (${formattedDuration}): ${stepTitle}`
+          : `${stepLabel} (${formattedDuration})`
+      }),
+    [rows, t],
+  )
   const handleSelectExportText = (
     event: SyntheticEvent<HTMLTextAreaElement>,
   ) => {
@@ -34,22 +54,23 @@ export default function ManualSaveDialog({
   const exportText = useMemo(() => {
     const lines = [
       `${t("saveDialogTimerLabel")}: ${resolvedTimerTitle}`,
-      `${tShare("localLink")}`,
+      ...resolvedStepLines,
       timerUrl,
     ]
 
     if (controlClientUrl) {
-      lines.push("", `${tShare("controlLink")}`, controlClientUrl)
+      lines.push("", tShare("controlLink"), controlClientUrl)
     }
 
     if (readonlyClientUrl) {
-      lines.push("", `${tShare("viewerLink")}`, readonlyClientUrl)
+      lines.push("", tShare("viewerLink"), readonlyClientUrl)
     }
 
     return lines.join("\n")
   }, [
     controlClientUrl,
     readonlyClientUrl,
+    resolvedStepLines,
     resolvedTimerTitle,
     t,
     tShare,
@@ -92,11 +113,11 @@ export default function ManualSaveDialog({
       title={t("saveDialogTitle")}
     >
       <div className="mt-5 space-y-4">
-        <p className="text-sm/6 text-foreground/78">{t("saveDialogText")}</p>
+        <p className="text-sm/6 text-ink/78">{t("saveDialogText")}</p>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <label
-              className="text-sm font-semibold text-foreground"
+              className="text-sm font-semibold text-ink"
               htmlFor={exportTextareaId}
             >
               {t("saveDialogManualStorageTitle")}
@@ -130,10 +151,10 @@ export default function ManualSaveDialog({
           </div>
           <textarea
             className="
-              min-h-44 w-full rounded-2xl border border-foreground/14
-              bg-foreground/4.5 px-4 py-3 font-mono text-[0.82rem]/6
-              text-foreground transition outline-none
-              focus:border-primary/50 focus:bg-foreground/6
+              min-h-44 w-full rounded-2xl border border-ink/14
+              bg-ink/4.5 px-4 py-3 font-mono text-[0.82rem]/6
+              text-ink transition outline-none
+              focus:border-primary/50 focus:bg-ink/6
               focus:outline-2 focus:-outline-offset-2 focus:outline-primary
             "
             id={exportTextareaId}

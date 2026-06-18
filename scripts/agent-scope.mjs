@@ -124,12 +124,26 @@ const runScopeRecommendation = (files) => {
   }
 
   print()
-  print("Suggested first-pass validation")
+  print("Required targeted validation")
   const uniqueCommands = dedupe(commands)
   if (uniqueCommands.length === 0) {
     print(
-      "- No narrow lane matched. Start with the closest unit or component test, then widen.",
+      "- No narrow lane matched. Start with the closest unit or component test, then widen before closeout.",
     )
+    const uncovered = files.filter((filePath) => {
+      const underSrc =
+        filePath.startsWith("src/") || filePath.startsWith("tests/")
+      if (!underSrc) return false
+      return findNearestScopePath(filePath) === null
+    })
+    if (uncovered.length > 0) {
+      print(
+        "- The following files have no scope.yaml ancestor. Check whether a scope.yaml should be added for their feature boundary (see AGENTS.md → Testing):",
+      )
+      for (const filePath of uncovered) {
+        print(`  - ${filePath}`)
+      }
+    }
   } else {
     for (const command of uniqueCommands) {
       print(`- ${command}`)
@@ -137,13 +151,15 @@ const runScopeRecommendation = (files) => {
   }
 
   print()
-  print("Required finish lane")
-  print("- `pnpm lint`")
-  print("- `pnpm test:e2e:local:smoke`")
-  print("- `pnpm format:fix`")
-
+  print("Validation gate")
+  print("Always required after targeted validation:")
+  print("  pnpm lint:fix")
+  print("  pnpm format:fix")
+  print("  pnpm test:e2e:local:smoke")
   if (needsFullLane) {
-    print("- `pnpm test:full`")
+    print("")
+    print("Also required:")
+    print("  pnpm test:full")
   }
 
   print()
@@ -155,9 +171,6 @@ const runScopeRecommendation = (files) => {
   }
   print(
     "- Do not run overlapping Playwright lanes in parallel when they share the same ports.",
-  )
-  print(
-    "- Delay `pnpm test:full` until the last failing local or remote subsystem is already stable.",
   )
 }
 

@@ -13,6 +13,8 @@ const timerPageNamespaces = [
   "DeveloperReportDialog",
   "DigitalDisplay",
   "HelpText",
+  "InfoPages",
+  "liveSessionStatus",
   "QrCodeOverlay",
   "Sidebar",
   "StatusBadge",

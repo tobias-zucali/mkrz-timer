@@ -1,5 +1,5 @@
 {
-  "shareViewerLink": "Share viewer link",
+  "shareViewerLink": "Share join link",
   "openSharing": "Open sharing",
   "share": "Share",
   "toggleFloatingWindow": "Toggle floating window",
@@ -8,5 +8,5 @@
   "enterFullscreen": "Enter fullscreen",
   "closeFullscreen": "Close fullscreen",
   "fullscreenMode": "Fullscreen mode",
-  "viewerLink": "Viewer link"
+  "viewerLink": "Join link"
 }

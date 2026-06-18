@@ -1,0 +1,105 @@
+- main:
+  - link "time-timer":
+    - /url: /en
+    - img "time-timer": mkrz timer
+  - button "Language"
+  - link "Open timer":
+    - /url: /en/t
+  - paragraph:
+    - text: // simple timekeeping · by
+    - link "mkrz lab":
+      - /url: https://mkrz.at
+  - article:
+    - heading "Privacy" [level=1]
+    - paragraph: mkrz timer is designed to be usable without creating an account.
+    - paragraph: The project aims to keep data handling understandable, transparent, and privacy-conscious.
+    - heading "Local timers" [level=2]
+    - paragraph: You can use mkrz timer entirely within your browser.
+    - paragraph: "When using a local timer:"
+    - list:
+      - listitem: no account is required
+      - listitem: no live session is created
+      - listitem: timer data remains on your device
+      - listitem: no timer state is sent to the synchronization relay
+    - paragraph: The application may store a small amount of information in browser storage to support functionality and convenience features.
+    - paragraph: "This currently includes:"
+    - list:
+      - listitem: "restored local timer entries in `timer.localLibrary`"
+      - listitem: "preferences for including non-default settings in shared links in `timer.share.includeVoiceSoundSettings`"
+    - paragraph: "The current implementation does not persist live-session access tokens in `localStorage`."
+    - heading "Live sessions" [level=2]
+    - paragraph: mkrz timer also supports live sessions that allow multiple devices to stay in sync.
+    - paragraph: "When using live sessions:"
+    - list:
+      - listitem: timer state is synchronized through the relay service
+      - listitem: a join link can be shared with participants
+      - listitem: a manage link is used to control the session
+      - listitem: anyone with the corresponding link can access the session
+    - paragraph: These links act as access credentials and should be treated accordingly.
+    - heading "Server-side handling" [level=2]
+    - paragraph: The synchronization relay currently stores active session data in memory while sessions are running.
+    - paragraph: "This may include:"
+    - list:
+      - listitem: synchronized timer state
+      - listitem: participant information required for synchronization
+      - listitem: join and manage tokens
+      - listitem: operational metadata required for session recovery
+    - paragraph: The project does not currently rely on a dedicated database for normal live-session operation.
+    - heading "Infrastructure" [level=2]
+    - paragraph: The hosted infrastructure currently operates within the European Union.
+    - paragraph: The relay infrastructure is currently hosted in Frankfurt, Germany.
+    - heading "No advertising or tracking focus" [level=2]
+    - paragraph: mkrz timer is not intended as an advertising or behavioral tracking platform.
+    - paragraph: We do not currently aim to build advertising profiles, behavioral analytics systems, or personalization systems around the application.
+    - heading "Open source transparency" [level=2]
+    - paragraph:
+      - text: The source code is publicly available on
+      - link "GitHub":
+        - /url: https://github.com/tobias-zucali/mkrz-timer
+      - text: .
+    - paragraph: The open-source nature of the project is intended to make technical behavior easier to understand and review.
+    - heading "Your choices" [level=2]
+    - paragraph: "You can:"
+    - list:
+      - listitem: use local timers only
+      - listitem: avoid live sessions
+      - listitem: clear browser storage through your browser settings
+      - listitem: stop using the hosted service at any time
+    - heading "Contact" [level=2]
+    - paragraph: Questions, feedback, or privacy-related concerns are welcome.
+    - paragraph:
+      - text: See the
+      - link "Contact":
+        - /url: /en/contact
+      - text: page for contact information.
+  - link "time-timer":
+    - /url: /en
+    - img "time-timer": mkrz timer
+  - navigation "Information pages":
+    - list:
+      - listitem:
+        - link "About":
+          - /url: /en/about
+      - listitem:
+        - link "Privacy":
+          - /url: /en/privacy
+      - listitem:
+        - link "Impressum":
+          - /url: /en/impressum
+      - listitem:
+        - link "Terms":
+          - /url: /en/terms
+      - listitem:
+        - link "Accessibility":
+          - /url: /en/accessibility
+      - listitem:
+        - link "Contact":
+          - /url: /en/contact
+  - text: /© \d+/
+  - link "mkrz lab":
+    - /url: https://mkrz.at
+  - text: · by
+  - link "Tobias Zucali":
+    - /url: https://www.linkedin.com/in/tobias-zucali/
+  - link "CC BY-NC-SA 4.0":
+    - /url: https://creativecommons.org/licenses/by-nc-sa/4.0/

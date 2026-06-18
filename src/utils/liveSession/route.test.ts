@@ -10,21 +10,21 @@ import {
 test("buildRemotePath uses role-specific prefixes", () => {
   assert.equal(
     buildRemotePath({ role: "readonly", token: "viewer-1" }),
-    "/view/viewer-1",
+    "/join/viewer-1",
   )
   assert.equal(
     buildRemotePath({ role: "control", token: "controller-1" }),
-    "/control/controller-1",
+    "/manage/controller-1",
   )
   assert.equal(
     buildRemotePath({ locale: "de", role: "control", token: "controller-1" }),
-    "/de/control/controller-1",
+    "/de/manage/controller-1",
   )
 })
 
 test("getRemotePathPrefix returns stable remote route prefixes", () => {
-  assert.equal(getRemotePathPrefix("readonly"), "/view")
-  assert.equal(getRemotePathPrefix("control"), "/control")
+  assert.equal(getRemotePathPrefix("readonly"), "/join")
+  assert.equal(getRemotePathPrefix("control"), "/manage")
 })
 
 test("parseRemoteRoute detects local paths", () => {
@@ -35,7 +35,25 @@ test("parseRemoteRoute detects local paths", () => {
   })
 })
 
-test("parseRemoteRoute parses valid viewer and controller paths", () => {
+test("parseRemoteRoute parses valid join and manage paths", () => {
+  assert.deepEqual(parseRemoteRoute("/join/viewer_1"), {
+    isRemote: true,
+    role: "readonly",
+    token: "viewer_1",
+  })
+  assert.deepEqual(parseRemoteRoute("/manage/controller-1"), {
+    isRemote: true,
+    role: "control",
+    token: "controller-1",
+  })
+  assert.deepEqual(parseRemoteRoute("/de/join/viewer_1"), {
+    isRemote: true,
+    role: "readonly",
+    token: "viewer_1",
+  })
+})
+
+test("parseRemoteRoute keeps accepting legacy viewer and controller paths", () => {
   assert.deepEqual(parseRemoteRoute("/view/viewer_1"), {
     isRemote: true,
     role: "readonly",
@@ -46,10 +64,10 @@ test("parseRemoteRoute parses valid viewer and controller paths", () => {
     role: "control",
     token: "controller-1",
   })
-  assert.deepEqual(parseRemoteRoute("/de/view/viewer_1"), {
+  assert.deepEqual(parseRemoteRoute("/de/control/controller-1"), {
     isRemote: true,
-    role: "readonly",
-    token: "viewer_1",
+    role: "control",
+    token: "controller-1",
   })
 })
 

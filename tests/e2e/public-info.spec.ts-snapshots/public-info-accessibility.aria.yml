@@ -1,0 +1,91 @@
+- main:
+  - link "time-timer":
+    - /url: /en
+    - img "time-timer": mkrz timer
+  - button "Language"
+  - link "Open timer":
+    - /url: /en/t
+  - paragraph:
+    - text: // simple timekeeping · by
+    - link "mkrz lab":
+      - /url: https://mkrz.at
+  - article:
+    - heading "Accessibility" [level=1]
+    - paragraph: Accessibility is an important goal of mkrz timer.
+    - paragraph: The project aims to support participation across different devices, environments, and usage contexts.
+    - heading "Goals" [level=2]
+    - paragraph: "We aim to support:"
+    - list:
+      - listitem: keyboard-friendly interaction
+      - listitem: readable layouts
+      - listitem: responsive design
+      - listitem: mobile-friendly usage
+      - listitem: collaborative and presentation contexts
+      - listitem: clear interaction patterns
+    - heading "Collaborative environments" [level=2]
+    - paragraph: Many people use mkrz timer in workshops, classrooms, presentations, facilitation sessions, exercise settings, and shared environments.
+    - paragraph: "This influences design decisions such as:"
+    - list:
+      - listitem: readability from a distance
+      - listitem: low-distraction presentation modes
+      - listitem: support for different screen sizes
+      - listitem: support for shared and collaborative usage
+    - heading "Ongoing improvement" [level=2]
+    - paragraph: Accessibility is an ongoing process.
+    - paragraph: While we continuously work to improve usability and accessibility, limitations may still exist and new issues may be discovered over time.
+    - paragraph: Feedback helps identify areas for improvement and prioritize future work.
+    - heading "Current limitations" [level=2]
+    - paragraph: "Because the project is actively evolving:"
+    - list:
+      - listitem: some accessibility issues may not yet be identified
+      - listitem: behavior may differ across browsers and devices
+      - listitem: newly introduced features may require additional accessibility improvements
+    - heading "Feedback" [level=2]
+    - paragraph: Accessibility feedback, usability suggestions, bug reports, and contributions are welcome.
+    - paragraph:
+      - text: Please visit the
+      - link "Contact":
+        - /url: /en/contact
+      - text: page if you would like to get in touch.
+    - heading "Learn more" [level=2]
+    - list:
+      - listitem:
+        - link "About":
+          - /url: /en/about
+      - listitem:
+        - link "Privacy":
+          - /url: /en/privacy
+      - listitem:
+        - link "Contact":
+          - /url: /en/contact
+  - link "time-timer":
+    - /url: /en
+    - img "time-timer": mkrz timer
+  - navigation "Information pages":
+    - list:
+      - listitem:
+        - link "About":
+          - /url: /en/about
+      - listitem:
+        - link "Privacy":
+          - /url: /en/privacy
+      - listitem:
+        - link "Impressum":
+          - /url: /en/impressum
+      - listitem:
+        - link "Terms":
+          - /url: /en/terms
+      - listitem:
+        - link "Accessibility":
+          - /url: /en/accessibility
+      - listitem:
+        - link "Contact":
+          - /url: /en/contact
+  - text: /© \d+/
+  - link "mkrz lab":
+    - /url: https://mkrz.at
+  - text: · by
+  - link "Tobias Zucali":
+    - /url: https://www.linkedin.com/in/tobias-zucali/
+  - link "CC BY-NC-SA 4.0":
+    - /url: https://creativecommons.org/licenses/by-nc-sa/4.0/

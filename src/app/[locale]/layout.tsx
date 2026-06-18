@@ -36,7 +36,6 @@ export default async function LocaleLayout({
   const { locale } = await params
 
   const resolvedLocale = resolveAppLocale(locale)
-  const appShellMessages = getMessagesForLocale(resolvedLocale).AppShell
 
   setRequestLocale(resolvedLocale)
 
@@ -44,15 +43,6 @@ export default async function LocaleLayout({
     <>
       <SyncDocumentLocale locale={resolvedLocale} />
       {children}
-      <a
-        className="
-          absolute right-4 bottom-4 underline
-          hover:text-primary
-        "
-        href="https://www.mkrz.at/"
-      >
-        {appShellMessages.footer.credit}
-      </a>
     </>
   )
 }

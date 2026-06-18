@@ -57,7 +57,7 @@ export default function useParams() {
   const pathname =
     typeof window === "undefined" ? nextPathname : window.location.pathname
   const router = useRouter()
-  const { setColors } = useContext(ParamStyleContext)
+  const { setTheme, setPc } = useContext(ParamStyleContext)
 
   const searchParamsString =
     typeof window === "undefined"
@@ -69,7 +69,9 @@ export default function useParams() {
   )
   const isSearchParamsEmpty = searchParams.size === 0
   const normalizedPathname = stripLocalePrefix(pathname)
-  const isReadonlyRemotePath = normalizedPathname.startsWith("/view")
+  const isReadonlyRemotePath =
+    normalizedPathname.startsWith("/join") ||
+    normalizedPathname.startsWith("/view")
   const allowTimerState = !isReadonlyRemotePath
   const allowPageTitle = !isReadonlyRemotePath
   const parsedTimerUrlState = useMemo(
@@ -104,12 +106,9 @@ export default function useParams() {
   )
 
   useEffect(() => {
-    setColors({
-      bg: currentParams.bg,
-      fg: currentParams.fg,
-      pc: currentParams.pc,
-    })
-  }, [setColors, currentParams.bg, currentParams.fg, currentParams.pc])
+    setTheme(currentParams.theme)
+    setPc(currentParams.pc)
+  }, [setTheme, setPc, currentParams.theme, currentParams.pc])
 
   const getPathWithParams = useCallback(
     (options: ParamBuildOptions = {}) => {
@@ -192,7 +191,13 @@ export default function useParams() {
               ? allowTimerState
               : !(
                   stripLocalePrefix(window.location.pathname).startsWith(
+                    "/join",
+                  ) ||
+                  stripLocalePrefix(window.location.pathname).startsWith(
                     "/view",
+                  ) ||
+                  stripLocalePrefix(window.location.pathname).startsWith(
+                    "/manage",
                   ) ||
                   stripLocalePrefix(window.location.pathname).startsWith(
                     "/control",

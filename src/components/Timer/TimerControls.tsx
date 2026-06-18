@@ -4,12 +4,12 @@ import { getResponsiveClamp } from "@/utils/responsiveClamp"
 
 const timerButtonClassName =
   "inline-flex appearance-none items-center justify-center " +
-  "rounded-md bg-foreground/80 text-background " +
-  "text-background " +
-  "bg-foreground font-bold text-background " +
-  "shadow-sm transition-colors hover:bg-foreground " +
+  "rounded-md bg-ink/80 text-screen " +
+  "text-screen " +
+  "bg-ink font-bold text-screen " +
+  "shadow-sm transition-colors hover:bg-ink " +
   "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-foreground/80 touch-manipulation"
+  "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-ink/80 touch-manipulation"
 
 type TimerControlsProps = {
   isDimmed: boolean

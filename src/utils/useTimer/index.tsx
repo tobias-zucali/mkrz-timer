@@ -364,6 +364,11 @@ export default function useTimer({
   useEffect(() => {
     if (
       sequenceAuthority !== "client" ||
+      // In React 18 concurrent rendering, setAnimationNow can trigger a render
+      // before commitNextState's setState calls are processed. If the React
+      // state revision hasn't caught up to the ref yet, resolvedState is stale
+      // — committing it would reset the timer.
+      revision !== latestStateRef.current.revision ||
       (resolvedSnapshot.params.activeIndex === activeIndex &&
         resolvedState.revision === latestStateRef.current.revision &&
         resolvedState.status === latestStateRef.current.status &&
@@ -391,6 +396,7 @@ export default function useTimer({
     resolvedSnapshot,
     resolvedState,
     sequenceAuthority,
+    revision,
   ])
 
   useEffect(() => {

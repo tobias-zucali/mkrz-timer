@@ -302,8 +302,8 @@ test("rejoins readonly clients after a controller restores an offline session", 
   await enableLiveSession(page)
   const readonlyClient = await openClientFromSettings(
     page,
-    await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
-    "Viewer link",
+    await page.getByRole("textbox", { name: "Join link" }).inputValue(),
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -379,8 +379,8 @@ test("ignores malformed relay payload attempts without breaking active clients",
   await enableLiveSession(page)
   const readonlyClient = await openClientFromSettings(
     page,
-    await page.getByRole("textbox", { name: "Viewer link" }).inputValue(),
-    "Viewer link",
+    await page.getByRole("textbox", { name: "Join link" }).inputValue(),
+    "Join link",
   )
 
   await closeSettingsOverlay(page)
@@ -446,8 +446,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   })
 
   const mainSettings = {
-    backgroundColor: "#123456",
-    foregroundColor: "#fefefe",
+    theme: "bright" as const,
     minutes: "02",
     primaryColor: "#00aa88",
     seconds: "15",
@@ -455,7 +454,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   }
 
   await openSettingsOverlay(page)
-  await expectUrlQrCode(page, "Control link")
+  await expectUrlQrCode(page, "Manage link")
   await updateTimerSettings(page, mainSettings)
   await closeSettingsOverlay(page)
 
@@ -470,8 +469,7 @@ test("syncs settings changes from main and clients", async ({ page }) => {
   )
 
   const clientSettings = {
-    backgroundColor: "#1a2b3c",
-    foregroundColor: "#ddeeff",
+    theme: "dark" as const,
     minutes: "00",
     primaryColor: "#ff8800",
     seconds: "45",
@@ -502,33 +500,31 @@ test("new clients inherit host settings without resetting the session", async ({
 
   const clientUrl = await enableLiveSession(page)
   const viewerUrl = await page
-    .getByRole("textbox", { name: "Viewer link" })
+    .getByRole("textbox", { name: "Join link" })
     .inputValue()
 
   const mainSettings = {
-    backgroundColor: "#2456ab",
-    foregroundColor: "#f6f1de",
+    theme: "bright" as const,
     minutes: "03",
     primaryColor: "#f97316",
     seconds: "20",
     title: "Host tuned",
   }
   const inheritedSettings = {
-    backgroundColor: mainSettings.backgroundColor,
-    foregroundColor: mainSettings.foregroundColor,
+    theme: mainSettings.theme,
     minutes: mainSettings.minutes,
     primaryColor: mainSettings.primaryColor,
     seconds: mainSettings.seconds,
   }
 
-  await expectUrlQrCode(page, "Control link")
+  await expectUrlQrCode(page, "Manage link")
   await updateTimerSettings(page, mainSettings)
   await expectTimerSettings(page, mainSettings)
   await openSidebarPanel(page, "Share")
-  const controlLinkField = page.getByRole("textbox", { name: "Control link" })
-  const viewerLinkField = page.getByRole("textbox", { name: "Viewer link" })
-  await expect(controlLinkField).toHaveValue(/\/control\//)
-  await expect(viewerLinkField).toHaveValue(/\/view\//)
+  const controlLinkField = page.getByRole("textbox", { name: "Manage link" })
+  const viewerLinkField = page.getByRole("textbox", { name: "Join link" })
+  await expect(controlLinkField).toHaveValue(/\/manage\//)
+  await expect(viewerLinkField).toHaveValue(/\/join\//)
   const currentControlUrl = await controlLinkField.inputValue()
   const currentViewerUrl = await viewerLinkField.inputValue()
 
@@ -539,7 +535,7 @@ test("new clients inherit host settings without resetting the session", async ({
   const readonlyClient = await openClientFromSettings(
     page,
     currentViewerUrl || viewerUrl,
-    "Viewer link",
+    "Join link",
   )
   const allPages = [page, controlClient, readonlyClient]
 

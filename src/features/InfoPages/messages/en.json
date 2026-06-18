@@ -1,0 +1,15 @@
+{
+  "contentFallback": "This page currently falls back to English content.",
+  "footer": {
+    "navigationLabel": "Information pages",
+    "about": "About",
+    "privacy": "Privacy",
+    "impressum": "Impressum",
+    "terms": "Terms",
+    "accessibility": "Accessibility",
+    "github": "GitHub",
+    "contact": "Contact",
+    "copyright": "© 2025 mkrz lab · by Tobias Zucali",
+    "license": "CC BY-NC-SA 4.0"
+  }
+}

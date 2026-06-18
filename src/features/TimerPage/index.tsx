@@ -21,6 +21,7 @@ import TopRightControls from "@/components/TimerPageTopRightControls"
 import ManualSaveDialog from "@/features/TimerPage/settings/ManualSaveDialog"
 import RecentTimersDialog from "@/features/TimerPage/settings/RecentTimersDialog"
 import TimerAnnouncements from "@/features/TimerPage/settings/TimerAnnouncements"
+import { getInfoPagePath } from "@/features/InfoPages/routes"
 import type { AppLocale } from "@/i18n/config"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { mergeSyncParamsPatch } from "@/shared/liveSession/mergeSyncParamsPatch"
@@ -60,6 +61,10 @@ import useDebouncedEffect from "@/utils/useDebouncedEffect"
 
 const SHARE_PANEL_SETTINGS_STORAGE_KEY = "timer.share.includeVoiceSoundSettings"
 const TIMER_LIBRARY_DEBOUNCE_MS = 300
+const EMPTY_STORED_TIMER_FINGERPRINT = buildStoredTimerFingerprint({
+  pageTitle: "",
+  params: DEFAULT_SYNC_PARAMS,
+})
 
 export default function TimerPage() {
   return (
@@ -73,6 +78,7 @@ function TimerApp() {
   const locale = useLocale() as AppLocale
   const t = useTranslations("TimerPage.page")
   const tAppShell = useTranslations("AppShell")
+  const tInfoPages = useTranslations("InfoPages")
   const sidebarOffcanvasId = useId()
   const syncStateRef = useRef<TimerState>({} as TimerState)
 
@@ -82,7 +88,7 @@ function TimerApp() {
   const remoteRoute = useMemo(() => parseRemoteRoute(pathname), [pathname])
   const paramData = useParams()
   const { pageTitle, params } = paramData
-  const { title, bg, fg, pc } = params
+  const { title, pc } = params
   const syncParams = params
   const syncParamsRef = useRef<SyncParams>(syncParams)
   syncParamsRef.current = syncParams
@@ -166,13 +172,9 @@ function TimerApp() {
   const hasTimerChanges = useMemo(
     () =>
       buildStoredTimerFingerprint(storedTimerSnapshot) !==
-      buildStoredTimerFingerprint({
-        pageTitle: "",
-        params: DEFAULT_SYNC_PARAMS,
-      }),
+      EMPTY_STORED_TIMER_FINGERPRINT,
     [storedTimerSnapshot],
   )
-
   const timer = useTimer({
     canMutate: !isReadonlyClient,
     onAction: (action, payload) => {
@@ -254,7 +256,7 @@ function TimerApp() {
 
   const handleChange = useCallback(
     (key: string, value: string) => {
-      if (key === "bg" || key === "fg" || key === "snd" || key === "tts") {
+      if (key === "theme" || key === "snd" || key === "tts") {
         applyParamPatch({
           [key]: key === "tts" ? value === "1" : value,
         } as Partial<SyncParams>)
@@ -423,6 +425,23 @@ function TimerApp() {
   }, [hasRecentlyEndedLiveSession, remoteRoute.isRemote])
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    if (window.location.hash !== "#share") {
+      return
+    }
+
+    openStatusOrSharePanel()
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${window.location.search}`,
+    )
+  }, [openStatusOrSharePanel])
+
+  useEffect(() => {
     document.title = buildDocumentTitle({
       appTitle: tAppShell("metadata.title"),
       pageTitle,
@@ -502,9 +521,7 @@ function TimerApp() {
     remoteStatusEnabled,
     sessionId,
     timerState: {
-      backgroundColor: bg,
       elapsedPercentage,
-      foregroundColor: fg,
       isFinished,
       minutes,
       primaryColor: pc,
@@ -518,7 +535,7 @@ function TimerApp() {
     : getSettingsOnlyOmitKeys()
   const timerUrl = paramData.getUrlWithParams({
     omit: settingsOmitKeys,
-    pathname: `/${locale}`,
+    pathname: `/${locale}/t`,
   })
   const readonlyClientUrl =
     liveSession.accessTokens && typeof window !== "undefined"
@@ -527,11 +544,11 @@ function TimerApp() {
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/${locale}/view/${liveSession.accessTokens.readonly}`,
+              `/${locale}/join/${liveSession.accessTokens.readonly}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/${locale}/view/${liveSession.accessTokens.readonly}`,
+          pathname: `/${locale}/join/${liveSession.accessTokens.readonly}`,
         })
       : ""
   const controlClientUrl =
@@ -541,11 +558,11 @@ function TimerApp() {
             ...getRemoteSessionOnlyOmitKeys(
               shareableParams,
               [],
-              `/${locale}/control/${liveSession.accessTokens.control}`,
+              `/${locale}/manage/${liveSession.accessTokens.control}`,
             ),
             ...settingsOmitKeys,
           ],
-          pathname: `/${locale}/control/${liveSession.accessTokens.control}`,
+          pathname: `/${locale}/manage/${liveSession.accessTokens.control}`,
         })
       : ""
 
@@ -559,8 +576,10 @@ function TimerApp() {
       return
     }
 
+    const persistedLibrary = readStoredTimerLibrary(window.localStorage)
+
     const initialLibrary = initializeStoredTimerLibrary({
-      library: readStoredTimerLibrary(window.localStorage),
+      library: persistedLibrary,
       snapshot: storedTimerSnapshot,
     })
 
@@ -726,12 +745,12 @@ function TimerApp() {
         />
       </main>
       <Sidebar
+        locale={locale}
         settingsPanel={{
           floatingTimerData: sessionDiagnostics.floatingTimerData,
           handleChange,
           params: {
-            bg: params.bg,
-            fg: params.fg,
+            theme: params.theme,
             snd: params.snd,
             tts: params.tts,
           },
@@ -822,8 +841,9 @@ function TimerApp() {
         <ManualSaveDialog
           controlClientUrl={controlClientUrl}
           onClose={() => setIsManualSaveDialogOpen(false)}
-          pageTitle={pageTitle || title}
+          pageTitle={pageTitle}
           readonlyClientUrl={readonlyClientUrl}
+          rows={params.rows}
           timerUrl={timerUrl}
         />
       ) : null}
@@ -836,6 +856,29 @@ function TimerApp() {
           onSelect={handleSelectStoredTimer}
         />
       ) : null}
+      <footer
+        className="
+          absolute inset-x-4 bottom-4 z-10 flex flex-wrap items-center
+          justify-end gap-2 text-sm
+        "
+      >
+        <a className="underline hover:text-primary" href="https://www.mkrz.at/">
+          {tAppShell("footer.credit")}
+        </a>
+        <span className="text-ink/72" aria-hidden="true">
+          ·
+        </span>
+        <a
+          className="
+            cursor-pointer text-ink/78 underline transition
+            hover:text-primary focus:outline-2 focus:-outline-offset-2
+            focus:outline-primary
+          "
+          href={getInfoPagePath(locale, "about")}
+        >
+          {tInfoPages("footer.about")}
+        </a>
+      </footer>
     </>
   )
 }

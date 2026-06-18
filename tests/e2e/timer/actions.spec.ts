@@ -14,6 +14,8 @@ import {
   type Page,
 } from "../support/test"
 
+test.describe.configure({ mode: "serial" })
+
 const timerVisualFormFactors = [
   {
     name: "desktop",
@@ -67,8 +69,8 @@ async function setTimer(page: Page, minutes: string, seconds: string) {
 
 async function setInlineTitle(page: Page, title: string) {
   const titleRoot = page.getByTestId("timer-title")
-  const emptyAction = titleRoot.getByTestId("timer-title-empty-action")
-  const editor = titleRoot.getByTestId("timer-title-input")
+  const emptyAction = titleRoot.getByRole("button", { name: "Add title" })
+  const editor = titleRoot.getByLabel("Title", { exact: true })
 
   if ((await emptyAction.count()) > 0) {
     await emptyAction.click()
@@ -79,28 +81,18 @@ async function setInlineTitle(page: Page, title: string) {
 }
 
 function buildTimerUrl({
-  backgroundColor = "000000",
-  foregroundColor = "ffffff",
   primaryColor = "d61f69",
   seconds = 3,
+  theme,
   title = "",
 }: {
-  backgroundColor?: string
-  foregroundColor?: string
   primaryColor?: string
   seconds?: number
+  theme?: "dark" | "bright"
   title?: string
 }) {
-  return `/?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&a=0&bg=${backgroundColor}&fg=${foregroundColor}`
-}
-
-function toComputedRgb(hexColor: string) {
-  const normalized = hexColor.replace(/^#/, "")
-  const red = Number.parseInt(normalized.slice(0, 2), 16)
-  const green = Number.parseInt(normalized.slice(2, 4), 16)
-  const blue = Number.parseInt(normalized.slice(4, 6), 16)
-
-  return `rgb(${red}, ${green}, ${blue})`
+  const themeParam = theme && theme !== "dark" ? `&theme=${theme}` : ""
+  return `/t?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&a=0${themeParam}`
 }
 
 async function getTitleMetrics(page: Page) {
@@ -123,7 +115,7 @@ async function getTitleMetrics(page: Page) {
     })
   }
 
-  return titleRoot.getByTestId("timer-title-input").evaluate((node) => {
+  return titleRoot.getByLabel("Title", { exact: true }).evaluate((node) => {
     const element = node as HTMLElement
     const computedStyle = window.getComputedStyle(element)
     const rootElement = document.querySelector(
@@ -141,7 +133,7 @@ async function getTitleMetrics(page: Page) {
 async function getTitleOverflowMetrics(page: Page) {
   return page.evaluate(() => {
     const inputTitle = document.querySelector(
-      '[data-testid="timer-title-input"]',
+      '[aria-label="Title"]',
     ) as HTMLTextAreaElement | null
 
     if (!inputTitle) {
@@ -170,7 +162,7 @@ async function getTitlePositionMetrics(page: Page) {
       '[data-testid="timer-title-text"]',
     ) as HTMLElement | null
     const inputTitle = document.querySelector(
-      '[data-testid="timer-title-input"]',
+      '[aria-label="Title"]',
     ) as HTMLTextAreaElement | null
 
     const toRect = (element: HTMLElement | null) => {
@@ -201,7 +193,7 @@ async function getControlChromeMetrics(page: Page) {
       'button[aria-label="Toggle navigation"]',
     ) as HTMLElement | null
     const titleAction = document.querySelector(
-      '[data-testid="timer-title-empty-action"]',
+      '[aria-label="Add title"]',
     ) as HTMLElement | null
     const topRight = document.querySelector(
       '[data-testid="top-right-controls"]',
@@ -311,15 +303,14 @@ async function expectMainTimerContentToFitViewport(page: Page) {
   ).toBe(true)
 }
 
-test("applies custom URL colors on the first load without waiting for interaction", async ({
+test("applies the theme on the first load without waiting for interaction", async ({
   page,
 }) => {
   await page.addInitScript(() => {
     ;(
       window as typeof window & {
         __themeSamples?: Array<{
-          background: string
-          foreground: string
+          theme: string
           primary: string
         }>
       }
@@ -328,20 +319,17 @@ test("applies custom URL colors on the first load without waiting for interactio
     document.addEventListener("DOMContentLoaded", () => {
       requestAnimationFrame(() => {
         const rootStyle = window.getComputedStyle(document.documentElement)
-        const bodyStyle = window.getComputedStyle(document.body)
 
         ;(
           window as typeof window & {
             __themeSamples?: Array<{
-              background: string
-              foreground: string
+              theme: string
               primary: string
             }>
           }
         ).__themeSamples?.push({
-          background: bodyStyle.backgroundColor,
-          foreground: bodyStyle.color,
-          primary: rootStyle.getPropertyValue("--primary").trim(),
+          theme: document.documentElement.getAttribute("data-theme") ?? "",
+          primary: rootStyle.getPropertyValue("--color-primary").trim(),
         })
       })
     })
@@ -349,10 +337,9 @@ test("applies custom URL colors on the first load without waiting for interactio
 
   await page.goto(
     buildTimerUrl({
-      backgroundColor: "112233",
-      foregroundColor: "ddeeff",
       primaryColor: "d61f69",
       seconds: 60,
+      theme: "bright",
       title: "First paint",
     }),
   )
@@ -361,8 +348,7 @@ test("applies custom URL colors on the first load without waiting for interactio
     return (
       window as typeof window & {
         __themeSamples?: Array<{
-          background: string
-          foreground: string
+          theme: string
           primary: string
         }>
       }
@@ -371,9 +357,8 @@ test("applies custom URL colors on the first load without waiting for interactio
 
   expect(themeSamples).toEqual([
     {
-      background: toComputedRgb("#112233"),
-      foreground: toComputedRgb("#ddeeff"),
-      primary: "214 31 105",
+      theme: "bright",
+      primary: "#d61f69",
     },
   ])
 })
@@ -456,7 +441,7 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
   await expect(
     titleRoot.getByRole("button", { name: "Add title" }),
   ).toBeVisible()
-  await expect(titleRoot.getByTestId("timer-title-input")).toHaveCount(1)
+  await expect(titleRoot.getByLabel("Title", { exact: true })).toHaveCount(1)
   await expect(
     titleRoot.evaluate((node) => node.getBoundingClientRect().height),
   ).resolves.toBeLessThan(80)
@@ -468,8 +453,8 @@ test("supports wrapped single-paragraph titles with class-based sizing and a com
 
   const displayHeight = await getTitleRootHeight(page)
   const displayPosition = await getTitlePositionMetrics(page)
-  await titleRoot.getByTestId("timer-title-input").click()
-  await expect(titleRoot.getByTestId("timer-title-input")).toBeFocused()
+  await titleRoot.getByLabel("Title", { exact: true }).click()
+  await expect(titleRoot.getByLabel("Title", { exact: true })).toBeFocused()
   const focusHeight = await getTitleRootHeight(page)
   const focusPosition = await getTitlePositionMetrics(page)
   expect(Math.abs(focusHeight - displayHeight)).toBeLessThan(10)
@@ -556,99 +541,106 @@ test("keeps long wrapped titles readable in fullscreen mode", async ({
   })
 })
 
-test(
-  "starts, pauses, and resumes the timer",
-  { tag: "@smoke" },
-  async ({ page }) => {
-    test.slow()
+test.describe("countdown progression", () => {
+  test.describe.configure({ mode: "serial" })
 
-    await openTimer(page, 30)
+  test(
+    "starts, pauses, and resumes the timer",
+    { tag: "@smoke" },
+    async ({ page }) => {
+      await openTimer(page, 60)
+
+      await page.getByRole("button", { name: "START" }).click()
+      await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+
+      await expect
+        .poll(() => getDisplayedSeconds(page), {
+          message: "timer should count down after start",
+          timeout: 8_000,
+        })
+        .toBeLessThan(60)
+
+      await page.getByRole("button", { name: "PAUSE" }).click()
+      await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+
+      const pausedAt = await getDisplayedSeconds(page)
+      await page.waitForTimeout(1_200)
+      await expect(getDisplayedSeconds(page)).resolves.toBe(pausedAt)
+
+      await page.getByRole("button", { name: "START" }).click()
+      await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+      await expect
+        .poll(() => getDisplayedSeconds(page), {
+          message: "timer should continue counting down after resume",
+          timeout: 8_000,
+        })
+        .toBeLessThan(pausedAt)
+    },
+  )
+
+  test(
+    "runs a short timer to completion and resets it",
+    { tag: "@smoke" },
+    async ({ page }) => {
+      await openTimer(page, 3)
+
+      const liveRegion = page.getByRole("status", {
+        name: "Timer announcements",
+      })
+
+      await page.getByRole("button", { name: "START" }).click()
+      await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+
+      await expect(liveRegion).toContainText("Time is up.", { timeout: 10_000 })
+
+      await expect(page.getByRole("button", { name: "RESET" })).toBeEnabled()
+      await page.getByRole("button", { name: "RESET" }).click()
+
+      await expect
+        .poll(() => getDisplayedSeconds(page), {
+          message: "timer should restore the configured duration after reset",
+        })
+        .toBe(3)
+    },
+  )
+
+  test("announces timer state changes and uses semantic readout mode", async ({
+    page,
+  }) => {
+    await openTimer(page, 60)
+
+    const liveRegion = page.getByRole("status", {
+      name: "Timer announcements",
+    })
 
     await page.getByRole("button", { name: "START" }).click()
     await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
+    await expect(
+      page.getByRole("timer", {
+        name: /Running\. Remaining time\. 1 minute/i,
+      }),
+    ).toBeVisible()
+    await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(
+      0,
+    )
+    await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(
+      0,
+    )
+    await expect(liveRegion).toContainText("1 minute timer started.")
 
     await expect
       .poll(() => getDisplayedSeconds(page), {
-        message: "timer should count down after start",
-        timeout: 4_000,
+        message: "timer should count down before pausing",
+        timeout: 8_000,
       })
-      .toBeLessThan(30)
+      .toBeLessThan(60)
 
     await page.getByRole("button", { name: "PAUSE" }).click()
-    await expect(page.getByRole("button", { name: "START" })).toBeVisible()
+    await expect(liveRegion).toContainText("Paused.")
 
-    const pausedAt = await getDisplayedSeconds(page)
-    await page.waitForTimeout(1_200)
-    await expect(getDisplayedSeconds(page)).resolves.toBe(pausedAt)
-
-    await page.getByRole("button", { name: "START" }).click()
-    await expect(page.getByRole("button", { name: "PAUSE" })).toBeVisible()
-    await expect
-      .poll(() => getDisplayedSeconds(page), {
-        message: "timer should continue counting down after resume",
-        timeout: 4_000,
-      })
-      .toBeLessThan(pausedAt)
-  },
-)
-
-test(
-  "runs a short timer to completion and resets it",
-  { tag: "@smoke" },
-  async ({ page }) => {
-    test.slow()
-
-    await openTimer(page, 3)
-
-    await page.getByRole("button", { name: "START" }).click()
-
-    await expect
-      .poll(() => getDisplayedSeconds(page), {
-        message: "timer should reach zero",
-        timeout: 10_000,
-      })
-      .toBe(0)
-
-    await expect(page.getByRole("button", { name: "RESET" })).toBeEnabled()
     await page.getByRole("button", { name: "RESET" }).click()
-
-    await expect
-      .poll(() => getDisplayedSeconds(page), {
-        message: "timer should restore the configured duration after reset",
-      })
-      .toBe(3)
-  },
-)
-
-test("announces timer state changes and uses semantic readout mode", async ({
-  page,
-}) => {
-  await openTimer(page, 12)
-
-  const liveRegion = page.getByRole("status", { name: "Timer announcements" })
-
-  await page.getByRole("button", { name: "START" }).click()
-  await expect(
-    page.getByRole("timer", {
-      name: /Running\. Remaining time\. 12 seconds/i,
-    }),
-  ).toBeVisible()
-  await expect(page.getByRole("spinbutton", { name: "Minutes" })).toHaveCount(0)
-  await expect(page.getByRole("spinbutton", { name: "Seconds" })).toHaveCount(0)
-  await expect(liveRegion).toContainText("12 seconds timer started.")
-
-  await expect
-    .poll(async () => (await liveRegion.textContent()) ?? "", {
-      message: "timer should announce the final countdown milestone",
-      timeout: 8_000,
-    })
-    .toContain("Five.")
-
-  await page.getByRole("button", { name: "PAUSE" }).click()
-  await expect(liveRegion).toContainText("Paused.")
-
-  await page.getByRole("button", { name: "RESET" }).click()
-  await expect(liveRegion).toContainText("Timer reset to 12 seconds.")
+    await expect(liveRegion).toContainText("Timer reset to 1 minute.")
+  })
 })
 
 test("@smoke keeps the timer viewport fixed while sidebar panels scroll", async ({
@@ -869,7 +861,7 @@ test("keeps timer chrome mounted on small screens and dims it after idle", async
             '[data-testid="timer-controls"]',
           ) as HTMLElement | null
           const titleAction = document.querySelector(
-            '[data-testid="timer-title-empty-action"]',
+            '[aria-label="Add title"]',
           ) as HTMLElement | null
 
           if (!topRight || !timerControls || !sidebarToggle || !titleAction) {

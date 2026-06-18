@@ -5,6 +5,23 @@ import useClipboardCopy from "@/utils/useClipboardCopy"
 
 import ManualSaveDialog from "./ManualSaveDialog"
 
+const sampleRows = [
+  {
+    endBehavior: "stop" as const,
+    primaryColor: "#d61f69",
+    repeatCount: 1,
+    title: "Intro",
+    totalSeconds: 60,
+  },
+  {
+    endBehavior: "stop" as const,
+    primaryColor: "#d61f69",
+    repeatCount: 1,
+    title: "",
+    totalSeconds: 184,
+  },
+]
+
 vi.mock("@/utils/useClipboardCopy", () => ({
   default: vi.fn(),
 }))
@@ -26,6 +43,7 @@ describe("ManualSaveDialog", () => {
         onClose={vi.fn()}
         pageTitle="Workshop"
         readonlyClientUrl="http://localhost:3000/en/view/token-1"
+        rows={sampleRows}
         timerUrl="http://localhost:3000/en?v=1&t=60%21d61f69%21%211%210&a=0"
       />,
     )
@@ -47,6 +65,8 @@ describe("ManualSaveDialog", () => {
     )
     expect(screen.getByRole("button", { name: "Close" })).toBeVisible()
     expect(screen.getByDisplayValue(/Timer: Workshop/)).toBeVisible()
+    expect(screen.getByDisplayValue(/Step 1 \(01:00\): Intro/)).toBeVisible()
+    expect(screen.getByDisplayValue(/Step 2 \(03:04\)/)).toBeVisible()
     expect(
       screen.getByDisplayValue(/http:\/\/localhost:3000\/en\/view\/token-1/),
     ).toHaveAttribute("readonly")
@@ -61,6 +81,7 @@ describe("ManualSaveDialog", () => {
         onClose={vi.fn()}
         pageTitle="Workshop"
         readonlyClientUrl=""
+        rows={sampleRows}
         timerUrl="http://localhost:3000/en?v=1&t=60%21d61f69%21%211%210&a=0"
       />,
     )
@@ -83,6 +104,12 @@ describe("ManualSaveDialog", () => {
         onClose={vi.fn()}
         pageTitle="Workshop"
         readonlyClientUrl=""
+        rows={[
+          {
+            ...sampleRows[0],
+            title: "",
+          },
+        ]}
         timerUrl="http://localhost:3000/en?v=1&t=60%21d61f69%21%211%210&a=0"
       />,
     )
@@ -92,7 +119,7 @@ describe("ManualSaveDialog", () => {
     })
 
     expect(exportField).toHaveDisplayValue(
-      "Timer: Workshop\nLocal link\nhttp://localhost:3000/en?v=1&t=60%21d61f69%21%211%210&a=0",
+      "Timer: Workshop\nStep 1 (01:00)\nhttp://localhost:3000/en?v=1&t=60%21d61f69%21%211%210&a=0",
     )
   })
 })

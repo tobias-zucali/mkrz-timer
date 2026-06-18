@@ -32,18 +32,18 @@ export default function HelpText({
 
   return (
     <div
-      className={classNames("grid gap-3 text-sm text-foreground/78", className)}
+      className={classNames("grid gap-3 text-sm text-ink/78", className)}
       {...otherProps}
     >
       {entries.map((entry) => (
         <div
           className="
-            grid gap-2 rounded-xl border border-foreground/10 bg-foreground/4
+            grid gap-2 rounded-xl border border-ink/10 bg-ink/4
             p-4 sm:grid-cols-[8rem_minmax(0,1fr)]
           "
           key={entry.shortcut}
         >
-          <p className="font-semibold text-foreground">{entry.shortcut}</p>
+          <p className="font-semibold text-ink">{entry.shortcut}</p>
           <p>{entry.description}</p>
         </div>
       ))}

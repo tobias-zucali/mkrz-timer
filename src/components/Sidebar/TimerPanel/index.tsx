@@ -219,9 +219,8 @@ export default function TimerPanel({
           autoComplete="off"
           className="
             block w-full border-none bg-transparent px-0 text-2xl font-semibold
-            text-foreground outline-none placeholder:text-foreground/42
+            text-ink outline-none placeholder:text-ink/42
           "
-          data-testid="sidebar-page-title-input"
           id={pageTitleInputId}
           maxLength={MAX_TITLE_LENGTH}
           onChange={(event) =>
@@ -238,9 +237,7 @@ export default function TimerPanel({
       </section>
       <section className="space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
-            {t("heading")}
-          </h3>
+          <h3 className="text-base font-semibold text-ink">{t("heading")}</h3>
         </div>
 
         <div className="space-y-3">
@@ -254,7 +251,7 @@ export default function TimerPanel({
 
             return (
               <section
-                className={`rounded-2xl border bg-background p-4 transition ${
+                className={`rounded-2xl border bg-screen p-4 transition ${
                   isSelected ? "" : "cursor-pointer"
                 }`}
                 key={index}
@@ -279,7 +276,7 @@ export default function TimerPanel({
                       </span>
                       {isActive ? (
                         <span
-                          className={`${stateBadgeClassName} text-foreground`}
+                          className={`${stateBadgeClassName} text-ink`}
                           style={{ backgroundColor: displayRow.primaryColor }}
                         >
                           {t("active")}
@@ -304,12 +301,12 @@ export default function TimerPanel({
 
                     <div className="mt-2 min-w-0 text-left">
                       {!isSelected && sourceRow.title ? (
-                        <p className="truncate text-sm font-semibold text-foreground">
+                        <p className="truncate text-sm font-semibold text-ink">
                           {sourceRow.title}
                         </p>
                       ) : null}
                       {!isSelected ? (
-                        <p className="mt-1 text-xs text-foreground/62">
+                        <p className="mt-1 text-xs text-ink/62">
                           {buildSummaryText(displayRow, t)}
                         </p>
                       ) : null}
@@ -404,7 +401,7 @@ export default function TimerPanel({
           <button
             className="
               inline-flex min-h-11 w-full cursor-pointer items-center justify-center
-              rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-foreground
+              rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-ink
               transition hover:bg-primary/88 focus:outline-2 focus:-outline-offset-2
               focus:outline-primary
             "

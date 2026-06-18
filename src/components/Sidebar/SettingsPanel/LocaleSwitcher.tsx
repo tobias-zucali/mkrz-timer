@@ -19,16 +19,15 @@ export default function LocaleSwitcher() {
   return (
     <section className="space-y-4">
       <label className="grid gap-2" htmlFor={fieldId}>
-        <h3 className="text-base font-semibold text-foreground">
+        <h3 className="text-base font-semibold text-ink">
           {t("languageHeading")}
         </h3>
         <select
           className="
-            rounded-2xl border border-foreground/10 bg-foreground/2 px-4 py-3
-            text-sm text-foreground transition outline-none
+            rounded-2xl border border-ink/10 bg-ink/2 px-4 py-3
+            text-sm text-ink transition outline-none
             focus:border-primary focus:ring-2 focus:ring-primary/20
           "
-          data-testid="language-switcher"
           id={fieldId}
           onChange={(event) => {
             const nextLocale = event.target.value as AppLocale

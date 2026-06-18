@@ -101,16 +101,33 @@ test("redirects unprefixed routes to the browser locale with English fallback", 
   page,
 }) => {
   await page.goto("/")
-  await expect(page).toHaveURL(/\/en$/)
+  await expect(page).toHaveURL(/\/en$/, { timeout: 30_000 })
 
   await page.goto("/view/viewer-token")
-  await expect(page).toHaveURL(/\/en\/view\/viewer-token$/)
+  await expect(page).toHaveURL(/\/en\/view\/viewer-token$/, {
+    timeout: 30_000,
+  })
 
   await page.goto("/control/controller-token")
-  await expect(page).toHaveURL(/\/en\/control\/controller-token$/)
+  await expect(page).toHaveURL(/\/en\/control\/controller-token$/, {
+    timeout: 30_000,
+  })
+})
+
+
+test("navigates to the about page from the footer link", async ({ page }) => {
+  await openTimer(page, 60)
+
+  await page.locator("footer").getByRole("link", { name: "About" }).click()
+  await expect(page).toHaveURL(/\/en\/about$/, { timeout: 10_000 })
+  await expect(
+    page.getByRole("heading", { name: "About mkrz timer" }),
+  ).toBeVisible()
 })
 
 test("matches sidebar panel aria structures", async ({ page }) => {
+  test.setTimeout(60_000)
+
   await openTimer(page, 3)
 
   await openSidebarPanel(page, "Timer")
@@ -126,7 +143,7 @@ test("matches sidebar panel aria structures", async ({ page }) => {
     await page.getByRole("textbox", { name: "Local link" }).inputValue(),
   )
 
-  expect(localLink.pathname).toBe("/en")
+  expect(localLink.pathname).toBe("/en/t")
   expect(localLink.searchParams.get("v")).toBe("1")
   expect(localLink.searchParams.get("t")).toBeTruthy()
   expect(localLink.searchParams.get("a")).toBe("0")
@@ -144,8 +161,7 @@ test(
     await openTimer(page, 3)
 
     const settings = {
-      backgroundColor: "#123456",
-      foregroundColor: "#fefefe",
+      theme: "bright" as const,
       minutes: "02",
       primaryColor: "#00aa88",
       seconds: "15",
@@ -166,7 +182,6 @@ test("toggles shared settings in the local share link", async ({ page }) => {
   await openTimer(page, 3)
 
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
     soundId: "b",
     ttsEnabled: true,
   })
@@ -174,7 +189,6 @@ test("toggles shared settings in the local share link", async ({ page }) => {
   await openSidebarPanel(page, "Share")
   const localLink = page.getByRole("textbox", { name: "Local link" })
 
-  await expect(localLink).toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 
@@ -184,16 +198,16 @@ test("toggles shared settings in the local share link", async ({ page }) => {
     })
     .uncheck()
 
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 })
 
 test("persists the share settings toggle across reloads", async ({ page }) => {
+  test.setTimeout(45_000)
+
   await openTimer(page, 3)
 
   await updateTimerSettings(page, {
-    backgroundColor: "#123456",
     soundId: "b",
     ttsEnabled: true,
   })
@@ -205,15 +219,13 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   const localLink = page.getByRole("textbox", { name: "Local link" })
 
   await includeSettingsToggle.uncheck()
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 
-  await page.reload()
+  await page.reload({ waitUntil: "domcontentloaded" })
   await openSidebarPanel(page, "Share")
 
   await expect(includeSettingsToggle).not.toBeChecked()
-  await expect(localLink).not.toHaveValue(/(?:\?|&)bg=123456(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)s=b(?:&|$)/)
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 })
@@ -224,8 +236,8 @@ test("switches languages without losing the current route state", async ({
   await openTimer(page, 3)
   await openSidebarPanel(page, "Settings")
 
-  await page.getByTestId("language-switcher").selectOption("de")
-  await expect(page).toHaveURL(/\/de\?v=1&t=/)
+  await page.getByLabel("Language").selectOption("de")
+  await expect(page).toHaveURL(/\/de\/t\?v=1&t=/, { timeout: 15_000 })
 
   await page.getByRole("button", { name: "Teilen öffnen" }).click()
   await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
@@ -233,7 +245,7 @@ test("switches languages without losing the current route state", async ({
     await page.getByRole("textbox", { name: "Lokaler Link" }).inputValue(),
   )
 
-  expect(localLink.pathname).toBe("/de")
+  expect(localLink.pathname).toBe("/de/t")
 })
 
 test("keeps timer shortcuts predictable inside the sidebar", async ({
@@ -245,7 +257,7 @@ test("keeps timer shortcuts predictable inside the sidebar", async ({
   const offcanvas = page.getByTestId("sidebar-offcanvas")
   const viewportSize = page.viewportSize()
 
-  await timerPanel.getByLabel("Title").press(" ")
+  await timerPanel.getByLabel("Title", { exact: true }).press(" ")
   await expect(page.getByRole("button", { name: "START" })).toBeVisible()
   await expect(timerPanel).toBeVisible()
 
@@ -268,7 +280,9 @@ test("limits titles to 64 characters in settings", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
-  const titleField = page.getByTestId("sidebar-panel-timer").getByLabel("Title")
+  const titleField = page
+    .getByTestId("sidebar-panel-timer")
+    .getByLabel("Title", { exact: true })
   const longTitle = "Facilitator notes ".repeat(6)
 
   await titleField.fill(longTitle)

@@ -3,13 +3,14 @@ import type { TimerFinishedSoundId } from "../timerSettings"
 
 export type { TimerEndBehavior, TimerSequenceRow }
 
+export type AppTheme = "dark" | "bright"
+
 export type SyncParams = {
   activeIndex: number
   m: string
   s: string
   title: string
-  bg: string
-  fg: string
+  theme: AppTheme
   pc: string
   tts: boolean
   snd: TimerFinishedSoundId

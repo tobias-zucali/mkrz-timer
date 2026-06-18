@@ -1,4 +1,5 @@
 import type {
+  AppTheme,
   RemoteAccessRole,
   RemoteAccessTokenSet,
   RelayClientMessage,
@@ -29,8 +30,7 @@ export { MAX_TIMER_DURATION_SECONDS } from "../timerSequence.ts"
 
 export const DEFAULT_SYNC_PARAMS: SyncParams = {
   activeIndex: 0,
-  bg: "#000000",
-  fg: "#ffffff",
+  theme: "dark",
   m: "01",
   pc: DEFAULT_TIMER_PRIMARY_COLOR,
   rows: [buildDefaultTimerSequenceRow()],
@@ -39,6 +39,9 @@ export const DEFAULT_SYNC_PARAMS: SyncParams = {
   tts: false,
   title: "",
 }
+
+export const normalizeTheme = (value: unknown): AppTheme =>
+  value === "bright" ? "bright" : "dark"
 
 export const DEFAULT_TIMER_STATE = {
   anchorServerTimestamp: 0,
@@ -303,15 +306,13 @@ const normalizeSequenceRows = (
 
 const deriveSequenceSyncParams = ({
   activeIndex,
-  bg,
-  fg,
+  theme,
   rows,
   snd,
   tts,
 }: {
   activeIndex: number
-  bg: string
-  fg: string
+  theme: AppTheme
   rows: TimerSequenceRow[]
   snd: SyncParams["snd"]
   tts: boolean
@@ -327,8 +328,7 @@ const deriveSequenceSyncParams = ({
 
   return {
     activeIndex: normalizedActiveIndex,
-    bg,
-    fg,
+    theme,
     m: duration.m,
     pc: activeRow.primaryColor || DEFAULT_TIMER_PRIMARY_COLOR,
     rows: normalizedRows,
@@ -382,8 +382,7 @@ export const normalizeSyncParams = (
   fallback: SyncParams = DEFAULT_SYNC_PARAMS,
 ): SyncParams => {
   const params = isObject(value) ? value : {}
-  const normalizedBg = normalizeColor(params.bg, fallback.bg)
-  const normalizedFg = normalizeColor(params.fg, fallback.fg)
+  const normalizedTheme = normalizeTheme(params.theme ?? fallback.theme)
   const duration = normalizeDurationParams({
     fallback,
     minutesValue: params.m,
@@ -427,8 +426,7 @@ export const normalizeSyncParams = (
 
   return deriveSequenceSyncParams({
     activeIndex: normalizedActiveIndex,
-    bg: normalizedBg,
-    fg: normalizedFg,
+    theme: normalizedTheme,
     rows: sequenceRows,
     snd: normalizedSound,
     tts: normalizedTts,
@@ -442,11 +440,8 @@ export const normalizeSyncParamPatch = (value: unknown) => {
 
   const normalizedPatch: Partial<SyncParams> = {}
 
-  if ("bg" in value) {
-    normalizedPatch.bg = normalizeColor(value.bg, DEFAULT_SYNC_PARAMS.bg)
-  }
-  if ("fg" in value) {
-    normalizedPatch.fg = normalizeColor(value.fg, DEFAULT_SYNC_PARAMS.fg)
+  if ("theme" in value) {
+    normalizedPatch.theme = normalizeTheme(value.theme)
   }
   if ("activeIndex" in value) {
     normalizedPatch.activeIndex = normalizeFiniteNumber({

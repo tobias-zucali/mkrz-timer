@@ -6,11 +6,11 @@
 - term: State
 - definition: Connected
 - term: Access
-- definition: Viewer access
+- definition: Join access
 - term: Live session
 - definition: Synchronized
 - term: Participants
-- definition: You + 1 control
+- definition: You + 1 manage
 - term: Build
 - definition: dev
 - paragraph: This timer is synchronized through a live session.
