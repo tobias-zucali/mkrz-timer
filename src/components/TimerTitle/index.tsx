@@ -306,7 +306,7 @@ export default function TimerTitle({
         <button
           aria-label={t("addTitle")}
           className={classNames(
-            "absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2",
+            "absolute top-7 left-1/2 inline-flex min-h-11 -translate-1/2",
             "cursor-pointer items-center justify-center rounded-full",
             "border border-dashed border-primary/35 bg-card px-4 py-1.5",
             "font-display text-sm font-semibold tracking-wider text-ink/72",

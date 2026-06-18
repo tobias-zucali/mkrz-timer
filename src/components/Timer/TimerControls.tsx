@@ -59,6 +59,7 @@ export default function TimerControls({
       max: 0.9,
       min: 0.1,
     }),
+    minHeight: "2.75rem",
   }
 
   return (
