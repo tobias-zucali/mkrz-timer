@@ -281,6 +281,14 @@ export function PlusIcon(props: IconProps) {
   )
 }
 
+export function MinusIcon(props: IconProps) {
+  return (
+    <BaseIcon strokeWidth={1.5} {...props}>
+      <path d="M4.5 12h15" strokeLinecap="round" strokeLinejoin="round" />
+    </BaseIcon>
+  )
+}
+
 export function ShareIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

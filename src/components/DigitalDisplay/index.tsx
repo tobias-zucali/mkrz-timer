@@ -33,15 +33,16 @@ function DigitalDisplay({
   const secondsInputRef = useRef<HTMLInputElement>(null)
 
   const inputClassNames = classNames(
-    "inline-block flex-1 text-center w-8 outline-none",
+    "inline-block w-8 flex-1 text-center font-mono font-bold tabular-nums outline-none",
     styles.noSpinner,
   )
   const sharedClassName = classNames(
-    "relative flex w-full content-center text-center font-mono font-bold",
+    "relative flex w-full content-center text-center font-mono font-bold tabular-nums text-white drop-shadow-[0_14px_34px_rgba(214,31,105,0.2)]",
     isReadonly && displayMode === "editable" && "opacity-50",
     isAlert && classNames(styles.blink, "text-primary opacity-100"),
   )
   const sharedStyle = {
+    fontFamily: "var(--font-mono)",
     fontSize: getResponsiveClamp({
       max: 8,
       min: 3,
@@ -61,7 +62,9 @@ function DigitalDisplay({
         <span aria-hidden="true" className="inline-block flex-1 text-right">
           {minutes}
         </span>
-        <span aria-hidden="true">{" : "}</span>
+        <span aria-hidden="true">
+          :
+        </span>
         <span aria-hidden="true" className="inline-block flex-1 text-left">
           {seconds}
         </span>
@@ -94,7 +97,7 @@ function DigitalDisplay({
         onBlur={onBlur}
         onChange={onMinutesChange}
       />
-      <div>{" : "}</div>
+      <div>:</div>
       <input
         aria-label={t("seconds")}
         className={classNames(inputClassNames, "text-left")}

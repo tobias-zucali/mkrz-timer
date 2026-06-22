@@ -36,7 +36,7 @@ test("serializeParamValue strips hashes only from color params", () => {
 test("buildPathWithParams serializes timer state with v=1&t rows", () => {
   assert.equal(
     buildPathWithParams(buildParams()),
-    "/?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+    "/?v=1&t=300%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
   )
 })
 
@@ -70,7 +70,7 @@ test("buildPathWithParams preserves localized route prefixes", () => {
     buildPathWithParams(buildParams(), {
       pathname: "/de/control/token-1",
     }),
-    "/de/control/token-1?v=1&t=60%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+    "/de/control/token-1?v=1&t=300%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
   )
 })
 

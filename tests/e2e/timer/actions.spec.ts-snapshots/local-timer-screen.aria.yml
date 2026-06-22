@@ -19,6 +19,7 @@
   - banner:
     - link "mkrz timer":
       - /url: /en
+      - img "time-timer": mkrz timer
   - navigation:
     - list:
       - listitem:

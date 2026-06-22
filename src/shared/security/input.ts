@@ -31,7 +31,7 @@ export { MAX_TIMER_DURATION_SECONDS } from "../timerSequence.ts"
 export const DEFAULT_SYNC_PARAMS: SyncParams = {
   activeIndex: 0,
   theme: "dark",
-  m: "01",
+  m: "05",
   pc: DEFAULT_TIMER_PRIMARY_COLOR,
   rows: [buildDefaultTimerSequenceRow()],
   s: "00",
@@ -46,7 +46,7 @@ export const normalizeTheme = (value: unknown): AppTheme =>
 export const DEFAULT_TIMER_STATE = {
   anchorServerTimestamp: 0,
   currentRepeat: 1,
-  durationSeconds: 60,
+  durationSeconds: 300,
   elapsedSecondsAtAnchor: 0,
   elapsedTime: 0,
   isPaused: true,
@@ -54,7 +54,7 @@ export const DEFAULT_TIMER_STATE = {
   lastUpdatedAt: 0,
   revision: 0,
   status: "idle",
-  totalDuration: 60,
+  totalDuration: 300,
 } satisfies SessionSnapshot["state"]
 
 export const MAX_CLIENT_MESSAGE_BYTES = 16 * 1024

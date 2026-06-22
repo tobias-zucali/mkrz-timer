@@ -4,15 +4,19 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import type { CSSProperties } from "react"
 import { useTranslations } from "next-intl"
 
-import InputField from "@/components/InputField"
+import NumericStepperField from "@/components/NumericStepperField"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
 import ColorSwatchField from "@/utils/ColorSwatchField"
+import { ChevronRightIcon } from "@/utils/icons"
+import { parseIntSafe } from "@/utils/timeInputHelpers"
 import { normalizeTimeParts } from "@/utils/timeInputHelpers"
 
 const selectedFieldClassName =
-  "focus:border-(--step-color) focus:outline-(--step-color)"
+  "text-center focus:border-(--step-color) focus:outline-(--step-color)"
+
+const clampRepeatCount = (value: number) => Math.min(Math.max(value, 1), 9)
 
 export default function TimerSequenceInspector({
   onRowChange,
@@ -63,6 +67,32 @@ export default function TimerSequenceInspector({
     onRowChange({ ...row, totalSeconds: normalized.totalSeconds })
   }
 
+  const stepDurationField = (
+    field: "minutes" | "seconds",
+    direction: -1 | 1,
+  ) => {
+    const nextMinutes =
+      field === "minutes"
+        ? String(parseIntSafe(minutesValue) + direction)
+        : minutesValue
+    const nextSeconds =
+      field === "seconds"
+        ? String(parseIntSafe(secondsValue) + direction)
+        : secondsValue
+
+    commitDurationChange({
+      minutes: nextMinutes,
+      seconds: nextSeconds,
+    })
+  }
+
+  const updateRepeatCount = (nextValue: string | number) => {
+    onRowChange({
+      ...row,
+      repeatCount: clampRepeatCount(parseIntSafe(nextValue)),
+    })
+  }
+
   return (
     <div
       className="mt-4 space-y-4 pt-1"
@@ -74,17 +104,17 @@ export default function TimerSequenceInspector({
     >
       <div className="w-full">
         <label
-          className="mb-2 block text-sm font-medium text-ink"
+          className="mb-2 block panel-label text-ink/74"
           htmlFor={`sidebar-sequence-title-${rowIndex}`}
         >
           {t("title")}
         </label>
         <textarea
           className="
-            block min-h-0 w-full resize-none overflow-hidden rounded-md border border-ink/10
-            bg-screen px-3 py-2 text-sm/6 text-ink outline-1
-            -outline-offset-1 outline-ink/10
-            placeholder:text-ink/50 focus:outline-2
+            block min-h-0 w-full resize-none overflow-hidden rounded-field border
+            border-hairline bg-input-bg px-3 py-2 text-sm/6 text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
+            outline-1 -outline-offset-1 outline-transparent
+            placeholder:text-ink/42 focus:outline-2
             focus:-outline-offset-2 focus:outline-(--step-color)
           "
           id={`sidebar-sequence-title-${rowIndex}`}
@@ -127,17 +157,11 @@ export default function TimerSequenceInspector({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <InputField
-          className={selectedFieldClassName}
+        <NumericStepperField
           id={`sidebar-sequence-minutes-${rowIndex}`}
-          inputMode="numeric"
+          inputClassName={selectedFieldClassName}
           label={t("minutes")}
-          onBlur={() =>
-            commitDurationChange({
-              minutes: minutesValue,
-              seconds: secondsValue,
-            })
-          }
+          min={0}
           onChange={(event) => {
             const nextMinutes = event.target.value
             setMinutesValue(nextMinutes)
@@ -146,20 +170,15 @@ export default function TimerSequenceInspector({
               seconds: secondsValue,
             })
           }}
-          type="number"
+          onStep={(direction) => stepDurationField("minutes", direction)}
           value={minutesValue}
         />
-        <InputField
-          className={selectedFieldClassName}
+        <NumericStepperField
           id={`sidebar-sequence-seconds-${rowIndex}`}
-          inputMode="numeric"
+          inputClassName={selectedFieldClassName}
           label={t("seconds")}
-          onBlur={() =>
-            commitDurationChange({
-              minutes: minutesValue,
-              seconds: secondsValue,
-            })
-          }
+          max={59}
+          min={0}
           onChange={(event) => {
             const nextSeconds = event.target.value
             setSecondsValue(nextSeconds)
@@ -168,76 +187,82 @@ export default function TimerSequenceInspector({
               seconds: nextSeconds,
             })
           }}
-          type="number"
+          onStep={(direction) => stepDurationField("seconds", direction)}
           value={secondsValue}
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <NumericStepperField
+            id={`sidebar-sequence-repeat-count-${rowIndex}`}
+            inputClassName={selectedFieldClassName}
+            label={t("repetitions")}
+            max={9999999999}
+            min={1}
+            onChange={(event) => updateRepeatCount(event.target.value)}
+            onStep={(direction) =>
+              updateRepeatCount(row.repeatCount + direction)
+            }
+            step={1}
+            value={String(row.repeatCount)}
+          />
+        </div>
         <div>
           <label
-            className="mb-2 block text-sm font-medium text-ink"
-            htmlFor={`sidebar-sequence-repeat-count-${rowIndex}`}
-          >
-            {t("repetitions")}
-          </label>
-          <select
-            className="
-              block h-10 w-full rounded-md border border-ink/10
-              bg-screen px-3 text-sm text-ink outline-1
-              -outline-offset-1 outline-ink/10
-              focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
-            "
-            id={`sidebar-sequence-repeat-count-${rowIndex}`}
-            onChange={(event) =>
-              onRowChange({
-                ...row,
-                repeatCount: Number.parseInt(event.target.value, 10),
-              })
-            }
-            value={String(row.repeatCount)}
-          >
-            {Array.from({ length: 9 }, (_, index) => {
-              const value = String(index + 1)
-
-              return (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              )
-            })}
-          </select>
-        </div>
-        <div className="md:col-span-2">
-          <label
-            className="mb-2 block text-sm font-medium text-ink"
+            className="mb-2 block panel-label text-ink/74"
             htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}
           >
             {t("endBehavior")}
           </label>
-          <select
+          <div
             className="
-              block h-10 w-full rounded-md border border-ink/10
-              bg-screen px-3 text-sm text-ink outline-1
-              -outline-offset-1 outline-ink/10
-              focus:outline-2 focus:-outline-offset-2 focus:outline-(--step-color)
+              relative flex min-h-11 items-center rounded-field border border-hairline
+              bg-input-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
+              outline-1 -outline-offset-1 outline-transparent
+              focus-within:outline-2 focus-within:-outline-offset-2
+              focus-within:outline-(--step-color)
             "
-            id={`sidebar-sequence-end-behavior-${rowIndex}`}
-            onChange={(event) =>
-              onRowChange({
-                ...row,
-                endBehavior: event.target
-                  .value as SyncParams["rows"][number]["endBehavior"],
-              })
-            }
-            value={row.endBehavior}
           >
-            {endBehaviorOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <select
+              className="
+                block size-full appearance-none bg-transparent pr-10 pl-3
+                font-body text-base font-semibold text-ink outline-none sm:text-sm
+              "
+              id={`sidebar-sequence-end-behavior-${rowIndex}`}
+              onChange={(event) =>
+                onRowChange({
+                  ...row,
+                  endBehavior: event.target
+                    .value as SyncParams["rows"][number]["endBehavior"],
+                })
+              }
+              value={row.endBehavior}
+            >
+              {endBehaviorOptions.map((option) => (
+                <option
+                  key={option.value}
+                  style={{
+                    backgroundColor: "var(--color-input-bg)",
+                    color: "var(--color-ink)",
+                    fontWeight: 500,
+                  }}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <span
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute inset-y-0 right-3 flex items-center
+                text-ink/54
+              "
+            >
+              <ChevronRightIcon className="size-4 rotate-90" />
+            </span>
+          </div>
         </div>
       </div>
 

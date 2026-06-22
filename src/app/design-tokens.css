@@ -69,9 +69,12 @@
   --radius-pill: 999px;
 
   /* ---------- Type ---------- */
-  --font-display: "Kanit", sans-serif; /* headlines, wordmark, nav */
-  --font-body: "Roboto", sans-serif; /* body, labels, buttons, inputs */
-  --font-mono: "Space Mono", monospace; /* numerals only */
+  --font-display:
+    var(--font-display-family, "Kanit"), sans-serif; /* headlines, wordmark, nav */
+  --font-body:
+    var(--font-body-family, "Roboto"), sans-serif; /* body, labels, buttons, inputs */
+  --font-mono:
+    var(--font-mono-family, "Space Mono"), monospace; /* numerals only */
 
   /* ---------- Misc ---------- */
   --hit-target-min: 44px;
@@ -96,12 +99,12 @@
 /* ---------- Bright mode ---------- */
 [data-theme="bright"] {
   --bg-screen: var(--sand-200);
-  --bg-card: var(--sand-50);
+  --bg-card: #fffef9;
   --bg-input: #ffffff;
-  --bg-control: var(--sand-300);
+  --bg-control: #f8f2e6;
   --text-primary: var(--clay-900);
   --text-secondary: var(--clay-500);
   --text-muted: var(--clay-300);
-  --border-hairline: rgba(35, 30, 16, 0.12);
+  --border-hairline: rgba(35, 30, 16, 0.1);
   --focus-ring: rgba(214, 31, 105, 0.25);
 }

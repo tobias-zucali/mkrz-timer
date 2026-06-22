@@ -168,14 +168,14 @@ describe("Timer", () => {
     expect(screen.queryByRole("spinbutton", { name: "Seconds" })).toBeNull()
   })
 
-  it("enables reset after time has elapsed", () => {
+  it("enables reset as soon as the timer is running", () => {
     renderTimer({
       timer: {
         ...timerStub,
         isPaused: false,
         isStarted: true,
-        minutes: "00",
-        seconds: "45",
+        minutes: "01",
+        seconds: "00",
         totalDuration: 60,
       } as ReturnType<typeof useTimer>,
     })

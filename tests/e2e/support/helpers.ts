@@ -351,14 +351,14 @@ export async function updateTimerSettings(
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Minutes")
+      .getByRole("spinbutton", { name: "Minutes" })
       .fill(minutes)
   }
   if (seconds !== undefined) {
     await openSidebarPanel(page, "Timer")
     await page
       .getByTestId("sidebar-panel-timer")
-      .getByLabel("Seconds")
+      .getByRole("spinbutton", { name: "Seconds" })
       .fill(seconds)
   }
   if (theme !== undefined) {

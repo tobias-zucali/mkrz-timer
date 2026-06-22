@@ -34,12 +34,13 @@ This is a hard stop. Do not summarize work, offer to commit, or consider the tas
 1. If the change introduces new behavior, modifies a user-visible guarantee, or changes a live-session or URL-state contract:
    - Add or update Playwright coverage for the affected behavior.
    - Add or update relevant documentation (`docs/`, `README.md`, or inline `scope.yaml` hints).
-2. Run `pnpm scope` (or `pnpm scope -- <changed paths>` for targeted scope) and complete every command listed under "Required targeted validation".
-3. Always run in order after the targeted validation is clean — do not skip ahead:
-   - `pnpm lint:fix` then `pnpm lint` to confirm 0 errors. Warnings are acceptable.
-   - `pnpm format:fix`
-   - `pnpm test:e2e:local:smoke`
-4. If the "Validation gate" output includes "Also required", run it only after step 3 is fully clean:
+   - If a feature folder was added, moved, or removed, add/move/delete the corresponding `scope.yaml` in the same change.
+2. Review files changed in this task: if any exceed ~200 lines or mix concerns (route logic, UI, dialog state, side effects), extract before continuing.
+3. Run `pnpm format:fix`.
+4. Run `pnpm lint:fix` then `pnpm lint` to confirm 0 errors. Warnings are acceptable.
+5. Run `pnpm scope` (or `pnpm scope -- <changed paths>` for targeted scope) and complete every command listed under "Required targeted validation". When resuming a branch or doing a pre-PR check, use `pnpm scope:branch` instead to cover the full branch diff against `main`.
+6. Run `pnpm test:e2e:local:smoke`.
+7. If the "Validation gate" output includes "Also required", run it only after step 6 is fully clean:
    - `pnpm test:full`
 
 If any step fails, fix the failure before proceeding to the next step. Do not report partial results as done.

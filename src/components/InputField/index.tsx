@@ -4,9 +4,9 @@ import { useId } from "react"
 import styles from "@/components/InputField/index.module.css"
 
 const baseInputClassName = classNames(
-  "block h-10 w-full rounded-md",
-  "bg-screen text-base text-ink",
-  "outline-1 -outline-offset-1 outline-foreground/10 placeholder:text-ink/50",
+  "block h-10 w-full rounded-field",
+  "text-base text-ink placeholder:text-ink/42",
+  "outline-1 -outline-offset-1 outline-transparent",
   "focus:outline-2 focus:-outline-offset-2 focus:outline-primary sm:text-sm/6",
 )
 
@@ -17,10 +17,12 @@ export default function InputField({
   id,
   className,
   children,
+  digitStyle = false,
   ...otherProps
 }: {
   containerClassName?: string
   description?: string
+  digitStyle?: boolean
   id: string
   label: string
   onChange?: React.ChangeEventHandler<HTMLInputElement>
@@ -34,10 +36,7 @@ export default function InputField({
 
   return (
     <div className={classNames("w-full", containerClassName)}>
-      <label
-        className="mb-2 block text-sm font-medium text-ink"
-        htmlFor={inputId}
-      >
+      <label className="mb-2 block panel-label text-ink/74" htmlFor={inputId}>
         {label}
       </label>
       <div className="flex items-stretch">
@@ -51,7 +50,8 @@ export default function InputField({
             otherProps.type !== "color" && "pl-3",
             hasInsetPadding && "pr-3",
             otherProps.type === "number" && styles.numberInput,
-            "border border-ink/10",
+            digitStyle && "font-mono text-[1.8rem] font-bold tracking-[0.04em]",
+            "border border-hairline bg-input-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
             baseInputClassName,
             className,
           )}
@@ -68,7 +68,7 @@ export default function InputField({
         {children}
       </div>
       {description && (
-        <p className="text-sm/6 text-ink/68" id={`${inputId}-desc`}>
+        <p className="mt-2 text-sm/6 text-ink/68" id={`${inputId}-desc`}>
           {description}
         </p>
       )}

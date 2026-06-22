@@ -103,7 +103,7 @@ export default function TimerTitle({
     text: normalizedValue,
   })
   const titleSurfaceClassName =
-    "box-border w-full rounded-3xl border border-transparent bg-transparent text-center font-bold tracking-tight"
+    "box-border w-full rounded-3xl border border-transparent bg-transparent text-center font-display font-semibold tracking-tight text-ink"
   const titleBoxStyle = getTimerTitleBoxStyle()
   const showEmptyAction = !hasText && !isFocused
   const showFocusedTextarea = isFocused
@@ -250,7 +250,7 @@ export default function TimerTitle({
         autoComplete="off"
         className={classNames(
           titleSurfaceClassName,
-          "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-ink/4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ink/70",
+          "resize-none overflow-hidden whitespace-pre-wrap outline-none transition focus:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/55",
           hasText
             ? "relative z-10 cursor-text"
             : showFocusedTextarea
@@ -306,11 +306,12 @@ export default function TimerTitle({
         <button
           aria-label={t("addTitle")}
           className={classNames(
-            "absolute top-7 left-1/2 inline-flex min-h-10 -translate-1/2",
+            "absolute top-7 left-1/2 inline-flex min-h-11 -translate-1/2",
             "cursor-pointer items-center justify-center rounded-full",
-            "border border-dashed border-ink/18 bg-ink/3 px-4 py-1.5",
-            "text-sm font-semibold text-ink/72 hover:border-ink/28",
-            "hover:bg-ink/6 hover:text-ink focus-visible:outline-2",
+            "border border-dashed border-primary/35 bg-card px-4 py-1.5",
+            "font-display text-sm font-semibold tracking-wider text-ink/72",
+            "hover:border-primary/55",
+            "hover:bg-primary/8 hover:text-ink focus-visible:outline-2",
             "focus-visible:outline-offset-2 focus-visible:outline-primary",
             "transition-opacity timer-chrome-transition",
             isDimmed ? "timer-chrome-dimmed" : "opacity-100",

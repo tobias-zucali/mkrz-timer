@@ -3,13 +3,11 @@ import classNames from "classnames"
 import { getResponsiveClamp } from "@/utils/responsiveClamp"
 
 const timerButtonClassName =
-  "inline-flex appearance-none items-center justify-center " +
-  "rounded-md bg-ink/80 text-screen " +
-  "text-screen " +
-  "bg-ink font-bold text-screen " +
-  "shadow-sm transition-colors hover:bg-ink " +
+  "inline-flex appearance-none items-center justify-center rounded-field " +
+  "font-display font-semibold tracking-[0.08em] uppercase transition-colors " +
   "focus-visible:outline-primary focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "cursor-pointer disabled:cursor-default disabled:opacity-50 disabled:hover:bg-ink/80 touch-manipulation"
+  "cursor-pointer disabled:cursor-default touch-manipulation " +
+  "bg-ink/80 text-screen backdrop-blur-sm enabled:hover:bg-ink enabled:hover:text-primary enabled:hover:shadow-xl enabled:hover:shadow-screen/20 enabled:focus-visible:bg-ink enabled:focus-visible:text-primary enabled:focus-visible:shadow-xl enabled:focus-visible:shadow-screen/20 disabled:bg-ink/40 disabled:text-screen/40"
 
 type TimerControlsProps = {
   isDimmed: boolean
@@ -61,6 +59,7 @@ export default function TimerControls({
       max: 0.9,
       min: 0.1,
     }),
+    minHeight: "2.75rem",
   }
 
   return (

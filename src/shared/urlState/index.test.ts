@@ -204,28 +204,28 @@ test("buildTimerUrlSearchParams omits default settings and serializes selected o
     rows: [
       buildUrlTimerRow({
         title: "",
-        totalSeconds: 60,
+        totalSeconds: 300,
       }),
     ],
     snd: DEFAULT_SYNC_PARAMS.snd,
     tts: DEFAULT_SYNC_PARAMS.tts,
   }).toString()
 
-  assert.equal(defaultsQuery, "v=1&t=60%21%21%211%210&a=0")
+  assert.equal(defaultsQuery, "v=1&t=300%21%21%211%210&a=0")
 
   const selectedQuery = buildTimerUrlSearchParams({
     activeIndex: 0,
     rows: [
       buildUrlTimerRow({
         title: "",
-        totalSeconds: 60,
+        totalSeconds: 300,
       }),
     ],
     snd: "b",
     tts: true,
   }).toString()
 
-  assert.equal(selectedQuery, "v=1&t=60%21%21%211%210&a=0&s=b&ts=1")
+  assert.equal(selectedQuery, "v=1&t=300%21%21%211%210&a=0&s=b&ts=1")
 })
 
 test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", () => {

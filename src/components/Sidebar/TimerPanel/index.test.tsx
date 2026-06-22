@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { fireEvent, screen, within } from "@testing-library/react"
 import { useState } from "react"
 
 import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
@@ -152,12 +152,70 @@ describe("TimerPanel", () => {
     expect(screen.getByRole("button", { name: "Duplicate" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
       "title",
-      "Save this timer",
+      "Save timer links",
     )
     expect(screen.getByRole("button", { name: "Load recent" })).toHaveAttribute(
       "title",
       "Load a recent timer",
     )
+  })
+
+  it("exposes native spinbuttons and stepper buttons for step timing controls", () => {
+    renderWithIntl(<TimerPanelHarness />)
+
+    const minutesStepper = screen.getByRole("group", { name: "Minutes" })
+    const secondsStepper = screen.getByRole("group", { name: "Seconds" })
+
+    expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(1)
+    expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0)
+    expect(screen.getByRole("spinbutton", { name: "Repetitions" })).toHaveValue(
+      1,
+    )
+    expect(
+      within(minutesStepper).getByRole("button", { name: "Increase" }),
+    ).toBeVisible()
+    expect(
+      within(secondsStepper).getByRole("button", { name: "Decrease" }),
+    ).toBeVisible()
+  })
+
+  it("keeps arrow-key spinbutton behavior for repetitions", () => {
+    renderWithIntl(<TimerPanelHarness />)
+
+    const repeatInput = screen.getByRole("spinbutton", { name: "Repetitions" })
+
+    fireEvent.change(repeatInput, { target: { value: "2" } })
+
+    expect(repeatInput).toHaveValue(2)
+  })
+
+  it("updates minutes through the stepper buttons", () => {
+    renderWithIntl(<TimerPanelHarness />)
+
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Minutes" })).getByRole(
+        "button",
+        { name: "Increase" },
+      ),
+    )
+
+    expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(2)
+    expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0)
+  })
+
+  it("keeps stepper buttons out of the tab order", () => {
+    renderWithIntl(<TimerPanelHarness />)
+
+    const repetitionsStepper = screen.getByRole("group", {
+      name: "Repetitions",
+    })
+
+    expect(
+      within(repetitionsStepper).getByRole("button", { name: "Decrease" }),
+    ).toHaveAttribute("tabindex", "-1")
+    expect(
+      within(repetitionsStepper).getByRole("button", { name: "Increase" }),
+    ).toHaveAttribute("tabindex", "-1")
   })
 
   it("enables loading recent timers when another stored timer exists", () => {
