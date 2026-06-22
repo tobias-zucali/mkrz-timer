@@ -310,7 +310,7 @@ export default function TimerTitle({
             "cursor-pointer items-center justify-center rounded-full",
             "border border-dashed border-primary/35 bg-card px-4 py-1.5",
             "font-display text-sm font-semibold tracking-wider text-ink/72",
-            "shadow-[0_10px_24px_rgba(0,0,0,0.08)] hover:border-primary/55",
+            "hover:border-primary/55",
             "hover:bg-primary/8 hover:text-ink focus-visible:outline-2",
             "focus-visible:outline-offset-2 focus-visible:outline-primary",
             "transition-opacity timer-chrome-transition",

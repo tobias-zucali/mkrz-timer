@@ -279,7 +279,7 @@ export default function TimerPanel({
                       </span>
                       {isActive ? (
                         <span
-                          className={`${stateBadgeClassName} text-white shadow-[0_10px_24px_rgba(214,31,105,0.2)]`}
+                          className={`${stateBadgeClassName} text-white`}
                           style={{ backgroundColor: displayRow.primaryColor }}
                         >
                           {t("active")}
@@ -322,7 +322,7 @@ export default function TimerPanel({
                         aria-label={t("moveStepUp", {
                           step: index + 1,
                         })}
-                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
+                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, -1)
@@ -341,7 +341,7 @@ export default function TimerPanel({
                         aria-label={t("moveStepDown", {
                           step: index + 1,
                         })}
-                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
+                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleMoveRow(index, 1)
@@ -359,7 +359,7 @@ export default function TimerPanel({
                       aria-label={t("duplicateStep", {
                         step: index + 1,
                       })}
-                      className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
+                      className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
                       onClick={(event) => {
                         event.stopPropagation()
                         handleDuplicateRow(index)
@@ -377,7 +377,7 @@ export default function TimerPanel({
                         aria-label={t("deleteStep", {
                           step: index + 1,
                         })}
-                        className="border-hairline bg-input-bg text-ink/70 shadow-[0_8px_18px_rgba(0,0,0,0.08)] hover:border-primary/45 hover:text-primary"
+                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
                         onClick={(event) => {
                           event.stopPropagation()
                           handleDeleteRow(index)
@@ -409,9 +409,8 @@ export default function TimerPanel({
             className="
               inline-flex min-h-11 w-full cursor-pointer items-center justify-center
               rounded-xl bg-primary px-4 py-2.5 font-display text-sm font-semibold
-              tracking-wider text-white shadow-[0_16px_32px_rgba(214,31,105,0.28)]
-              transition hover:bg-primary-hover focus:outline-2 focus:-outline-offset-2
-              focus:outline-primary
+              tracking-wider text-white transition hover:bg-primary-hover
+              focus:outline-2 focus:-outline-offset-2 focus:outline-primary
             "
             onClick={handleAddRow}
             type="button"
