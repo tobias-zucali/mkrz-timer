@@ -6,6 +6,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs"
+import { networkInterfaces } from "node:os"
 import path from "node:path"
 import process from "node:process"
 import { fileURLToPath } from "node:url"
@@ -26,8 +27,8 @@ const playwrightCliPath = path.join(
   "node_modules/@playwright/test/cli.js",
 )
 
-const APP_HOST = "127.0.0.1"
-const RELAY_CLIENT_HOST = "127.0.0.1"
+const BIND_HOST = "0.0.0.0"
+const CONNECT_HOST = "127.0.0.1"
 const DEFAULT_TIMEOUT_MS = 120_000
 const MAX_PORT_ATTEMPTS = 10
 
@@ -44,7 +45,7 @@ const laneDefinitions = {
     description: "Playwright stack",
     preferredAppPort: 3300,
     preferredRelayPort: 9200,
-    relayBindHost: APP_HOST,
+    relayBindHost: BIND_HOST,
   },
 }
 
@@ -56,12 +57,23 @@ const fail = (message) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const buildRelayWebSocketUrl = (relayPort) =>
-  `ws://${RELAY_CLIENT_HOST}:${relayPort}/ws`
+  `ws://${CONNECT_HOST}:${relayPort}/ws`
 
 const buildRelayHealthUrl = (relayPort) =>
-  `http://${APP_HOST}:${relayPort}/health`
+  `http://${CONNECT_HOST}:${relayPort}/health`
 
-const buildAppUrl = (appPort) => `http://${APP_HOST}:${appPort}`
+const buildAppUrl = (appPort) => `http://${CONNECT_HOST}:${appPort}`
+
+const getLanIp = () => {
+  for (const ifaces of Object.values(networkInterfaces())) {
+    for (const iface of ifaces ?? []) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address
+      }
+    }
+  }
+  return null
+}
 const buildRunId = (laneId, appPort, relayPort) =>
   `${laneId}-${appPort}-${relayPort}`
 const buildDistDir = (runId) => `.next-runs/${runId}`
@@ -222,7 +234,7 @@ const spawnRelay = (runtime) =>
 const spawnApp = (runtime) =>
   spawn(
     nodeExec,
-    [nextBinPath, "dev", "-H", APP_HOST, "-p", `${runtime.appPort}`],
+    [nextBinPath, "dev", "-H", BIND_HOST, "-p", `${runtime.appPort}`],
     {
       cwd: repoRoot,
       env: {
@@ -364,10 +376,16 @@ const startStack = async ({ laneId }) => {
   const lane = resolveLane(laneId)
   const { appChild, relayChild, runtime } = await launchStackWithRetries(lane)
 
+  const lanIp = getLanIp()
+  const networkAppUrl = lanIp
+    ? `http://${lanIp}:${runtime.appPort}`
+    : null
+
   process.stdout.write(
     [
       `${lane.description} ready`,
       `- app: ${runtime.appUrl}`,
+      ...(networkAppUrl ? [`- app (network): ${networkAppUrl}`] : []),
       `- relay health: ${runtime.relayUrl}`,
       `- relay ws: ${runtime.relayWebSocketUrl}`,
       `- dist: ${runtime.distDir}`,
@@ -472,7 +490,7 @@ const runPlaywright = async ({
           PLAYWRIGHT_MANAGED_RUNTIME: "1",
           PLAYWRIGHT_OUTPUT_DIR: runtime.outputDir,
           PLAYWRIGHT_NODE: nodeExec,
-          PLAYWRIGHT_RELAY_URL: `http://${APP_HOST}:${runtime.relayPort}`,
+          PLAYWRIGHT_RELAY_URL: `http://${CONNECT_HOST}:${runtime.relayPort}`,
           PLAYWRIGHT_REPORT_DIR: runtime.reportDir,
         },
         stdio: "inherit",
