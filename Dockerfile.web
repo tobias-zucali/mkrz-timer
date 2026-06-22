@@ -5,6 +5,7 @@ ARG NEXT_PUBLIC_REMOTE_WS_URL=wss://ws.timer.mkrz.at/ws
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY src ./src
 COPY public ./public
+COPY content ./content
 COPY scripts ./scripts
 COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs tailwind.config.ts ./
 RUN corepack enable && pnpm install --frozen-lockfile
