@@ -11,6 +11,7 @@ This file captures durable repo conventions for agents. For product/setup contex
 - Read `README.md` for product and setup context.
 - Inspect the affected files before making changes.
 - Prefer extending existing helpers, abstractions, and feature boundaries before introducing new patterns or parallel implementations.
+- If you detect changes in the worktree that you did not make, do not revert them — ask the user whether the changes are intentional before taking any action on them.
 
 ### Tooling
 
