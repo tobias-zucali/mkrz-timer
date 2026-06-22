@@ -170,7 +170,7 @@ export const EXAMPLES: ExampleTimer[] = [
     scope: "live",
     steps: [
       {
-        title: "Make Something!",
+        title: "What feels most urgent to you? Grab whatever material is close to you and MAKE something representing it!",
         duration: 120,
         color: EXAMPLE_COLOR.yellow,
         behavior: "advance",
