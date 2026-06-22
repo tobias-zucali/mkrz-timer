@@ -29,21 +29,15 @@ function buildRow({
 }
 
 function TimerPanelHarness({
-  hasTimerChanges = true,
-  currentEntryId = null,
   initialPageTitle = "",
   initialParams,
   onActivateSequenceRow,
-  onOpenLoadRecentDialog,
-  storedTimerCount = 0,
+  onOpenLoadTimerDialog,
 }: {
-  hasTimerChanges?: boolean
-  currentEntryId?: string | null
   initialParams?: typeof DEFAULT_SYNC_PARAMS
   initialPageTitle?: string
   onActivateSequenceRow?: (rowIndex: number) => void
-  onOpenLoadRecentDialog?: () => void
-  storedTimerCount?: number
+  onOpenLoadTimerDialog?: () => void
 }) {
   const [params, setParams] = useState(
     initialParams ?? {
@@ -56,13 +50,8 @@ function TimerPanelHarness({
   return (
     <TimerPanel
       activeIndex={params.activeIndex}
-      hasTimerChanges={hasTimerChanges}
-      currentEntryId={currentEntryId}
       onActivateSequenceRow={onActivateSequenceRow ?? vi.fn()}
-      onDuplicateCurrentTimer={vi.fn()}
-      onNewTimer={vi.fn()}
-      onOpenLoadRecentDialog={onOpenLoadRecentDialog ?? vi.fn()}
-      onOpenSaveDialog={vi.fn()}
+      onOpenLoadTimerDialog={onOpenLoadTimerDialog ?? vi.fn()}
       onPageTitleChange={setPageTitle}
       onSequenceChange={(nextChange) =>
         setParams((currentParams) => ({
@@ -72,7 +61,6 @@ function TimerPanelHarness({
       }
       pageTitle={pageTitle}
       params={params}
-      storedTimerCount={storedTimerCount}
     />
   )
 }
@@ -144,20 +132,17 @@ describe("TimerPanel", () => {
     )
   })
 
-  it("renders the timer-level action row", () => {
-    renderWithIntl(<TimerPanelHarness hasTimerChanges={false} />)
+  it("renders the Load Timer button and calls the callback when clicked", () => {
+    const onOpenLoadTimerDialog = vi.fn()
 
-    expect(screen.getByRole("button", { name: "Load recent" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "New" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Duplicate" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
-      "title",
-      "Save timer links",
+    renderWithIntl(
+      <TimerPanelHarness onOpenLoadTimerDialog={onOpenLoadTimerDialog} />,
     )
-    expect(screen.getByRole("button", { name: "Load recent" })).toHaveAttribute(
-      "title",
-      "Load a recent timer",
-    )
+
+    const btn = screen.getByRole("button", { name: "Load Timer" })
+    expect(btn).toBeVisible()
+    fireEvent.click(btn)
+    expect(onOpenLoadTimerDialog).toHaveBeenCalledTimes(1)
   })
 
   it("exposes native spinbuttons and stepper buttons for step timing controls", () => {
@@ -216,22 +201,5 @@ describe("TimerPanel", () => {
     expect(
       within(repetitionsStepper).getByRole("button", { name: "Increase" }),
     ).toHaveAttribute("tabindex", "-1")
-  })
-
-  it("enables loading recent timers when another stored timer exists", () => {
-    const onOpenLoadRecentDialog = vi.fn()
-
-    renderWithIntl(
-      <TimerPanelHarness
-        hasTimerChanges={true}
-        currentEntryId="entry-1"
-        onOpenLoadRecentDialog={onOpenLoadRecentDialog}
-        storedTimerCount={2}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole("button", { name: "Load recent" }))
-
-    expect(onOpenLoadRecentDialog).toHaveBeenCalledTimes(1)
   })
 })

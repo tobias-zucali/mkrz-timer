@@ -62,9 +62,7 @@ function DigitalDisplay({
         <span aria-hidden="true" className="inline-block flex-1 text-right">
           {minutes}
         </span>
-        <span aria-hidden="true">
-          :
-        </span>
+        <span aria-hidden="true">{":"}</span>
         <span aria-hidden="true" className="inline-block flex-1 text-left">
           {seconds}
         </span>
@@ -97,7 +95,7 @@ function DigitalDisplay({
         onBlur={onBlur}
         onChange={onMinutesChange}
       />
-      <div>:</div>
+      <div>{":"}</div>
       <input
         aria-label={t("seconds")}
         className={classNames(inputClassNames, "text-left")}

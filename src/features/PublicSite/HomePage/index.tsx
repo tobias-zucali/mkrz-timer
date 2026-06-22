@@ -3,6 +3,7 @@ import type { AppLocale } from "@/i18n/config"
 import { getMessagesForLocale } from "@/i18n/messages"
 
 import PublicPageFrame from "../PublicPageFrame"
+import ExamplesSection from "./ExamplesSection"
 import GoodToKnowSection from "./GoodToKnowSection"
 import { WavyUnderline } from "./icons"
 import TwoWaysSection from "./TwoWaysSection"
@@ -41,6 +42,7 @@ export default function HomePage({ locale }: { locale: AppLocale }) {
         </div>
       </section>
 
+      <ExamplesSection locale={locale} />
       <TwoWaysSection locale={locale} />
       <GoodToKnowSection locale={locale} />
     </PublicPageFrame>

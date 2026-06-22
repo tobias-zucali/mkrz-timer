@@ -377,9 +377,7 @@ const startStack = async ({ laneId }) => {
   const { appChild, relayChild, runtime } = await launchStackWithRetries(lane)
 
   const lanIp = getLanIp()
-  const networkAppUrl = lanIp
-    ? `http://${lanIp}:${runtime.appPort}`
-    : null
+  const networkAppUrl = lanIp ? `http://${lanIp}:${runtime.appPort}` : null
 
   process.stdout.write(
     [

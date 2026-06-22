@@ -35,7 +35,4 @@
 - button "Custom swatch"
 - textbox "Color": "#d61f69"
 - button "Add step"
-- button "New"
-- button "Duplicate"
-- button "Save"
-- button "Load recent" [disabled]
+- button "Load Timer"

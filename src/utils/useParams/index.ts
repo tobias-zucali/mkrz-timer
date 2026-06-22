@@ -54,15 +54,11 @@ const getPageTitleFromSearchParams = ({
 export default function useParams() {
   const nextSearchParams = useSearchParams()
   const nextPathname = usePathname()
-  const pathname =
-    typeof window === "undefined" ? nextPathname : window.location.pathname
+  const pathname = nextPathname
   const router = useRouter()
   const { setTheme, setPc } = useContext(ParamStyleContext)
 
-  const searchParamsString =
-    typeof window === "undefined"
-      ? nextSearchParams.toString()
-      : window.location.search.replace(/^\?/, "")
+  const searchParamsString = nextSearchParams.toString()
   const searchParams = useMemo(
     () => new URLSearchParams(searchParamsString),
     [searchParamsString],

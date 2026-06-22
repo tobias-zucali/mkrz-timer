@@ -65,44 +65,29 @@ const getCardAccentStyle = ({
 
 export type TimerPanelProps = {
   activeIndex: number
-  hasTimerChanges: boolean
   onActivateSequenceRow: (rowIndex: number) => void
-  onDuplicateCurrentTimer: () => void
-  onOpenLoadRecentDialog: () => void
-  onNewTimer: () => void
+  onOpenLoadTimerDialog: () => void
   onPageTitleChange: (title: string) => void
-  onOpenSaveDialog: () => void
   onSequenceChange: (nextChange: {
     activeIndex: number
     rows: SyncParams["rows"]
   }) => void
   pageTitle: string
   params: SyncParams
-  currentEntryId: string | null
-  storedTimerCount: number
 }
 
 export default function TimerPanel({
   activeIndex,
-  hasTimerChanges,
   onActivateSequenceRow,
-  onDuplicateCurrentTimer,
-  onOpenLoadRecentDialog,
-  onNewTimer,
+  onOpenLoadTimerDialog,
   onPageTitleChange,
-  onOpenSaveDialog,
   onSequenceChange,
   pageTitle,
   params,
-  currentEntryId,
-  storedTimerCount,
 }: TimerPanelProps) {
   const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
-  const hasRecentAlternatives =
-    storedTimerCount > 0 && (currentEntryId === null || storedTimerCount > 1)
-
   useEffect(() => {
     if (params.rows.length === 0) {
       setSelectedIndex(0)
@@ -421,39 +406,11 @@ export default function TimerPanel({
         <div className="flex flex-wrap justify-end gap-2">
           <ActionButton
             compact={true}
-            disabled={!hasTimerChanges}
-            onClick={onNewTimer}
+            onClick={onOpenLoadTimerDialog}
             tone="secondary"
-            title={t("newTimerTitle")}
+            title={t("loadTimerTitle")}
           >
-            {t("newTimer")}
-          </ActionButton>
-          <ActionButton
-            compact={true}
-            disabled={!hasTimerChanges}
-            onClick={onDuplicateCurrentTimer}
-            tone="secondary"
-            title={t("duplicateTitle")}
-          >
-            {t("duplicate")}
-          </ActionButton>
-          <ActionButton
-            compact={true}
-            disabled={!hasTimerChanges}
-            onClick={onOpenSaveDialog}
-            tone="secondary"
-            title={t("saveTitle")}
-          >
-            {t("save")}
-          </ActionButton>
-          <ActionButton
-            compact={true}
-            disabled={!hasRecentAlternatives}
-            onClick={onOpenLoadRecentDialog}
-            tone="secondary"
-            title={t("loadRecentTitle")}
-          >
-            {t("loadRecent")}
+            {t("loadTimer")}
           </ActionButton>
         </div>
       </section>
