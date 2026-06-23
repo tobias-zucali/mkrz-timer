@@ -2,6 +2,10 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import { DEFAULT_SYNC_PARAMS } from "../../shared/security/input.ts"
+import {
+  buildTimerUrlSearchParams,
+  buildUrlTimerRow,
+} from "../../shared/urlState/index.ts"
 import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
 
 import {
@@ -34,9 +38,19 @@ test("serializeParamValue strips hashes only from color params", () => {
 })
 
 test("buildPathWithParams serializes timer state with v=1&t rows", () => {
+  const tParam = buildTimerUrlSearchParams({
+    rows: [
+      buildUrlTimerRow({
+        totalSeconds: 300,
+        primaryColor: "#d61f69",
+        title: "Shared timer",
+        endBehavior: "stop",
+      }),
+    ],
+  }).get("t")
   assert.equal(
     buildPathWithParams(buildParams()),
-    "/?v=1&t=300%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+    `/?v=1&t=${tParam}&a=0&title=Workshop+timer`,
   )
 })
 
@@ -61,7 +75,7 @@ test("buildPathWithParams preserves non-timer params alongside the new timer for
         pathname: "/control/token-1",
       },
     ),
-    "/control/token-1?v=1&t=135%2100aa88%21Workshop%211%211&a=0&theme=bright&title=Workshop+timer&settings=1",
+    `/control/token-1?v=1&t=${buildTimerUrlSearchParams({ rows: [buildUrlTimerRow({ totalSeconds: 135, primaryColor: "#00aa88", title: "Workshop", endBehavior: "advance" })] }).get("t")}&a=0&theme=bright&title=Workshop+timer&settings=1`,
   )
 })
 
@@ -70,7 +84,7 @@ test("buildPathWithParams preserves localized route prefixes", () => {
     buildPathWithParams(buildParams(), {
       pathname: "/de/control/token-1",
     }),
-    "/de/control/token-1?v=1&t=300%21d61f69%21Shared%2520timer%211%210&a=0&title=Workshop+timer",
+    `/de/control/token-1?v=1&t=${buildTimerUrlSearchParams({ rows: [buildUrlTimerRow({ totalSeconds: 300, primaryColor: "#d61f69", title: "Shared timer", endBehavior: "stop" })] }).get("t")}&a=0&title=Workshop+timer`,
   )
 })
 
@@ -89,7 +103,7 @@ test("buildPathWithParams can skip inheritance for client URLs", () => {
         ],
       },
     }),
-    "/?v=1&t=120%21d61f69%21%211%210&a=0",
+    `/?v=1&t=${buildTimerUrlSearchParams({ rows: [buildUrlTimerRow({ totalSeconds: 120, primaryColor: "#d61f69", title: "", endBehavior: "stop" })] }).get("t")}&a=0`,
   )
 })
 

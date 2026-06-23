@@ -20,7 +20,7 @@ describe("TimerTitle", () => {
 
     const editor = screen.getByLabelText("Title")
     expect(editor).toHaveFocus()
-    expect(editor).toHaveAttribute("maxlength", "64")
+    expect(editor).toHaveAttribute("maxlength", "128")
     expect(editor.tagName).toBe("TEXTAREA")
   })
 

@@ -7,6 +7,8 @@ import {
 } from "@/shared/security/input"
 import type { SessionSnapshot, SyncParams } from "@/shared/liveSession/types"
 import {
+  buildTimerUrlSearchParams,
+  buildUrlTimerRow,
   parseTimerUrlState,
   projectFirstUrlTimerRowToSyncParams,
 } from "@/shared/urlState"
@@ -35,11 +37,19 @@ const buildState = (overrides: Partial<TimerState> = {}): TimerState => ({
 
 describe("useSyncConflictResolution", () => {
   it("flags a conflict only when both the URL snapshot and relay snapshot changed", () => {
-    const urlState = parseTimerUrlState({
-      searchParams: new URLSearchParams(
-        "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee",
-      ),
+    const urlSearchParams = buildTimerUrlSearchParams({
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 45,
+          primaryColor: "#ff8800",
+          title: "URL Override",
+          endBehavior: "stop",
+        }),
+      ],
     })
+    urlSearchParams.set("bg", "111111")
+    urlSearchParams.set("fg", "eeeeee")
+    const urlState = parseTimerUrlState({ searchParams: urlSearchParams })
     const startingParams: SyncParams = buildParams()
     const syncParamsRef = {
       current: startingParams,
@@ -166,11 +176,19 @@ describe("useSyncConflictResolution", () => {
   })
 
   it("builds a reconnect snapshot from the URL state when timer params are present", () => {
-    const urlState = parseTimerUrlState({
-      searchParams: new URLSearchParams(
-        "v=1&t=150!ff8800!Opening!0&bg=111111&fg=eeeeee",
-      ),
+    const urlSearchParams = buildTimerUrlSearchParams({
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 150,
+          primaryColor: "#ff8800",
+          title: "Opening",
+          endBehavior: "stop",
+        }),
+      ],
     })
+    urlSearchParams.set("bg", "111111")
+    urlSearchParams.set("fg", "eeeeee")
+    const urlState = parseTimerUrlState({ searchParams: urlSearchParams })
     const syncParamsRef = {
       current: {
         ...buildParams(),
@@ -240,10 +258,20 @@ describe("useSyncConflictResolution", () => {
   })
 
   it("accepts local URL changes silently when the relay still matches the baseline", () => {
+    const urlSearchParams = buildTimerUrlSearchParams({
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 45,
+          primaryColor: "#ff8800",
+          title: "URL Override",
+          endBehavior: "stop",
+        }),
+      ],
+    })
+    urlSearchParams.set("bg", "111111")
+    urlSearchParams.set("fg", "eeeeee")
     const localOnlyUrlState = parseTimerUrlState({
-      searchParams: new URLSearchParams(
-        "v=1&t=45!ff8800!URL%20Override!0&bg=111111&fg=eeeeee",
-      ),
+      searchParams: urlSearchParams,
     })
     const syncParamsRef = {
       current: {
@@ -293,10 +321,20 @@ describe("useSyncConflictResolution", () => {
   })
 
   it("accepts relay updates silently when the URL snapshot did not change", () => {
+    const matchingUrlSearchParams = buildTimerUrlSearchParams({
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 300,
+          primaryColor: "#00aa88",
+          title: "Server state",
+          endBehavior: "stop",
+        }),
+      ],
+    })
+    matchingUrlSearchParams.set("bg", "000000")
+    matchingUrlSearchParams.set("fg", "ffffff")
     const matchingUrlState = parseTimerUrlState({
-      searchParams: new URLSearchParams(
-        "v=1&t=300!00aa88!Server%20state!0&bg=000000&fg=ffffff",
-      ),
+      searchParams: matchingUrlSearchParams,
     })
     const syncParamsRef = {
       current: {
@@ -370,10 +408,20 @@ describe("useSyncConflictResolution", () => {
   })
 
   it("preserves runtime-extended duration when rebuilding URL snapshots for recovery", () => {
+    const matchingUrlSearchParams = buildTimerUrlSearchParams({
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 300,
+          primaryColor: "#00aa88",
+          title: "Server state",
+          endBehavior: "stop",
+        }),
+      ],
+    })
+    matchingUrlSearchParams.set("bg", "000000")
+    matchingUrlSearchParams.set("fg", "ffffff")
     const matchingUrlState = parseTimerUrlState({
-      searchParams: new URLSearchParams(
-        "v=1&t=300!00aa88!Server%20state!0&bg=000000&fg=ffffff",
-      ),
+      searchParams: matchingUrlSearchParams,
     })
     const syncParamsRef = {
       current: {

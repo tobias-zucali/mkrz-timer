@@ -193,7 +193,7 @@ export default function TimerSequenceInspector({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <NumericStepperField
             id={`sidebar-sequence-repeat-count-${rowIndex}`}
             inputClassName={selectedFieldClassName}
@@ -208,7 +208,7 @@ export default function TimerSequenceInspector({
             value={String(row.repeatCount)}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label
             className="mb-2 block panel-label text-ink/74"
             htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}

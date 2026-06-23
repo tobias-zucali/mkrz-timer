@@ -23,9 +23,27 @@ import {
   clampTimerSequenceIndex,
 } from "../timerSequence.ts"
 
+export function encodeBase64Url(str: string): string {
+  const bytes = new TextEncoder().encode(str)
+  let binStr = ""
+  for (const byte of bytes) {
+    binStr += String.fromCharCode(byte)
+  }
+  return btoa(binStr).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+}
+
+function decodeBase64Url(str: string): string {
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/")
+  const binStr = atob(base64)
+  const bytes = new Uint8Array(binStr.length)
+  for (let i = 0; i < binStr.length; i++) {
+    bytes[i] = binStr.charCodeAt(i)
+  }
+  return new TextDecoder().decode(bytes)
+}
+
 export const TIMER_URL_VERSION = "1"
-export const MAX_TIMER_URL_ROWS = 12
-export const MAX_TIMER_URL_LENGTH = 2000
+export const URL_LENGTH_WARN_CHARS = 4096
 
 export type UrlTimerRow = TimerSequenceRow
 
@@ -80,7 +98,7 @@ const parseUrlActiveIndex = (value: string | null, rowCount: number) => {
 const parseTimerUrlRow = (value: string): UrlTimerRow | null => {
   const parts = value.split("!")
 
-  if (parts.length !== 4 && parts.length !== 5) {
+  if (parts.length !== 5) {
     return null
   }
 
@@ -105,21 +123,6 @@ const parseTimerUrlRow = (value: string): UrlTimerRow | null => {
   const primaryColor = normalizeOptionalColor(colorValue)
   if (colorValue !== "" && !primaryColor) {
     return null
-  }
-
-  if (parts.length === 4) {
-    const endBehavior = parseUrlEndBehavior(fourthValue)
-    if (endBehavior === null) {
-      return null
-    }
-
-    return {
-      endBehavior: "stop",
-      primaryColor,
-      repeatCount: 1,
-      title: normalizeTitle(decodedTitle).slice(0, MAX_TITLE_LENGTH),
-      totalSeconds,
-    }
   }
 
   const repeatCount = parseUrlRepeatCount(fourthValue)
@@ -166,9 +169,24 @@ export const parseTimerUrlState = ({
     }
   }
   const version = searchParams.get("v")
-  const rowsValue = searchParams.get("t")
+  const encodedT = searchParams.get("t")
 
-  if (version !== TIMER_URL_VERSION || !rowsValue) {
+  if (version !== TIMER_URL_VERSION || !encodedT) {
+    return {
+      activeIndex: 0,
+      theme,
+      hasTimerState: false,
+      rows: [],
+      snd,
+      tts,
+      version,
+    }
+  }
+
+  let rowsValue: string
+  try {
+    rowsValue = decodeBase64Url(encodedT)
+  } catch {
     return {
       activeIndex: 0,
       theme,
@@ -182,7 +200,6 @@ export const parseTimerUrlState = ({
 
   const rows = rowsValue
     .split("|")
-    .slice(0, MAX_TIMER_URL_ROWS)
     .map(parseTimerUrlRow)
     .filter((row): row is UrlTimerRow => row !== null)
 
@@ -324,46 +341,12 @@ export const buildTimerUrlSearchParams = ({
     DEFAULT_SYNC_PARAMS.snd,
   )
   const normalizedTts = normalizeTimerTtsEnabled(tts, DEFAULT_SYNC_PARAMS.tts)
-  const normalizedRows = rows.slice(0, MAX_TIMER_URL_ROWS).map(buildUrlTimerRow)
-
-  let serializedRows = ""
-
-  for (const row of normalizedRows) {
-    const nextSerializedRow = serializeUrlTimerRow(row)
-    const candidateRows = serializedRows
-      ? `${serializedRows}|${nextSerializedRow}`
-      : nextSerializedRow
-    const candidateSearchParams = new URLSearchParams()
-
-    candidateSearchParams.set("v", TIMER_URL_VERSION)
-    candidateSearchParams.set("t", candidateRows)
-    candidateSearchParams.set("a", activeIndex.toString())
-    if (normalizedTheme !== DEFAULT_SYNC_PARAMS.theme) {
-      candidateSearchParams.set("theme", normalizedTheme)
-    }
-    if (normalizedSound !== DEFAULT_SYNC_PARAMS.snd) {
-      candidateSearchParams.set("s", normalizedSound)
-    }
-    if (normalizedTts !== DEFAULT_SYNC_PARAMS.tts) {
-      candidateSearchParams.set("ts", TIMER_TTS_ENABLED_QUERY_VALUE)
-    }
-
-    for (const [key, value] of Object.entries(extraParams)) {
-      if (value) {
-        candidateSearchParams.set(key, value)
-      }
-    }
-
-    if (candidateSearchParams.toString().length >= MAX_TIMER_URL_LENGTH) {
-      break
-    }
-
-    serializedRows = candidateRows
-  }
+  const normalizedRows = rows.map(buildUrlTimerRow)
+  const serializedRows = normalizedRows.map(serializeUrlTimerRow).join("|")
 
   if (serializedRows) {
     searchParams.set("v", TIMER_URL_VERSION)
-    searchParams.set("t", serializedRows)
+    searchParams.set("t", encodeBase64Url(serializedRows))
     searchParams.set(
       "a",
       clampTimerSequenceIndex({

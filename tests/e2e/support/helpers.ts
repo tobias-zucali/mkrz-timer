@@ -1,6 +1,21 @@
 import { expect, Page } from "@playwright/test"
 
-function buildTimerPath({
+export function encodeRowBase64Url(row: string): string {
+  return Buffer.from(row, "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+}
+
+function decodeRowBase64Url(encoded: string): string {
+  return Buffer.from(
+    encoded.replace(/-/g, "+").replace(/_/g, "/"),
+    "base64",
+  ).toString("utf8")
+}
+
+export function buildTimerPath({
   primaryColor = "d61f69",
   seconds,
   theme,
@@ -11,8 +26,9 @@ function buildTimerPath({
   theme?: "dark" | "bright"
   title?: string
 }) {
+  const row = `${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0`
   const themeParam = theme && theme !== "dark" ? `&theme=${theme}` : ""
-  return `/en/t?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0&a=0${themeParam}`
+  return `/en/t?v=1&t=${encodeRowBase64Url(row)}&a=0${themeParam}`
 }
 
 const timerUrl = buildTimerPath({ seconds: 60 })
@@ -849,29 +865,40 @@ export async function expectTimerUrlParams(
       new RegExp(`(?:\\?|&)s=${escapeRegex(settings.soundId)}(?:&|$)`),
     )
   }
-  if (settings.primaryColor !== undefined) {
-    await expect(page).toHaveURL(
-      new RegExp(
-        `(?:\\?|&)t=[^&]*%21${escapeRegex(settings.primaryColor.slice(1))}%21[^&]*(?:&|$)`,
-      ),
-    )
-  }
-
   if (
+    settings.primaryColor !== undefined ||
     settings.minutes !== undefined ||
     settings.seconds !== undefined ||
     settings.title !== undefined
   ) {
-    const totalSeconds =
-      Number(settings.minutes ?? "0") * 60 + Number(settings.seconds ?? "0")
-    const encodedTitle = encodeURIComponent(
-      encodeURIComponent(settings.title ?? ""),
-    )
-    await expect(page).toHaveURL(
-      new RegExp(
-        `(?:\\?|&)t=${totalSeconds}%21.*%21${escapeRegex(encodedTitle)}%211%210(?:&|$)`,
-      ),
-    )
+    let decodedT = ""
+    await expect
+      .poll(
+        () => {
+          const tParam = new URL(page.url()).searchParams.get("t")
+          if (!tParam) return ""
+          decodedT = decodeRowBase64Url(tParam)
+          return decodedT
+        },
+        { message: "timer URL t param should decode to row data" },
+      )
+      .toContain("!")
+
+    if (settings.primaryColor !== undefined) {
+      expect(decodedT).toContain(`!${settings.primaryColor.slice(1)}!`)
+    }
+
+    if (
+      settings.minutes !== undefined ||
+      settings.seconds !== undefined ||
+      settings.title !== undefined
+    ) {
+      const totalSeconds =
+        Number(settings.minutes ?? "0") * 60 + Number(settings.seconds ?? "0")
+      const encodedTitle = encodeURIComponent(settings.title ?? "")
+      expect(decodedT).toContain(`${totalSeconds}!`)
+      expect(decodedT).toContain(`!${encodedTitle}!`)
+    }
   }
 }
 

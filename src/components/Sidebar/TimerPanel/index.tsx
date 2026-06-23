@@ -3,7 +3,6 @@
 import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import ActionButton from "@/utils/ActionButton"
 import IconButton from "@/components/IconButton"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
@@ -13,7 +12,12 @@ import {
   getEffectiveTimerSequenceRows,
 } from "@/shared/timerSequence"
 import {
+  buildTimerUrlSearchParams,
+  URL_LENGTH_WARN_CHARS,
+} from "@/shared/urlState"
+import {
   ArrowDownIcon,
+  ArrowDownTrayIcon,
   ArrowUpIcon,
   DocumentDuplicateIcon,
   TrashIcon,
@@ -196,30 +200,46 @@ export default function TimerPanel({
     )
   }
 
+  const urlLength = buildTimerUrlSearchParams({ rows: params.rows }).toString()
+    .length
+  const showUrlWarning = urlLength > URL_LENGTH_WARN_CHARS
+
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <input
-          aria-label={t("pageTitleLabel")}
-          autoComplete="off"
-          className="
-            block w-full border-none bg-transparent px-0 font-display text-2xl
-            font-semibold tracking-tight text-ink outline-none
-            placeholder:text-ink/42
-          "
-          id={pageTitleInputId}
-          maxLength={MAX_TITLE_LENGTH}
-          onChange={(event) =>
-            onPageTitleChange(normalizeTitle(event.target.value))
-          }
-          onKeyDown={(event) => event.stopPropagation()}
-          onKeyUp={(event) => event.stopPropagation()}
-          placeholder={t("pageTitlePlaceholder")}
-          spellCheck={false}
-          title={t("pageTitleLabel")}
-          type="text"
-          value={pageTitle}
-        />
+        <div className="flex items-center gap-2">
+          <input
+            aria-label={t("pageTitleLabel")}
+            autoComplete="off"
+            className="
+              min-w-0 flex-1 border-none bg-transparent px-0 font-display text-2xl
+              font-semibold tracking-tight text-ink outline-none
+              placeholder:text-ink/42
+            "
+            id={pageTitleInputId}
+            maxLength={MAX_TITLE_LENGTH}
+            onChange={(event) =>
+              onPageTitleChange(normalizeTitle(event.target.value))
+            }
+            onKeyDown={(event) => event.stopPropagation()}
+            onKeyUp={(event) => event.stopPropagation()}
+            placeholder={t("pageTitlePlaceholder")}
+            spellCheck={false}
+            title={t("pageTitleLabel")}
+            type="text"
+            value={pageTitle}
+          />
+          <IconButton
+            aria-label={t("loadTimerTitle")}
+            className="shrink-0 text-ink/42 hover:text-ink/70"
+            onClick={onOpenLoadTimerDialog}
+            shape="round"
+            size="sm"
+            title={t("loadTimerTitle")}
+          >
+            <ArrowDownTrayIcon className="size-4" />
+          </IconButton>
+        </div>
       </section>
       <section className="space-y-4">
         <div>
@@ -403,17 +423,17 @@ export default function TimerPanel({
             {t("addStep")}
           </button>
         </div>
-        <div className="flex flex-wrap justify-end gap-2">
-          <ActionButton
-            compact={true}
-            onClick={onOpenLoadTimerDialog}
-            tone="secondary"
-            title={t("loadTimerTitle")}
-          >
-            {t("loadTimer")}
-          </ActionButton>
-        </div>
       </section>
+      {showUrlWarning && (
+        <p
+          className="
+            sticky bottom-0 rounded-lg bg-amber-50 px-3 py-2 font-body
+            text-xs text-amber-700
+          "
+        >
+          {t("urlLengthWarning")}
+        </p>
+      )}
     </div>
   )
 }

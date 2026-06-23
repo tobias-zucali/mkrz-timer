@@ -15,17 +15,17 @@
   "loadTimer": "Timer laden",
   "loadTimerTitle": "Einen Timer laden",
   "recentTimers": "Letzte Timer",
-  "templatesHeading": "Vorlagen",
-  "recentHeading": "Zuletzt verwendet",
-  "recentDialogDescription": "Laden Sie eine Vorlage oder einen zuvor in diesem Browser verwendeten Timer. Zuletzt verwendete Timer werden nur in diesem Browser gespeichert und können verloren gehen, wenn Browserdaten gelöscht werden.",
+  "recentTab": "Zuletzt verwendet",
+  "templatesTab": "Vorlagen",
+  "recentTabDescription": "Zuletzt verwendete Timer werden nur in diesem Browser gespeichert und können verloren gehen, wenn Browserdaten gelöscht werden.",
+  "templatesTabDescription": "Starten Sie mit einer Vorlage, um schnell loszulegen.",
   "currentTimer": "Aktuell",
   "updatedAt": "Aktualisiert {timestamp}",
-  "recentTimerSingleStep": "1 Schritt",
-  "recentTimerStepCount": "{count} Schritte",
   "untitledTimer": "Unbenannter Timer",
   "delete": "Timer löschen",
   "deleteRecentTimer": "Timer {title} löschen",
   "closeLoadTimerDialog": "Schließen",
   "copySuffix": "Kopie",
-  "untitledCopyTitle": "Kopierter Timer"
+  "untitledCopyTitle": "Kopierter Timer",
+  "urlLengthWarning": "Dieser Timer hat viele Schritte. Die Freigabe-URL funktioniert möglicherweise nicht in allen Browsern oder Link-Diensten."
 }

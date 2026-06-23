@@ -81,7 +81,7 @@ test(
       qrCodeDialog.getByRole("img", { name: "Local link" }),
     ).toBeVisible()
     await expect(qrCodeDialog).toContainText("v=1")
-    await expect(qrCodeDialog).toContainText("t=3%21")
+    await expect(qrCodeDialog).toContainText("t=MyFkNjFmNjkhITEhMA")
     const qrCodeBounds = await qrCodeDialog.boundingBox()
     const viewportSize = page.viewportSize()
 
@@ -302,18 +302,18 @@ test("supports accessible stepper controls for timing and repetitions", async ({
   await expect(repetitionsInput).toHaveValue("1")
 })
 
-test("limits titles to 64 characters in settings", async ({ page }) => {
+test("limits titles to 128 characters in settings", async ({ page }) => {
   await openTimer(page, 3)
   await openSettingsOverlay(page)
 
   const titleField = page
     .getByTestId("sidebar-panel-timer")
     .getByLabel("Title", { exact: true })
-  const longTitle = "Facilitator notes ".repeat(6)
+  const longTitle = "Facilitator notes ".repeat(8)
 
   await titleField.fill(longTitle)
 
-  await expect(titleField).toHaveValue(longTitle.slice(0, 64))
+  await expect(titleField).toHaveValue(longTitle.slice(0, 128))
 })
 
 test(

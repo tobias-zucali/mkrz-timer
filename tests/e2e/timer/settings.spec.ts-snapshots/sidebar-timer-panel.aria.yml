@@ -2,6 +2,7 @@
 - button "Close sidebar"
 - textbox "Timer name":
   - /placeholder: Untitled timer
+- button "Load a timer"
 - heading "Sequence" [level=3]
 - text: Step 1 Active
 - button "Duplicate step 1"
@@ -35,4 +36,3 @@
 - button "Custom swatch"
 - textbox "Color": "#d61f69"
 - button "Add step"
-- button "Load Timer"

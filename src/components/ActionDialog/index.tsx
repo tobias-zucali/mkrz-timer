@@ -118,7 +118,7 @@ export default function ActionDialog({
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">{children}</div>
           <div
             className="
-              mt-6 flex flex-col gap-3 border-t border-ink/8 pt-4
+              flex flex-col gap-3 border-t border-ink/8 pt-4
               lg:flex-row lg:justify-end lg:border-t-0
               lg:pt-0
             "

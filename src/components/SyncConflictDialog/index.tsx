@@ -39,7 +39,7 @@ export default function SyncConflictDialog({
           <button
             type="button"
             className="
-              mt-4 cursor-pointer text-sm font-medium text-primary
+              mt-4 mb-6 cursor-pointer text-sm font-medium text-primary
               underline decoration-primary/60 underline-offset-4
               transition-colors hover:text-primary/82
               focus-visible:outline-2 focus-visible:outline-offset-2

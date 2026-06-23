@@ -534,7 +534,7 @@ export default function Sidebar({
               "
               data-testid={`sidebar-panel-${selectedEntry}`}
             >
-              <div className="sticky top-0 z-10 ml-auto">
+              <div className="ml-auto sm:sticky sm:top-0 sm:z-10">
                 <h2 className="sr-only" id={`sidebar-panel-${selectedEntry}`}>
                   {getPanelHeading(selectedEntry)}
                 </h2>
@@ -557,7 +557,7 @@ export default function Sidebar({
                   ) : undefined}
                 </CloseButton>
               </div>
-              <div className="min-h-0 pt-6 pr-1">
+              <div className="min-h-0 min-w-0 pt-6 pr-1">
                 {renderSelectedPanel()}
                 <div className="h-12"></div>
               </div>

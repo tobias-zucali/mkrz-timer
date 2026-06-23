@@ -15,17 +15,17 @@
   "loadTimer": "Load Timer",
   "loadTimerTitle": "Load a timer",
   "recentTimers": "Recent timers",
-  "templatesHeading": "Templates",
-  "recentHeading": "Recent",
-  "recentDialogDescription": "Load a template or a timer previously used in this browser. Recent timers are stored only in this browser and may be removed when browser data is cleared.",
+  "recentTab": "Recent",
+  "templatesTab": "Templates",
+  "recentTabDescription": "Recent timers are stored only in this browser and may be removed when browser data is cleared.",
+  "templatesTabDescription": "Load a template to get started quickly.",
   "currentTimer": "Current",
   "updatedAt": "Updated {timestamp}",
-  "recentTimerSingleStep": "1 step",
-  "recentTimerStepCount": "{count} steps",
   "untitledTimer": "Untitled timer",
   "delete": "Delete timer",
   "deleteRecentTimer": "Delete recent timer {title}",
   "closeLoadTimerDialog": "Close",
   "copySuffix": "Copy",
-  "untitledCopyTitle": "Copied timer"
+  "untitledCopyTitle": "Copied timer",
+  "urlLengthWarning": "This timer has a lot of steps. The share URL may not work in all browsers or link-sharing services."
 }

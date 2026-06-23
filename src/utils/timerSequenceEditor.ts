@@ -3,7 +3,6 @@ import {
   buildDefaultTimerSequenceRow,
   clampTimerSequenceIndex,
 } from "@/shared/timerSequence"
-import { MAX_TIMER_URL_ROWS } from "@/shared/urlState"
 
 type TimerSequenceRows = SyncParams["rows"]
 
@@ -41,10 +40,6 @@ export const replaceTimerSequenceRow = ({
 }) => rows.map((row, index) => (index === rowIndex ? nextRow : row))
 
 export const addTimerSequenceRow = (rows: TimerSequenceRows) => {
-  if (rows.length >= MAX_TIMER_URL_ROWS) {
-    return rows
-  }
-
   const sourceRow = rows[rows.length - 1] ?? buildDefaultTimerSequenceRow()
 
   return [
@@ -63,10 +58,6 @@ export const duplicateTimerSequenceRow = ({
   rowIndex: number
   rows: TimerSequenceRows
 }) => {
-  if (rows.length >= MAX_TIMER_URL_ROWS) {
-    return rows
-  }
-
   const sourceRow = rows[rowIndex]
   if (!sourceRow) {
     return rows

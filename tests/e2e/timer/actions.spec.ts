@@ -1,6 +1,8 @@
 import { devices } from "@playwright/test"
 
 import {
+  buildTimerPath,
+  encodeRowBase64Url,
   expectScreenshotWithoutDebugInfo,
   getDisplayedSeconds,
   openTimer,
@@ -91,8 +93,9 @@ function buildTimerUrl({
   theme?: "dark" | "bright"
   title?: string
 }) {
+  const row = `${seconds}!${primaryColor}!${encodeURIComponent(title)}!1!0`
   const themeParam = theme && theme !== "dark" ? `&theme=${theme}` : ""
-  return `/t?v=1&t=${seconds}!${primaryColor}!${encodeURIComponent(title)}!0&a=0${themeParam}`
+  return `/t?v=1&t=${encodeRowBase64Url(row)}&a=0${themeParam}`
 }
 
 async function getTitleMetrics(page: Page) {
@@ -991,8 +994,8 @@ test(
 
       await devicePage.goto(
         baseURL
-          ? new URL(buildTimerUrl({ title }), baseURL).toString()
-          : buildTimerUrl({ title }),
+          ? new URL(buildTimerPath({ seconds: 3, title }), baseURL).toString()
+          : buildTimerPath({ seconds: 3, title }),
       )
       await expect(
         devicePage.getByRole("button", { name: "START" }),
@@ -1024,8 +1027,8 @@ test(
 
       await devicePage.goto(
         baseURL
-          ? new URL(buildTimerUrl({ title }), baseURL).toString()
-          : buildTimerUrl({ title }),
+          ? new URL(buildTimerPath({ seconds: 3, title }), baseURL).toString()
+          : buildTimerPath({ seconds: 3, title }),
       )
       await expect(
         devicePage.getByRole("button", { name: "START" }),

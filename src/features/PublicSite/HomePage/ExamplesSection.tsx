@@ -2,7 +2,10 @@ import type { AppLocale } from "@/i18n/config"
 import { getMessagesForLocale } from "@/i18n/messages"
 
 import ExampleCard from "@/components/ExampleCard"
-import { buildExampleTimerUrl, EXAMPLES } from "@/components/ExampleCard/examplesData"
+import {
+  buildExampleTimerUrl,
+  EXAMPLES,
+} from "@/components/ExampleCard/examplesData"
 
 export default function ExamplesSection({ locale }: { locale: AppLocale }) {
   const { PublicSite } = getMessagesForLocale(locale)

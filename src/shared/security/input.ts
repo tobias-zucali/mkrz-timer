@@ -62,7 +62,7 @@ export const MAX_SERVER_MESSAGE_BYTES = 32 * 1024
 export const MAX_CLIENT_ID_LENGTH = 64
 export const MAX_SESSION_ID_LENGTH = 64
 export const MAX_REMOTE_ACCESS_TOKEN_LENGTH = 64
-export const MAX_TITLE_LENGTH = 64
+export const MAX_TITLE_LENGTH = 128
 export const MAX_TIMER_MINUTES = Math.floor(MAX_TIMER_DURATION_SECONDS / 60)
 export const MAX_TIMER_SECONDS = 59
 export const MAX_REVISION = 1_000_000_000
@@ -295,11 +295,9 @@ const normalizeSequenceRows = (
       title: DEFAULT_SYNC_PARAMS.title,
     })
 
-  const normalizedRows = sourceRows
-    .slice(0, 12)
-    .map((row, index) =>
-      normalizeSequenceRow(row, fallbackRows[index] ?? fallbackRow),
-    )
+  const normalizedRows = sourceRows.map((row, index) =>
+    normalizeSequenceRow(row, fallbackRows[index] ?? fallbackRow),
+  )
 
   return normalizedRows.length > 0 ? normalizedRows : fallbackRows
 }

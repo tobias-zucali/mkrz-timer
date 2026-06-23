@@ -40,7 +40,7 @@ export default function NumericStepperField({
   const labelId = `${id}-label`
 
   return (
-    <div className={classNames("w-full", className)}>
+    <div className={classNames("min-w-0 w-full", className)}>
       <label
         className="mb-2 block panel-label text-ink/74"
         htmlFor={id}

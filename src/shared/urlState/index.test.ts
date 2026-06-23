@@ -6,8 +6,7 @@ import {
   buildTimerUrlSearchParams,
   buildUrlTimerRow,
   buildUrlTimerRowFromSyncParams,
-  MAX_TIMER_URL_LENGTH,
-  MAX_TIMER_URL_ROWS,
+  encodeBase64Url,
   parseTimerUrlState,
   projectTimerUrlStateToSyncParams,
   serializeUrlTimerRow,
@@ -17,9 +16,25 @@ import {
 
 test("parseTimerUrlState reads valid multi-row timer params", () => {
   const parsed = parseTimerUrlState({
-    searchParams: new URLSearchParams(
-      "v=1&t=300!!Opening!2!1|900!dc2626!Q%26A%20Session!1!0&a=1&theme=bright",
-    ),
+    searchParams: buildTimerUrlSearchParams({
+      activeIndex: 1,
+      theme: "bright",
+      rows: [
+        buildUrlTimerRow({
+          totalSeconds: 300,
+          repeatCount: 2,
+          endBehavior: "advance",
+          title: "Opening",
+        }),
+        buildUrlTimerRow({
+          totalSeconds: 900,
+          primaryColor: "#dc2626",
+          repeatCount: 1,
+          endBehavior: "stop",
+          title: "Q&A Session",
+        }),
+      ],
+    }),
   })
 
   assert.deepEqual(parsed, {
@@ -48,23 +63,6 @@ test("parseTimerUrlState reads valid multi-row timer params", () => {
   })
 })
 
-test("parseTimerUrlState accepts legacy 4-part rows", () => {
-  const parsed = parseTimerUrlState({
-    searchParams: new URLSearchParams("v=1&t=300!2563eb!Opening!1"),
-  })
-
-  assert.equal(parsed.activeIndex, 0)
-  assert.deepEqual(parsed.rows, [
-    {
-      endBehavior: "stop",
-      primaryColor: "#2563eb",
-      repeatCount: 1,
-      title: "Opening",
-      totalSeconds: 300,
-    },
-  ])
-})
-
 test("parseTimerUrlState reads compact settings params", () => {
   const parsed = parseTimerUrlState({
     searchParams: new URLSearchParams("ts=1&s=b&theme=bright"),
@@ -81,27 +79,46 @@ test("parseTimerUrlState reads compact settings params", () => {
   })
 })
 
-test("parseTimerUrlState ignores malformed rows and rows beyond the max", () => {
-  const overflowRows = Array.from(
-    { length: MAX_TIMER_URL_ROWS + 2 },
-    (_, index) => `${index + 1}!2563eb!Row${index}!1!0`,
-  ).join("|")
-  const parsed = parseTimerUrlState({
-    searchParams: new URLSearchParams(
-      `v=1&t=300!badcolor!Oops!1!0|${overflowRows}|oops`,
-    ),
-  })
+test("parseTimerUrlState ignores malformed rows", () => {
+  const validRows = Array.from({ length: 15 }, (_, i) =>
+    buildUrlTimerRow({
+      totalSeconds: i + 1,
+      primaryColor: "#2563eb",
+      title: `Row${i}`,
+      endBehavior: "stop",
+    }),
+  )
+  // Prepend a row with a bad color and append a garbage row to verify both are filtered out.
+  // encodeBase64Url is used directly because buildTimerUrlSearchParams would strip invalid rows.
+  const rawRows = [
+    "300!badcolor!Oops!1!0",
+    ...validRows.map(serializeUrlTimerRow),
+    "oops",
+  ].join("|")
+  const searchParams = new URLSearchParams()
+  searchParams.set("v", "1")
+  searchParams.set("t", encodeBase64Url(rawRows))
+  const parsed = parseTimerUrlState({ searchParams })
 
-  assert.equal(parsed.rows.length, MAX_TIMER_URL_ROWS - 1)
+  assert.equal(parsed.rows.length, 15)
   assert.equal(parsed.rows[0]?.title, "Row0")
-  assert.equal(parsed.rows.at(-1)?.title, `Row${MAX_TIMER_URL_ROWS - 2}`)
+  assert.equal(parsed.rows.at(-1)?.title, "Row14")
 })
 
 test("parseTimerUrlState fails closed when timer state is disabled", () => {
   assert.deepEqual(
     parseTimerUrlState({
       allowTimerState: false,
-      searchParams: new URLSearchParams("v=1&t=300!!Opening!1!0&theme=bright"),
+      searchParams: buildTimerUrlSearchParams({
+        theme: "bright",
+        rows: [
+          buildUrlTimerRow({
+            totalSeconds: 300,
+            endBehavior: "stop",
+            title: "Opening",
+          }),
+        ],
+      }),
     }),
     {
       activeIndex: 0,
@@ -193,7 +210,7 @@ test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t
 
   assert.equal(
     query,
-    "v=1&t=75%21%21Line%25201%2520Line%25202%212%211&a=0&theme=bright&settings=1",
+    "v=1&t=NzUhIUxpbmUlMjAxJTIwTGluZSUyMDIhMiEx&a=0&theme=bright&settings=1",
   )
 })
 
@@ -211,7 +228,7 @@ test("buildTimerUrlSearchParams omits default settings and serializes selected o
     tts: DEFAULT_SYNC_PARAMS.tts,
   }).toString()
 
-  assert.equal(defaultsQuery, "v=1&t=300%21%21%211%210&a=0")
+  assert.equal(defaultsQuery, "v=1&t=MzAwISEhMSEw&a=0")
 
   const selectedQuery = buildTimerUrlSearchParams({
     activeIndex: 0,
@@ -225,27 +242,7 @@ test("buildTimerUrlSearchParams omits default settings and serializes selected o
     tts: true,
   }).toString()
 
-  assert.equal(selectedQuery, "v=1&t=300%21%21%211%210&a=0&s=b&ts=1")
-})
-
-test("buildTimerUrlSearchParams keeps generated URLs below the maximum length", () => {
-  const longRows = Array.from({ length: MAX_TIMER_URL_ROWS }, (_, index) =>
-    buildUrlTimerRow({
-      endBehavior: "advance",
-      primaryColor: "",
-      repeatCount: 99,
-      title: `${index}`.repeat(64),
-      totalSeconds: 999,
-    }),
-  )
-
-  const query = buildTimerUrlSearchParams({
-    activeIndex: 0,
-    theme: "dark",
-    rows: longRows,
-  }).toString()
-
-  assert.ok(query.length < MAX_TIMER_URL_LENGTH)
+  assert.equal(selectedQuery, "v=1&t=MzAwISEhMSEw&a=0&s=b&ts=1")
 })
 
 test("buildUrlTimerRowFromSyncParams and syncParamsMatchParsedTimerUrlState bridge runtime params", () => {
