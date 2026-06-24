@@ -5,12 +5,12 @@ import type { CSSProperties } from "react"
 import { useTranslations } from "next-intl"
 
 import NumericStepperField from "@/components/NumericStepperField"
+import SelectField from "@/components/SelectField"
 import SegmentedControl from "@/components/SegmentedControl"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
 import ColorSwatchField from "@/utils/ColorSwatchField"
-import { ChevronRightIcon } from "@/utils/icons"
 import { parseIntSafe, normalizeTimeParts } from "@/utils/timeInputHelpers"
 
 type SequenceRow = SyncParams["rows"][number]
@@ -267,67 +267,39 @@ export default function TimerSequenceInspector({
             />
           </div>
           <div className="min-w-0">
-            <label
-              className="mb-2 block panel-label text-ink/74"
-              htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}
+            <SelectField
+              focusOutlineClassName="focus-within:outline-(--step-color)"
+              id={`sidebar-sequence-end-behavior-${rowIndex}`}
+              label={t("then")}
+              onChange={(event) =>
+                onRowChange({
+                  ...row,
+                  endBehavior: event.target.value as SequenceRow["endBehavior"],
+                })
+              }
+              value={row.endBehavior}
             >
-              {t("then")}
-            </label>
-            <div
-              className="
-                relative flex min-h-11 items-center rounded-field border border-hairline
-                bg-input-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
-                outline-1 -outline-offset-1 outline-transparent
-                focus-within:outline-2 focus-within:-outline-offset-2
-                focus-within:outline-(--step-color)
-              "
-            >
-              <select
-                className="
-                  block size-full appearance-none bg-transparent pr-10 pl-3
-                  font-body text-base font-semibold text-ink outline-none sm:text-sm
-                "
-                id={`sidebar-sequence-end-behavior-${rowIndex}`}
-                onChange={(event) =>
-                  onRowChange({
-                    ...row,
-                    endBehavior: event.target
-                      .value as SequenceRow["endBehavior"],
-                  })
-                }
-                value={row.endBehavior}
+              <option
+                style={{
+                  backgroundColor: "var(--color-input-bg)",
+                  color: "var(--color-ink)",
+                  fontWeight: 500,
+                }}
+                value="stop"
               >
-                <option
-                  style={{
-                    backgroundColor: "var(--color-input-bg)",
-                    color: "var(--color-ink)",
-                    fontWeight: 500,
-                  }}
-                  value="stop"
-                >
-                  {t("thenStop")}
-                </option>
-                <option
-                  style={{
-                    backgroundColor: "var(--color-input-bg)",
-                    color: "var(--color-ink)",
-                    fontWeight: 500,
-                  }}
-                  value="advance"
-                >
-                  {endBehaviorLabel}
-                </option>
-              </select>
-              <span
-                aria-hidden="true"
-                className="
-                  pointer-events-none absolute inset-y-0 right-3 flex items-center
-                  text-ink/54
-                "
+                {t("thenStop")}
+              </option>
+              <option
+                style={{
+                  backgroundColor: "var(--color-input-bg)",
+                  color: "var(--color-ink)",
+                  fontWeight: 500,
+                }}
+                value="advance"
               >
-                <ChevronRightIcon className="size-4 rotate-90" />
-              </span>
-            </div>
+                {endBehaviorLabel}
+              </option>
+            </SelectField>
           </div>
         </div>
       )}

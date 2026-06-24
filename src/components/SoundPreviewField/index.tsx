@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react"
 
+import SelectField from "@/components/SelectField"
 import ActionButton from "@/utils/ActionButton"
 import { PlayIcon } from "@/utils/icons"
 import {
@@ -41,28 +42,24 @@ export default function SoundPreviewField({
         {label}
       </label>
       <div className="flex items-center gap-2">
-        <select
-          className="
-            block h-10 min-w-0 flex-1 rounded-md border border-ink/10
-            bg-screen px-3 text-sm text-ink outline-1
-            -outline-offset-1 outline-ink/10 focus:outline-2
-            focus:-outline-offset-2 focus:outline-primary
-          "
-          id={fieldId}
-          onChange={(event) =>
-            onChange(event.target.value as TimerFinishedSoundId)
-          }
-          value={value}
-        >
-          {TIMER_FINISHED_SOUND_OPTIONS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="min-w-0 flex-1">
+          <SelectField
+            id={fieldId}
+            onChange={(event) =>
+              onChange(event.target.value as TimerFinishedSoundId)
+            }
+            value={value}
+          >
+            {TIMER_FINISHED_SOUND_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </SelectField>
+        </div>
         <ActionButton
           aria-label={previewLabel}
-          className="h-10 shrink-0 px-3"
+          className="h-11 shrink-0 px-3"
           disabled={!canPreviewSound}
           onClick={() => {
             if (!selectedSound.src) {

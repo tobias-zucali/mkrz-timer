@@ -3,6 +3,7 @@
 import { useId } from "react"
 import { useTranslations } from "next-intl"
 
+import CheckboxField from "@/components/CheckboxField"
 import HelpText from "@/components/HelpText"
 import SegmentedControl from "@/components/SegmentedControl"
 import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
@@ -72,25 +73,14 @@ export default function SettingsPanel({
             previewLabel={t("previewSound")}
             value={params.snd}
           />
-          <label
-            className="
-              flex cursor-pointer items-start gap-3
-            "
-            htmlFor={ttsId}
-          >
-            <input
-              checked={params.tts}
-              className="mt-1 size-4 accent-primary"
-              id={ttsId}
-              onChange={(event) =>
-                handleChange("tts", event.target.checked ? "1" : "0")
-              }
-              type="checkbox"
-            />
-            <span className="block text-sm font-medium text-ink">
-              {t("speakAnnouncements")}
-            </span>
-          </label>
+          <CheckboxField
+            checked={params.tts}
+            id={ttsId}
+            label={t("speakAnnouncements")}
+            onChange={(event) =>
+              handleChange("tts", event.target.checked ? "1" : "0")
+            }
+          />
         </div>
       </section>
       <section className="space-y-4">

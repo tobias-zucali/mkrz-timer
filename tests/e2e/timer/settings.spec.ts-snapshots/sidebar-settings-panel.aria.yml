@@ -1,6 +1,6 @@
 - heading "Settings" [level=2]
 - button "Close sidebar"
-- heading "Language" [level=3]
+- text: Language
 - combobox "Language":
   - option "English" [selected]
   - option "Deutsch"
