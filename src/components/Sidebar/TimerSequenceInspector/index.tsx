@@ -5,26 +5,39 @@ import type { CSSProperties } from "react"
 import { useTranslations } from "next-intl"
 
 import NumericStepperField from "@/components/NumericStepperField"
+import SegmentedControl from "@/components/SegmentedControl"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
 import { buildDurationPartsFromTotalSeconds } from "@/shared/timerSequence"
 import ColorSwatchField from "@/utils/ColorSwatchField"
 import { ChevronRightIcon } from "@/utils/icons"
-import { parseIntSafe } from "@/utils/timeInputHelpers"
-import { normalizeTimeParts } from "@/utils/timeInputHelpers"
+import { parseIntSafe, normalizeTimeParts } from "@/utils/timeInputHelpers"
+
+type SequenceRow = SyncParams["rows"][number]
+type RepeatMode = "once" | "times" | "loop"
 
 const selectedFieldClassName =
   "text-center focus:border-(--step-color) focus:outline-(--step-color)"
 
-const clampRepeatCount = (value: number) => Math.min(Math.max(value, 1), 9)
+const clampRepeatCount = (value: number) => Math.min(Math.max(value, 1), 99)
+
+const deriveRepeatMode = (row: SequenceRow): RepeatMode => {
+  if (row.endBehavior === "advance") return "loop"
+  if (row.repeatCount > 1) return "times"
+  return "once"
+}
 
 export default function TimerSequenceInspector({
+  isSingleStep = false,
+  isLastStep = false,
   onRowChange,
   row,
   rowIndex,
 }: {
-  onRowChange: (nextRow: SyncParams["rows"][number]) => void
-  row: SyncParams["rows"][number]
+  isSingleStep?: boolean
+  isLastStep?: boolean
+  onRowChange: (nextRow: SequenceRow) => void
+  row: SequenceRow
   rowIndex: number
 }) {
   const t = useTranslations("Sidebar.timerSequenceInspector")
@@ -32,10 +45,6 @@ export default function TimerSequenceInspector({
   const [minutesValue, setMinutesValue] = useState(duration.m)
   const [secondsValue, setSecondsValue] = useState(duration.s)
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null)
-  const endBehaviorOptions = [
-    { label: t("endBehaviorStop"), value: "stop" },
-    { label: t("endBehaviorContinue"), value: "advance" },
-  ] as const
 
   useEffect(() => {
     setMinutesValue(duration.m)
@@ -80,10 +89,7 @@ export default function TimerSequenceInspector({
         ? String(parseIntSafe(secondsValue) + direction)
         : secondsValue
 
-    commitDurationChange({
-      minutes: nextMinutes,
-      seconds: nextSeconds,
-    })
+    commitDurationChange({ minutes: nextMinutes, seconds: nextSeconds })
   }
 
   const updateRepeatCount = (nextValue: string | number) => {
@@ -93,14 +99,37 @@ export default function TimerSequenceInspector({
     })
   }
 
+  const repeatMode = deriveRepeatMode(row)
+
+  const handleRepeatModeChange = (mode: RepeatMode) => {
+    if (mode === "once") {
+      onRowChange({ ...row, repeatCount: 1, endBehavior: "stop" })
+    } else if (mode === "times") {
+      onRowChange({
+        ...row,
+        repeatCount: Math.max(row.repeatCount, 2),
+        endBehavior: "stop",
+      })
+    } else {
+      onRowChange({ ...row, endBehavior: "advance" })
+    }
+  }
+
+  const repeatModes: RepeatMode[] = ["once", "times", "loop"]
+  const repeatModeLabels: Record<RepeatMode, string> = {
+    once: t("repeatOnce"),
+    times: t("repeatNTimes"),
+    loop: t("repeatLoop"),
+  }
+
+  const endBehaviorLabel = isLastStep
+    ? t("thenLoopSequence")
+    : t("thenContinue")
+
   return (
     <div
       className="mt-4 space-y-4 pt-1"
-      style={
-        {
-          "--step-color": row.primaryColor,
-        } as CSSProperties
-      }
+      style={{ "--step-color": row.primaryColor } as CSSProperties}
     >
       <div className="w-full">
         <label
@@ -124,7 +153,6 @@ export default function TimerSequenceInspector({
           }
           onKeyDown={(event) => {
             event.stopPropagation()
-
             if (event.key === "Enter") {
               event.preventDefault()
             }
@@ -144,9 +172,7 @@ export default function TimerSequenceInspector({
             onRowChange({
               ...row,
               title: normalizeTitle(
-                `${normalizedTitle.slice(0, selectionStart)}${pastedText}${normalizedTitle.slice(
-                  selectionEnd,
-                )}`,
+                `${normalizedTitle.slice(0, selectionStart)}${pastedText}${normalizedTitle.slice(selectionEnd)}`,
               ),
             })
           }}
@@ -192,89 +218,126 @@ export default function TimerSequenceInspector({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="min-w-0">
-          <NumericStepperField
-            id={`sidebar-sequence-repeat-count-${rowIndex}`}
-            inputClassName={selectedFieldClassName}
-            label={t("repetitions")}
-            max={9999999999}
-            min={1}
-            onChange={(event) => updateRepeatCount(event.target.value)}
-            onStep={(direction) =>
-              updateRepeatCount(row.repeatCount + direction)
-            }
-            step={1}
-            value={String(row.repeatCount)}
+      {isSingleStep ? (
+        <div>
+          <p className="mb-2 panel-label text-ink/74">{t("repeat")}</p>
+          <SegmentedControl
+            activeClassName="bg-(--step-color) text-white"
+            label={t("repeat")}
+            onChange={handleRepeatModeChange}
+            options={repeatModes.map((mode) => ({
+              label: repeatModeLabels[mode],
+              value: mode,
+            }))}
+            value={repeatMode}
           />
+          {repeatMode === "times" ? (
+            <div className="mt-3">
+              <NumericStepperField
+                id={`sidebar-sequence-repeat-count-${rowIndex}`}
+                inputClassName={selectedFieldClassName}
+                label={t("repeatCount")}
+                max={99}
+                min={2}
+                onChange={(event) => updateRepeatCount(event.target.value)}
+                onStep={(direction) =>
+                  updateRepeatCount(row.repeatCount + direction)
+                }
+                step={1}
+                value={String(row.repeatCount)}
+              />
+            </div>
+          ) : null}
         </div>
-        <div className="min-w-0">
-          <label
-            className="mb-2 block panel-label text-ink/74"
-            htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}
-          >
-            {t("endBehavior")}
-          </label>
-          <div
-            className="
-              relative flex min-h-11 items-center rounded-field border border-hairline
-              bg-input-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
-              outline-1 -outline-offset-1 outline-transparent
-              focus-within:outline-2 focus-within:-outline-offset-2
-              focus-within:outline-(--step-color)
-            "
-          >
-            <select
-              className="
-                block size-full appearance-none bg-transparent pr-10 pl-3
-                font-body text-base font-semibold text-ink outline-none sm:text-sm
-              "
-              id={`sidebar-sequence-end-behavior-${rowIndex}`}
-              onChange={(event) =>
-                onRowChange({
-                  ...row,
-                  endBehavior: event.target
-                    .value as SyncParams["rows"][number]["endBehavior"],
-                })
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="min-w-0">
+            <NumericStepperField
+              id={`sidebar-sequence-repeat-count-${rowIndex}`}
+              inputClassName={selectedFieldClassName}
+              label={t("repeatCount")}
+              max={99}
+              min={1}
+              onChange={(event) => updateRepeatCount(event.target.value)}
+              onStep={(direction) =>
+                updateRepeatCount(row.repeatCount + direction)
               }
-              value={row.endBehavior}
+              step={1}
+              value={String(row.repeatCount)}
+            />
+          </div>
+          <div className="min-w-0">
+            <label
+              className="mb-2 block panel-label text-ink/74"
+              htmlFor={`sidebar-sequence-end-behavior-${rowIndex}`}
             >
-              {endBehaviorOptions.map((option) => (
+              {t("then")}
+            </label>
+            <div
+              className="
+                relative flex min-h-11 items-center rounded-field border border-hairline
+                bg-input-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]
+                outline-1 -outline-offset-1 outline-transparent
+                focus-within:outline-2 focus-within:-outline-offset-2
+                focus-within:outline-(--step-color)
+              "
+            >
+              <select
+                className="
+                  block size-full appearance-none bg-transparent pr-10 pl-3
+                  font-body text-base font-semibold text-ink outline-none sm:text-sm
+                "
+                id={`sidebar-sequence-end-behavior-${rowIndex}`}
+                onChange={(event) =>
+                  onRowChange({
+                    ...row,
+                    endBehavior: event.target
+                      .value as SequenceRow["endBehavior"],
+                  })
+                }
+                value={row.endBehavior}
+              >
                 <option
-                  key={option.value}
                   style={{
                     backgroundColor: "var(--color-input-bg)",
                     color: "var(--color-ink)",
                     fontWeight: 500,
                   }}
-                  value={option.value}
+                  value="stop"
                 >
-                  {option.label}
+                  {t("thenStop")}
                 </option>
-              ))}
-            </select>
-            <span
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute inset-y-0 right-3 flex items-center
-                text-ink/54
-              "
-            >
-              <ChevronRightIcon className="size-4 rotate-90" />
-            </span>
+                <option
+                  style={{
+                    backgroundColor: "var(--color-input-bg)",
+                    color: "var(--color-ink)",
+                    fontWeight: 500,
+                  }}
+                  value="advance"
+                >
+                  {endBehaviorLabel}
+                </option>
+              </select>
+              <span
+                aria-hidden="true"
+                className="
+                  pointer-events-none absolute inset-y-0 right-3 flex items-center
+                  text-ink/54
+                "
+              >
+                <ChevronRightIcon className="size-4 rotate-90" />
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div>
         <ColorSwatchField
           id={`sidebar-sequence-primary-${rowIndex}`}
           label={t("color")}
           onChange={(event) =>
-            onRowChange({
-              ...row,
-              primaryColor: event.target.value,
-            })
+            onRowChange({ ...row, primaryColor: event.target.value })
           }
           value={row.primaryColor}
         />

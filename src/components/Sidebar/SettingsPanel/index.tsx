@@ -4,6 +4,7 @@ import { useId } from "react"
 import { useTranslations } from "next-intl"
 
 import HelpText from "@/components/HelpText"
+import SegmentedControl from "@/components/SegmentedControl"
 import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
 import SoundPreviewField from "@/components/SoundPreviewField"
 import type { AppTheme } from "@/shared/liveSession/types"
@@ -42,38 +43,15 @@ export default function SettingsPanel({
             {t("appearanceDescription")}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => handleChange("theme", "dark")}
-            className={`
-              flex items-center justify-center gap-2 rounded-field border px-4 py-2.5
-              text-sm font-medium transition
-              ${
-                params.theme === "dark"
-                  ? "border-primary bg-primary text-white"
-                  : "border-hairline text-ink hover:border-primary/40"
-              }
-            `}
-          >
-            {t("themeDark")}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleChange("theme", "bright")}
-            className={`
-              flex items-center justify-center gap-2 rounded-field border px-4 py-2.5
-              text-sm font-medium transition
-              ${
-                params.theme === "bright"
-                  ? "border-primary bg-primary text-white"
-                  : "border-hairline text-ink hover:border-primary/40"
-              }
-            `}
-          >
-            {t("themeBright")}
-          </button>
-        </div>
+        <SegmentedControl
+          label={t("appearanceHeading")}
+          onChange={(theme) => handleChange("theme", theme)}
+          options={[
+            { label: t("themeDark"), value: "dark" },
+            { label: t("themeBright"), value: "bright" },
+          ]}
+          value={params.theme}
+        />
       </section>
       <section className="space-y-4">
         <div>

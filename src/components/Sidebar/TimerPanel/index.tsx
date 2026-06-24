@@ -7,21 +7,12 @@ import IconButton from "@/components/IconButton"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
 import { MAX_TITLE_LENGTH, normalizeTitle } from "@/shared/security/input"
-import {
-  buildDurationPartsFromTotalSeconds,
-  getEffectiveTimerSequenceRows,
-} from "@/shared/timerSequence"
+import { getEffectiveTimerSequenceRows } from "@/shared/timerSequence"
 import {
   buildTimerUrlSearchParams,
   URL_LENGTH_WARN_CHARS,
 } from "@/shared/urlState"
-import {
-  ArrowDownIcon,
-  ArrowDownTrayIcon,
-  ArrowUpIcon,
-  DocumentDuplicateIcon,
-  TrashIcon,
-} from "@/utils/icons"
+import { ArrowDownTrayIcon } from "@/utils/icons"
 import {
   addTimerSequenceRow,
   buildTimerSequenceChange,
@@ -31,41 +22,9 @@ import {
   replaceTimerSequenceRow,
 } from "@/utils/timerSequenceEditor"
 
-const stateBadgeClassName =
-  "rounded-full px-2.5 py-1 font-display text-[0.68rem] font-semibold tracking-[0.05em]"
+import SequenceStepCard from "./SequenceStepCard"
 
 type SequenceRow = SyncParams["rows"][number]
-
-const buildSummaryText = (
-  row: SequenceRow,
-  t: ReturnType<typeof useTranslations>,
-) => {
-  const duration = buildDurationPartsFromTotalSeconds(row.totalSeconds)
-  const parts = [`${duration.m}:${duration.s}`]
-
-  if (row.repeatCount > 1) {
-    parts.push(t("repeatSummary", { count: row.repeatCount }))
-  }
-
-  if (row.endBehavior === "advance") {
-    parts.push(t("autoAdvance"))
-  }
-
-  return parts.join(" • ")
-}
-
-const getCardAccentStyle = ({
-  isSelected,
-  primaryColor,
-}: {
-  isSelected: boolean
-  primaryColor: string
-}) => ({
-  borderColor: `${primaryColor}${isSelected ? "cc" : "36"}`,
-  boxShadow: `inset 0 0 0 1px ${
-    isSelected ? `${primaryColor}3d` : "transparent"
-  }`,
-})
 
 export type TimerPanelProps = {
   activeIndex: number
@@ -92,6 +51,8 @@ export default function TimerPanel({
   const pageTitleInputId = useId()
   const t = useTranslations("Sidebar.timer")
   const [selectedIndex, setSelectedIndex] = useState(activeIndex)
+  const [isMultiStep, setIsMultiStep] = useState(params.rows.length > 1)
+
   useEffect(() => {
     if (params.rows.length === 0) {
       setSelectedIndex(0)
@@ -102,6 +63,14 @@ export default function TimerPanel({
       setSelectedIndex(params.rows.length - 1)
     }
   }, [params.rows.length, selectedIndex])
+
+  useEffect(() => {
+    if (params.rows.length <= 1) {
+      setIsMultiStep(false)
+    } else {
+      setIsMultiStep(true)
+    }
+  }, [params.rows.length])
 
   const effectiveRows = getEffectiveTimerSequenceRows(params.rows)
 
@@ -136,6 +105,7 @@ export default function TimerPanel({
   }
 
   const handleAddRow = () => {
+    setIsMultiStep(true)
     const nextRows = addTimerSequenceRow(params.rows)
     const nextIndex = Math.max(nextRows.length - 1, 0)
     setSelectedIndex(nextIndex)
@@ -241,180 +211,20 @@ export default function TimerPanel({
           </IconButton>
         </div>
       </section>
-      <section className="space-y-4">
-        <div>
-          <h3 className="font-display text-base font-semibold text-ink">
-            {t("heading")}
-          </h3>
-        </div>
-
-        <div className="space-y-3">
-          {effectiveRows.map((displayRow, index) => {
-            const sourceRow = params.rows[index] ?? displayRow
-            const isActive = index === activeIndex
-            const isSelected = index === selectedIndex
-            const canMoveUp = index > 0
-            const canMoveDown = index < params.rows.length - 1
-            const canDeleteRow = params.rows.length > 1
-
-            return (
-              <section
-                className={`rounded-card border bg-card p-4 shadow-[0_18px_44px_rgba(0,0,0,0.12)] transition ${
-                  isSelected ? "" : "cursor-pointer"
-                }`}
-                key={index}
-                onClick={() => {
-                  if (!isSelected) {
-                    selectRow(index)
-                  }
-                }}
-                style={getCardAccentStyle({
-                  isSelected,
-                  primaryColor: displayRow.primaryColor,
-                })}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="panel-label text-xs"
-                        style={{ color: displayRow.primaryColor }}
-                      >
-                        {t("step", { step: index + 1 })}
-                      </span>
-                      {isActive ? (
-                        <span
-                          className={`${stateBadgeClassName} text-white`}
-                          style={{ backgroundColor: displayRow.primaryColor }}
-                        >
-                          {t("active")}
-                        </span>
-                      ) : (
-                        <button
-                          className={`${stateBadgeClassName} cursor-pointer border bg-transparent`}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            activateRow(index)
-                          }}
-                          style={{
-                            borderColor: `${displayRow.primaryColor}cc`,
-                            color: displayRow.primaryColor,
-                          }}
-                          type="button"
-                        >
-                          {t("makeActive")}
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="mt-2 min-w-0 text-left">
-                      {!isSelected && sourceRow.title ? (
-                        <p className="truncate font-display text-base font-semibold text-ink">
-                          {sourceRow.title}
-                        </p>
-                      ) : null}
-                      {!isSelected ? (
-                        <p className="mt-1 text-xs text-ink/62">
-                          {buildSummaryText(displayRow, t)}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="-mt-1 -mr-1 flex shrink-0 flex-wrap justify-end gap-1 self-start">
-                    {canMoveUp ? (
-                      <IconButton
-                        aria-label={t("moveStepUp", {
-                          step: index + 1,
-                        })}
-                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleMoveRow(index, -1)
-                        }}
-                        shape="round"
-                        size="sm"
-                        title={t("moveStepUp", {
-                          step: index + 1,
-                        })}
-                      >
-                        <ArrowUpIcon className="size-4" />
-                      </IconButton>
-                    ) : null}
-                    {canMoveDown ? (
-                      <IconButton
-                        aria-label={t("moveStepDown", {
-                          step: index + 1,
-                        })}
-                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleMoveRow(index, 1)
-                        }}
-                        shape="round"
-                        size="sm"
-                        title={t("moveStepDown", {
-                          step: index + 1,
-                        })}
-                      >
-                        <ArrowDownIcon className="size-4" />
-                      </IconButton>
-                    ) : null}
-                    <IconButton
-                      aria-label={t("duplicateStep", {
-                        step: index + 1,
-                      })}
-                      className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        handleDuplicateRow(index)
-                      }}
-                      shape="round"
-                      size="sm"
-                      title={t("duplicateStep", {
-                        step: index + 1,
-                      })}
-                    >
-                      <DocumentDuplicateIcon className="size-4" />
-                    </IconButton>
-                    {canDeleteRow ? (
-                      <IconButton
-                        aria-label={t("deleteStep", {
-                          step: index + 1,
-                        })}
-                        className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleDeleteRow(index)
-                        }}
-                        shape="round"
-                        size="sm"
-                        title={t("deleteStep", {
-                          step: index + 1,
-                        })}
-                      >
-                        <TrashIcon className="size-4" />
-                      </IconButton>
-                    ) : null}
-                  </div>
-                </div>
-
-                {isSelected ? (
-                  <TimerSequenceInspector
-                    onRowChange={(nextRow) => updateRow(index, nextRow)}
-                    row={sourceRow}
-                    rowIndex={index}
-                  />
-                ) : null}
-              </section>
-            )
-          })}
-
+      {!isMultiStep ? (
+        <section className="space-y-4">
+          <TimerSequenceInspector
+            isSingleStep
+            onRowChange={(nextRow) => updateRow(0, nextRow)}
+            row={effectiveRows[0] ?? params.rows[0]}
+            rowIndex={0}
+          />
           <button
             className="
               inline-flex min-h-11 w-full cursor-pointer items-center justify-center
-              rounded-xl bg-primary px-4 py-2.5 font-display text-sm font-semibold
-              tracking-wider text-white transition hover:bg-primary-hover
+              rounded-xl border border-hairline bg-input-bg px-4 py-2.5 font-display
+              text-sm font-semibold tracking-wider text-ink/70 transition
+              hover:border-primary/45 hover:text-primary
               focus:outline-2 focus:-outline-offset-2 focus:outline-primary
             "
             onClick={handleAddRow}
@@ -422,8 +232,51 @@ export default function TimerPanel({
           >
             {t("addStep")}
           </button>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="space-y-4">
+          <div className="space-y-3">
+            {effectiveRows.map((displayRow, index) => {
+              const sourceRow = params.rows[index] ?? displayRow
+
+              return (
+                <SequenceStepCard
+                  canDeleteRow={params.rows.length > 1}
+                  canMoveDown={index < params.rows.length - 1}
+                  canMoveUp={index > 0}
+                  displayRow={displayRow}
+                  index={index}
+                  isActive={index === activeIndex}
+                  isLastStep={index === effectiveRows.length - 1}
+                  isSelected={index === selectedIndex}
+                  key={index}
+                  onActivate={() => activateRow(index)}
+                  onDelete={() => handleDeleteRow(index)}
+                  onDuplicate={() => handleDuplicateRow(index)}
+                  onMoveDown={() => handleMoveRow(index, 1)}
+                  onMoveUp={() => handleMoveRow(index, -1)}
+                  onRowChange={(nextRow) => updateRow(index, nextRow)}
+                  onSelect={() => selectRow(index)}
+                  sourceRow={sourceRow}
+                />
+              )
+            })}
+
+            <button
+              className="
+                inline-flex min-h-11 w-full cursor-pointer items-center justify-center
+                rounded-xl bg-primary px-4 py-2.5 font-display text-sm font-semibold
+                tracking-wider text-white transition hover:bg-primary-hover
+                focus:outline-2 focus:-outline-offset-2 focus:outline-primary
+              "
+              onClick={handleAddRow}
+              type="button"
+            >
+              {t("addStep")}
+            </button>
+          </div>
+        </section>
+      )}
       {showUrlWarning && (
         <p
           className="

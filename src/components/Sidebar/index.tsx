@@ -353,8 +353,8 @@ export default function Sidebar({
                   </h2>
                   <CloseButton
                     className="
-                      size-6 rounded-full border-ink/14 bg-white/3
-                      text-ink/60 hover:bg-white/7 hover:text-ink
+                      size-6 rounded-full border-ink/14 bg-card
+                      text-ink/60 shadow-sm hover:bg-input-bg hover:text-ink
                     "
                     onClick={closeSidebar}
                     ref={panelCloseButtonRef}
@@ -534,14 +534,14 @@ export default function Sidebar({
               "
               data-testid={`sidebar-panel-${selectedEntry}`}
             >
-              <div className="ml-auto sm:sticky sm:top-0 sm:z-10">
+              <div className="ml-auto rounded-pill sm:sticky sm:top-0 sm:z-10 sm:mr-2 sm:mb-2 sm:border-2 sm:border-screen/96 sm:bg-screen/96 sm:backdrop-blur-xl">
                 <h2 className="sr-only" id={`sidebar-panel-${selectedEntry}`}>
                   {getPanelHeading(selectedEntry)}
                 </h2>
                 <CloseButton
                   className="
-                    size-6 rounded-full border-ink/14 bg-white/3
-                    text-ink/60 hover:bg-white/7 hover:text-ink
+                    size-6 rounded-full border-ink/14
+                    text-ink/60 hover:text-ink
                   "
                   onClick={isNarrowViewport ? returnToMenu : closeSidebar}
                   ref={panelCloseButtonRef}

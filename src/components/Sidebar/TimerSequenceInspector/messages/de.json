@@ -2,9 +2,14 @@
   "title": "Titel",
   "minutes": "Minuten",
   "seconds": "Sekunden",
-  "repetitions": "Wiederholungen",
-  "endBehavior": "Nach diesem Schritt",
-  "color": "Farbe",
-  "endBehaviorStop": "Timer stoppen",
-  "endBehaviorContinue": "Nächsten Schritt starten"
+  "repeat": "Wiederholen",
+  "repeatOnce": "Einmal",
+  "repeatNTimes": "N-mal",
+  "repeatLoop": "Loop",
+  "repeatCount": "Wiederholen",
+  "then": "Danach",
+  "thenStop": "Stoppen",
+  "thenContinue": "Weiter",
+  "thenLoopSequence": "Ablauf wiederholen",
+  "color": "Farbe"
 }

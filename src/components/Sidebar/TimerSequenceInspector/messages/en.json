@@ -2,9 +2,14 @@
   "title": "Title",
   "minutes": "Minutes",
   "seconds": "Seconds",
-  "repetitions": "Repetitions",
-  "endBehavior": "After this step",
-  "color": "Color",
-  "endBehaviorStop": "Stop timer",
-  "endBehaviorContinue": "Start next step"
+  "repeat": "Repeat",
+  "repeatOnce": "Once",
+  "repeatNTimes": "N times",
+  "repeatLoop": "Loop",
+  "repeatCount": "Repeat",
+  "then": "Then",
+  "thenStop": "Stop",
+  "thenContinue": "Continue",
+  "thenLoopSequence": "Loop sequence",
+  "color": "Color"
 }

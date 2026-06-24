@@ -37,7 +37,7 @@ test("excludes the current client from viewer counts", () => {
       ],
       t,
     }),
-    "You + 2 view",
+    "You + 2 join",
   )
 })
 
@@ -56,7 +56,7 @@ test("groups remote participants by effective role", () => {
       ],
       t,
     }),
-    "You + 1 control + 5 view",
+    "You + 1 manage + 5 join",
   )
 })
 
@@ -70,6 +70,6 @@ test("omits empty control groups for control-capable clients", () => {
       ],
       t,
     }),
-    "You + 1 view",
+    "You + 1 join",
   )
 })
