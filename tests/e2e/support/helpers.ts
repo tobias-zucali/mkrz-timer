@@ -356,56 +356,50 @@ export async function updateTimerSettings(
     ttsEnabled,
   }: TimerSettings,
 ) {
-  if (title !== undefined) {
+  const needsTimerPanel =
+    title !== undefined ||
+    minutes !== undefined ||
+    seconds !== undefined ||
+    primaryColor !== undefined
+  const needsSettingsPanel =
+    theme !== undefined || ttsEnabled !== undefined || soundId !== undefined
+
+  if (needsTimerPanel) {
     await openSidebarPanel(page, "Timer")
-    await page
-      .getByTestId("sidebar-panel-timer")
-      .getByLabel("Title", { exact: true })
-      .fill(title)
+  }
+  const timerPanel = page.getByTestId("sidebar-panel-timer")
+
+  if (title !== undefined) {
+    await timerPanel.getByLabel("Title", { exact: true }).fill(title)
   }
   if (minutes !== undefined) {
-    await openSidebarPanel(page, "Timer")
-    await page
-      .getByTestId("sidebar-panel-timer")
-      .getByRole("spinbutton", { name: "Minutes" })
-      .fill(minutes)
+    await timerPanel.getByRole("spinbutton", { name: "Minutes" }).fill(minutes)
   }
   if (seconds !== undefined) {
-    await openSidebarPanel(page, "Timer")
-    await page
-      .getByTestId("sidebar-panel-timer")
-      .getByRole("spinbutton", { name: "Seconds" })
-      .fill(seconds)
+    await timerPanel.getByRole("spinbutton", { name: "Seconds" }).fill(seconds)
   }
-  if (theme !== undefined) {
+  if (primaryColor !== undefined) {
+    await timerPanel.getByLabel("Color").fill(primaryColor)
+  }
+
+  if (needsSettingsPanel) {
     await openSidebarPanel(page, "Settings")
-    await page
-      .getByTestId("sidebar-panel-settings")
+  }
+  const settingsPanel = page.getByTestId("sidebar-panel-settings")
+
+  if (theme !== undefined) {
+    await settingsPanel
       .getByRole("button", { name: theme === "dark" ? "Dark" : "Bright" })
       .click()
   }
   if (ttsEnabled !== undefined) {
-    await openSidebarPanel(page, "Settings")
-    const checkbox = page
-      .getByTestId("sidebar-panel-settings")
-      .getByLabel("Voice announcements")
+    const checkbox = settingsPanel.getByLabel("Voice announcements")
     if ((await checkbox.isChecked()) !== ttsEnabled) {
       await checkbox.click()
     }
   }
   if (soundId !== undefined) {
-    await openSidebarPanel(page, "Settings")
-    await page
-      .getByTestId("sidebar-panel-settings")
-      .getByLabel("Sound when finished")
-      .selectOption(soundId)
-  }
-  if (primaryColor !== undefined) {
-    await openSidebarPanel(page, "Timer")
-    await page
-      .getByTestId("sidebar-panel-timer")
-      .getByLabel("Color")
-      .fill(primaryColor)
+    await settingsPanel.getByLabel("Sound when finished").selectOption(soundId)
   }
 }
 
@@ -805,21 +799,23 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
       })
       .toBe(settings.theme)
   }
-  if (settings.ttsEnabled !== undefined) {
+  const needsSettingsPanel =
+    settings.ttsEnabled !== undefined || settings.soundId !== undefined
+
+  if (needsSettingsPanel) {
     await openSidebarPanel(page, "Settings")
+  }
+  const settingsPanel = page.getByTestId("sidebar-panel-settings")
+
+  if (settings.ttsEnabled !== undefined) {
     await expect(
-      page
-        .getByTestId("sidebar-panel-settings")
-        .getByLabel("Voice announcements"),
+      settingsPanel.getByLabel("Voice announcements"),
     ).toHaveJSProperty("checked", settings.ttsEnabled)
   }
   if (settings.soundId !== undefined) {
-    await openSidebarPanel(page, "Settings")
-    await expect(
-      page
-        .getByTestId("sidebar-panel-settings")
-        .getByLabel("Sound when finished"),
-    ).toHaveValue(settings.soundId)
+    await expect(settingsPanel.getByLabel("Sound when finished")).toHaveValue(
+      settings.soundId,
+    )
   }
   if (settings.primaryColor !== undefined) {
     await expect
