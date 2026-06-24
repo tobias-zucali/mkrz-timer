@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
+import { DEFAULT_SYNC_PARAMS } from "../../shared/security/input.ts"
 
 import {
   buildEmptyStoredTimerLibrary,

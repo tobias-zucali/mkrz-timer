@@ -1,4 +1,4 @@
-import { getResponsiveClamp } from "@/utils/responsiveClamp"
+import { getResponsiveClamp } from "../responsiveClamp/index.ts"
 
 export const LONG_TIMER_TITLE_LENGTH = 32
 export const TIMER_TITLE_TEXT_CLASS_NAME =

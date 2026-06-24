@@ -2,8 +2,8 @@ import {
   DEFAULT_SYNC_PARAMS,
   normalizeQueryParams,
   normalizeTitle,
-} from "@/shared/security/input"
-import type { SyncParams } from "@/shared/liveSession/types"
+} from "../../shared/security/input.ts"
+import type { SyncParams } from "../../shared/liveSession/types.ts"
 
 const TIMER_LIBRARY_STORAGE_KEY = "timer.localLibrary"
 const TIMER_LIBRARY_STORAGE_VERSION = 1

@@ -3,9 +3,6 @@
 - textbox "Timer name":
   - /placeholder: Untitled timer
 - button "Load a timer"
-- heading "Sequence" [level=3]
-- text: Step 1 Active
-- button "Duplicate step 1"
 - text: Title
 - textbox "Title"
 - text: Minutes
@@ -18,15 +15,11 @@
   - button "Decrease"
   - spinbutton "Seconds"
   - button "Increase"
-- text: Repetitions
-- group "Repetitions":
-  - button "Decrease"
-  - spinbutton "Repetitions"
-  - button "Increase"
-- text: After this step
-- combobox "After this step":
-  - option "Stop timer" [selected]
-  - option "Start next step"
+- paragraph: Repeat
+- group "Repeat":
+  - button "Once"
+  - button "N times"
+  - button "Loop"
 - text: "Color #D61F69"
 - 'button "Preset #d61f69"'
 - 'button "Preset #ef9e3b"'

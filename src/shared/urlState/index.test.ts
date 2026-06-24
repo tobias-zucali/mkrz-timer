@@ -188,6 +188,65 @@ test("projectTimerUrlStateToSyncParams applies rows and active index", () => {
   })
 })
 
+test("serializeUrlTimerRow encodes title separators so field and row boundaries stay unambiguous", () => {
+  for (const [char, encoded] of [
+    ["!", "%21"],
+    ["|", "%7C"],
+  ] as const) {
+    const title = `Before${char}After`
+    const row = buildUrlTimerRow({
+      endBehavior: "stop",
+      title,
+      totalSeconds: 60,
+    })
+    const serialized = serializeUrlTimerRow(row)
+
+    assert.ok(
+      serialized.includes(encoded),
+      `${char} in title must be encoded as ${encoded}`,
+    )
+
+    const searchParams = new URLSearchParams()
+    searchParams.set("v", "1")
+    searchParams.set("t", encodeBase64Url(serialized))
+    searchParams.set("a", "0")
+    const parsed = parseTimerUrlState({ searchParams })
+    assert.equal(
+      parsed.rows[0]?.title,
+      title,
+      `title with ${char} must round-trip correctly`,
+    )
+  }
+})
+
+test("serializeUrlTimerRow encodes ! in titles so the field separator stays unambiguous", () => {
+  const row = buildUrlTimerRow({
+    endBehavior: "stop",
+    primaryColor: "#ef9e3b",
+    repeatCount: 1,
+    title: "Make something representing it!",
+    totalSeconds: 120,
+  })
+
+  const serialized = serializeUrlTimerRow(row)
+  assert.ok(
+    !serialized
+      .split("!")
+      .slice(2, -2)
+      .some((part) => part === ""),
+    "title must not introduce an empty field when split on !",
+  )
+  assert.ok(serialized.includes("%21"), "! in title must be encoded as %21")
+
+  // Round-trip: the serialized form must parse back to the original title
+  const searchParams = new URLSearchParams()
+  searchParams.set("v", "1")
+  searchParams.set("t", encodeBase64Url(serialized))
+  searchParams.set("a", "0")
+  const parsed = parseTimerUrlState({ searchParams })
+  assert.equal(parsed.rows[0]?.title, "Make something representing it!")
+})
+
 test("serializeUrlTimerRow and buildTimerUrlSearchParams use the multi-row v=1&t format", () => {
   const row = buildUrlTimerRow({
     endBehavior: "advance",

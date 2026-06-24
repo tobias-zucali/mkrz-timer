@@ -6,8 +6,9 @@
   - option "Deutsch"
 - heading "Appearance" [level=3]
 - paragraph: Choose between dark and bright mode.
-- button "Dark"
-- button "Bright"
+- group "Appearance":
+  - button "Dark"
+  - button "Bright"
 - heading "Voice & Sound" [level=3]
 - paragraph: Configure spoken announcements and the sound that plays when the timer finishes.
 - text: Sound when finished

@@ -292,7 +292,7 @@ describe("announcement rules", () => {
       getTimerMilestoneAnnouncement({
         remainingSeconds: 30,
         t,
-        totalDuration: 59,
+        totalDuration: 44,
       }),
     ).toBeNull()
 
@@ -300,7 +300,7 @@ describe("announcement rules", () => {
       getTimerMilestoneAnnouncement({
         remainingSeconds: 10,
         t,
-        totalDuration: 29,
+        totalDuration: 14,
       }),
     ).toBeNull()
 

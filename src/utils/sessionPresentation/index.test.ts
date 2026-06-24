@@ -60,8 +60,8 @@ test("maps a pending host connection to liveConnecting", () => {
   assert.equal(presentation.state, "liveConnecting")
   assert.equal(presentation.statusPanel.stateLabel, "Connecting...")
   assert.deepEqual(presentation.sharePanel.bullets, [
-    "Preparing separate viewer and control links",
-    "Switching this timer to its control link",
+    "Preparing separate join and manage links",
+    "Switching this timer to its manage link",
   ])
 })
 
@@ -76,7 +76,7 @@ test("maps a connected control session to connected live labels", () => {
   })
 
   assert.equal(presentation.state, "liveConnected")
-  assert.equal(presentation.roleChipLabel, "CONTROL")
+  assert.equal(presentation.roleChipLabel, "MANAGE")
   assert.equal(presentation.sidebarStatus.label, "Synchronized")
 })
 
@@ -97,10 +97,10 @@ test("maps a connected readonly session without a controller to warning labels",
   assert.equal(presentation.state, "liveConnected")
   assert.equal(presentation.isWaitingForController, true)
   assert.equal(presentation.runtimeBadgeLabel, "Waiting")
-  assert.equal(presentation.sidebarStatus.label, "Waiting for controller")
+  assert.equal(presentation.sidebarStatus.label, "Waiting for manager")
   assert.equal(
     presentation.statusPanel.description,
-    "The last control client left this live session. You can keep waiting for a controller to return or switch this viewer to a private local timer.",
+    "The last manage client left this live session. You can keep waiting for a manager to return or switch this joined client to a private local timer.",
   )
 })
 
@@ -130,7 +130,7 @@ test("maps retry-needed recovery to error state labels", () => {
 
   assert.equal(presentation.state, "liveConflict")
   assert.equal(presentation.runtimeBadgeLabel, "Error")
-  assert.equal(presentation.statusPanel.accessLabel, "Viewer access")
+  assert.equal(presentation.statusPanel.accessLabel, "Join access")
 })
 
 test("maps active offline interruption to liveOffline", () => {

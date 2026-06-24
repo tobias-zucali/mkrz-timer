@@ -226,6 +226,7 @@ test("sessionSnapshotsMatch treats paused and finished timers as different state
       {
         ...DEFAULT_SYNC_PARAMS.rows[0],
         title: "Workshop",
+        totalSeconds: 60,
       },
     ],
     title: "Workshop",
@@ -688,7 +689,10 @@ test("applyTimerCommandToSnapshot ignores decrease-minute on a finished stop ste
     command: { type: "decrease-minute" },
     now: 5_000,
     snapshot: {
-      params: DEFAULT_SYNC_PARAMS,
+      params: {
+        ...DEFAULT_SYNC_PARAMS,
+        rows: [{ ...DEFAULT_SYNC_PARAMS.rows[0], totalSeconds: 60 }],
+      },
       state: {
         ...DEFAULT_TIMER_STATE,
         currentRepeat: 1,

@@ -23,7 +23,7 @@ test("returns the reserved min-height clamp for empty and populated titles", () 
   )
   assert.equal(
     getTimerTitleReservedHeight({ hasText: true }),
-    "clamp(2.6rem, min(7vw, 7vh), 4.1rem)",
+    "clamp(2.4rem, min(8vw, 8vh), 5rem)",
   )
 })
 

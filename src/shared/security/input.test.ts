@@ -54,11 +54,12 @@ test("normalizeQueryParams falls back safely for malformed values", () => {
     }),
     {
       ...DEFAULT_SYNC_PARAMS,
-      fg: "#abcdef",
+      m: "9999",
       rows: [
         {
           ...DEFAULT_SYNC_PARAMS.rows[0],
           title: "  Hello<script>  ",
+          totalSeconds: 9999 * 60,
         },
       ],
       pid: "",
@@ -77,12 +78,10 @@ test("normalizeRemoteAccessToken rejects malformed values", () => {
 test("normalizeSyncParamPatch only returns supported sanitized fields", () => {
   assert.deepEqual(
     normalizeSyncParamPatch({
-      bg: "ff00aa",
       title: '  <b onclick="boom()">Title</b>  ',
       unknown: "ignored",
     }),
     {
-      bg: "#ff00aa",
       title: '  <b onclick="boom()">Title</b>  ',
     },
   )
@@ -116,8 +115,6 @@ test("normalizeSyncParams uses caller fallback for duration fields", () => {
   assert.deepEqual(
     normalizeSyncParams(
       {
-        bg: "123456",
-        fg: "abcdef",
         m: "nope",
         pc: "fedcba",
         s: "-1",
@@ -130,8 +127,6 @@ test("normalizeSyncParams uses caller fallback for duration fields", () => {
     ),
     {
       ...DEFAULT_SYNC_PARAMS,
-      bg: "#123456",
-      fg: "#abcdef",
       m: "03",
       pc: "#fedcba",
       rows: [
@@ -171,8 +166,6 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
     normalizeSessionSnapshot({
       params: {
         ...DEFAULT_SYNC_PARAMS,
-        bg: "#123456",
-        fg: "#654321",
         m: "05",
         pc: "#abcdef",
         rows: [
@@ -203,8 +196,6 @@ test("normalizeSessionSnapshot sanitizes nested params and state", () => {
     {
       params: {
         ...DEFAULT_SYNC_PARAMS,
-        bg: "#123456",
-        fg: "#654321",
         m: "05",
         pc: "#abcdef",
         rows: [

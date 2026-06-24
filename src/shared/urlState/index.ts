@@ -313,7 +313,7 @@ export const serializeUrlTimerRow = (row: UrlTimerRow) => {
   return [
     normalizedRow.totalSeconds.toString(),
     normalizedRow.primaryColor.replace(/^#/, ""),
-    encodeURIComponent(normalizedRow.title),
+    encodeURIComponent(normalizedRow.title).replace(/!/g, "%21"),
     normalizedRow.repeatCount.toString(),
     serializeUrlEndBehavior(normalizedRow.endBehavior),
   ].join("!")

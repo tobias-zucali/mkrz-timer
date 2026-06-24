@@ -283,23 +283,24 @@ test("supports accessible stepper controls for timing and repetitions", async ({
 
   const timerPanel = page.getByTestId("sidebar-panel-timer")
   const minutesInput = timerPanel.getByRole("spinbutton", { name: "Minutes" })
-  const repetitionsInput = timerPanel.getByRole("spinbutton", {
-    name: "Repetitions",
-  })
   const minutesStepper = timerPanel.getByRole("group", { name: "Minutes" })
-  const repetitionsStepper = timerPanel.getByRole("group", {
-    name: "Repetitions",
-  })
 
   await minutesStepper.getByRole("button", { name: "Increase" }).click()
   await expect(minutesInput).toHaveValue("01")
 
+  // Switch to "N times" mode to reveal the repeat count stepper
+  await timerPanel.getByRole("button", { name: "N times" }).click()
+
+  const repetitionsInput = timerPanel.getByRole("spinbutton", {
+    name: "Repeat",
+  })
+
   await repetitionsInput.focus()
   await repetitionsInput.press("ArrowUp")
-  await expect(repetitionsInput).toHaveValue("2")
+  await expect(repetitionsInput).toHaveValue("3")
 
-  await repetitionsStepper.getByRole("button", { name: "Decrease" }).click()
-  await expect(repetitionsInput).toHaveValue("1")
+  await repetitionsInput.press("ArrowDown")
+  await expect(repetitionsInput).toHaveValue("2")
 })
 
 test("limits titles to 128 characters in settings", async ({ page }) => {
@@ -314,6 +315,34 @@ test("limits titles to 128 characters in settings", async ({ page }) => {
   await titleField.fill(longTitle)
 
   await expect(titleField).toHaveValue(longTitle.slice(0, 128))
+})
+
+test("loads a multi-step template and shows the step card UI", async ({
+  page,
+}) => {
+  await openTimer(page, 3)
+  await openSidebarPanel(page, "Timer")
+
+  const timerPanel = page.getByTestId("sidebar-panel-timer")
+
+  // Verify initial single-step mode — segmented control visible, no step labels
+  await expect(timerPanel.getByRole("button", { name: "Once" })).toBeVisible()
+  await expect(timerPanel.getByRole("button", { name: "Loop" })).toBeVisible()
+
+  // Load a multi-step template via the load button
+  await timerPanel.getByRole("button", { name: "Load a timer" }).click()
+  await page.getByRole("tab", { name: "Templates" }).click()
+  await page.getByRole("button", { name: /Box Breathing/ }).click()
+
+  // Multi-step mode should now be active — step cards visible, segmented control gone
+  await expect(timerPanel.getByText("STEP 1")).toBeVisible()
+  await expect(timerPanel.getByText("STEP 2")).toBeVisible()
+  await expect(
+    timerPanel.getByRole("button", { name: "Once" }),
+  ).not.toBeVisible()
+  await expect(
+    timerPanel.getByRole("button", { name: "Loop" }),
+  ).not.toBeVisible()
 })
 
 test(
