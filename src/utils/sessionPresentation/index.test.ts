@@ -1,10 +1,7 @@
 import assert from "node:assert/strict"
-import { test } from "node:test"
+import { test } from "vitest"
 
-import {
-  createAppTranslator,
-  type AppTranslationFn,
-} from "../../i18n/translator.ts"
+import { createAppTranslator, type AppTranslationFn } from "@/i18n/translator"
 
 import getSessionPresentation from "./index.ts"
 

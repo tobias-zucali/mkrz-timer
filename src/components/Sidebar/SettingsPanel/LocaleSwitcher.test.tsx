@@ -22,9 +22,11 @@ describe("LocaleSwitcher", () => {
   it("shows the active locale and rewrites the current path", () => {
     renderWithIntl(<LocaleSwitcher />)
 
-    expect(screen.getByTestId("language-switcher")).toHaveValue("en")
+    const localeField = screen.getByRole("combobox", { name: "Language" })
 
-    fireEvent.change(screen.getByTestId("language-switcher"), {
+    expect(localeField).toHaveValue("en")
+
+    fireEvent.change(localeField, {
       target: { value: "de" },
     })
 

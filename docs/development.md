@@ -38,16 +38,15 @@ Use the generic `pnpm test*` and `pnpm test:e2e:*` commands documented in [READM
 Local validation lanes:
 
 - `pnpm lint`: ESLint and TypeScript validation
-- `pnpm test:unit`: plain-Node `.test.ts` coverage for pure logic and server-safe code
-- `pnpm test:components`: Vitest/jsdom `.test.tsx` coverage for React component behavior
-- `pnpm test`: lint + unit + component + local Playwright `@smoke`
-- `pnpm test:ci`: lint + unit + component + local non-visual Playwright + remote non-visual Playwright
-- `pnpm test:full`: lint + unit + component + local full Playwright + remote full Playwright
+- `pnpm test:vitest`: all unit and component coverage in one Vitest run
+- `pnpm test`: lint + Vitest + local Playwright `@smoke`
+- `pnpm test:ci`: Vitest + local non-visual Playwright + remote non-visual Playwright
+- `pnpm test:full`: lint + Vitest + local full Playwright + remote full Playwright
 
 Authoring rules:
 
-- use `.test.ts` for pure logic tests that should run under `node:test`, even when the file sits near a component
-- use `.test.tsx` for React/jsdom tests that should run under Vitest
+- use `.test.ts` for tests that should run in Vitest's default `node` environment
+- use `.test.tsx` for tests that need Vitest's `jsdom` environment, even when the file does not render React
 - keep browser tests focused on visible product guarantees such as route behavior, control permissions, readonly behavior, synchronized timer state, recovery UX, and first-load rendering
 - add `toMatchAriaSnapshot()` coverage for new standalone screens, dialogs, or panels when they introduce meaningful accessibility-tree surface that should remain stable
 - prefer accessibility queries such as `getByRole`, `getByLabel`, and `getByText` when the element is user-perceivable

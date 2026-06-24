@@ -1,10 +1,10 @@
 import assert from "node:assert/strict"
-import test from "node:test"
+import { test } from "vitest"
 
 import {
   DEFAULT_SYNC_PARAMS,
   DEFAULT_TIMER_STATE,
-} from "../../shared/security/input.ts"
+} from "@/shared/security/input"
 import { InMemorySessionStore } from "./sessionStore.ts"
 
 const buildSnapshot = ({

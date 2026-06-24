@@ -1,12 +1,9 @@
 import assert from "node:assert/strict"
-import { test } from "node:test"
+import { test } from "vitest"
 
-import { DEFAULT_SYNC_PARAMS } from "../../shared/security/input.ts"
-import {
-  buildTimerUrlSearchParams,
-  buildUrlTimerRow,
-} from "../../shared/urlState/index.ts"
-import { buildDefaultTimerSequenceRow } from "../../shared/timerSequence.ts"
+import { DEFAULT_SYNC_PARAMS } from "@/shared/security/input"
+import { buildTimerUrlSearchParams, buildUrlTimerRow } from "@/shared/urlState"
+import { buildDefaultTimerSequenceRow } from "@/shared/timerSequence"
 
 import {
   buildPathWithParams,

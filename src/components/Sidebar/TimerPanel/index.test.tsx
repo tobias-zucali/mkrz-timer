@@ -139,7 +139,7 @@ describe("TimerPanel", () => {
       <TimerPanelHarness onOpenLoadTimerDialog={onOpenLoadTimerDialog} />,
     )
 
-    const btn = screen.getByRole("button", { name: "Load Timer" })
+    const btn = screen.getByRole("button", { name: "Load a timer" })
     expect(btn).toBeVisible()
     fireEvent.click(btn)
     expect(onOpenLoadTimerDialog).toHaveBeenCalledTimes(1)
@@ -153,9 +153,7 @@ describe("TimerPanel", () => {
 
     expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(1)
     expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0)
-    expect(screen.getByRole("spinbutton", { name: "Repetitions" })).toHaveValue(
-      1,
-    )
+    expect(screen.getByRole("spinbutton", { name: "Repeat" })).toHaveValue(1)
     expect(
       within(minutesStepper).getByRole("button", { name: "Increase" }),
     ).toBeVisible()
@@ -167,7 +165,7 @@ describe("TimerPanel", () => {
   it("keeps arrow-key spinbutton behavior for repetitions", () => {
     renderWithIntl(<TimerPanelHarness />)
 
-    const repeatInput = screen.getByRole("spinbutton", { name: "Repetitions" })
+    const repeatInput = screen.getByRole("spinbutton", { name: "Repeat" })
 
     fireEvent.change(repeatInput, { target: { value: "2" } })
 
@@ -192,7 +190,7 @@ describe("TimerPanel", () => {
     renderWithIntl(<TimerPanelHarness />)
 
     const repetitionsStepper = screen.getByRole("group", {
-      name: "Repetitions",
+      name: "Repeat",
     })
 
     expect(

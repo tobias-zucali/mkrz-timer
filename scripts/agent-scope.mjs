@@ -61,20 +61,15 @@ const runScopeRecommendation = (files) => {
 
   const resolvedScopes = files.map((filePath) => resolveScopeForFile(filePath))
 
-  const unitRelevant = files.some(
+  const vitestRelevant = files.some(
     (filePath) =>
       filePath.startsWith("src/shared/") ||
       filePath.startsWith("src/server/") ||
       filePath.startsWith("src/utils/") ||
-      /\.test\.ts$/.test(filePath),
-  )
-
-  const componentRelevant = files.some(
-    (filePath) =>
       filePath.startsWith("src/components/") ||
       filePath.startsWith("src/features/") ||
       filePath.startsWith("src/app/") ||
-      /\.test\.tsx$/.test(filePath),
+      /\.test\.(?:ts|tsx|mjs)$/.test(filePath),
   )
 
   const snapshotRelevant = files.some(
@@ -85,12 +80,8 @@ const runScopeRecommendation = (files) => {
 
   const commands = []
 
-  if (unitRelevant) {
-    commands.push("pnpm test:unit")
-  }
-
-  if (componentRelevant) {
-    commands.push("pnpm test:components")
+  if (vitestRelevant) {
+    commands.push("pnpm test:vitest")
   }
 
   for (const { scope } of resolvedScopes) {

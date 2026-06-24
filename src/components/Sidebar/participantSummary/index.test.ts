@@ -1,10 +1,7 @@
-import { test } from "node:test"
+import { test } from "vitest"
 import assert from "node:assert/strict"
 
-import {
-  createAppTranslator,
-  type AppTranslationFn,
-} from "../../../i18n/translator.ts"
+import { createAppTranslator, type AppTranslationFn } from "@/i18n/translator"
 
 import { getParticipantSummary } from "./index.ts"
 

@@ -4,9 +4,9 @@
     - heading "Timer" [level=1]
     - paragraph: Error
     - paragraph: Error
-    - paragraph: Live session link is invalid or expired. Ask for a fresh link an
+    - paragraph: Live session link is invalid or expired. Ask for a fresh link and try again.
   - button "Share join link"
-- button "Open session status. Live session, Error, JOIN access"
+- button "Open session status. Live session, Error, JOIN access": Error JOIN
 - alertdialog "Live session recovery needs your decision.":
   - paragraph: Live session recovery
   - heading "Live session recovery needs your decision." [level=2]

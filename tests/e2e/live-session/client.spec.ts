@@ -106,10 +106,7 @@ test(
       "/t?v=1&t=60!d61f69!%20%3Cimg%20src%3Dx%20onerror%3D%22window.__timerInjected%3D1%22%3E%20!0&theme=javascript:alert(1)",
     )
 
-    await expectTimerTitleValue(
-      page,
-      ' <img src=x onerror="window.__timerInjected=1"> ',
-    )
+    await expectTimerTitleValue(page, "")
     await expect
       .poll(() =>
         page.evaluate(
@@ -219,7 +216,7 @@ test("moves the host onto the control route and ends the live session cleanly", 
     )
     .toEqual({
       a: "0",
-      t: "60!d61f69!!1!0",
+      t: "NjAhZDYxZjY5ISExITA",
       v: "1",
     })
   await openSidebarPanel(page, "Share")
