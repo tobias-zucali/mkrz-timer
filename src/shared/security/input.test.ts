@@ -95,7 +95,7 @@ test("normalizeSyncParamPatch sanitizes tts and sound settings", () => {
     }),
     {
       snd: "b",
-      tts: true,
+      tts: "1",
     },
   )
 

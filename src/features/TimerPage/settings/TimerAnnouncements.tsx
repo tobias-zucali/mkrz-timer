@@ -20,6 +20,7 @@ type TimerAnnouncementsProps = {
   stepTitle: string
   totalDuration: number
   ttsEnabled: boolean
+  ttsCountdowns: boolean
 }
 
 export default function TimerAnnouncements({
@@ -33,6 +34,7 @@ export default function TimerAnnouncements({
   stepTitle,
   totalDuration,
   ttsEnabled,
+  ttsCountdowns,
 }: TimerAnnouncementsProps) {
   const tPage = useTranslations("TimerPage.page")
   const tTimer = useTranslations("Timer")
@@ -107,7 +109,11 @@ export default function TimerAnnouncements({
 
     if (eventAnnouncement) {
       announce(eventAnnouncement)
-    } else if (currentSnapshot.isStarted && !currentSnapshot.isPaused) {
+    } else if (
+      ttsCountdowns &&
+      currentSnapshot.isStarted &&
+      !currentSnapshot.isPaused
+    ) {
       const milestone = getTimerMilestoneAnnouncement({
         remainingSeconds: currentSnapshot.remainingSeconds,
         t: tTimer,
@@ -121,7 +127,7 @@ export default function TimerAnnouncements({
     }
 
     previousTimerSnapshotRef.current = currentSnapshot
-  }, [announce, currentSnapshot, tTimer])
+  }, [announce, currentSnapshot, tTimer, ttsCountdowns])
 
   useEffect(() => {
     const currentRemoteAnnouncement = sessionAccessibilityLabel

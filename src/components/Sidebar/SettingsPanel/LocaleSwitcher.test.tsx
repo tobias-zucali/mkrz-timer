@@ -1,37 +1,21 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { act, fireEvent, screen } from "@testing-library/react"
 
 import { renderWithIntl } from "@/test/renderWithIntl"
 
 import LocaleSwitcher from "./LocaleSwitcher"
 
-const replace = vi.fn()
-
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/en/view/viewer-token",
-  useRouter: () => ({
-    replace,
-  }),
-  useSearchParams: () => new URLSearchParams("title=Workshop&v=1"),
-}))
-
 describe("LocaleSwitcher", () => {
-  beforeEach(() => {
-    replace.mockReset()
-  })
-
-  it("shows the active locale and rewrites the current path", () => {
+  it("shows locale options and switches locale without navigation", () => {
     renderWithIntl(<LocaleSwitcher />)
 
-    const localeField = screen.getByRole("combobox", { name: "Language" })
+    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument()
+    const deButton = screen.getByRole("button", { name: "Deutsch" })
 
-    expect(localeField).toHaveValue("en")
-
-    fireEvent.change(localeField, {
-      target: { value: "de" },
+    act(() => {
+      fireEvent.click(deButton)
     })
 
-    expect(replace).toHaveBeenCalledWith(
-      "/de/view/viewer-token?title=Workshop&v=1",
-    )
+    expect(screen.getByRole("button", { name: "Deutsch" })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe("de")
   })
 })

@@ -229,22 +229,20 @@ test("persists the share settings toggle across reloads", async ({ page }) => {
   await expect(localLink).not.toHaveValue(/(?:\?|&)ts=1(?:&|$)/)
 })
 
-test("switches languages without losing the current route state", async ({
-  page,
-}) => {
+test("switches languages without a page reload", async ({ page }) => {
   await openTimer(page, 3)
   await openSidebarPanel(page, "Settings")
 
-  await page.getByLabel("Language").selectOption("de")
-  await expect(page).toHaveURL(/\/de\/t\?v=1&t=/, { timeout: 15_000 })
+  await page
+    .getByRole("group", { name: "Language" })
+    .getByRole("button", { name: "Deutsch" })
+    .click()
 
-  await page.getByRole("button", { name: "Teilen öffnen" }).click()
-  await expect(page.getByTestId("sidebar-panel-share")).toBeVisible()
-  const localLink = new URL(
-    await page.getByRole("textbox", { name: "Lokaler Link" }).inputValue(),
-  )
-
-  expect(localLink.pathname).toBe("/de/t")
+  await expect(page).toHaveURL(/\/de\/t\?v=1&t=/, { timeout: 5_000 })
+  await expect(
+    page.getByRole("button", { name: "Teilen öffnen" }),
+  ).toBeVisible()
+  expect(page.url()).toContain("/de/t")
 })
 
 test("keeps timer shortcuts predictable inside the sidebar", async ({

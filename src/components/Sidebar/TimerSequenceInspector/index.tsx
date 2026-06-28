@@ -5,6 +5,7 @@ import type { CSSProperties } from "react"
 import { useTranslations } from "next-intl"
 
 import NumericStepperField from "@/components/NumericStepperField"
+import PanelLabel from "@/components/PanelLabel"
 import SelectField from "@/components/SelectField"
 import SegmentedControl from "@/components/SegmentedControl"
 import type { SyncParams } from "@/shared/liveSession/types"
@@ -128,16 +129,13 @@ export default function TimerSequenceInspector({
 
   return (
     <div
-      className="mt-4 space-y-4 pt-1"
+      className="space-y-4"
       style={{ "--step-color": row.primaryColor } as CSSProperties}
     >
       <div className="w-full">
-        <label
-          className="mb-2 block panel-label text-ink/74"
-          htmlFor={`sidebar-sequence-title-${rowIndex}`}
-        >
+        <PanelLabel htmlFor={`sidebar-sequence-title-${rowIndex}`}>
           {t("title")}
-        </label>
+        </PanelLabel>
         <textarea
           className="
             block min-h-0 w-full resize-none overflow-hidden rounded-field border
@@ -220,9 +218,8 @@ export default function TimerSequenceInspector({
 
       {isSingleStep ? (
         <div>
-          <p className="mb-2 panel-label text-ink/74">{t("repeat")}</p>
           <SegmentedControl
-            activeClassName="bg-(--step-color) text-white"
+            activeClassName="bg-(--step-color) text-ink"
             label={t("repeat")}
             onChange={handleRepeatModeChange}
             options={repeatModes.map((mode) => ({

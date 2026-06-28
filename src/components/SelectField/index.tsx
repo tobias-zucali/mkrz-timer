@@ -3,6 +3,7 @@
 import classNames from "classnames"
 import type { ReactNode, SelectHTMLAttributes } from "react"
 
+import PanelLabel from "@/components/PanelLabel"
 import { ChevronRightIcon } from "@/utils/icons"
 
 type SelectFieldProps = Omit<
@@ -37,11 +38,7 @@ export default function SelectField({
 
   return (
     <div className="min-w-0">
-      {label ? (
-        <label className="mb-2 block panel-label text-ink/74" htmlFor={id}>
-          {label}
-        </label>
-      ) : null}
+      {label ? <PanelLabel htmlFor={id}>{label}</PanelLabel> : null}
       <div
         className={classNames(
           `

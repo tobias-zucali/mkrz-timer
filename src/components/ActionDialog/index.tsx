@@ -129,8 +129,8 @@ export default function ActionDialog({
                   action.tone === "primary"
                     ? `
                       inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary
-                      text-sm font-semibold text-white transition
-                      hover:bg-primary/85
+                      text-sm font-semibold text-ink transition
+                      hover:bg-primary-hover
                       focus:outline-2 focus:-outline-offset-2
                       focus:outline-primary
                       ${action.size === "small" ? "min-h-10 self-end px-5 py-2" : "min-h-11 px-4 py-2.5"}

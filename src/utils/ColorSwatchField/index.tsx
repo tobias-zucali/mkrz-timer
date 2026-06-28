@@ -3,6 +3,8 @@
 import type { ChangeEvent, ChangeEventHandler, KeyboardEvent } from "react"
 import { useMemo, useRef } from "react"
 
+import PanelLabel from "@/components/PanelLabel"
+
 const DEFAULT_SWATCHES = ["#d61f69", "#ef9e3b", "#2f7fd6", "#34b87a", "#8a55d6"]
 
 function stopPropagation(event: KeyboardEvent<HTMLElement>) {
@@ -41,9 +43,7 @@ export default function ColorSwatchField({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <label className="block panel-label text-ink/74" htmlFor={id}>
-          {label}
-        </label>
+        <PanelLabel htmlFor={id}>{label}</PanelLabel>
         <span className="font-mono text-xs tracking-[0.14em] text-ink/58 uppercase">
           {normalizedValue}
         </span>

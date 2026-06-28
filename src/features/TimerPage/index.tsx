@@ -30,6 +30,10 @@ import {
   DEFAULT_SYNC_PARAMS,
   normalizeSyncParams,
 } from "@/shared/security/input"
+import {
+  TTS_MODE_COUNTDOWNS,
+  TTS_MODE_OFF,
+} from "@/shared/timerSettings"
 import { parseRemoteRoute } from "@/utils/liveSession/route"
 import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"
@@ -246,9 +250,7 @@ function TimerApp() {
   const handleChange = useCallback(
     (key: string, value: string) => {
       if (key === "theme" || key === "snd" || key === "tts") {
-        applyParamPatch({
-          [key]: key === "tts" ? value === "1" : value,
-        } as Partial<SyncParams>)
+        applyParamPatch({ [key]: value } as Partial<SyncParams>)
         return
       }
 
@@ -700,7 +702,8 @@ function TimerApp() {
           }
           stepTitle={params.title}
           totalDuration={timer.totalDuration}
-          ttsEnabled={params.tts}
+          ttsEnabled={params.tts !== TTS_MODE_OFF}
+          ttsCountdowns={params.tts === TTS_MODE_COUNTDOWNS}
         />
         <Timer
           activeIndex={params.activeIndex}

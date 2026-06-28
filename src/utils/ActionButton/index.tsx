@@ -29,9 +29,9 @@ export default function ActionButton({
         "inline-flex items-center justify-center gap-2 rounded-xl font-display text-sm font-semibold tracking-[0.06em] transition enabled:cursor-pointer",
         "focus:outline-2 focus:-outline-offset-2 focus:outline-primary disabled:opacity-50",
         compact ? "min-h-9 px-3 py-2" : "min-h-11 px-4 py-2.5",
-        tone === "primary" && "bg-primary text-white hover:bg-primary-hover",
+        tone === "primary" && "bg-primary text-ink hover:bg-primary-hover",
         tone === "secondary" &&
-          "border border-hairline bg-card text-ink hover:border-primary/35 hover:bg-primary/6",
+          "border border-primary/30 bg-ink text-primary hover:border-primary hover:bg-primary hover:text-ink",
         fullWidth && "w-full",
         className,
       )}

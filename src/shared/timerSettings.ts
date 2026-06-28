@@ -28,6 +28,15 @@ export const DEFAULT_TIMER_FINISHED_SOUND_ID =
   "a" satisfies TimerFinishedSoundId
 export const TIMER_TTS_ENABLED_QUERY_VALUE = "1"
 
+export type TtsMode = "0" | "1" | "2"
+export const TTS_MODE_OFF: TtsMode = "0"
+export const TTS_MODE_ALERTS: TtsMode = "1"
+export const TTS_MODE_COUNTDOWNS: TtsMode = "2"
+export const DEFAULT_TTS_MODE: TtsMode = TTS_MODE_OFF
+
+export const isTtsMode = (value: unknown): value is TtsMode =>
+  value === TTS_MODE_OFF || value === TTS_MODE_ALERTS || value === TTS_MODE_COUNTDOWNS
+
 export const isTimerFinishedSoundId = (
   value: unknown,
 ): value is TimerFinishedSoundId =>
@@ -43,18 +52,20 @@ export const getTimerFinishedSoundOption = (id: TimerFinishedSoundId) =>
   TIMER_FINISHED_SOUND_OPTIONS.find((option) => option.id === id) ??
   TIMER_FINISHED_SOUND_OPTIONS[0]
 
-export const normalizeTimerTtsEnabled = (value: unknown, fallback = false) => {
+export const normalizeTimerTtsMode = (
+  value: unknown,
+  fallback: TtsMode = DEFAULT_TTS_MODE,
+): TtsMode => {
+  if (value === TTS_MODE_COUNTDOWNS) return TTS_MODE_COUNTDOWNS
   if (
     value === true ||
     value === TIMER_TTS_ENABLED_QUERY_VALUE ||
     value === "true"
   ) {
-    return true
+    return TTS_MODE_ALERTS
   }
-
-  if (value === false || value === "0" || value === "false") {
-    return false
+  if (value === false || value === TTS_MODE_OFF || value === "false") {
+    return TTS_MODE_OFF
   }
-
   return fallback
 }

@@ -9,6 +9,7 @@ import {
   getActiveTimerSequenceRow,
   MAX_TIMER_DURATION_SECONDS,
 } from "./timerSequence.ts"
+import { TTS_MODE_OFF } from "./timerSettings.ts"
 
 type TimerState = SessionSnapshot["state"]
 type SyncParams = SessionSnapshot["params"]
@@ -368,7 +369,7 @@ export const resolveTimerStateAt = (
         ],
         s: "00",
         snd: "a",
-        tts: false,
+        tts: TTS_MODE_OFF,
         title: "",
       },
       state,

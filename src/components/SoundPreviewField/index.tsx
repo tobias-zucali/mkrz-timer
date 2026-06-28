@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react"
 
+import PanelLabel from "@/components/PanelLabel"
 import SelectField from "@/components/SelectField"
 import ActionButton from "@/utils/ActionButton"
 import { PlayIcon } from "@/utils/icons"
@@ -37,10 +38,8 @@ export default function SoundPreviewField({
   }, [])
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-ink" htmlFor={fieldId}>
-        {label}
-      </label>
+    <div>
+      <PanelLabel htmlFor={fieldId}>{label}</PanelLabel>
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <SelectField
@@ -60,6 +59,7 @@ export default function SoundPreviewField({
         <ActionButton
           aria-label={previewLabel}
           className="h-11 shrink-0 px-3"
+          tone="secondary"
           disabled={!canPreviewSound}
           onClick={() => {
             if (!selectedSound.src) {

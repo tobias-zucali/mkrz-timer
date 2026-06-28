@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useTranslations } from "next-intl"
 
 import IconButton from "@/components/IconButton"
@@ -11,6 +12,19 @@ import {
   DocumentDuplicateIcon,
   TrashIcon,
 } from "@/utils/icons"
+
+type CardIconButtonProps = Omit<React.ComponentProps<typeof IconButton>, "className" | "shape" | "size">
+
+function CardIconButton(props: CardIconButtonProps) {
+  return (
+    <IconButton
+      className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
+      shape="round"
+      size="sm"
+      {...props}
+    />
+  )
+}
 
 import {
   buildSummaryText,
@@ -85,7 +99,7 @@ export default function SequenceStepCard({
             </span>
             {isActive ? (
               <span
-                className={`${stateBadgeClassName} text-white`}
+                className={`${stateBadgeClassName} text-ink`}
                 style={{ backgroundColor: displayRow.primaryColor }}
               >
                 {t("active")}
@@ -124,62 +138,50 @@ export default function SequenceStepCard({
 
         <div className="-mt-1 -mr-1 flex shrink-0 flex-wrap justify-end gap-1 self-start">
           {canMoveUp ? (
-            <IconButton
+            <CardIconButton
               aria-label={t("moveStepUp", { step: index + 1 })}
-              className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
               onClick={(event) => {
                 event.stopPropagation()
                 onMoveUp()
               }}
-              shape="round"
-              size="sm"
               title={t("moveStepUp", { step: index + 1 })}
             >
               <ArrowUpIcon className="size-4" />
-            </IconButton>
+            </CardIconButton>
           ) : null}
           {canMoveDown ? (
-            <IconButton
+            <CardIconButton
               aria-label={t("moveStepDown", { step: index + 1 })}
-              className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
               onClick={(event) => {
                 event.stopPropagation()
                 onMoveDown()
               }}
-              shape="round"
-              size="sm"
               title={t("moveStepDown", { step: index + 1 })}
             >
               <ArrowDownIcon className="size-4" />
-            </IconButton>
+            </CardIconButton>
           ) : null}
-          <IconButton
+          <CardIconButton
             aria-label={t("duplicateStep", { step: index + 1 })}
-            className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
             onClick={(event) => {
               event.stopPropagation()
               onDuplicate()
             }}
-            shape="round"
-            size="sm"
             title={t("duplicateStep", { step: index + 1 })}
           >
             <DocumentDuplicateIcon className="size-4" />
-          </IconButton>
+          </CardIconButton>
           {canDeleteRow ? (
-            <IconButton
+            <CardIconButton
               aria-label={t("deleteStep", { step: index + 1 })}
-              className="border-hairline bg-input-bg text-ink/70 hover:border-primary/45 hover:text-primary"
               onClick={(event) => {
                 event.stopPropagation()
                 onDelete()
               }}
-              shape="round"
-              size="sm"
               title={t("deleteStep", { step: index + 1 })}
             >
               <TrashIcon className="size-4" />
-            </IconButton>
+            </CardIconButton>
           ) : null}
         </div>
       </div>

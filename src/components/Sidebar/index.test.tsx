@@ -141,11 +141,9 @@ describe("Sidebar", () => {
       />,
     )
 
-    expect(
-      screen.getByRole("checkbox", { name: /Voice announcements/ }),
-    ).toBeVisible()
-    expect(screen.getByLabelText("Sound when finished")).toBeVisible()
-    expect(screen.getByRole("button", { name: "Preview sound" })).toBeVisible()
+    expect(screen.getByLabelText("Announcements")).toBeVisible()
+    expect(screen.getByLabelText("Finish sound")).toBeVisible()
+    expect(screen.getByRole("button", { name: "Preview" })).toBeVisible()
   })
 
   it("renders the share settings toggle", () => {

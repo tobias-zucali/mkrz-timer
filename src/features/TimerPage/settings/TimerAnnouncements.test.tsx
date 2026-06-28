@@ -35,6 +35,7 @@ const buildProps = (
   stepTitle: "",
   totalDuration: 60,
   ttsEnabled: false,
+  ttsCountdowns: false,
   ...overrides,
 })
 

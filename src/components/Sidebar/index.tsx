@@ -256,7 +256,7 @@ export default function Sidebar({
   const sidebarBaseItemClassName =
     "flex w-full cursor-pointer items-center gap-x-3 rounded-lg border border-transparent px-2.5 py-2 text-left text-base font-semibold text-ink/74 transition hover:border-primary/50 hover:text-ink focus:outline-2 focus:-outline-offset-2 focus:outline-primary"
   const selectedSidebarItemClassName =
-    "relative z-10 -mr-2 border-primary/40 bg-primary text-white hover:border-primary/40 hover:text-white"
+    "relative z-10 -mr-2 border-primary/40 bg-primary text-ink hover:bg-primary-hover hover:border-primary/40"
 
   const toggleSidebar = useCallback(() => {
     setIsPinnedOpen((current) => {

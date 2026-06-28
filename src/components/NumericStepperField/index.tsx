@@ -3,6 +3,8 @@
 import classNames from "classnames"
 import type { KeyboardEvent } from "react"
 
+import PanelLabel from "@/components/PanelLabel"
+
 import IconButton from "@/components/IconButton"
 import { MinusIcon, PlusIcon } from "@/utils/icons"
 
@@ -41,13 +43,9 @@ export default function NumericStepperField({
 
   return (
     <div className={classNames("min-w-0 w-full", className)}>
-      <label
-        className="mb-2 block panel-label text-ink/74"
-        htmlFor={id}
-        id={labelId}
-      >
+      <PanelLabel htmlFor={id} id={labelId}>
         {label}
-      </label>
+      </PanelLabel>
       <div
         aria-labelledby={labelId}
         className="

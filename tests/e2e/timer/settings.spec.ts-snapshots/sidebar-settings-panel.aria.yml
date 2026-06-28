@@ -1,37 +1,35 @@
 - heading "Settings" [level=2]
 - button "Close sidebar"
-- text: Language
-- combobox "Language":
-  - option "English" [selected]
-  - option "Deutsch"
-- heading "Appearance" [level=3]
-- paragraph: Choose between dark and bright mode.
-- group "Appearance":
+- paragraph: Language
+- group "Language":
+  - button "English"
+  - button "Deutsch"
+- paragraph: Theme
+- group "Theme":
   - button "Dark"
   - button "Bright"
-- heading "Voice & Sound" [level=3]
-- paragraph: Configure spoken announcements and the sound that plays when the timer finishes.
-- text: Sound when finished
-- combobox "Sound when finished":
+- text: Finish sound
+- combobox "Finish sound":
   - option "Attention" [selected]
   - option "Ringing Bell"
   - option "Old Ring Ringing"
   - option "No sound"
-- button "Preview sound"
-- checkbox "Voice announcements"
-- text: Voice announcements
-- heading "Floating Timer" [level=3]
-- paragraph: Keep a compact timer visible above other windows.
-- button "Open floating timer"
-- heading "Keyboard Shortcuts" [level=3]
-- paragraph: Global timer shortcuts stay available unless focus is inside an editable field.
+- button "Preview"
+- text: Announcements
+- combobox "Announcements":
+  - option "Off" [selected]
+  - option "Spoken alerts"
+  - option "Spoken alerts & countdowns"
+- paragraph: Always-on-top timer
+- button "Open mini timer"
+- paragraph: Keyboard shortcuts
 - paragraph: Enter / Space
-- paragraph: Start or pause the timer, and reset when time has run out.
+- paragraph: Start or pause, reset when time has run out.
 - paragraph: P
-- paragraph: Start or pause the timer without resetting a finished step.
-- paragraph: R / Escape
-- paragraph: Reset the timer.
-- paragraph: Arrow Left / Right
-- paragraph: Move to the previous or next step.
-- paragraph: Arrow Up / Down
-- paragraph: Add or remove one minute.
+- paragraph: Start or pause.
+- paragraph: R / Esc
+- paragraph: Reset.
+- paragraph: ⬅ / ⮕
+- paragraph: Previous / next step.
+- paragraph: ⬆ / ⬇
+- paragraph: Add / remove 1 minute.

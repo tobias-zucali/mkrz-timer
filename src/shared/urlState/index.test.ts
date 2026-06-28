@@ -74,7 +74,7 @@ test("parseTimerUrlState reads compact settings params", () => {
     hasTimerState: false,
     rows: [],
     snd: "b",
-    tts: true,
+    tts: "1",
     version: null,
   })
 })
@@ -298,7 +298,7 @@ test("buildTimerUrlSearchParams omits default settings and serializes selected o
       }),
     ],
     snd: "b",
-    tts: true,
+    tts: "1",
   }).toString()
 
   assert.equal(selectedQuery, "v=1&t=MzAwISEhMSEw&a=0&s=b&ts=1")

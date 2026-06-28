@@ -13,8 +13,9 @@ import type {
 } from "../liveSession/types.ts"
 import {
   DEFAULT_TIMER_FINISHED_SOUND_ID,
+  DEFAULT_TTS_MODE,
   normalizeTimerFinishedSoundId,
-  normalizeTimerTtsEnabled,
+  normalizeTimerTtsMode,
 } from "../timerSettings.ts"
 import {
   buildDefaultTimerSequenceRow,
@@ -36,7 +37,7 @@ export const DEFAULT_SYNC_PARAMS: SyncParams = {
   rows: [buildDefaultTimerSequenceRow()],
   s: "00",
   snd: DEFAULT_TIMER_FINISHED_SOUND_ID,
-  tts: false,
+  tts: DEFAULT_TTS_MODE,
   title: "",
 }
 
@@ -313,7 +314,7 @@ const deriveSequenceSyncParams = ({
   theme: AppTheme
   rows: TimerSequenceRow[]
   snd: SyncParams["snd"]
-  tts: boolean
+  tts: SyncParams["tts"]
 }): SyncParams => {
   const normalizedActiveIndex = clampTimerSequenceIndex({ activeIndex, rows })
   const normalizedRows =
@@ -392,7 +393,7 @@ export const normalizeSyncParams = (
     title: normalizeTitle(params.title),
   })
   const normalizedRows = normalizeSequenceRows(params.rows, [legacyRow])
-  const normalizedTts = normalizeTimerTtsEnabled(params.tts, fallback.tts)
+  const normalizedTts = normalizeTimerTtsMode(params.tts, fallback.tts)
   const normalizedSound = normalizeTimerFinishedSoundId(
     params.snd,
     fallback.snd,
@@ -480,7 +481,7 @@ export const normalizeSyncParamPatch = (value: unknown) => {
     )
   }
   if ("tts" in value) {
-    normalizedPatch.tts = normalizeTimerTtsEnabled(
+    normalizedPatch.tts = normalizeTimerTtsMode(
       value.tts,
       DEFAULT_SYNC_PARAMS.tts,
     )

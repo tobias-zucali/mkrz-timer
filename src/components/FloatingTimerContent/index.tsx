@@ -40,7 +40,10 @@ export default function FloatingTimerContent({
       "
       style={
         primaryColor
-          ? ({ ["--color-primary"]: primaryColor } as React.CSSProperties)
+          ? ({
+              "--color-primary": primaryColor,
+              "--color-primary-hover": `color-mix(in srgb, ${primaryColor} 85%, black)`,
+            } as React.CSSProperties)
           : undefined
       }
     >

@@ -14,8 +14,8 @@ import {
 } from "../security/input.ts"
 import {
   normalizeTimerFinishedSoundId,
-  normalizeTimerTtsEnabled,
-  TIMER_TTS_ENABLED_QUERY_VALUE,
+  normalizeTimerTtsMode,
+  type TtsMode,
 } from "../timerSettings.ts"
 import {
   buildDurationPartsFromTotalSeconds,
@@ -53,7 +53,7 @@ export type ParsedTimerUrlState = {
   hasTimerState: boolean
   rows: UrlTimerRow[]
   snd: SyncParams["snd"]
-  tts: boolean
+  tts: TtsMode
   version: string | null
 }
 
@@ -152,7 +152,7 @@ export const parseTimerUrlState = ({
     searchParams.get("s"),
     DEFAULT_SYNC_PARAMS.snd,
   )
-  const tts = normalizeTimerTtsEnabled(
+  const tts = normalizeTimerTtsMode(
     searchParams.get("ts"),
     DEFAULT_SYNC_PARAMS.tts,
   )
@@ -332,7 +332,7 @@ export const buildTimerUrlSearchParams = ({
   extraParams?: Record<string, string | null | undefined>
   rows: UrlTimerRow[]
   snd?: SyncParams["snd"]
-  tts?: boolean
+  tts?: TtsMode
 }) => {
   const searchParams = new URLSearchParams()
   const normalizedTheme = normalizeTheme(theme)
@@ -340,7 +340,7 @@ export const buildTimerUrlSearchParams = ({
     snd,
     DEFAULT_SYNC_PARAMS.snd,
   )
-  const normalizedTts = normalizeTimerTtsEnabled(tts, DEFAULT_SYNC_PARAMS.tts)
+  const normalizedTts = normalizeTimerTtsMode(tts, DEFAULT_SYNC_PARAMS.tts)
   const normalizedRows = rows.map(buildUrlTimerRow)
   const serializedRows = normalizedRows.map(serializeUrlTimerRow).join("|")
 
@@ -366,7 +366,7 @@ export const buildTimerUrlSearchParams = ({
     searchParams.set("s", normalizedSound)
   }
   if (normalizedTts !== DEFAULT_SYNC_PARAMS.tts) {
-    searchParams.set("ts", TIMER_TTS_ENABLED_QUERY_VALUE)
+    searchParams.set("ts", normalizedTts)
   }
 
   for (const [key, value] of Object.entries(extraParams)) {

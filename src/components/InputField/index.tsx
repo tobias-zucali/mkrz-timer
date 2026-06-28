@@ -1,6 +1,7 @@
 import classNames from "classnames"
 import { useId } from "react"
 
+import PanelLabel from "@/components/PanelLabel"
 import styles from "@/components/InputField/index.module.css"
 
 const baseInputClassName = classNames(
@@ -36,9 +37,7 @@ export default function InputField({
 
   return (
     <div className={classNames("w-full", containerClassName)}>
-      <label className="mb-2 block panel-label text-ink/74" htmlFor={inputId}>
-        {label}
-      </label>
+      <PanelLabel htmlFor={inputId}>{label}</PanelLabel>
       <div className="flex items-stretch">
         <input
           aria-describedby={description && `${inputId}-desc`}

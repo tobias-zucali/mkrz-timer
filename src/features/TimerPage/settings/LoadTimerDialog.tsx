@@ -41,7 +41,7 @@ function TimerCard({
         <div className={`flex items-center gap-2 ${onDelete ? "pr-7" : ""}`}>
           <p className="truncate text-sm font-semibold text-ink">{title}</p>
           {badge?.variant === "current" ? (
-            <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-white">
+            <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-ink">
               {badge.label}
             </span>
           ) : badge?.variant === "category" ? (

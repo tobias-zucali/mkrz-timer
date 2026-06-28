@@ -1,30 +1,10 @@
 import { Suspense } from "react"
-import { NextIntlClientProvider } from "next-intl"
 
 import RedirectCurrentPathToLocale from "@/i18n/RedirectCurrentPathToLocale"
+import LocaleProvider from "@/i18n/LocaleProvider"
 import { isAppLocale, resolveAppLocale } from "@/i18n/locale"
-import { getMessagesForLocale } from "@/i18n/messages"
 
 import TimerPage from "@/features/TimerPage"
-
-const timerPageNamespaces = [
-  "AppShell",
-  "CloseButton",
-  "DeveloperReportDialog",
-  "DigitalDisplay",
-  "HelpText",
-  "InfoPages",
-  "liveSessionStatus",
-  "QrCodeOverlay",
-  "Sidebar",
-  "StatusBadge",
-  "SyncConflictDialog",
-  "Timer",
-  "TimerPage",
-  "TimerTitle",
-  "TopRightControls",
-  "UrlCopyField",
-] as const
 
 export default function TimerPageRoute({
   requestedLocale,
@@ -32,16 +12,15 @@ export default function TimerPageRoute({
   requestedLocale: string
 }) {
   const locale = resolveAppLocale(requestedLocale)
-  const messages = getMessagesForLocale(locale, timerPageNamespaces)
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <LocaleProvider defaultLocale={locale}>
       {!isAppLocale(requestedLocale) ? (
         <Suspense fallback={null}>
           <RedirectCurrentPathToLocale locale={locale} />
         </Suspense>
       ) : null}
       <TimerPage />
-    </NextIntlClientProvider>
+    </LocaleProvider>
   )
 }

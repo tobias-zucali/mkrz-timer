@@ -1,5 +1,5 @@
 import type { TimerEndBehavior, TimerSequenceRow } from "../timerSequence"
-import type { TimerFinishedSoundId } from "../timerSettings"
+import type { TimerFinishedSoundId, TtsMode } from "../timerSettings"
 
 export type { TimerEndBehavior, TimerSequenceRow }
 
@@ -12,7 +12,7 @@ export type SyncParams = {
   title: string
   theme: AppTheme
   pc: string
-  tts: boolean
+  tts: TtsMode
   snd: TimerFinishedSoundId
   rows: TimerSequenceRow[]
 }

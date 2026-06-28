@@ -30,7 +30,7 @@ export default function TimerStepButton({
         "timer-chrome-transition",
         direction === "previous" ? "left-4" : "right-4",
         isHighlighted
-          ? "border-primary bg-primary hover:bg-primary/88"
+          ? "border-primary bg-primary hover:bg-primary-hover"
           : "border-ink/18 bg-screen/82 hover:border-primary/40 hover:bg-screen/90 hover:text-primary",
         !isHighlighted && isDimmed && "timer-chrome-dimmed",
       )}

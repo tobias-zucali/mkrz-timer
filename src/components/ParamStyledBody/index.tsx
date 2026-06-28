@@ -30,7 +30,12 @@ export default function ParamStyledBody({
     <body
       data-theme={theme}
       style={
-        pc ? ({ "--color-primary": pc } as React.CSSProperties) : undefined
+        pc
+          ? ({
+              "--color-primary": pc,
+              "--color-primary-hover": `color-mix(in srgb, ${pc} 85%, black)`,
+            } as React.CSSProperties)
+          : undefined
       }
       {...otherProps}
     >

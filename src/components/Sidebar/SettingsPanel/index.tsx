@@ -3,13 +3,20 @@
 import { useId } from "react"
 import { useTranslations } from "next-intl"
 
-import CheckboxField from "@/components/CheckboxField"
 import HelpText from "@/components/HelpText"
-import SegmentedControl from "@/components/SegmentedControl"
-import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
+import PanelLabel from "@/components/PanelLabel"
+import SelectField from "@/components/SelectField"
 import SoundPreviewField from "@/components/SoundPreviewField"
+import LocaleSwitcher from "@/components/Sidebar/SettingsPanel/LocaleSwitcher"
+import SegmentedControl from "@/components/SegmentedControl"
 import type { AppTheme } from "@/shared/liveSession/types"
-import { type TimerFinishedSoundId } from "@/shared/timerSettings"
+import {
+  type TimerFinishedSoundId,
+  TTS_MODE_ALERTS,
+  TTS_MODE_COUNTDOWNS,
+  TTS_MODE_OFF,
+  type TtsMode,
+} from "@/shared/timerSettings"
 import ActionButton from "@/utils/ActionButton"
 import { WindowIcon } from "@/utils/icons"
 import type { FloatingTimerData } from "@/utils/useFloatingTimerPiP"
@@ -20,7 +27,7 @@ export type SettingsPanelProps = {
   params: {
     theme: AppTheme
     snd: TimerFinishedSoundId
-    tts: boolean
+    tts: TtsMode
   }
 }
 
@@ -33,65 +40,35 @@ export default function SettingsPanel({
   const ttsId = useId()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <LocaleSwitcher />
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-ink">
-            {t("appearanceHeading")}
-          </h3>
-          <p className="mt-1 text-sm/6 text-ink/68">
-            {t("appearanceDescription")}
-          </p>
-        </div>
-        <SegmentedControl
-          label={t("appearanceHeading")}
-          onChange={(theme) => handleChange("theme", theme)}
-          options={[
-            { label: t("themeDark"), value: "dark" },
-            { label: t("themeBright"), value: "bright" },
-          ]}
-          value={params.theme}
-        />
-      </section>
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-ink">
-            {t("announcementsHeading")}
-          </h3>
-          <p className="mt-1 text-sm/6 text-ink/68">
-            {t("announcementsDescription")}
-          </p>
-        </div>
-        <div
-          className="space-y-4 rounded-2xl border
-              border-ink/10 bg-ink/2 p-4"
-        >
-          <SoundPreviewField
-            label={t("finishedSound")}
-            onChange={(value) => handleChange("snd", value)}
-            previewLabel={t("previewSound")}
-            value={params.snd}
-          />
-          <CheckboxField
-            checked={params.tts}
-            id={ttsId}
-            label={t("speakAnnouncements")}
-            onChange={(event) =>
-              handleChange("tts", event.target.checked ? "1" : "0")
-            }
-          />
-        </div>
-      </section>
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-ink">
-            {t("floatingHeading")}
-          </h3>
-          <p className="mt-1 text-sm/6 text-ink/68">
-            {t("floatingDescription")}
-          </p>
-        </div>
+      <SegmentedControl
+        label={t("themeLabel")}
+        onChange={(theme) => handleChange("theme", theme)}
+        options={[
+          { label: t("themeDark"), value: "dark" },
+          { label: t("themeBright"), value: "bright" },
+        ]}
+        value={params.theme}
+      />
+      <SoundPreviewField
+        label={t("finishedSound")}
+        onChange={(value) => handleChange("snd", value)}
+        previewLabel={t("previewSound")}
+        value={params.snd}
+      />
+      <SelectField
+        id={ttsId}
+        label={t("announcementsLabel")}
+        onChange={(event) => handleChange("tts", event.target.value)}
+        value={params.tts}
+      >
+        <option value={TTS_MODE_OFF}>{t("announcementsOff")}</option>
+        <option value={TTS_MODE_ALERTS}>{t("announcementsAlerts")}</option>
+        <option value={TTS_MODE_COUNTDOWNS}>{t("announcementsCountdowns")}</option>
+      </SelectField>
+      <div>
+        <PanelLabel>{t("floatingLabel")}</PanelLabel>
         <div className="space-y-3">
           <ActionButton
             disabled={!floatingTimerData.isSupported}
@@ -99,6 +76,7 @@ export default function SettingsPanel({
               void floatingTimerData.toggle()
             }}
             fullWidth={true}
+            tone="secondary"
           >
             <span>
               {floatingTimerData.isOpen
@@ -113,18 +91,11 @@ export default function SettingsPanel({
             </p>
           )}
         </div>
-      </section>
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-ink">
-            {t("shortcutsHeading")}
-          </h3>
-          <p className="mt-1 text-sm/6 text-ink/68">
-            {t("shortcutsDescription")}
-          </p>
-        </div>
+      </div>
+      <div>
+        <PanelLabel>{t("shortcutsHeading")}</PanelLabel>
         <HelpText />
-      </section>
+      </div>
     </div>
   )
 }

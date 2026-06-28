@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react"
 import { useTranslations } from "next-intl"
 
+import ActionButton from "@/utils/ActionButton"
 import IconButton from "@/components/IconButton"
 import TimerSequenceInspector from "@/components/Sidebar/TimerSequenceInspector"
 import type { SyncParams } from "@/shared/liveSession/types"
@@ -219,19 +220,9 @@ export default function TimerPanel({
             row={effectiveRows[0] ?? params.rows[0]}
             rowIndex={0}
           />
-          <button
-            className="
-              inline-flex min-h-11 w-full cursor-pointer items-center justify-center
-              rounded-xl border border-hairline bg-input-bg px-4 py-2.5 font-display
-              text-sm font-semibold tracking-wider text-ink/70 transition
-              hover:border-primary/45 hover:text-primary
-              focus:outline-2 focus:-outline-offset-2 focus:outline-primary
-            "
-            onClick={handleAddRow}
-            type="button"
-          >
+          <ActionButton fullWidth tone="secondary" onClick={handleAddRow}>
             {t("addStep")}
-          </button>
+          </ActionButton>
         </section>
       ) : (
         <section className="space-y-4">
@@ -262,18 +253,9 @@ export default function TimerPanel({
               )
             })}
 
-            <button
-              className="
-                inline-flex min-h-11 w-full cursor-pointer items-center justify-center
-                rounded-xl bg-primary px-4 py-2.5 font-display text-sm font-semibold
-                tracking-wider text-white transition hover:bg-primary-hover
-                focus:outline-2 focus:-outline-offset-2 focus:outline-primary
-              "
-              onClick={handleAddRow}
-              type="button"
-            >
+            <ActionButton fullWidth tone="secondary" onClick={handleAddRow}>
               {t("addStep")}
-            </button>
+            </ActionButton>
           </div>
         </section>
       )}

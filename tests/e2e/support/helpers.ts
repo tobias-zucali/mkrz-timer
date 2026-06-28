@@ -393,13 +393,12 @@ export async function updateTimerSettings(
       .click()
   }
   if (ttsEnabled !== undefined) {
-    const checkbox = settingsPanel.getByLabel("Voice announcements")
-    if ((await checkbox.isChecked()) !== ttsEnabled) {
-      await checkbox.click()
-    }
+    await settingsPanel
+      .getByLabel("Announcements")
+      .selectOption(ttsEnabled ? "1" : "0")
   }
   if (soundId !== undefined) {
-    await settingsPanel.getByLabel("Sound when finished").selectOption(soundId)
+    await settingsPanel.getByLabel("Finish sound").selectOption(soundId)
   }
 }
 
@@ -808,12 +807,12 @@ export async function expectTimerSettings(page: Page, settings: TimerSettings) {
   const settingsPanel = page.getByTestId("sidebar-panel-settings")
 
   if (settings.ttsEnabled !== undefined) {
-    await expect(
-      settingsPanel.getByLabel("Voice announcements"),
-    ).toHaveJSProperty("checked", settings.ttsEnabled)
+    await expect(settingsPanel.getByLabel("Announcements")).toHaveValue(
+      settings.ttsEnabled ? "1" : "0",
+    )
   }
   if (settings.soundId !== undefined) {
-    await expect(settingsPanel.getByLabel("Sound when finished")).toHaveValue(
+    await expect(settingsPanel.getByLabel("Finish sound")).toHaveValue(
       settings.soundId,
     )
   }

@@ -49,7 +49,7 @@ export default function TimerSequenceList({
                     Step {index + 1}
                   </span>
                   {isActive ? (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-white">
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[0.68rem] font-semibold text-ink">
                       Active
                     </span>
                   ) : null}
