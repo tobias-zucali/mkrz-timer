@@ -1,6 +1,59 @@
-import { expect, test } from "./support/test"
+import { devices } from "@playwright/test"
+
+import { expectScreenshotWithoutDebugInfo } from "./support/helpers"
+import { expect, installE2eBrowserMocks, test } from "./support/test"
 
 test.describe.configure({ mode: "serial" })
+
+const homePageViewports = [
+  {
+    name: "mobile",
+    contextOptions: { ...devices["iPhone SE"] },
+  },
+  {
+    name: "tablet",
+    contextOptions: { ...devices["iPad Mini"] },
+  },
+  {
+    name: "desktop",
+    contextOptions: { viewport: { width: 1280, height: 900 } },
+  },
+] as const
+
+const homePageLocales = ["en", "de"] as const
+
+test(
+  "matches home page layout across viewports",
+  { tag: "@visual" },
+  async ({ baseURL, browser }) => {
+    test.slow()
+
+    for (const locale of homePageLocales) {
+      for (const { name, contextOptions } of homePageViewports) {
+        const context = await browser.newContext(contextOptions)
+        await installE2eBrowserMocks(context)
+        const devicePage = await context.newPage()
+
+        await devicePage.goto(
+          baseURL
+            ? new URL(`/${locale}`, baseURL).toString()
+            : `/${locale}`,
+        )
+        await expect(
+          devicePage.getByRole("heading", { level: 1 }),
+        ).toBeVisible({ timeout: 15_000 })
+
+        await expectScreenshotWithoutDebugInfo(devicePage, {
+          fullPage: true,
+          message: `home page ${locale} ${name} layout should stay visually stable`,
+          name: `home-layout-${locale}-${name}.png`,
+        })
+
+        await context.close()
+      }
+    }
+  },
+)
 
 const infoPages = [
   { slug: "about", title: "About mkrz timer" },

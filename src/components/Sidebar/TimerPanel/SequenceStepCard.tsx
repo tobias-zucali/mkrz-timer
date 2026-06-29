@@ -13,7 +13,10 @@ import {
   TrashIcon,
 } from "@/utils/icons"
 
-type CardIconButtonProps = Omit<React.ComponentProps<typeof IconButton>, "className" | "shape" | "size">
+type CardIconButtonProps = Omit<
+  React.ComponentProps<typeof IconButton>,
+  "className" | "shape" | "size"
+>
 
 function CardIconButton(props: CardIconButtonProps) {
   return (

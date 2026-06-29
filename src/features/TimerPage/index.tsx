@@ -30,10 +30,7 @@ import {
   DEFAULT_SYNC_PARAMS,
   normalizeSyncParams,
 } from "@/shared/security/input"
-import {
-  TTS_MODE_COUNTDOWNS,
-  TTS_MODE_OFF,
-} from "@/shared/timerSettings"
+import { TTS_MODE_COUNTDOWNS, TTS_MODE_OFF } from "@/shared/timerSettings"
 import { parseRemoteRoute } from "@/utils/liveSession/route"
 import { buildTimerSequenceChange } from "@/utils/timerSequenceEditor"
 import { isPromotedHostControlClient } from "@/utils/timerPage/routeTransition"

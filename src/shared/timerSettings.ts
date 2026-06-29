@@ -35,7 +35,9 @@ export const TTS_MODE_COUNTDOWNS: TtsMode = "2"
 export const DEFAULT_TTS_MODE: TtsMode = TTS_MODE_OFF
 
 export const isTtsMode = (value: unknown): value is TtsMode =>
-  value === TTS_MODE_OFF || value === TTS_MODE_ALERTS || value === TTS_MODE_COUNTDOWNS
+  value === TTS_MODE_OFF ||
+  value === TTS_MODE_ALERTS ||
+  value === TTS_MODE_COUNTDOWNS
 
 export const isTimerFinishedSoundId = (
   value: unknown,

@@ -65,7 +65,9 @@ export default function SettingsPanel({
       >
         <option value={TTS_MODE_OFF}>{t("announcementsOff")}</option>
         <option value={TTS_MODE_ALERTS}>{t("announcementsAlerts")}</option>
-        <option value={TTS_MODE_COUNTDOWNS}>{t("announcementsCountdowns")}</option>
+        <option value={TTS_MODE_COUNTDOWNS}>
+          {t("announcementsCountdowns")}
+        </option>
       </SelectField>
       <div>
         <PanelLabel>{t("floatingLabel")}</PanelLabel>
